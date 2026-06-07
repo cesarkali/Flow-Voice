@@ -2,7 +2,7 @@
 
 O **FlowVoice** é um utilitário de produtividade leve e elegante para Windows que roda em segundo plano na bandeja do sistema. Ele permite que você dite textos por voz em qualquer campo de digitação do sistema (navegador, editores de código, chat do Teams, Word, etc.). O áudio é capturado, transcrito por IA e, opcionalmente, polido e corrigido gramaticalmente de forma automática antes de ser colado diretamente onde está o seu cursor.
 
-Desenvolvido por: **Júlio Caliberda** ([caliberda.com.br](https://caliberda.com.br))
+Desenvolvido por: **Júlio Caliberda** ([caliberda.com.br](https://caliberda.com.br)) | Repositório: [GitHub](https://github.com/cesarkali/Flow-Voice)
 
 ---
 
