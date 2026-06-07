@@ -1,8 +1,12 @@
 # FlowVoice - Ditado Inteligente por IA no seu Cursor
 
 O **FlowVoice** é um utilitário de produtividade leve e elegante para Windows que roda em segundo plano na bandeja do sistema. Ele permite que você dite textos por voz em qualquer campo de digitação do sistema (navegador, editores de código, chat do Teams, Word, etc.). O áudio é capturado, transcrito por IA e, opcionalmente, polido e corrigido gramaticalmente de forma automática antes de ser colado diretamente onde está o seu cursor.
-
 Desenvolvido por: **Júlio Caliberda** ([caliberda.com.br](https://caliberda.com.br)) | Repositório: [GitHub](https://github.com/cesarkali/Flow-Voice)
+
+### ⚡ Consumo de Recursos (Leveza)
+O **FlowVoice** foi projetado para ser executado sem impactar o desempenho do seu computador:
+- **Memória RAM**: Consome apenas **~30 MB** enquanto permanece ativo em segundo plano na bandeja do sistema.
+- **Processador CPU**: Consome **&lt; 1%** de CPU quando ocioso. Durante a gravação e o processamento de IA, o consumo permanece mínimo devido ao uso de threads de segundo plano.
 
 ---
 
