@@ -1,14 +1,20 @@
 import sys
 import os
 import time
+import urllib.request
+import json
+import re
+import tempfile
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QLabel, 
     QSystemTrayIcon, QMenu, QDialog, QFormLayout, QLineEdit, 
     QComboBox, QPushButton, QMessageBox, QFrame, QGraphicsDropShadowEffect,
-    QTextEdit, QCheckBox
+    QTextEdit, QCheckBox, QProgressBar
 )
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect
 from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen
+
+CURRENT_VERSION = "1.0.0"
 
 # Import application modules
 from config import ConfigManager
@@ -95,6 +101,306 @@ class ChatWorker(QThread):
                     os.remove(self.audio_path)
                 except Exception:
                     pass
+
+# Helper functions for version updates
+def get_latest_release():
+    url = "https://api.github.com/repos/cesarkali/Flow-Voice/releases/latest"
+    req = urllib.request.Request(
+        url,
+        headers={'User-Agent': 'FlowVoice-Updater'}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            tag_name = data.get("tag_name", "")
+            # Clean version tag (e.g. "v1.0.1" -> "1.0.1")
+            version_match = re.search(r"(\d+\.\d+\.\d+)", tag_name)
+            if not version_match:
+                return None
+            latest_ver = version_match.group(1)
+            
+            # Find FlowVoiceSetup.exe asset
+            download_url = None
+            for asset in data.get("assets", []):
+                if asset.get("name") == "FlowVoiceSetup.exe":
+                    download_url = asset.get("browser_download_url")
+                    break
+            if not download_url:
+                # Fallback: construct download URL from tag_name if asset not found in JSON yet
+                download_url = f"https://github.com/cesarkali/Flow-Voice/releases/download/{tag_name}/FlowVoiceSetup.exe"
+                
+            return latest_ver, download_url
+    except Exception as e:
+        print(f"Erro ao verificar atualizações: {e}")
+        return None
+
+def is_version_newer(current, latest):
+    try:
+        def parse_version(v_str):
+            return [int(x) for x in re.findall(r"\d+", v_str)]
+        return parse_version(latest) > parse_version(current)
+    except Exception:
+        return False
+
+# Background thread to check for updates
+class UpdateCheckerWorker(QThread):
+    update_available = Signal(str, str) # version, download_url
+    no_update_found = Signal()
+    error = Signal(str)
+    
+    def run(self):
+        res = get_latest_release()
+        if res:
+            latest_ver, download_url = res
+            if is_version_newer(CURRENT_VERSION, latest_ver):
+                self.update_available.emit(latest_ver, download_url)
+            else:
+                self.no_update_found.emit()
+        else:
+            self.error.emit("Não foi possível conectar ao servidor de atualizações.")
+
+# Background thread to download the installer
+class DownloadWorker(QThread):
+    progress = Signal(int) # percentage
+    finished = Signal(str) # temp file path
+    error = Signal(str)
+    
+    def __init__(self, url):
+        super().__init__()
+        self.url = url
+        
+    def run(self):
+        try:
+            temp_dir = tempfile.gettempdir()
+            dest_path = os.path.join(temp_dir, "FlowVoiceSetup_update.exe")
+            
+            # Download file chunk by chunk to calculate progress
+            req = urllib.request.Request(self.url, headers={'User-Agent': 'FlowVoice-Updater'})
+            with urllib.request.urlopen(req) as response:
+                total_size = int(response.headers.get('content-length', 0))
+                downloaded = 0
+                chunk_size = 8192 * 4
+                
+                with open(dest_path, 'wb') as f:
+                    while True:
+                        chunk = response.read(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            percent = int((downloaded / total_size) * 100)
+                            self.progress.emit(percent)
+                               
+            self.finished.emit(dest_path)
+        except Exception as e:
+            self.error.emit(str(e))
+
+# Modern premium Dialog to inform about update and manage downloading
+class UpdateDialog(QDialog):
+    def __init__(self, latest_version, download_url, parent=None):
+        super().__init__(parent)
+        self.latest_version = latest_version
+        self.download_url = download_url
+        self.download_worker = None
+        self.drag_position = None
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setFixedSize(450, 260)
+
+        # Main glassmorphism container
+        self.container_frame = QFrame(self)
+        self.container_frame.setObjectName("container_frame")
+        self.container_frame.setGeometry(10, 10, 430, 240)
+        self.container_frame.setStyleSheet("""
+            QFrame#container_frame {
+                background-color: rgba(12, 12, 12, 248);
+                border: 1px solid rgba(255, 255, 255, 30);
+                border-radius: 12px;
+            }
+        """)
+
+        # Shadow effect
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor(0, 0, 0, 200))
+        shadow.setOffset(0, 4)
+        self.container_frame.setGraphicsEffect(shadow)
+
+        # Layout inside container
+        layout = QVBoxLayout(self.container_frame)
+        layout.setContentsMargins(20, 16, 20, 20)
+        layout.setSpacing(12)
+
+        # Title
+        self.lbl_title = QLabel("ATUALIZAÇÃO DISPONÍVEL")
+        title_font = QFont("Segoe UI", 9)
+        title_font.setBold(True)
+        self.lbl_title.setFont(title_font)
+        self.lbl_title.setStyleSheet("color: #8b5cf6; letter-spacing: 1.5px;")
+        layout.addWidget(self.lbl_title)
+
+        # Separator
+        sep = QFrame()
+        sep.setFixedHeight(1)
+        sep.setStyleSheet("background-color: rgba(255, 255, 255, 15);")
+        layout.addWidget(sep)
+
+        # Description
+        self.lbl_desc = QLabel(
+            f"Uma nova versão (v{self.latest_version}) do FlowVoice está disponível no GitHub.<br/>"
+            "Deseja baixar e atualizar agora automaticamente?"
+        )
+        self.lbl_desc.setWordWrap(True)
+        self.lbl_desc.setStyleSheet("color: rgba(255, 255, 255, 200); font-size: 13px; font-family: 'Segoe UI', sans-serif; line-height: 1.4;")
+        layout.addWidget(self.lbl_desc)
+
+        layout.addStretch()
+
+        # Progress bar (hidden initially)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setFixedHeight(8)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: rgba(255, 255, 255, 10);
+                border: none;
+                border-radius: 4px;
+            }
+            QProgressBar::chunk {
+                background-color: #ffffff;
+                border-radius: 4px;
+            }
+        """)
+        self.progress_bar.hide()
+        layout.addWidget(self.progress_bar)
+
+        self.lbl_progress = QLabel("Baixando... 0%")
+        self.lbl_progress.setStyleSheet("color: rgba(255, 255, 255, 140); font-size: 11px; font-family: 'Segoe UI', sans-serif;")
+        self.lbl_progress.hide()
+        layout.addWidget(self.lbl_progress)
+
+        # Buttons
+        self.btn_layout = QHBoxLayout()
+        self.btn_layout.setSpacing(10)
+        
+        self.btn_cancel = QPushButton("Ignorar")
+        self.btn_cancel.setObjectName("btn_cancel")
+        self.btn_cancel.setCursor(Qt.PointingHandCursor)
+        self.btn_cancel.setStyleSheet("""
+            QPushButton#btn_cancel {
+                background-color: transparent;
+                border: 1px solid rgba(255, 255, 255, 25);
+                border-radius: 6px;
+                color: rgba(255, 255, 255, 160);
+                padding: 6px 14px;
+                font-size: 12px;
+                font-family: 'Segoe UI', sans-serif;
+                font-weight: bold;
+                min-height: 28px;
+            }
+            QPushButton#btn_cancel:hover {
+                background-color: rgba(255, 255, 255, 12);
+                color: #ffffff;
+            }
+        """)
+        self.btn_cancel.clicked.connect(self.reject)
+
+        self.btn_update = QPushButton("Baixar e Instalar")
+        self.btn_update.setObjectName("btn_update")
+        self.btn_update.setCursor(Qt.PointingHandCursor)
+        self.btn_update.setStyleSheet("""
+            QPushButton#btn_update {
+                background-color: #ffffff;
+                border: none;
+                border-radius: 6px;
+                color: #000000;
+                padding: 6px 14px;
+                font-size: 12px;
+                font-family: 'Segoe UI', sans-serif;
+                font-weight: bold;
+                min-height: 28px;
+            }
+            QPushButton#btn_update:hover {
+                background-color: rgba(255, 255, 255, 220);
+            }
+        """)
+        self.btn_update.clicked.connect(self.start_download)
+
+        self.btn_layout.addWidget(self.btn_cancel)
+        self.btn_layout.addWidget(self.btn_update)
+        layout.addLayout(self.btn_layout)
+
+    # Window Dragging Logic
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and event.position().y() < 40:
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+        else:
+            self.drag_position = None
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton and self.drag_position is not None:
+            self.move(event.globalPosition().toPoint() - self.drag_position)
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self.drag_position = None
+        super().mouseReleaseEvent(event)
+
+    def start_download(self):
+        # Hide standard action buttons and show progress bar
+        self.btn_cancel.hide()
+        self.btn_update.hide()
+        self.progress_bar.show()
+        self.lbl_progress.show()
+        self.lbl_desc.setText(f"Baixando a versão v{self.latest_version} do GitHub...")
+        self.lbl_title.setText("BAIXANDO ATUALIZAÇÃO")
+        self.lbl_title.setStyleSheet("color: #ffffff; letter-spacing: 1.5px;")
+
+        # Start Download worker thread
+        self.download_worker = DownloadWorker(self.download_url)
+        self.download_worker.progress.connect(self.on_download_progress)
+        self.download_worker.finished.connect(self.on_download_finished)
+        self.download_worker.error.connect(self.on_download_error)
+        self.download_worker.start()
+
+    def on_download_progress(self, percent):
+        self.progress_bar.setValue(percent)
+        self.lbl_progress.setText(f"Baixando... {percent}%")
+
+    def on_download_finished(self, dest_path):
+        self.lbl_desc.setText("Pronto! Iniciando o instalador...")
+        self.lbl_progress.setText("Instalador executando...")
+        QTimer.singleShot(1000, lambda: self.launch_installer_and_exit(dest_path))
+
+    def launch_installer_and_exit(self, dest_path):
+        try:
+            # Launch setup.exe in default OS shell
+            os.startfile(dest_path)
+            # Quit PySide6 App to release files so installer can overwrite them
+            QApplication.quit()
+        except Exception as e:
+            self.on_download_error(f"Erro ao abrir instalador: {e}")
+
+    def on_download_error(self, err_msg):
+        self.progress_bar.hide()
+        self.lbl_progress.show()
+        self.lbl_progress.setText(f"Erro no download: {err_msg}")
+        self.lbl_progress.setStyleSheet("color: #ff5555; font-size: 11px;")
+        
+        # Restore buttons to retry
+        self.btn_cancel.show()
+        self.btn_update.setText("Tentar Novamente")
+        self.btn_update.show()
 
 # Modal window to show Search/Ask AI responses (now an interactive chat)
 class SearchResultCard(QDialog):
@@ -985,12 +1291,35 @@ class SettingsDialog(QDialog):
         btn_cancel.setObjectName("btn_cancel")
         btn_cancel.clicked.connect(lambda: self.fade_out_and_close(False))
         
+        btn_check_update = QPushButton("Verificar Atualizações")
+        btn_check_update.setObjectName("btn_check_update")
+        btn_check_update.setCursor(Qt.PointingHandCursor)
+        btn_check_update.clicked.connect(self.check_updates_manually)
+        btn_check_update.setStyleSheet("""
+            QPushButton#btn_check_update {
+                background-color: transparent;
+                border: 1px solid rgba(139, 92, 246, 120);
+                border-radius: 6px;
+                color: #8b5cf6;
+                padding: 8px 14px;
+                font-size: 12px;
+                font-weight: bold;
+                min-height: 32px;
+            }
+            QPushButton#btn_check_update:hover {
+                background-color: rgba(139, 92, 246, 25);
+                border: 1px solid #8b5cf6;
+                color: #ffffff;
+            }
+        """)
+        
         btn_save = QPushButton("Salvar Configurações")
         btn_save.setObjectName("btn_save")
         btn_save.clicked.connect(self.save_settings)
         btn_save.setFocus()
 
         btn_layout.addWidget(btn_cancel)
+        btn_layout.addWidget(btn_check_update)
         btn_layout.addWidget(btn_save)
         main_layout.addLayout(btn_layout)
 
@@ -1087,6 +1416,43 @@ class SettingsDialog(QDialog):
         set_run_at_startup(start_with_win)
         
         self.fade_out_and_close(True)
+
+    def check_updates_manually(self):
+        # Find the updates button and disable it during the search
+        btn_update = self.findChild(QPushButton, "btn_check_update")
+        if btn_update:
+            btn_update.setEnabled(False)
+            btn_update.setText("Verificando...")
+        
+        self.manual_checker = UpdateCheckerWorker()
+        self.manual_checker.update_available.connect(self.on_manual_update_available)
+        self.manual_checker.no_update_found.connect(self.on_manual_no_update)
+        self.manual_checker.error.connect(self.on_manual_update_error)
+        self.manual_checker.start()
+
+    def on_manual_update_available(self, version, download_url):
+        btn_update = self.findChild(QPushButton, "btn_check_update")
+        if btn_update:
+            btn_update.setEnabled(True)
+            btn_update.setText("Verificar Atualizações")
+            
+        # Show UpdateDialog
+        self.update_dialog = UpdateDialog(version, download_url, self)
+        self.update_dialog.show()
+
+    def on_manual_no_update(self):
+        btn_update = self.findChild(QPushButton, "btn_check_update")
+        if btn_update:
+            btn_update.setEnabled(True)
+            btn_update.setText("Verificar Atualizações")
+        QMessageBox.information(self, "FlowVoice", f"O FlowVoice já está atualizado!\nVersão atual: v{CURRENT_VERSION}")
+
+    def on_manual_update_error(self, err_msg):
+        btn_update = self.findChild(QPushButton, "btn_check_update")
+        if btn_update:
+            btn_update.setEnabled(True)
+            btn_update.setText("Verificar Atualizações")
+        QMessageBox.warning(self, "FlowVoice", f"Não foi possível verificar atualizações:\n{err_msg}")
 
 
 
@@ -1582,6 +1948,10 @@ class FlowVoiceApp(QApplication):
         # Initial check: show warning if API keys are missing on cloud providers
         self.check_api_keys()
 
+        # Check for updates in the background on startup
+        self.update_checker = None
+        QTimer.singleShot(1500, self.start_background_update_check)
+
     def get_hotkeys_map(self):
         """Returns a mapping of hotkeys to their corresponding mode triggers."""
         h_dict = {}
@@ -1603,6 +1973,16 @@ class FlowVoiceApp(QApplication):
         provider = self.config_manager.get("provider", "gemini")
         if provider in ["gemini", "openai"] and not self.config_manager.get_api_key(provider):
             QTimer.singleShot(1000, self.show_settings_dialog)
+
+    def start_background_update_check(self):
+        self.update_checker = UpdateCheckerWorker()
+        self.update_checker.update_available.connect(self.show_update_dialog)
+        self.update_checker.start()
+
+    @Slot(str, str)
+    def show_update_dialog(self, version, download_url):
+        self.update_dialog = UpdateDialog(version, download_url)
+        self.update_dialog.show()
 
     def setup_tray(self):
         """Initializes the System Tray Icon and its context menu."""
