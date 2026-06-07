@@ -1,0 +1,29 @@
+{
+    "hotkey": "<ctrl>+<shift>+<space>",
+    "hotkey_translation": "<ctrl>+<shift>+<y>",
+    "hotkey_pesquisa": "<ctrl>+<shift>+<u>",
+    "provider": "groq",
+    "local_refinement": "ollama",
+    "active_style": "Direto",
+    "operation_mode": "ditado",
+    "translation_target": "Inglês",
+    "api_keys": {
+        "gemini": "",
+        "openai": "",
+        "groq": "",
+        "github_models": ""
+    },
+    "whisper": {
+        "model_size": "base",
+        "device": "cpu"
+    },
+    "local_llm": {
+        "ollama_model": "llama3.2",
+        "model_path": "",
+        "repo_id": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+        "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        "n_ctx": 2048
+    },
+    "language": "pt",
+    "start_with_windows": true
+}

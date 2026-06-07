@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowVoice - Ditado Inteligente por IA no seu Cursor</title>
+    
+    <!-- Meta Tags para SEO -->
+    <meta name="description" content="Dite textos por voz em qualquer campo de digitação do Windows com polimento inteligente por IA. Transcreva, traduza e pesquise instantaneamente.">
+    <meta name="keywords" content="ditado por voz, transcrição de áudio, inteligência artificial, gemini, whisper, produtividade, windows">
+    <meta name="author" content="Júlio Caliberda">
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="FlowVoice - Ditado Inteligente por IA no seu Cursor">
+    <meta property="og:description" content="Dite textos por voz em qualquer campo de digitação do Windows com polimento inteligente por IA.">
+    <meta property="og:image" content="icon.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #09090b;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-color-hover: rgba(255, 255, 255, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #52525b;
+            --accent-glow: rgba(255, 255, 255, 0.02);
+            --accent-purple: #8b5cf6;
+            --accent-emerald: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            /* Subtle Grid Background (more visible) */
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(255, 255, 255, 0.02) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(255, 255, 255, 0.02) 0px, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 45px 45px, 45px 45px;
+        }
+
+        /* Background Glow Container to prevent overflow on mobile */
+        .bg-glow-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Ambient glows */
+        .ambient-light {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.015) 0%, transparent 70%);
+            filter: blur(50px);
+            z-index: -1;
+            pointer-events: none;
+        }
+        .light-top { top: -250px; left: 15%; }
+
+        /* Animation reveals */
+        .reveal {
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Sticky Frosted Header */
+        header {
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .header-inner {
+            width: 92%;
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-group img {
+            width: 28px;
+            height: 28px;
+        }
+
+        .logo-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: color 0.15s;
+        }
+
+        .nav-links a:hover {
+            color: #ffffff;
+        }
+
+        /* Hero Split-Screen Layout (Left: Copy, Right: Live Demo) */
+        .hero-section {
+            width: 92%;
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 60px 0 40px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 48px;
+        }
+
+        .hero-left {
+            flex: 1 1 45%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .hero-left h1 {
+            font-size: 46px;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+
+        .hero-left p {
+            font-size: 16.5px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 13.5px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.15s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .btn-primary:hover {
+            background-color: #eaeaea;
+        }
+
+        /* Specs Bar inside Hero Left to prevent empty spacing */
+        .specs-bar {
+            display: flex;
+            border-top: 1px solid var(--border-color);
+            padding-top: 24px;
+            margin-top: 40px;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .spec-tile {
+            flex: 1;
+        }
+
+        .spec-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .spec-val {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .spec-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: block;
+            margin-top: 1px;
+        }
+
+        /* Notepad Demo (Right Column) */
+        .hero-right {
+            flex: 1 1 50%;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .demo-window {
+            width: 100%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 335px;
+            position: relative;
+        }
+
+        .demo-header {
+            height: 38px;
+            background-color: rgba(255, 255, 255, 0.015);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 6px;
+        }
+
+        .window-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .window-title {
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+        }
+
+        .demo-body {
+            flex-grow: 1;
+            padding: 24px;
+            position: relative;
+            background-color: rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .simulated-editor {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            outline: none;
+            flex-grow: 1;
+            white-space: pre-wrap;
+        }
+
+        .caret {
+            display: inline-block;
+            width: 2px;
+            height: 17px;
+            background-color: #ffffff;
+            vertical-align: middle;
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+        }
+
+        /* Floating Pill overlay matching the app overlay */
+        .app-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translate(-50%, 12px);
+            width: 160px;
+            height: 40px;
+            background-color: rgba(10, 10, 10, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .app-overlay.visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .app-overlay.processing {
+            width: 130px;
+        }
+
+        .app-overlay.done {
+            width: 240px;
+            border-radius: 8px;
+            height: 44px;
+        }
+
+        /* Soundwave */
+        .soundwave {
+            display: none;
+            align-items: center;
+            gap: 2.5px;
+        }
+
+        .soundwave-bar {
+            width: 2px;
+            height: 6px;
+            background-color: #ffffff;
+            border-radius: 1px;
+            animation: wave 0.8s infinite ease-in-out;
+        }
+        .soundwave-bar:nth-child(2) { animation-delay: 0.15s; }
+        .soundwave-bar:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes wave {
+            0%, 100% { height: 4px; }
+            50% { height: 12px; }
+        }
+
+        .spinner {
+            display: none;
+            width: 12px;
+            height: 12px;
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .done-dot {
+            display: none;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--accent-emerald);
+        }
+
+        .overlay-status-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+        }
+
+        .overlay-sublabel {
+            font-size: 8px;
+            font-weight: 800;
+            color: var(--accent-purple);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: none;
+        }
+
+        .app-overlay.done .overlay-sublabel {
+            display: block;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Divider Line */
+        .section-divider {
+            border: 0;
+            height: 1px;
+            background-color: var(--border-color);
+            width: 92%;
+            max-width: 1500px;
+            margin: 30px auto 40px auto;
+        }
+
+        /* Horizontal Features Grid (Bottom Section) */
+        .features-row-section {
+            width: 92%;
+            max-width: 1500px;
+            margin: 0 auto 50px auto;
+        }
+
+        .features-horizontal {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 28px;
+        }
+
+        @media(min-width: 600px) {
+            .features-horizontal {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(min-width: 1024px) {
+            .features-horizontal {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .feat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feat-item h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .feat-item p {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        .feat-item code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            background-color: rgba(255, 255, 255, 0.06);
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: #ffffff;
+        }
+
+        main {
+            flex-grow: 1;
+        }
+
+        /* Footer */
+        footer {
+            width: 100%;
+            border-top: 1px solid var(--border-color);
+            background-color: #000000;
+            z-index: 10;
+        }
+
+        .footer-inner {
+            width: 92%;
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 16px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s;
+        }
+
+        footer a:hover {
+            color: #ffffff;
+        }
+
+        /* Responsive Layouts */
+        @media(max-width: 900px) {
+            .hero-section {
+                flex-direction: column;
+                padding-top: 30px;
+                gap: 40px;
+                text-align: center;
+            }
+            .hero-left, .hero-right {
+                width: 100%;
+            }
+            .hero-left {
+                align-items: center;
+            }
+            .hero-ctas {
+                justify-content: center;
+            }
+            .specs-bar {
+                margin-top: 30px;
+            }
+        }
+
+        @media(max-width: 600px) {
+            .hero-left h1 {
+                font-size: 32px;
+            }
+            .hero-left p {
+                font-size: 15px;
+            }
+            .specs-bar {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+            .header-inner {
+                padding: 16px 0;
+            }
+            .demo-window {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow-container">
+        <div class="ambient-light light-top"></div>
+    </div>
+
+    <header>
+        <div class="header-inner">
+            <a href="#" class="logo-group">
+                <img src="icon.png" alt="FlowVoice logo">
+                <span class="logo-title">FlowVoice</span>
+            </a>
+            <div class="nav-links">
+                <a href="https://caliberda.com.br" target="_blank">Contato</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Split-Screen -->
+        <section class="hero-section reveal">
+            <div class="hero-left">
+                <h1>Dite naturalmente. A IA digita por você.</h1>
+                <p>O FlowVoice roda em segundo plano. Pressione o atalho global, fale e assista ao aplicativo remover erros gramaticais e hesitações, digitando o texto perfeito diretamente sob seu cursor em qualquer programa.</p>
+                
+                <div class="hero-ctas">
+                    <a href="FlowVoiceSetup.exe" class="btn btn-primary" download>
+                        Baixar FlowVoice (.exe)
+                    </a>
+                </div>
+
+                <!-- Technical specifications aligned at the bottom -->
+                <div class="specs-bar">
+                    <div class="spec-tile">
+                        <span class="spec-label">Download</span>
+                        <span class="spec-val">~92 MB</span>
+                        <span class="spec-sub">Instalador Leve</span>
+                    </div>
+                    <div class="spec-tile">
+                        <span class="spec-label">Sistema</span>
+                        <span class="spec-val">Windows 10/11</span>
+                        <span class="spec-sub">Executável 64-bit</span>
+                    </div>
+                    <div class="spec-tile">
+                        <span class="spec-label">Hospedagem</span>
+                        <span class="spec-val">Vercel</span>
+                        <span class="spec-sub">flowvoice.caliberda.com.br</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notepad Demo Visual (Now fully looping automatically) -->
+            <div class="hero-right">
+                <div class="demo-window">
+                    <div class="demo-header">
+                        <span class="window-dot" style="background-color:#ff5f56;"></span>
+                        <span class="window-dot" style="background-color:#ffbd2e;"></span>
+                        <span class="window-dot" style="background-color:#27c93f;"></span>
+                        <span class="window-title" id="demo-window-title">FLOWVOICE - E-MAIL</span>
+                    </div>
+                    <div class="demo-body">
+                        <div class="simulated-editor" id="demo-notepad"><span class="caret"></span></div>
+                        
+                        <!-- Floating Pill Overlay -->
+                        <div class="app-overlay" id="demo-overlay">
+                            <div class="soundwave" id="demo-soundwave">
+                                <span class="soundwave-bar"></span>
+                                <span class="soundwave-bar"></span>
+                                <span class="soundwave-bar"></span>
+                            </div>
+                            <div class="spinner" id="demo-spinner"></div>
+                            <div class="done-dot" id="demo-done-dot"></div>
+                            <div style="display:flex; flex-direction:column; line-height:1.2;">
+                                <span class="overlay-sublabel" id="demo-sublabel">COPIADO</span>
+                                <span class="overlay-status-label" id="demo-label">GRAVANDO</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Divider Line -->
+        <hr class="section-divider">
+
+        <!-- Horizontal Features Grid -->
+        <section class="features-row-section reveal">
+            <div class="features-horizontal">
+                <div class="feat-item">
+                    <h4>Atalho Global</h4>
+                    <p>Pressione <code>Ctrl+Shift+Space</code> para ditar em qualquer editor ou aplicativo do Windows.</p>
+                </div>
+                <div class="feat-item">
+                    <h4>Chat Assistente</h4>
+                    <p>Use <code>Ctrl+Shift+U</code> para abrir a barra lateral flutuante e continuar dialogando com a IA.</p>
+                </div>
+                <div class="feat-item">
+                    <h4>Failover de IAs</h4>
+                    <p>Alterne automaticamente entre Gemini, OpenAI ou Groq caso o provedor principal apresente falhas.</p>
+                </div>
+                <div class="feat-item">
+                    <h4>Privacidade Local</h4>
+                    <p>Suas chaves de API são salvas no <code>%APPDATA%</code> e a transcrição Whisper roda de forma offline.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <p>© 2026 FlowVoice. Desenvolvido por <a href="https://caliberda.com.br" target="_blank">Júlio Caliberda</a>.</p>
+        </div>
+    </footer>
+
+    <!-- Interactive auto-looping simulation script -->
+    <script>
+        // Intersection Observer scroll reveals
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.05 });
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            revealObserver.observe(el);
+        });
+
+        // Autoloop examples database
+        const demoExamples = [
+            {
+                type: "E-mail Profissional",
+                before: "então queria saber se... é... você recebeu meu relatório ontem a tarde tipo tá com alguns números errados e se puder ver... obrigado",
+                after: "Gostaria de saber se você recebeu o relatório que enviei ontem à tarde. Observei que há alguns números incorretos; se puder verificar, agradeço desde já."
+            },
+            {
+                type: "Anotação Rápida",
+                before: "a gente precisa fechar o escopo do projeto até sexta feira sem falta e o júlio vai fazer os testes do instalador e... hum... rodar o build",
+                after: "Precisamos finalizar o escopo do projeto até sexta-feira, sem falta. O Júlio ficará responsável por testar o instalador e executar a compilação do build."
+            },
+            {
+                type: "Mensagem de Chat",
+                before: "fala cara beleza então... o negócio do banco de dados tá dando erro aqui... acho que é a porta... você consegue dar uma olhada rápida?",
+                after: "Olá! Tudo bem? O banco de dados está apresentando um erro, provavelmente relacionado à porta de conexão. Você conseguiria dar uma olhada rápida?"
+            }
+        ];
+
+        let currentExampleIndex = 0;
+
+        function runAutoLoop() {
+            const notepad = document.getElementById('demo-notepad');
+            const overlay = document.getElementById('demo-overlay');
+            const soundwave = document.getElementById('demo-soundwave');
+            const spinner = document.getElementById('demo-spinner');
+            const doneDot = document.getElementById('demo-done-dot');
+            const label = document.getElementById('demo-label');
+            const sublabel = document.getElementById('demo-sublabel');
+            const windowTitle = document.getElementById('demo-window-title');
+
+            const example = demoExamples[currentExampleIndex];
+            windowTitle.innerText = `FLOWVOICE - ${example.type.toUpperCase()}`;
+
+            // Reset state
+            notepad.innerHTML = '<span class="caret"></span>';
+            notepad.style.color = "var(--text-secondary)";
+            notepad.style.fontStyle = "italic";
+            
+            overlay.className = "app-overlay";
+            soundwave.style.display = "none";
+            spinner.style.display = "none";
+            doneDot.style.display = "none";
+            sublabel.style.display = "none";
+
+            // Step 1: Start Recording after 800ms
+            setTimeout(() => {
+                overlay.classList.add('visible');
+                soundwave.style.display = "flex";
+                label.innerText = "GRAVANDO";
+                
+                let i = 0;
+                const textToType = example.before;
+
+                function typeSpeech() {
+                    if (i < textToType.length) {
+                        notepad.innerHTML = `"${textToType.substring(0, i + 1)}"<span class="caret"></span>`;
+                        i++;
+                        setTimeout(typeSpeech, 30);
+                    } else {
+                        // Step 2: Processing after typing finishes
+                        setTimeout(() => {
+                            soundwave.style.display = "none";
+                            spinner.style.display = "block";
+                            overlay.className = "app-overlay visible processing";
+                            label.innerText = "POLINDO";
+
+                            // Step 3: Finish and display polished text
+                            setTimeout(() => {
+                                spinner.style.display = "none";
+                                doneDot.style.display = "block";
+                                overlay.className = "app-overlay visible done";
+                                label.innerText = example.after.substring(0, 22) + "...";
+                                sublabel.style.display = "block";
+                                sublabel.innerText = "COPIADO";
+
+                                notepad.innerHTML = `"${example.after}"<span class="caret"></span>`;
+                                notepad.style.color = "#ffffff";
+                                notepad.style.fontStyle = "normal";
+
+                                // Step 4: Keep visible for 4.5 seconds, then move to next
+                                setTimeout(() => {
+                                    overlay.classList.remove('visible');
+                                    setTimeout(() => {
+                                        currentExampleIndex = (currentExampleIndex + 1) % demoExamples.length;
+                                        runAutoLoop();
+                                    }, 400);
+                                }, 4500);
+                            }, 1200);
+                        }, 600);
+                    }
+                }
+
+                typeSpeech();
+            }, 800);
+        }
+
+        // Run the autoloop immediately on load
+        window.addEventListener('load', runAutoLoop);
+    </script>
+</body>
+</html>

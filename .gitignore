@@ -1,0 +1,19 @@
+# Python files
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Packaging / Build directories
+build/
+dist/
+*.spec
+
+# Application Local Config & Temporary Audio Files
+config.json
+*.wav
+*.mp3
+*.tmp
