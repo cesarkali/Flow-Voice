@@ -3,7 +3,7 @@ Version: @VERSION@
 Section: utils
 Priority: optional
 Architecture: amd64
-Depends: libportaudio2, libasound2, libxcb-xinerama0, libxcb-cursor0, libegl1, libgl1, libxkbcommon0, libpulse0
+Depends: libportaudio2, libasound2t64 | libasound2, libxcb-xinerama0, libxcb-cursor0, libegl1, libgl1, libxkbcommon0, libpulse0, desktop-file-utils
 Maintainer: Júlio Caliberda <contact@caliberda.com.br>
 Homepage: https://github.com/cesarkali/Flow-Voice
 Description: FlowVoice - Ditado Inteligente por IA

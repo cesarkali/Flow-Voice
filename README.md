@@ -115,7 +115,7 @@ O script faz automaticamente:
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-venv python3-pip dpkg-dev \
-    libportaudio2 libasound2 libxcb-xinerama0 libxcb-cursor0 \
+    libportaudio2 libasound2t64 libxcb-xinerama0 libxcb-cursor0 \
     libegl1 libgl1 libxkbcommon0 libpulse0
 ```
 

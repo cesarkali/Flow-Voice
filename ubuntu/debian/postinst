@@ -1,16 +1,36 @@
 #!/bin/sh
 set -e
 
+APP_DESKTOP="/usr/share/applications/flowvoice.desktop"
+APP_ICON="/usr/share/icons/hicolor/256x256/apps/flowvoice.png"
+
 if [ -f /opt/flowvoice/flowvoice ]; then
     chmod 755 /opt/flowvoice/flowvoice
 fi
 
+if [ ! -e /usr/bin/flowvoice ]; then
+    ln -sf /opt/flowvoice/flowvoice /usr/bin/flowvoice
+fi
+
+if [ -f "$APP_DESKTOP" ]; then
+    chmod 644 "$APP_DESKTOP"
+fi
+
+if [ -f "$APP_ICON" ]; then
+    chmod 644 "$APP_ICON"
+fi
+
+if command -v desktop-file-validate >/dev/null 2>&1; then
+    desktop-file-validate "$APP_DESKTOP" || true
+fi
+
 if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database -q /usr/share/applications || true
+    update-desktop-database -q || true
 fi
 
 if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-    gtk-update-icon-cache -q /usr/share/icons/hicolor || true
+    gtk-update-icon-cache -q -f /usr/share/icons/hicolor || true
 fi
 
 exit 0
