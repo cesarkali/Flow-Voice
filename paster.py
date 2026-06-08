@@ -5,11 +5,10 @@ from PySide6.QtGui import QGuiApplication, QClipboard
 from pynput.keyboard import Controller, Key
 
 class TextPaster:
-    CLIPBOARD_SYNC_ATTEMPTS = 25
+    CLIPBOARD_SYNC_ATTEMPTS = 30
     CLIPBOARD_SYNC_DELAY = 0.02
-    PRE_PASTE_DELAY = 0.12
-    KEY_INTERVAL = 0.03
-    CLIPBOARD_RESTORE_DELAY = 1500
+    PRE_PASTE_DELAY = 0.15
+    KEY_INTERVAL = 0.04
 
     def __init__(self):
         self.keyboard = Controller()
@@ -23,19 +22,23 @@ class TextPaster:
             time.sleep(self.CLIPBOARD_SYNC_DELAY)
         return clipboard.text() == expected_text
 
+    def _set_clipboard_text(self, clipboard, text):
+        clipboard.setText(text, QClipboard.Mode.Clipboard)
+        if hasattr(QClipboard.Mode, "Selection"):
+            clipboard.setText(text, QClipboard.Mode.Selection)
+
     def paste_text(self, text):
         """
-        Pastes text by backing up the clipboard, setting the text,
-        simulating Ctrl+V, and restoring the clipboard.
+        Copies text to the clipboard, simulates Ctrl+V, and keeps the dictated
+        text available for manual Ctrl+C afterward.
         MUST be called from the main GUI thread because it accesses QClipboard.
         """
         if not text:
             return
 
         clipboard = QGuiApplication.clipboard()
-        old_text = clipboard.text()
+        self._set_clipboard_text(clipboard, text)
 
-        clipboard.setText(text, QClipboard.Mode.Clipboard)
         if not self._wait_for_clipboard(clipboard, text):
             print("Aviso: área de transferência ainda não sincronizou; tentando colar mesmo assim.")
 
@@ -53,13 +56,6 @@ class TextPaster:
         except Exception as e:
             print(f"Erro ao simular teclas de colagem: {e}")
 
-        QTimer.singleShot(self.CLIPBOARD_RESTORE_DELAY, lambda: self._restore_clipboard(old_text))
-
-    def _restore_clipboard(self, old_text):
-        """Restores original clipboard text."""
-        try:
-            clipboard = QGuiApplication.clipboard()
-            clipboard.setText(old_text, QClipboard.Mode.Clipboard)
-            print("Área de transferência original restaurada.")
-        except Exception as e:
-            print(f"Erro ao restaurar área de transferência: {e}")
+        # Keep dictated text in clipboard for Ctrl+C and re-apply after paste handlers run.
+        QTimer.singleShot(120, lambda: self._set_clipboard_text(clipboard, text))
+        QTimer.singleShot(400, lambda: self._set_clipboard_text(clipboard, text))
