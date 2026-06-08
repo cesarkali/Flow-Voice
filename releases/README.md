@@ -6,7 +6,7 @@ Cada versão publicada deve ter um arquivo `X.Y.Z.md` nesta pasta.
 
 1. Atualize a versão em [`version.py`](../version.py):
    ```python
-   VERSION = "1.5.0"
+   VERSION = "1.6.0"
    ```
 
 2. Gere o esqueleto das release notes:
@@ -35,8 +35,8 @@ Cada versão publicada deve ter um arquivo `X.Y.Z.md` nesta pasta.
 | Arquivo | Descrição |
 |---------|-----------|
 | `TEMPLATE.md` | Modelo base para novas versões |
-| `1.5.0.md` | Release notes da v1.5.0 |
+| `1.6.0.md` | Release notes da v1.6.0 |
 
 ## Versão atual
 
-Consulte [`version.py`](../version.py) — atualmente **1.5.0**.
+Consulte [`version.py`](../version.py) — atualmente **1.6.0**.

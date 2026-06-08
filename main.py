@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QComboBox, QPushButton, QMessageBox, QFrame, QGraphicsDropShadowEffect,
     QTextEdit, QCheckBox, QProgressBar, QScrollArea
 )
-from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect
+from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect, QAbstractAnimation
 from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen
 from PySide6 import QtSvg
 
@@ -202,6 +202,68 @@ class UpdateCheckerWorker(QThread):
                 self.no_update_found.emit()
         else:
             self.error.emit("Não foi possível conectar ao servidor de atualizações.")
+
+def get_app_executable_path():
+    """Returns the installed FlowVoice executable path for restart after updates."""
+    if getattr(sys, 'frozen', False):
+        return sys.executable
+    program_files = os.environ.get('ProgramFiles', r'C:\Program Files')
+    return os.path.join(program_files, 'FlowVoice', 'FlowVoice.exe')
+
+
+def launch_windows_update(installer_path, target_version):
+    """Shows an installing indicator, runs the silent setup, and relaunches FlowVoice."""
+    app_exe = get_app_executable_path()
+    ps_script = f"""
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$form = New-Object System.Windows.Forms.Form
+$form.Text = 'FlowVoice - Atualizando'
+$form.Size = New-Object System.Drawing.Size(460, 160)
+$form.StartPosition = 'CenterScreen'
+$form.FormBorderStyle = 'FixedDialog'
+$form.MaximizeBox = $false
+$form.MinimizeBox = $false
+$form.TopMost = $true
+$form.ShowInTaskbar = $true
+$label = New-Object System.Windows.Forms.Label
+$label.Text = 'Instalando FlowVoice v{target_version}...`r`nPor favor, aguarde. O aplicativo abrirá novamente ao concluir.'
+$label.AutoSize = $false
+$label.TextAlign = 'MiddleCenter'
+$label.Size = New-Object System.Drawing.Size(420, 70)
+$label.Location = New-Object System.Drawing.Point(20, 20)
+$form.Controls.Add($label)
+$progress = New-Object System.Windows.Forms.ProgressBar
+$progress.Style = 'Marquee'
+$progress.MarqueeAnimationSpeed = 30
+$progress.Size = New-Object System.Drawing.Size(420, 18)
+$progress.Location = New-Object System.Drawing.Point(20, 100)
+$form.Controls.Add($progress)
+$form.Add_Shown({{ $form.Activate() }})
+$form.Show()
+[System.Windows.Forms.Application]::DoEvents()
+$process = Start-Process -FilePath '{installer_path.replace("'", "''")}' -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/CLOSEAPPLICATIONS','/FORCECLOSEAPPLICATIONS' -Wait -PassThru
+$form.Close()
+if ($process.ExitCode -eq 0 -and (Test-Path '{app_exe.replace("'", "''")}')) {{
+    Start-Process '{app_exe.replace("'", "''")}'
+}}
+"""
+    fd, script_path = tempfile.mkstemp(suffix='.ps1', prefix='flowvoice_update_')
+    os.close(fd)
+    with open(script_path, 'w', encoding='utf-8') as f:
+        f.write(ps_script)
+
+    subprocess.Popen(
+        [
+            'powershell.exe',
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-Sta',
+            '-File', script_path,
+        ],
+        close_fds=True,
+        creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+    )
 
 # Background thread to download the installer
 class DownloadWorker(QThread):
@@ -427,28 +489,23 @@ class UpdateDialog(QDialog):
         self.lbl_progress.setText(f"Baixando... {percent}%")
 
     def on_download_finished(self, dest_path):
-        self.lbl_desc.setText("Pronto! Iniciando o instalador...")
-        self.lbl_progress.setText("Instalador executando...")
-        QTimer.singleShot(1000, lambda: self.launch_installer_and_exit(dest_path))
+        self.lbl_title.setText("INSTALANDO ATUALIZAÇÃO")
+        self.lbl_title.setStyleSheet("color: #ffffff; letter-spacing: 1.5px;")
+        self.lbl_desc.setText(
+            f"Instalando FlowVoice v{self.latest_version}...<br/>"
+            "Aguarde — o aplicativo será reiniciado automaticamente."
+        )
+        self.progress_bar.setRange(0, 0)
+        self.lbl_progress.setText("Instalando...")
+        QTimer.singleShot(800, lambda: self.launch_installer_and_exit(dest_path))
 
     def launch_installer_and_exit(self, dest_path):
         try:
             if sys.platform == 'win32':
-                subprocess.Popen(
-                    [
-                        dest_path,
-                        '/VERYSILENT',
-                        '/SUPPRESSMSGBOXES',
-                        '/NORESTART',
-                        '/CLOSEAPPLICATIONS',
-                        '/FORCECLOSEAPPLICATIONS',
-                    ],
-                    close_fds=True,
-                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
-                )
+                launch_windows_update(dest_path, self.latest_version)
             else:
                 subprocess.Popen(['xdg-open', dest_path], start_new_session=True)
-            QTimer.singleShot(300, QApplication.quit)
+            QTimer.singleShot(400, QApplication.quit)
         except Exception as e:
             self.on_download_error(f"Erro ao abrir instalador: {e}")
 
@@ -1746,15 +1803,41 @@ class LoadingSpinner(QWidget):
 
 # Frameless Glassmorphism Overlay (Sleek pill with slide and fade transitions)
 class FloatingOverlay(QWidget):
+    ACTIVE_STATES = frozenset({"listening", "processing"})
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.current_target_w = 220
         self.current_target_h = 56
         self.is_showing = False
+        self._current_state = None
         self.anim_group = None
+        self.size_anim_group = None
         self.frame_anim = None
         self.opacity_anim = None
+        self._dismiss_timer = QTimer(self)
+        self._dismiss_timer.setSingleShot(True)
+        self._dismiss_timer.timeout.connect(self.fade_out)
         self.init_ui()
+
+    def _stop_animations(self):
+        for group in (self.anim_group, self.size_anim_group):
+            if group is not None and group.state() == QAbstractAnimation.State.Running:
+                group.stop()
+
+    def _cancel_dismiss(self):
+        self._dismiss_timer.stop()
+
+    def _ensure_visible(self):
+        """Keeps the overlay on screen during active recording/processing states."""
+        self._stop_animations()
+        self.setWindowOpacity(1.0)
+        self.is_showing = True
+        self.center_on_screen()
+        geom = self.get_frame_geometry(self.current_target_w, self.current_target_h)
+        self.main_frame.setGeometry(geom)
+        self.show()
+        self.raise_()
 
     def init_ui(self):
         # Frameless, translucent, floating window settings
@@ -1878,6 +1961,10 @@ class FloatingOverlay(QWidget):
 
     def show_state(self, state, text=None):
         """Updates the UI look and dimensions based on state: listening, processing, done, error."""
+        self._current_state = state
+        if state in self.ACTIVE_STATES:
+            self._cancel_dismiss()
+
         target_w, target_h = 220, 56
         is_text_display = False
         
@@ -1943,15 +2030,19 @@ class FloatingOverlay(QWidget):
         # Update widget configurations before showing
         self.update_state_widgets(state, text)
 
-        # Adjust dimensions
-        if self.is_showing:
+        if state in self.ACTIVE_STATES:
+            if self.is_showing or self.isVisible():
+                self._ensure_visible()
+                self.animate_to_size(target_w, target_h)
+            else:
+                geom = self.get_frame_geometry(target_w, target_h)
+                self.main_frame.setGeometry(geom)
+                self.fade_in()
+        elif self.is_showing:
             self.animate_to_size(target_w, target_h)
         else:
             geom = self.get_frame_geometry(target_w, target_h)
             self.main_frame.setGeometry(geom)
-
-        # Trigger smooth fade-in if not currently showing
-        if not self.is_showing:
             self.fade_in()
 
         # Automatic dismiss on done/error state
@@ -1959,7 +2050,8 @@ class FloatingOverlay(QWidget):
             delay = 3500 if is_text_display else 1500
             if state == "error":
                 delay = 2500
-            QTimer.singleShot(delay, self.fade_out)
+            self._cancel_dismiss()
+            self._dismiss_timer.start(delay)
 
     def update_state_widgets(self, state, text=None):
         """Hides and shows the correct visual indicator according to the state."""
@@ -2049,10 +2141,13 @@ class FloatingOverlay(QWidget):
         
     def fade_out(self):
         """Triggers a smooth slide-down and fade-out animation."""
-        if not self.is_showing:
+        if self._current_state in self.ACTIVE_STATES:
             return
-        self.is_showing = False
-        
+        if not self.is_showing and not self.isVisible():
+            return
+
+        self._stop_animations()
+
         current_geom = self.main_frame.geometry()
         # Move 10px down
         target_geom = QRect(current_geom.x(), current_geom.y() + 10, current_geom.width(), current_geom.height())
@@ -2075,6 +2170,7 @@ class FloatingOverlay(QWidget):
         self.anim_group.start()
         
     def on_fade_out_finished(self):
+        self.is_showing = False
         self.hide()
         self.setWindowOpacity(1.0) # Reset to full opacity for next trigger
         # Reset to initial geometry to prevent jumping next time it appears
