@@ -14,6 +14,8 @@ dist/
 
 # Application Local Config & Temporary Audio Files
 config.json
+checkmark.svg
 *.wav
 *.mp3
 *.tmp
+website/FlowVoiceSetup.exe
