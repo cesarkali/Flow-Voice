@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "FlowVoice"
-#define MyAppVersion "1.3.0"
+#define MyAppVersion "1.4.0"
 #define MyAppPublisher "Júlio Caliberda"
 #define MyAppPublisherURL "https://caliberda.com.br"
 #define MyAppExeName "FlowVoice.exe"
@@ -28,6 +28,8 @@ Compression=lzma2/ultra
 SolidCompression=yes
 LZMAUseSeparateProcess=yes
 WizardStyle=modern
+CloseApplications=force
+RestartApplications=yes
 
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -46,3 +48,23 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure KillFlowVoiceProcesses();
+var
+  ResultCode: Integer;
+begin
+  Exec('taskkill', '/F /IM {#MyAppExeName} /T', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+function InitializeSetup(): Boolean;
+begin
+  KillFlowVoiceProcesses();
+  Result := True;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  KillFlowVoiceProcesses();
+  Result := True;
+end;

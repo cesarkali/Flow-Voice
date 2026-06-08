@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=FlowVoice
+Comment=Ditado Inteligente por IA
+Exec=/opt/flowvoice/flowvoice
+Icon=flowvoice
+Terminal=false
+Type=Application
+Categories=Utility;Audio;
+StartupNotify=false

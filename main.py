@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import subprocess
 import urllib.request
 import json
 import re
@@ -15,7 +16,9 @@ from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation
 from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen
 from PySide6 import QtSvg
 
-CURRENT_VERSION = "1.3.0"
+from version import VERSION
+
+CURRENT_VERSION = VERSION
 
 # Safe pycaw import for Windows volume control
 try:
@@ -54,7 +57,7 @@ def unmute_system_audio():
         print(f"Erro ao restaurar áudio do sistema: {e}")
 
 # Import application modules
-from config import ConfigManager
+from config import ConfigManager, get_app_data_dir, get_resource_path
 from hotkey import HotkeyListener
 from recorder import AudioRecorder
 from ai_processor import AIProcessor
@@ -139,6 +142,11 @@ class ChatWorker(QThread):
                 except Exception:
                     pass
 
+def get_installer_asset_name():
+    if sys.platform == 'win32':
+        return "FlowVoiceSetup.exe"
+    return f"flowvoice_{CURRENT_VERSION}_amd64.deb"
+
 # Helper functions for version updates
 def get_latest_release():
     url = "https://api.github.com/repos/cesarkali/Flow-Voice/releases/latest"
@@ -146,6 +154,7 @@ def get_latest_release():
         url,
         headers={'User-Agent': 'FlowVoice-Updater'}
     )
+    asset_name = get_installer_asset_name()
     try:
         with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode('utf-8'))
@@ -156,15 +165,13 @@ def get_latest_release():
                 return None
             latest_ver = version_match.group(1)
             
-            # Find FlowVoiceSetup.exe asset
             download_url = None
             for asset in data.get("assets", []):
-                if asset.get("name") == "FlowVoiceSetup.exe":
+                if asset.get("name") == asset_name:
                     download_url = asset.get("browser_download_url")
                     break
             if not download_url:
-                # Fallback: construct download URL from tag_name if asset not found in JSON yet
-                download_url = f"https://github.com/cesarkali/Flow-Voice/releases/download/{tag_name}/FlowVoiceSetup.exe"
+                download_url = f"https://github.com/cesarkali/Flow-Voice/releases/download/{tag_name}/{asset_name}"
                 
             return latest_ver, download_url
     except Exception as e:
@@ -202,14 +209,19 @@ class DownloadWorker(QThread):
     finished = Signal(str) # temp file path
     error = Signal(str)
     
-    def __init__(self, url):
+    def __init__(self, url, target_version=None):
         super().__init__()
         self.url = url
+        self.target_version = target_version or VERSION
         
     def run(self):
         try:
             temp_dir = tempfile.gettempdir()
-            dest_path = os.path.join(temp_dir, "FlowVoiceSetup_update.exe")
+            if sys.platform == 'win32':
+                dest_name = "FlowVoiceSetup_update.exe"
+            else:
+                dest_name = f"flowvoice_{self.target_version}_amd64.deb"
+            dest_path = os.path.join(temp_dir, dest_name)
             
             # Download file chunk by chunk to calculate progress
             req = urllib.request.Request(self.url, headers={'User-Agent': 'FlowVoice-Updater'})
@@ -404,7 +416,7 @@ class UpdateDialog(QDialog):
         self.lbl_title.setStyleSheet("color: #ffffff; letter-spacing: 1.5px;")
 
         # Start Download worker thread
-        self.download_worker = DownloadWorker(self.download_url)
+        self.download_worker = DownloadWorker(self.download_url, self.latest_version)
         self.download_worker.progress.connect(self.on_download_progress)
         self.download_worker.finished.connect(self.on_download_finished)
         self.download_worker.error.connect(self.on_download_error)
@@ -421,10 +433,22 @@ class UpdateDialog(QDialog):
 
     def launch_installer_and_exit(self, dest_path):
         try:
-            # Launch setup.exe in default OS shell
-            os.startfile(dest_path)
-            # Quit PySide6 App to release files so installer can overwrite them
-            QApplication.quit()
+            if sys.platform == 'win32':
+                subprocess.Popen(
+                    [
+                        dest_path,
+                        '/VERYSILENT',
+                        '/SUPPRESSMSGBOXES',
+                        '/NORESTART',
+                        '/CLOSEAPPLICATIONS',
+                        '/FORCECLOSEAPPLICATIONS',
+                    ],
+                    close_fds=True,
+                    creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+                )
+            else:
+                subprocess.Popen(['xdg-open', dest_path], start_new_session=True)
+            QTimer.singleShot(300, QApplication.quit)
         except Exception as e:
             self.on_download_error(f"Erro ao abrir instalador: {e}")
 
@@ -987,45 +1011,81 @@ class HotkeyLineEdit(QLineEdit):
         if not is_mod and key_name:
             self.stop_recording()
 
+def _autostart_desktop_path():
+    xdg_config = os.getenv('XDG_CONFIG_HOME') or os.path.join(os.path.expanduser('~'), '.config')
+    autostart_dir = os.path.join(xdg_config, 'autostart')
+    os.makedirs(autostart_dir, exist_ok=True)
+    return os.path.join(autostart_dir, 'flowvoice.desktop')
+
 def set_run_at_startup(enabled=True):
-    import sys
     if not getattr(sys, 'frozen', False):
         return
-    import winreg
-    key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-    app_name = "FlowVoice"
-    exe_path = sys.executable
-    try:
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE)
-        if enabled:
-            winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, f'"{exe_path}"')
-        else:
-            try:
-                winreg.DeleteValue(key, app_name)
-            except FileNotFoundError:
-                pass
-        winreg.CloseKey(key)
-    except Exception as e:
-        print(f"Erro ao configurar inicialização com Windows: {e}")
+
+    if sys.platform == 'win32':
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        app_name = "FlowVoice"
+        exe_path = sys.executable
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE)
+            if enabled:
+                winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, f'"{exe_path}"')
+            else:
+                try:
+                    winreg.DeleteValue(key, app_name)
+                except FileNotFoundError:
+                    pass
+            winreg.CloseKey(key)
+        except Exception as e:
+            print(f"Erro ao configurar inicialização com Windows: {e}")
+        return
+
+    if sys.platform == 'linux':
+        desktop_path = _autostart_desktop_path()
+        try:
+            if enabled:
+                exe_path = sys.executable
+                desktop_content = (
+                    "[Desktop Entry]\n"
+                    "Type=Application\n"
+                    "Name=FlowVoice\n"
+                    f'Exec="{exe_path}"\n'
+                    "Hidden=false\n"
+                    "NoDisplay=false\n"
+                    "X-GNOME-Autostart-enabled=true\n"
+                    "Comment=FlowVoice - Ditado Inteligente por IA\n"
+                )
+                with open(desktop_path, "w", encoding="utf-8") as f:
+                    f.write(desktop_content)
+            elif os.path.exists(desktop_path):
+                os.remove(desktop_path)
+        except Exception as e:
+            print(f"Erro ao configurar inicialização com o sistema: {e}")
 
 def is_run_at_startup_enabled():
-    import sys
     if not getattr(sys, 'frozen', False):
         return False
-    import winreg
-    key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-    app_name = "FlowVoice"
-    try:
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ)
+
+    if sys.platform == 'win32':
+        import winreg
+        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        app_name = "FlowVoice"
         try:
-            value, _ = winreg.QueryValueEx(key, app_name)
-            winreg.CloseKey(key)
-            return True
-        except FileNotFoundError:
-            winreg.CloseKey(key)
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ)
+            try:
+                value, _ = winreg.QueryValueEx(key, app_name)
+                winreg.CloseKey(key)
+                return True
+            except FileNotFoundError:
+                winreg.CloseKey(key)
+                return False
+        except Exception:
             return False
-    except Exception:
-        return False
+
+    if sys.platform == 'linux':
+        return os.path.exists(_autostart_desktop_path())
+
+    return False
 
 # Settings/Wizard Dialog
 class SettingsDialog(QDialog):
@@ -1316,23 +1376,14 @@ class SettingsDialog(QDialog):
         self.txt_hotkey_pesquisa, layout_hkp = self.create_hotkey_row("Atalho Pesquisa Google:", "hotkey_pesquisa", "<ctrl>+<shift>+<u>")
         form_layout.addRow("Atalho Pesquisa Google:", layout_hkp)
 
-        self.chk_startup = QCheckBox("Iniciar junto com o Windows")
+        startup_label = "Iniciar junto com o Windows" if sys.platform == 'win32' else "Iniciar junto com o sistema"
+        self.chk_startup = QCheckBox(startup_label)
         self.chk_startup.setChecked(is_run_at_startup_enabled() or self.config_manager.get("start_with_windows", False))
         
         self.chk_mute = QCheckBox("Mutar áudio do PC durante a gravação")
         self.chk_mute.setChecked(self.config_manager.get("mute_on_record", False))
         
-        # Get base directory dynamically
-        if getattr(sys, 'frozen', False):
-            appdata = os.getenv('APPDATA')
-            if appdata:
-                base_dir = os.path.join(appdata, "FlowVoice")
-                os.makedirs(base_dir, exist_ok=True)
-            else:
-                base_dir = os.path.dirname(sys.executable)
-        else:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            
+        base_dir = get_app_data_dir()
         checkmark_path = os.path.join(base_dir, "checkmark.svg").replace("\\", "/")
         
         # Write checkmark SVG if it doesn't exist yet
@@ -2129,7 +2180,7 @@ class FlowVoiceApp(QApplication):
         self.tray_icon = QSystemTrayIcon(self)
         
         # Load custom app icon if exists
-        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.png")
+        icon_path = get_resource_path("icon.png")
         if os.path.exists(icon_path):
             app_icon = QIcon(icon_path)
             self.tray_icon.setIcon(app_icon)
@@ -2353,10 +2404,8 @@ class FlowVoiceApp(QApplication):
                 else:
                     overlay_text = f"Copiado: {text}"
                 
-            self.overlay.show_state("done", overlay_text)
-            
-            # Paste text instantly
             self.paster.paste_text(text)
+            self.overlay.show_state("done", overlay_text)
             
         # Cleanup temporary audio files
         self.recorder.cleanup()
@@ -2375,28 +2424,26 @@ class FlowVoiceApp(QApplication):
 
 if __name__ == "__main__":
     import logging
-    appdata = os.getenv('APPDATA')
-    if appdata:
-        log_dir = os.path.join(appdata, "FlowVoice")
-        os.makedirs(log_dir, exist_ok=True)
-        log_filepath = os.path.join(log_dir, "flowvoice.log")
-        logging.basicConfig(
-            filename=log_filepath,
-            filemode='a',
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            level=logging.INFO,
-            encoding='utf-8'
-        )
-        
-        class StreamToLogger:
-            def __init__(self, logger_func):
-                self.logger_func = logger_func
-            def write(self, buf):
-                for line in buf.rstrip().splitlines():
-                    self.logger_func(line.rstrip())
-            def flush(self):
-                pass
-                
+    log_dir = get_app_data_dir()
+    log_filepath = os.path.join(log_dir, "flowvoice.log")
+    logging.basicConfig(
+        filename=log_filepath,
+        filemode='a',
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        level=logging.INFO,
+        encoding='utf-8'
+    )
+    
+    class StreamToLogger:
+        def __init__(self, logger_func):
+            self.logger_func = logger_func
+        def write(self, buf):
+            for line in buf.rstrip().splitlines():
+                self.logger_func(line.rstrip())
+        def flush(self):
+            pass
+            
+    if getattr(sys, 'frozen', False):
         sys.stdout = StreamToLogger(logging.info)
         sys.stderr = StreamToLogger(logging.error)
         

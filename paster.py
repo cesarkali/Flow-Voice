@@ -1,11 +1,27 @@
 import time
+from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QClipboard
 from pynput.keyboard import Controller, Key
 
 class TextPaster:
+    CLIPBOARD_SYNC_ATTEMPTS = 25
+    CLIPBOARD_SYNC_DELAY = 0.02
+    PRE_PASTE_DELAY = 0.12
+    KEY_INTERVAL = 0.03
+    CLIPBOARD_RESTORE_DELAY = 1500
+
     def __init__(self):
         self.keyboard = Controller()
+
+    def _wait_for_clipboard(self, clipboard, expected_text):
+        """Ensures the OS clipboard contains the text before simulating Ctrl+V."""
+        for _ in range(self.CLIPBOARD_SYNC_ATTEMPTS):
+            QApplication.processEvents()
+            if clipboard.text() == expected_text:
+                return True
+            time.sleep(self.CLIPBOARD_SYNC_DELAY)
+        return clipboard.text() == expected_text
 
     def paste_text(self, text):
         """
@@ -16,43 +32,34 @@ class TextPaster:
         if not text:
             return
 
-        # Access system clipboard
         clipboard = QGuiApplication.clipboard()
-        
-        # 1. Backup old clipboard text
         old_text = clipboard.text()
-        
-        # 2. Put new text in clipboard
-        clipboard.setText(text)
-        
-        # Allow clipboard to register the update (a tiny delay is safe)
-        time.sleep(0.05)
-        
-        # 3. Simulate Ctrl+V key press
+
+        clipboard.setText(text, QClipboard.Mode.Clipboard)
+        if not self._wait_for_clipboard(clipboard, text):
+            print("Aviso: área de transferência ainda não sincronizou; tentando colar mesmo assim.")
+
+        time.sleep(self.PRE_PASTE_DELAY)
+
         try:
-            # Press Ctrl
             self.keyboard.press(Key.ctrl)
-            # Press V (we use 'v' as a string or the key code)
+            time.sleep(self.KEY_INTERVAL)
             self.keyboard.press('v')
-            
-            # Release V
+            time.sleep(self.KEY_INTERVAL)
             self.keyboard.release('v')
-            # Release Ctrl
+            time.sleep(self.KEY_INTERVAL)
             self.keyboard.release(Key.ctrl)
-            
             print("Texto colado no campo ativo via Ctrl+V.")
         except Exception as e:
             print(f"Erro ao simular teclas de colagem: {e}")
 
-        # 4. Restore original clipboard content on the main GUI thread after a delay
-        # This resolves the COM CoInitialize error because it runs in the main thread context
-        QTimer.singleShot(500, lambda: self._restore_clipboard(old_text))
+        QTimer.singleShot(self.CLIPBOARD_RESTORE_DELAY, lambda: self._restore_clipboard(old_text))
 
     def _restore_clipboard(self, old_text):
         """Restores original clipboard text."""
         try:
             clipboard = QGuiApplication.clipboard()
-            clipboard.setText(old_text)
+            clipboard.setText(old_text, QClipboard.Mode.Clipboard)
             print("Área de transferência original restaurada.")
         except Exception as e:
             print(f"Erro ao restaurar área de transferência: {e}")

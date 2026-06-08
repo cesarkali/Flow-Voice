@@ -59,19 +59,33 @@ DEFAULT_CONFIG = {
 
 import sys
 
+def get_app_data_dir():
+    """Returns the writable directory for config, logs and user data."""
+    if getattr(sys, 'frozen', False):
+        if sys.platform == 'win32':
+            appdata = os.getenv('APPDATA')
+            base_dir = os.path.join(appdata, "FlowVoice") if appdata else os.path.dirname(sys.executable)
+        else:
+            xdg_config = os.getenv('XDG_CONFIG_HOME') or os.path.join(os.path.expanduser('~'), '.config')
+            base_dir = os.path.join(xdg_config, "FlowVoice")
+        os.makedirs(base_dir, exist_ok=True)
+        return base_dir
+
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def get_resource_path(filename):
+    """Returns the path to bundled or development resources such as icons."""
+    if getattr(sys, 'frozen', False):
+        base_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, filename)
+
+
 class ConfigManager:
     def __init__(self, filename="config.json"):
-        # Store config in user's Roaming AppData if packaged (so we have write permissions), or locally in development
-        if getattr(sys, 'frozen', False):
-            appdata = os.getenv('APPDATA')
-            if appdata:
-                base_dir = os.path.join(appdata, "FlowVoice")
-                os.makedirs(base_dir, exist_ok=True)
-            else:
-                base_dir = os.path.dirname(sys.executable)
-        else:
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            
+        base_dir = get_app_data_dir()
         self.filepath = os.path.join(base_dir, filename)
         self.config = {}
         self.load()
