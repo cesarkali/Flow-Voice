@@ -29,13 +29,13 @@ chmod +x ubuntu/build-deb.sh
 O arquivo final será criado em:
 
 ```text
-ubuntu/dist/flowvoice_1.4.0_amd64.deb
+ubuntu/dist/flowvoice_1.5.0_amd64.deb
 ```
 
 ## Instalar no Ubuntu
 
 ```bash
-sudo apt install ./ubuntu/dist/flowvoice_1.4.0_amd64.deb
+sudo apt install ./ubuntu/dist/flowvoice_1.5.0_amd64.deb
 ```
 
 Depois da instalação:
@@ -68,4 +68,4 @@ python3 main.py
 
 - A opção de mutar áudio do PC durante a gravação funciona apenas no Windows (`pycaw`).
 - Atalhos globais no Linux podem exigir permissões de sessão gráfica (Wayland/X11).
-- Para publicar atualizações automáticas no Ubuntu, anexe o `.deb` gerado na release do GitHub com o nome `flowvoice_1.4.0_amd64.deb` (versão em `version.py`).
+- Para publicar atualizações automáticas no Ubuntu, anexe o `.deb` gerado na release do GitHub com o nome `flowvoice_1.5.0_amd64.deb` (versão em `version.py`).

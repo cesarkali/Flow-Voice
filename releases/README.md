@@ -35,8 +35,8 @@ Cada versão publicada deve ter um arquivo `X.Y.Z.md` nesta pasta.
 | Arquivo | Descrição |
 |---------|-----------|
 | `TEMPLATE.md` | Modelo base para novas versões |
-| `1.4.0.md` | Release notes da v1.4.0 |
+| `1.5.0.md` | Release notes da v1.5.0 |
 
 ## Versão atual
 
-Consulte [`version.py`](../version.py) — atualmente **1.4.0**.
+Consulte [`version.py`](../version.py) — atualmente **1.5.0**.
