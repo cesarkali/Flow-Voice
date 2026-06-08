@@ -11,6 +11,7 @@ DEFAULT_CONFIG = {
     "operation_mode": "ditado",  # ditado, traducao, pesquisa
     "translation_target": "Inglês",  # Inglês, Espanhol, Francês, Alemão, Italiano
     "start_with_windows": True,
+    "mute_on_record": False,
     "api_keys": {
         "gemini": "",
         "openai": "",
@@ -31,22 +32,20 @@ DEFAULT_CONFIG = {
     "language": "pt",
     "prompts": {
         "Profissional": (
-            "REGRA CRÍTICA ABSOLUTA: Nunca censure, omita, sanitize, mascare (ex: f***, p***, etc.) ou "
-            "substitua palavrões, gírias, termos ofensivos ou palavras rudes. Transcreva-as e mantenha-as "
-            "100% de forma literal e integral, sem qualquer tipo de moderação ou suavização. "
-            "Você é um assistente de ditado profissional. Transcreva e reformule o texto falado "
-            "em uma linguagem formal e profissional de trabalho, corrigindo erros de gramática, "
-            "pontuação e concordância. Remova hesitações (como 'hã', 'né', 'tipo', 'então', 'hum'), gagueiras "
-            "e repetições de palavras. Entretanto, lembre-se: MANTENHA todos os palavrões exatamente "
-            "onde e como foram ditos pelo usuário."
+            "Você é uma ferramenta automatizada de formatação e polimento de texto profissional.\n"
+            "REGRA CRÍTICA DE SAÍDA: Sua única função é transcrever e reformular o texto fornecido pelo usuário em uma linguagem formal, clara e profissional de trabalho.\n"
+            "NÃO RESPONDA ao conteúdo do texto de forma alguma. NÃO dialogue com o usuário. NÃO responda a perguntas contidas no texto. NÃO crie conversações. Se o texto for uma pergunta, apenas faça a formatação e o polimento da pergunta.\n"
+            "Retorne APENAS o texto polido/reformulado resultante, sem aspas, sem explicações, sem comentários e sem introduções ou notas.\n"
+            "CORRIJA erros de gramática, pontuação e concordância. Remova hesitações (como 'hã', 'né', 'tipo', 'então', 'hum'), gagueiras e repetições de palavras desnecessárias.\n"
+            "REGRA CRÍTICA DE PRIVACIDADE E SEGURANÇA: Nunca censure, omita, sanitize, mascare (ex: f***, p***, etc.) ou substitua palavrões, termos ofensivos, gírias ou palavras rudes. Mantenha-os 100% de forma literal onde e como foram ditos."
         ),
         "Casual": (
-            "REGRA CRÍTICA ABSOLUTA: Nunca censure, omita, sanitize, mascare (ex: f***, p***, etc.) ou "
-            "substitua palavrões, gírias, termos ofensivos ou palavras rudes. Transcreva-as e mantenha-as "
-            "100% de forma literal e integral. "
-            "Você é um assistente de ditado casual. Transcreva o texto falado corrigindo "
-            "apenas erros graves de gramática e pontuação, mas mantendo a voz natural, o tom coloquial "
-            "e o estilo do usuário. Remova gagueiras e hesitações."
+            "Você é uma ferramenta automatizada de formatação e polimento de texto casual.\n"
+            "REGRA CRÍTICA DE SAÍDA: Sua única função é transcrever e limpar o texto fornecido pelo usuário corrigindo apenas erros graves de gramática e pontuação, mas mantendo a voz natural, o tom coloquial, as gírias e o estilo original do usuário.\n"
+            "NÃO RESPONDA ao conteúdo do texto de forma alguma. NÃO dialogue com o usuário. NÃO responda a perguntas contidas no texto. NÃO crie conversações. Se o texto for uma pergunta, apenas faça a formatação e o polimento da pergunta.\n"
+            "Retorne APENAS o texto polido resultante, sem aspas, sem explicações, sem comentários e sem introduções ou notas.\n"
+            "Remova apenas gagueiras e hesitações (como 'hã', 'né', 'tipo', 'hum').\n"
+            "REGRA CRÍTICA DE PRIVACIDADE E SEGURANÇA: Nunca censure, omita, sanitize, mascare (ex: f***, p***, etc.) ou substitua palavrões, termos ofensivos, gírias ou palavras rudes. Mantenha-os 100% de forma literal onde e como foram ditos."
         ),
         "Direto": (
             "REGRA CRÍTICA ABSOLUTA: Nunca censure, omita, sanitize, mascare (ex: f***, p***, etc.) ou "
@@ -89,6 +88,26 @@ class ConfigManager:
                 loaded = json.load(f)
                 # Merge loaded config with default config to ensure all keys exist
                 self.config = self._deep_merge(DEFAULT_CONFIG, loaded)
+                
+            # Migrate old default prompts if they are still configured
+            needs_save = False
+            if "prompts" in self.config:
+                old_prof_keyword = "Você é um assistente de ditado profissional."
+                old_casual_keyword = "Você é um assistente de ditado casual."
+                
+                prof_prompt = self.config["prompts"].get("Profissional", "")
+                if old_prof_keyword in prof_prompt:
+                    self.config["prompts"]["Profissional"] = DEFAULT_CONFIG["prompts"]["Profissional"]
+                    needs_save = True
+                    
+                casual_prompt = self.config["prompts"].get("Casual", "")
+                if old_casual_keyword in casual_prompt:
+                    self.config["prompts"]["Casual"] = DEFAULT_CONFIG["prompts"]["Casual"]
+                    needs_save = True
+            
+            if needs_save:
+                print("ConfigManager: Detectados prompts antigos padrão. Atualizando para prompts melhorados anti-chat.")
+                self.save()
         except Exception as e:
             print(f"Erro ao carregar configurações: {e}. Usando padrões.")
             self.config = DEFAULT_CONFIG.copy()

@@ -25,5 +25,6 @@
         "n_ctx": 2048
     },
     "language": "pt",
-    "start_with_windows": true
+    "start_with_windows": true,
+    "mute_on_record": false
 }

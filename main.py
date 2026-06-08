@@ -14,7 +14,43 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect
 from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen
 
-CURRENT_VERSION = "1.0.0"
+CURRENT_VERSION = "1.2.0"
+
+# Safe pycaw import for Windows volume control
+try:
+    from pycaw.pycaw import AudioUtilities
+    PYCAW_AVAILABLE = True
+except ImportError:
+    PYCAW_AVAILABLE = False
+
+_previous_mute_state = None
+
+def mute_system_audio():
+    global _previous_mute_state
+    if not PYCAW_AVAILABLE:
+        return
+    try:
+        devices = AudioUtilities.GetSpeakers()
+        volume = devices.EndpointVolume
+        _previous_mute_state = volume.GetMute()
+        volume.SetMute(1, None)
+        print(f"Áudio do sistema mutado (estado anterior: {_previous_mute_state})")
+    except Exception as e:
+        print(f"Erro ao mutar áudio do sistema: {e}")
+
+def unmute_system_audio():
+    global _previous_mute_state
+    if not PYCAW_AVAILABLE:
+        return
+    try:
+        if _previous_mute_state is not None:
+            devices = AudioUtilities.GetSpeakers()
+            volume = devices.EndpointVolume
+            volume.SetMute(_previous_mute_state, None)
+            print(f"Áudio do sistema restaurado para: {_previous_mute_state}")
+            _previous_mute_state = None
+    except Exception as e:
+        print(f"Erro ao restaurar áudio do sistema: {e}")
 
 # Import application modules
 from config import ConfigManager
@@ -679,6 +715,8 @@ class SearchResultCard(QDialog):
             """)
             self.input_field.setEnabled(False)
             self.input_field.setPlaceholderText("Gravando voz... Clique em 🔴 para parar.")
+            if self.processor.config_manager.get("mute_on_record", False):
+                mute_system_audio()
             self.recorder.start()
         else:
             self.is_recording = False
@@ -700,6 +738,8 @@ class SearchResultCard(QDialog):
             self.input_field.setPlaceholderText("Escreva uma resposta e aperte Enter...")
             
             audio_path = self.recorder.stop()
+            if self.processor.config_manager.get("mute_on_record", False):
+                unmute_system_audio()
             if audio_path:
                 self.start_chat_worker(audio_path=audio_path)
 
@@ -809,6 +849,15 @@ class SearchResultCard(QDialog):
         super().showEvent(event)
 
     def fade_out_and_close(self):
+        if self.is_recording:
+            self.is_recording = False
+            try:
+                self.recorder.stop()
+            except Exception:
+                pass
+            if self.processor.config_manager.get("mute_on_record", False):
+                unmute_system_audio()
+
         geom = self.geometry()
         target_geom = QRect(geom.x(), geom.y() + 10, geom.width(), geom.height())
         
@@ -1229,7 +1278,11 @@ class SettingsDialog(QDialog):
 
         self.chk_startup = QCheckBox("Iniciar junto com o Windows")
         self.chk_startup.setChecked(is_run_at_startup_enabled() or self.config_manager.get("start_with_windows", False))
-        self.chk_startup.setStyleSheet("""
+        
+        self.chk_mute = QCheckBox("Mutar áudio do PC durante a gravação")
+        self.chk_mute.setChecked(self.config_manager.get("mute_on_record", False))
+        
+        checkbox_style = """
             QCheckBox {
                 color: rgba(255, 255, 255, 220);
                 font-size: 13px;
@@ -1247,8 +1300,12 @@ class SettingsDialog(QDialog):
                 background-color: #ffffff;
                 border: 1px solid #ffffff;
             }
-        """)
+        """
+        self.chk_startup.setStyleSheet(checkbox_style)
+        self.chk_mute.setStyleSheet(checkbox_style)
+        
         form_layout.addRow("", self.chk_startup)
+        form_layout.addRow("", self.chk_mute)
 
         main_layout.addLayout(form_layout)
         main_layout.addSpacing(5)
@@ -1410,10 +1467,13 @@ class SettingsDialog(QDialog):
         whisper_cfg["model_size"] = self.combo_whisper.currentText()
         self.config_manager.set("whisper", whisper_cfg)
         
-        # Save Windows Startup config
+        # Save Windows Startup and Mute config
         start_with_win = self.chk_startup.isChecked()
         self.config_manager.set("start_with_windows", start_with_win)
         set_run_at_startup(start_with_win)
+        
+        mute_on_rec = self.chk_mute.isChecked()
+        self.config_manager.set("mute_on_record", mute_on_rec)
         
         self.fade_out_and_close(True)
 
@@ -2143,6 +2203,8 @@ class FlowVoiceApp(QApplication):
                 overlay_text = "PESQUISANDO"
 
             QTimer.singleShot(0, lambda: self.overlay.show_state("listening", overlay_text))
+            if self.config_manager.get("mute_on_record", False):
+                mute_system_audio()
             self.recorder.start()
         else:
             # Stop dictation
@@ -2157,6 +2219,8 @@ class FlowVoiceApp(QApplication):
 
             QTimer.singleShot(0, lambda: self.overlay.show_state("processing", processing_text))
             audio_path = self.recorder.stop()
+            if self.config_manager.get("mute_on_record", False):
+                unmute_system_audio()
             if audio_path:
                 self.process_audio(audio_path)
 
