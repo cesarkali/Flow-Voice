@@ -9,13 +9,13 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QLabel, 
     QSystemTrayIcon, QMenu, QDialog, QFormLayout, QLineEdit, 
     QComboBox, QPushButton, QMessageBox, QFrame, QGraphicsDropShadowEffect,
-    QTextEdit, QCheckBox, QProgressBar
+    QTextEdit, QCheckBox, QProgressBar, QScrollArea
 )
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect
 from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen
 from PySide6 import QtSvg
 
-CURRENT_VERSION = "1.2.0"
+CURRENT_VERSION = "1.3.0"
 
 # Safe pycaw import for Windows volume control
 try:
@@ -1099,12 +1099,12 @@ class SettingsDialog(QDialog):
     def init_ui(self):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setFixedSize(620, 780)
+        self.setFixedSize(620, 800)
 
         # Main container for shadow and borders
         self.container_frame = QFrame(self)
         self.container_frame.setObjectName("container_frame")
-        self.container_frame.setGeometry(10, 10, 600, 760)
+        self.container_frame.setGeometry(10, 10, 600, 780)
         
         self.container_frame.setStyleSheet("""
             QFrame#container_frame {
@@ -1212,9 +1212,48 @@ class SettingsDialog(QDialog):
         sep.setStyleSheet("background-color: rgba(255, 255, 255, 20);")
         main_layout.addWidget(sep)
 
-        # 2. Form Layout for Inputs
+        # 2. Scroll Area for Inputs
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setStyleSheet("""
+            QScrollArea {
+                background-color: transparent;
+                border: none;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: transparent;
+                width: 6px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 30);
+                min-height: 30px;
+                border-radius: 3px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: rgba(255, 255, 255, 60);
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
+            }
+        """)
+
+        scroll_content = QWidget()
+        scroll_content.setObjectName("scroll_content")
+        scroll_content.setStyleSheet("QWidget#scroll_content { background-color: transparent; }")
+        
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(0, 0, 10, 0)
+        scroll_layout.setSpacing(16)
+
         form_layout = QFormLayout()
-        form_layout.setSpacing(18)
+        form_layout.setVerticalSpacing(14)
+        form_layout.setHorizontalSpacing(15)
         form_layout.setContentsMargins(0, 5, 0, 5)
 
         self.combo_provider = QComboBox()
@@ -1341,8 +1380,7 @@ class SettingsDialog(QDialog):
         form_layout.addRow("", self.chk_startup)
         form_layout.addRow("", self.chk_mute)
 
-        main_layout.addLayout(form_layout)
-        main_layout.addSpacing(5)
+        scroll_layout.addLayout(form_layout)
 
         # Info Box for API Keys
         info_frame = QFrame()
@@ -1371,19 +1409,27 @@ class SettingsDialog(QDialog):
         
         info_layout.addWidget(lbl_info_title)
         info_layout.addWidget(lbl_info_desc)
-        main_layout.addWidget(info_frame)
+        scroll_layout.addWidget(info_frame)
+
+        self.scroll_area.setWidget(scroll_content)
+        main_layout.addWidget(self.scroll_area)
         main_layout.addSpacing(5)
 
         # 3. Action Buttons
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(10)
+        btn_layout.setSpacing(16)
+        btn_layout.setContentsMargins(0, 10, 0, 0)
         
         btn_cancel = QPushButton("Cancelar")
         btn_cancel.setObjectName("btn_cancel")
+        btn_cancel.setFixedWidth(176)
+        btn_cancel.setFixedHeight(36)
         btn_cancel.clicked.connect(lambda: self.fade_out_and_close(False))
         
         btn_check_update = QPushButton("Verificar Atualizações")
         btn_check_update.setObjectName("btn_check_update")
+        btn_check_update.setFixedWidth(176)
+        btn_check_update.setFixedHeight(36)
         btn_check_update.setCursor(Qt.PointingHandCursor)
         btn_check_update.clicked.connect(self.check_updates_manually)
         btn_check_update.setStyleSheet("""
@@ -1392,10 +1438,8 @@ class SettingsDialog(QDialog):
                 border: 1px solid rgba(139, 92, 246, 120);
                 border-radius: 6px;
                 color: #8b5cf6;
-                padding: 8px 14px;
                 font-size: 12px;
                 font-weight: bold;
-                min-height: 32px;
             }
             QPushButton#btn_check_update:hover {
                 background-color: rgba(139, 92, 246, 25);
@@ -1406,6 +1450,8 @@ class SettingsDialog(QDialog):
         
         btn_save = QPushButton("Salvar Configurações")
         btn_save.setObjectName("btn_save")
+        btn_save.setFixedWidth(176)
+        btn_save.setFixedHeight(36)
         btn_save.clicked.connect(self.save_settings)
         btn_save.setFocus()
 
