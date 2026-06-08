@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect
 from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen
+from PySide6 import QtSvg
 
 CURRENT_VERSION = "1.2.0"
 
@@ -1282,24 +1283,57 @@ class SettingsDialog(QDialog):
         self.chk_mute = QCheckBox("Mutar áudio do PC durante a gravação")
         self.chk_mute.setChecked(self.config_manager.get("mute_on_record", False))
         
-        checkbox_style = """
-            QCheckBox {
+        # Get base directory dynamically
+        if getattr(sys, 'frozen', False):
+            appdata = os.getenv('APPDATA')
+            if appdata:
+                base_dir = os.path.join(appdata, "FlowVoice")
+                os.makedirs(base_dir, exist_ok=True)
+            else:
+                base_dir = os.path.dirname(sys.executable)
+        else:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            
+        checkmark_path = os.path.join(base_dir, "checkmark.svg").replace("\\", "/")
+        
+        # Write checkmark SVG if it doesn't exist yet
+        if not os.path.exists(checkmark_path):
+            try:
+                with open(checkmark_path, "w", encoding="utf-8") as f:
+                    f.write(
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">'
+                        '<path fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M3 8.5l3.5 3.5 6.5-7"/>'
+                        '</svg>'
+                    )
+            except Exception as e:
+                print(f"Erro ao criar checkmark.svg: {e}")
+                
+        checkbox_style = f"""
+            QCheckBox {{
                 color: rgba(255, 255, 255, 220);
                 font-size: 13px;
                 font-family: 'Segoe UI', sans-serif;
                 spacing: 8px;
-            }
-            QCheckBox::indicator {
+            }}
+            QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
-                border: 1px solid rgba(255, 255, 255, 30);
-                border-radius: 4px;
-                background-color: rgba(255, 255, 255, 8);
-            }
-            QCheckBox::indicator:checked {
-                background-color: #ffffff;
-                border: 1px solid #ffffff;
-            }
+                min-width: 16px;
+                max-width: 16px;
+                min-height: 16px;
+                max-height: 16px;
+                border: 1px solid rgba(255, 255, 255, 40);
+                border-radius: 3px;
+                background-color: rgba(255, 255, 255, 10);
+            }}
+            QCheckBox::indicator:unchecked:hover {{
+                border-color: #8b5cf6;
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: #8b5cf6;
+                border: 1px solid #8b5cf6;
+                image: url("{checkmark_path}");
+            }}
         """
         self.chk_startup.setStyleSheet(checkbox_style)
         self.chk_mute.setStyleSheet(checkbox_style)
