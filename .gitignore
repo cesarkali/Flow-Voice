@@ -11,6 +11,8 @@ env/
 build/
 dist/
 *.spec
+ubuntu/build/
+ubuntu/dist/
 
 # Application Local Config & Temporary Audio Files
 config.json

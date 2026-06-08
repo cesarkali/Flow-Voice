@@ -1,7 +1,9 @@
 # FlowVoice - Ditado Inteligente por IA no seu Cursor
 
-O **FlowVoice** é um utilitário de produtividade leve e elegante para Windows que roda em segundo plano na bandeja do sistema. Ele permite que você dite textos por voz em qualquer campo de digitação do sistema (navegador, editores de código, chat do Teams, Word, etc.). O áudio é capturado, transcrito por IA e, opcionalmente, polido e corrigido gramaticalmente de forma automática antes de ser colado diretamente onde está o seu cursor.
+O **FlowVoice** é um utilitário de produtividade leve e elegante para **Windows** e **Ubuntu** que roda em segundo plano na bandeja do sistema. Ele permite que você dite textos por voz em qualquer campo de digitação do sistema (navegador, editores de código, chat do Teams, Word, etc.). O áudio é capturado, transcrito por IA e, opcionalmente, polido e corrigido gramaticalmente de forma automática antes de ser colado diretamente onde está o seu cursor.
 Desenvolvido por: **Júlio Caliberda** ([caliberda.com.br](https://caliberda.com.br)) | Repositório: [GitHub](https://github.com/cesarkali/Flow-Voice)
+
+**Versão atual:** 1.4.0
 
 ### ⚡ Consumo de Recursos (Leveza)
 O **FlowVoice** foi projetado para ser executado sem impactar o desempenho do seu computador:
@@ -21,14 +23,14 @@ O **FlowVoice** foi projetado para ser executado sem impactar o desempenho do se
 - **Pesquisa Google por Voz**: Pressione `Ctrl + Shift + U` para fazer perguntas faladas. O app busca na IA e abre um **Assistente Chat** interativo para você continuar a conversa.
 - **Múltiplos Provedores (Failover Pool)**: Configure chaves para **Gemini**, **OpenAI**, **Groq** ou **GitHub Models**. Se um provedor falhar, o app automaticamente tenta o próximo na fila.
 - **Transcrição Local (100% Offline)**: Opção de rodar sem chaves de nuvem usando o modelo **Whisper** localmente via GPU/CPU.
-- **Integração com Windows**: Roda silenciosamente na área de notificação (bandeja), com opção de **iniciar junto com o Windows** integrada no menu.
-- **Sistema de Logs**: Todos os eventos e depurações do Whisper local e da IA são salvos de forma organizada em `%APPDATA%\FlowVoice\flowvoice.log`.
+- **Integração com o sistema**: Roda silenciosamente na área de notificação (bandeja), com opção de **iniciar junto com o sistema** integrada no menu.
+- **Sistema de Logs**: Todos os eventos e depurações do Whisper local e da IA são salvos de forma organizada em `%APPDATA%\FlowVoice\flowvoice.log` (Windows) ou `~/.config/FlowVoice/flowvoice.log` (Ubuntu).
 
 ---
 
 ## 💻 Instalação
 
-### Instalação via Instalador (Recomendado para Usuários)
+### Windows (Recomendado para Usuários)
 Basta baixar e executar o arquivo de instalação rápida:
 👉 **`dist/FlowVoiceSetup.exe`**
 
@@ -37,46 +39,121 @@ O instalador irá:
 2. Criar atalhos no Menu Iniciar e na Área de Trabalho.
 3. Salvar suas chaves de API e arquivos de preferências de forma persistente e segura na pasta local de usuário (`%APPDATA%\FlowVoice`), de modo que suas configurações não sejam apagadas em atualizações do programa.
 
+### Ubuntu (Recomendado para Usuários)
+Baixe ou gere o pacote `.deb` e instale com:
+
+```bash
+sudo apt install ./ubuntu/dist/flowvoice_1.4.0_amd64.deb
+```
+
+Depois da instalação:
+- Aplicativo em `/opt/flowvoice/flowvoice`
+- Atalho **FlowVoice** no menu de aplicativos
+- Configurações e logs em `~/.config/FlowVoice/`
+
 ---
 
 ## 🛠️ Desenvolvimento e Execução (via Python)
 
 ### 1. Pré-requisitos
-Certifique-se de ter o Python 3.10 ou superior instalado no seu sistema.
+Certifique-se de ter o **Python 3.10 ou superior** instalado no seu sistema.
 
 ### 2. Instalar Dependências
-Instale as dependências executando:
+
+**Windows:**
 ```bash
 py -m pip install -r requirements.txt
 ```
 
+**Ubuntu / Linux:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-linux.txt
+```
+
 ### 3. Executar o Aplicativo
-Inicie o aplicativo pelo interpretador do Python:
+
+**Windows:**
 ```bash
 py main.py
 ```
-*Nota: Na primeira execução, o aplicativo gerará automaticamente o arquivo `config.json` na raiz ou no `%APPDATA%` (se compilado). Caso prefira configurar as chaves de API e atalhos antes de abrir o aplicativo, basta copiar o arquivo `config.example.json` como `config.json` e inserir suas chaves.*
+
+**Ubuntu / Linux:**
+```bash
+python3 main.py
+```
+
+*Nota: Na primeira execução, o aplicativo gerará automaticamente o arquivo `config.json` na raiz do projeto (desenvolvimento) ou na pasta de dados do usuário (se compilado). Caso prefira configurar as chaves de API e atalhos antes de abrir o aplicativo, basta copiar o arquivo `config.example.json` como `config.json` e inserir suas chaves.*
 
 ---
 
 ## ⚙️ Empacotamento e Compilação
 
-Para recompilar o executável e o instalador de alta compressão:
+### Windows — gerar `FlowVoiceSetup.exe`
 
-### 1. Instalar as Ferramentas de Compilação
+**Pré-requisito:** [Inno Setup 6](https://jrsoftware.org/isinfo.php) instalado.
+
+Na raiz do projeto, execute um único comando:
+
 ```bash
-py -m pip install pyinstaller pillow
+py build-windows.py
 ```
 
-### 2. Compilar o Diretório de Distribuição
+O script faz automaticamente:
+1. Instala `pyinstaller` e `pillow` (se necessário)
+2. Compila o executável com PyInstaller em `dist/main/`
+3. Gera o instalador com Inno Setup em `dist/FlowVoiceSetup.exe`
+
+**Saída:**
+- Instalador: `dist/FlowVoiceSetup.exe`
+- Executável: `dist/main/main.exe`
+
+### Ubuntu — gerar `flowvoice_1.4.0_amd64.deb`
+
+**Pré-requisitos no Ubuntu:**
 ```bash
-py -m PyInstaller --noconsole --onedir --icon=icon.png --add-data "icon.png;." --hidden-import="pynput.keyboard._win32" main.py
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip dpkg-dev \
+    libportaudio2 libasound2 libxcb-xinerama0 libxcb-cursor0 \
+    libegl1 libgl1 libxkbcommon0 libpulse0
 ```
-Isso gerará a pasta do programa descompactada e otimizada para inicialização rápida em `dist/main/`.
 
-### 3. Gerar o Instalador Setup
-Abra o programa **Inno Setup** e compile o arquivo [`installer.iss`](file:///c:/Dev/ST/installer.iss), ou execute via linha de comando:
-```powershell
-& "C:\Users\<SeuUsuario>\AppData\Local\Programs\Inno Setup 6\ISCC.exe" installer.iss
+Na raiz do projeto, execute:
+
+```bash
+chmod +x ubuntu/build-deb.sh
+./ubuntu/build-deb.sh
 ```
-O arquivo final do instalador otimizado de ~108MB será gerado em `dist/FlowVoiceSetup.exe`.
+
+O script faz automaticamente:
+1. Cria um ambiente virtual e instala as dependências de `requirements-linux.txt`
+2. Compila o executável com PyInstaller
+3. Empacota o instalador `.deb`
+
+**Saída:**
+- Pacote: `ubuntu/dist/flowvoice_1.4.0_amd64.deb`
+
+**Instalar o pacote gerado:**
+```bash
+sudo apt install ./ubuntu/dist/flowvoice_1.4.0_amd64.deb
+```
+
+Documentação adicional do build Ubuntu: [`ubuntu/README.md`](ubuntu/README.md).
+
+---
+
+## 📋 Versões e Release Notes
+
+A versão oficial fica em [`version.py`](version.py). Ao publicar uma nova versão:
+
+1. Atualize `VERSION` em `version.py`
+2. Gere o esqueleto das notas de release:
+   ```bash
+   py new_release.py
+   ```
+3. Edite `releases/X.Y.Z.md` com as mudanças em relação à versão anterior
+4. Gere os instaladores (`py build-windows.py` e/ou `./ubuntu/build-deb.sh`)
+5. Publique no GitHub Release usando o conteúdo de `releases/X.Y.Z.md`
+
+Release notes da versão atual: [`releases/1.4.0.md`](releases/1.4.0.md)
