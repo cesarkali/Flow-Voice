@@ -3,7 +3,7 @@
 O **FlowVoice** é um utilitário de produtividade leve e elegante para **Windows** e **Ubuntu** que roda em segundo plano na bandeja do sistema. Ele permite que você dite textos por voz em qualquer campo de digitação do sistema (navegador, editores de código, chat do Teams, Word, etc.). O áudio é capturado, transcrito por IA e, opcionalmente, polido e corrigido gramaticalmente de forma automática antes de ser colado diretamente onde está o seu cursor.
 Desenvolvido por: **Júlio Caliberda** ([caliberda.com.br](https://caliberda.com.br)) | Repositório: [GitHub](https://github.com/cesarkali/Flow-Voice)
 
-**Versão atual:** 1.7.1
+**Versão atual:** 1.7.2
 
 ### ⚡ Consumo de Recursos (Leveza)
 O **FlowVoice** foi projetado para ser executado sem impactar o desempenho do seu computador:
@@ -43,7 +43,7 @@ O instalador irá:
 Baixe ou gere o pacote `.deb` e instale com:
 
 ```bash
-sudo apt install ./ubuntu/dist/flowvoice_1.7.1_amd64.deb
+sudo apt install ./ubuntu/dist/flowvoice_1.7.2_amd64.deb
 ```
 
 Depois da instalação:
@@ -109,7 +109,7 @@ O script faz automaticamente:
 - Instalador: `dist/FlowVoiceSetup.exe`
 - Executável: `dist/main/main.exe`
 
-### Ubuntu — gerar `flowvoice_1.7.1_amd64.deb`
+### Ubuntu — gerar `flowvoice_1.7.2_amd64.deb`
 
 **Pré-requisitos no Ubuntu:**
 ```bash
@@ -132,11 +132,11 @@ O script faz automaticamente:
 3. Empacota o instalador `.deb`
 
 **Saída:**
-- Pacote: `ubuntu/dist/flowvoice_1.7.1_amd64.deb`
+- Pacote: `ubuntu/dist/flowvoice_1.7.2_amd64.deb`
 
 **Instalar o pacote gerado:**
 ```bash
-sudo apt install ./ubuntu/dist/flowvoice_1.7.1_amd64.deb
+sudo apt install ./ubuntu/dist/flowvoice_1.7.2_amd64.deb
 ```
 
 Documentação adicional do build Ubuntu: [`ubuntu/README.md`](ubuntu/README.md).
@@ -156,4 +156,4 @@ A versão oficial fica em [`version.py`](version.py). Ao publicar uma nova vers�
 4. Gere os instaladores (`py build-windows.py` e/ou `./ubuntu/build-deb.sh`)
 5. Publique no GitHub Release usando o conteúdo de `releases/X.Y.Z.md`
 
-Release notes da versão atual: [`releases/1.7.1.md`](releases/1.7.1.md)
+Release notes da versão atual: [`releases/1.7.2.md`](releases/1.7.2.md)
