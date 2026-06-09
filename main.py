@@ -211,59 +211,34 @@ def get_app_executable_path():
     return os.path.join(program_files, 'FlowVoice', 'FlowVoice.exe')
 
 
+def get_updater_path():
+    """Returns the path to the standalone updater executable or script."""
+    if getattr(sys, 'frozen', False):
+        return os.path.join(os.path.dirname(sys.executable), "FlowVoiceUpdater.exe")
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "updater.py")
+
+
 def launch_windows_update(installer_path, target_version):
-    """Shows an installing indicator, runs the silent setup, and relaunches FlowVoice."""
+    """Starts the dedicated updater process and returns immediately."""
     app_exe = get_app_executable_path()
-    ps_script = f"""
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
-$form = New-Object System.Windows.Forms.Form
-$form.Text = 'FlowVoice - Atualizando'
-$form.Size = New-Object System.Drawing.Size(460, 160)
-$form.StartPosition = 'CenterScreen'
-$form.FormBorderStyle = 'FixedDialog'
-$form.MaximizeBox = $false
-$form.MinimizeBox = $false
-$form.TopMost = $true
-$form.ShowInTaskbar = $true
-$label = New-Object System.Windows.Forms.Label
-$label.Text = 'Instalando FlowVoice v{target_version}...`r`nPor favor, aguarde. O aplicativo abrirá novamente ao concluir.'
-$label.AutoSize = $false
-$label.TextAlign = 'MiddleCenter'
-$label.Size = New-Object System.Drawing.Size(420, 70)
-$label.Location = New-Object System.Drawing.Point(20, 20)
-$form.Controls.Add($label)
-$progress = New-Object System.Windows.Forms.ProgressBar
-$progress.Style = 'Marquee'
-$progress.MarqueeAnimationSpeed = 30
-$progress.Size = New-Object System.Drawing.Size(420, 18)
-$progress.Location = New-Object System.Drawing.Point(20, 100)
-$form.Controls.Add($progress)
-$form.Add_Shown({{ $form.Activate() }})
-$form.Show()
-[System.Windows.Forms.Application]::DoEvents()
-$process = Start-Process -FilePath '{installer_path.replace("'", "''")}' -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/CLOSEAPPLICATIONS','/FORCECLOSEAPPLICATIONS' -Wait -PassThru
-$form.Close()
-if ($process.ExitCode -eq 0 -and (Test-Path '{app_exe.replace("'", "''")}')) {{
-    Start-Process '{app_exe.replace("'", "''")}'
-}}
-"""
-    fd, script_path = tempfile.mkstemp(suffix='.ps1', prefix='flowvoice_update_')
-    os.close(fd)
-    with open(script_path, 'w', encoding='utf-8') as f:
-        f.write(ps_script)
+    updater_path = get_updater_path()
+
+    if updater_path.endswith(".py"):
+        command = [sys.executable, updater_path, installer_path, target_version, app_exe]
+    else:
+        if not os.path.isfile(updater_path):
+            raise FileNotFoundError(
+                f"Atualizador não encontrado: {updater_path}. "
+                "Reinstale o FlowVoice manualmente uma vez para incluir o FlowVoiceUpdater.exe."
+            )
+        command = [updater_path, installer_path, target_version, app_exe]
 
     subprocess.Popen(
-        [
-            'powershell.exe',
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-Sta',
-            '-File', script_path,
-        ],
+        command,
         close_fds=True,
         creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
     )
+
 
 # Background thread to download the installer
 class DownloadWorker(QThread):
@@ -505,7 +480,7 @@ class UpdateDialog(QDialog):
                 launch_windows_update(dest_path, self.latest_version)
             else:
                 subprocess.Popen(['xdg-open', dest_path], start_new_session=True)
-            QTimer.singleShot(400, QApplication.quit)
+            QTimer.singleShot(150, QApplication.quit)
         except Exception as e:
             self.on_download_error(f"Erro ao abrir instalador: {e}")
 

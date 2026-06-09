@@ -1,5 +1,5 @@
 # Dependências de execução — Ubuntu / Linux
-# Versão atual: 1.7.0 (version.py)
+# Versão atual: 1.7.1 (version.py)
 # Instalar: pip install -r requirements-linux.txt
 # Executar: python3 main.py
 # Gerar instalador (.deb): ./ubuntu/build-deb.sh

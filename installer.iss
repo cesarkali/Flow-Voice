@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "FlowVoice"
-#define MyAppVersion "1.7.0"
+#define MyAppVersion "1.7.1"
 #define MyAppPublisher "Júlio Caliberda"
 #define MyAppPublisherURL "https://caliberda.com.br"
 #define MyAppExeName "FlowVoice.exe"
@@ -40,6 +40,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "dist\main\main.exe"; DestDir: "{app}"; DestName: "FlowVoice.exe"; Flags: ignoreversion
 Source: "dist\main\*"; DestDir: "{app}"; Excludes: "main.exe"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\FlowVoiceUpdater.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "icon.png"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]

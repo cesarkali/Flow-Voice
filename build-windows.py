@@ -97,6 +97,40 @@ def build_executable() -> None:
         raise SystemExit(f"PyInstaller não gerou o executável esperado: {exe_path}")
 
 
+def build_updater() -> None:
+    if not (ROOT / "updater.py").is_file():
+        raise SystemExit("Arquivo updater.py não encontrado.")
+
+    pyinstaller_args = [
+        sys.executable,
+        "-m",
+        "PyInstaller",
+        "--noconsole",
+        "--onefile",
+        "--noconfirm",
+        "--clean",
+        "--name",
+        "FlowVoiceUpdater",
+        "--distpath",
+        str(DIST_DIR),
+        "--workpath",
+        str(ROOT / "build" / "updater-work"),
+        "--specpath",
+        str(ROOT / "build" / "updater-spec"),
+        str(ROOT / "updater.py"),
+    ]
+
+    icon_png = ROOT / "icon.png"
+    if icon_png.is_file():
+        pyinstaller_args[-1:-1] = ["--icon", str(icon_png)]
+
+    run_step("Compilando FlowVoiceUpdater.exe...", pyinstaller_args)
+
+    updater_exe = DIST_DIR / "FlowVoiceUpdater.exe"
+    if not updater_exe.is_file():
+        raise SystemExit(f"PyInstaller não gerou o atualizador esperado: {updater_exe}")
+
+
 def build_installer() -> None:
     iss_path = ROOT / "installer.iss"
     if not iss_path.is_file():
@@ -128,6 +162,7 @@ def main() -> None:
 
     ensure_build_tools()
     build_executable()
+    build_updater()
     build_installer()
 
     size_mb = INSTALLER_OUTPUT.stat().st_size / (1024 * 1024)
@@ -136,6 +171,7 @@ def main() -> None:
     print(f"    Instalador: {INSTALLER_OUTPUT}")
     print(f"    Tamanho:    {size_mb:.1f} MB")
     print(f"    Executável: {PYINSTALLER_DIST / 'main.exe'}")
+    print(f"    Atualizador: {DIST_DIR / 'FlowVoiceUpdater.exe'}")
 
 
 if __name__ == "__main__":
