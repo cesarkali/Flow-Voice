@@ -13,6 +13,8 @@ import subprocess
 import sys
 import threading
 import time
+import shutil
+import traceback
 import tkinter as tk
 from tkinter import ttk
 
@@ -41,9 +43,11 @@ def _no_window_flags() -> int:
     return 0
 
 
-def kill_flowvoice() -> None:
+def kill_app(app_exe: str) -> None:
+    exe_name = os.path.basename(app_exe)
+    log(f"Encerrando processo: {exe_name}")
     subprocess.run(
-        ["taskkill", "/F", "/IM", "FlowVoice.exe", "/T"],
+        ["taskkill", "/F", "/IM", exe_name, "/T"],
         capture_output=True,
         creationflags=_no_window_flags(),
     )
@@ -146,7 +150,7 @@ class UpdaterWindow:
                 raise FileNotFoundError(f"Instalador não encontrado: {self.installer_path}")
 
             self.root.after(0, lambda: self._set_status("Encerrando o FlowVoice..."))
-            kill_flowvoice()
+            kill_app(self.app_exe)
             time.sleep(1.5)
 
             self.root.after(
@@ -185,8 +189,9 @@ class UpdaterWindow:
 
             self.root.after(0, self.root.destroy)
         except Exception as exc:
-            log(f"Erro fatal: {exc}")
-            self.root.after(0, lambda: self._show_error(str(exc)))
+            err_msg = traceback.format_exc()
+            log(f"Erro fatal durante a atualização:\n{err_msg}")
+            self.root.after(0, lambda: self._show_error(f"Erro fatal: {exc}"))
 
     def _show_error(self, message: str) -> None:
         self.progress.stop()
@@ -199,12 +204,65 @@ class UpdaterWindow:
         self.root.mainloop()
 
 
+def relocate_and_run_from_temp() -> bool:
+    """
+    Move o atualizador para a pasta TEMP antes de rodar.
+    Isso evita que o Inno Setup mate o processo por estar na pasta de destino.
+    """
+    if not getattr(sys, 'frozen', False):
+        return False
+        
+    current_exe = os.path.abspath(sys.executable)
+    temp_dir = os.path.abspath(os.environ.get("TEMP", os.path.dirname(current_exe)))
+    
+    # Se já estiver rodando da pasta TEMP, prossegue normalmente
+    if current_exe.lower().startswith(temp_dir.lower()):
+        return False
+        
+    temp_exe = os.path.join(temp_dir, "FlowVoiceUpdater_Temp.exe")
+    
+    try:
+        if os.path.exists(temp_exe):
+            try:
+                os.remove(temp_exe)
+            except OSError:
+                pass
+                
+        shutil.copy2(current_exe, temp_exe)
+        log(f"Atualizador realocado para ambiente seguro: {temp_exe}")
+        
+        args = [temp_exe] + sys.argv[1:]
+        subprocess.Popen(
+            args,
+            close_fds=True,
+            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+        )
+        return True
+    except Exception as e:
+        log(f"Aviso: Não foi possível realocar o atualizador. Erro: {e}")
+        return False
+
+
+def global_exception_handler(exc_type, exc_value, exc_traceback):
+    err_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    log(f"EXCEÇÃO NÃO TRATADA:\n{err_msg}")
+
+
 def main() -> None:
+    sys.excepthook = global_exception_handler
     if len(sys.argv) < 4:
         print("Uso: FlowVoiceUpdater.exe <instalador> <versão> <app_exe>")
         sys.exit(1)
 
-    UpdaterWindow(sys.argv[1], sys.argv[2], sys.argv[3]).run()
+    if relocate_and_run_from_temp():
+        sys.exit(0)
+        
+    log("\n--- Nova Sessão de Atualização Iniciada ---")
+    try:
+        UpdaterWindow(sys.argv[1], sys.argv[2], sys.argv[3]).run()
+    except Exception as e:
+        log(f"Erro Crítico na inicialização:\n{traceback.format_exc()}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
