@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "FlowVoice"
-#define MyAppVersion "1.7.2"
+#define MyAppVersion "1.7.3"
 #define MyAppPublisher "Júlio Caliberda"
 #define MyAppPublisherURL "https://caliberda.com.br"
 #define MyAppExeName "FlowVoice.exe"
