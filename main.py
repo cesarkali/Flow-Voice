@@ -1818,7 +1818,12 @@ class FloatingOverlay(QWidget):
 
     def init_ui(self):
         # Frameless, translucent, floating window settings
-        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool | Qt.SubWindow)
+        flags = Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint
+        if sys.platform == 'linux':
+            flags |= Qt.ToolTip  # Evita que o Ubuntu force a janela para o centro
+        else:
+            flags |= Qt.Tool | Qt.SubWindow
+        self.setWindowFlags(flags)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_ShowWithoutActivating, True) # Prevents stealing window focus
         self.setFixedSize(500, 320)

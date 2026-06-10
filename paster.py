@@ -1,4 +1,5 @@
 import time
+import os
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QGuiApplication, QClipboard
@@ -44,17 +45,23 @@ class TextPaster:
 
         time.sleep(self.PRE_PASTE_DELAY)
 
-        try:
-            self.keyboard.press(Key.ctrl)
-            time.sleep(self.KEY_INTERVAL)
-            self.keyboard.press('v')
-            time.sleep(self.KEY_INTERVAL)
-            self.keyboard.release('v')
-            time.sleep(self.KEY_INTERVAL)
-            self.keyboard.release(Key.ctrl)
-            print("Texto colado no campo ativo via Ctrl+V.")
-        except Exception as e:
-            print(f"Erro ao simular teclas de colagem: {e}")
+        # No Wayland (Ubuntu 22.04+ padrão), simular Ctrl+V causa um alerta de segurança do GNOME.
+        # Se for Wayland, pulamos a simulação e deixamos o usuário colar manualmente sem alertas.
+        is_wayland = os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland"
+        if not is_wayland:
+            try:
+                self.keyboard.press(Key.ctrl)
+                time.sleep(self.KEY_INTERVAL)
+                self.keyboard.press('v')
+                time.sleep(self.KEY_INTERVAL)
+                self.keyboard.release('v')
+                time.sleep(self.KEY_INTERVAL)
+                self.keyboard.release(Key.ctrl)
+                print("Texto colado no campo ativo via Ctrl+V.")
+            except Exception as e:
+                print(f"Erro ao simular teclas de colagem: {e}")
+        else:
+            print("Sessão Wayland detectada. O texto foi copiado, aguardando colagem manual.")
 
         # Keep dictated text in clipboard for Ctrl+C and re-apply after paste handlers run.
         QTimer.singleShot(120, lambda: self._set_clipboard_text(clipboard, text))
