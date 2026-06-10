@@ -6,18 +6,18 @@
     <title>FlowVoice - Ditado Inteligente por IA no seu Cursor</title>
     
     <!-- Meta Tags para SEO -->
-    <meta name="description" content="Dite textos por voz em qualquer campo de digitação do Windows com polimento inteligente por IA. Transcreva, traduza e pesquise instantaneamente.">
-    <meta name="keywords" content="ditado por voz, transcrição de áudio, inteligência artificial, gemini, whisper, produtividade, windows, flowvoice, voice dictation, whisper dictation">
+    <meta name="description" content="Fale ao invés de digitar. Economize tempo e seja mais produtivo com o FlowVoice. Transcreva, traduza e pesquise por voz direto no seu cursor. Utilitário 100% gratuito para Windows.">
+    <meta name="keywords" content="ditado por voz, transcrição de áudio, inteligência artificial, gemini, whisper, produtividade, windows, flowvoice, voice dictation, whisper dictation, groq, grok, openai">
     <meta name="author" content="Júlio Caliberda">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#0a0a0c">
     <link rel="canonical" href="https://flowvoice.caliberda.com.br/">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://flowvoice.caliberda.com.br/">
     <meta property="og:title" content="FlowVoice - Ditado Inteligente por IA no seu Cursor">
-    <meta property="og:description" content="Dite textos por voz em qualquer campo de digitação do Windows com polimento inteligente por IA. Transcreva, traduza e pesquise instantaneamente.">
+    <meta property="og:description" content="Fale ao invés de digitar. Economize tempo e seja mais produtivo com o FlowVoice. Transcreva, traduza e pesquise por voz direto no seu cursor. Utilitário 100% gratuito para Windows.">
     <meta property="og:image" content="https://flowvoice.caliberda.com.br/icon.png">
     <meta property="og:image:alt" content="Logotipo do FlowVoice">
     <meta property="og:site_name" content="FlowVoice">
@@ -27,7 +27,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://flowvoice.caliberda.com.br/">
     <meta name="twitter:title" content="FlowVoice - Ditado Inteligente por IA no seu Cursor">
-    <meta name="twitter:description" content="Dite textos por voz em qualquer campo de digitação do Windows com polimento inteligente por IA. Transcreva, traduza e pesquise instantaneamente.">
+    <meta name="twitter:description" content="Fale ao invés de digitar. Economize tempo e seja mais produtivo com o FlowVoice. Transcreva, traduza e pesquise por voz direto no seu cursor. Utilitário 100% gratuito para Windows.">
     <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/icon.png">
     
     <!-- Google Fonts -->
@@ -39,16 +39,22 @@
 
     <style>
         :root {
-            --bg-color: #000000;
+            --bg-color: #030303;
+            --bg-grid: rgba(255, 255, 255, 0.012);
             --card-bg: #09090b;
+            --card-bg-glass: rgba(13, 13, 17, 0.7);
             --border-color: rgba(255, 255, 255, 0.08);
-            --border-color-hover: rgba(255, 255, 255, 0.2);
+            --border-color-hover: rgba(255, 255, 255, 0.18);
             --text-primary: #ffffff;
             --text-secondary: #a1a1aa;
             --text-muted: #52525b;
-            --accent-glow: rgba(255, 255, 255, 0.02);
             --accent-purple: #8b5cf6;
+            --accent-purple-glow: rgba(139, 92, 246, 0.15);
+            --accent-blue: #3b82f6;
+            --accent-blue-glow: rgba(59, 130, 246, 0.15);
             --accent-emerald: #10b981;
+            --accent-emerald-glow: rgba(16, 185, 129, 0.15);
+            --accent-yellow: #f59e0b;
         }
 
         * {
@@ -77,16 +83,18 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            /* Subtle Grid Background (more visible) */
+            
+            /* Sleek Grid Background */
             background-image: 
-                radial-gradient(at 0% 0%, rgba(255, 255, 255, 0.02) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(255, 255, 255, 0.02) 0px, transparent 50%),
-                linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 45px 45px, 45px 45px;
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.04) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%),
+                linear-gradient(var(--bg-grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
         }
 
-        /* Background Glow Container to prevent overflow on mobile */
+        /* Ambient light effects with breathing animation */
         .bg-glow-container {
             position: absolute;
             top: 0;
@@ -98,47 +106,190 @@
             z-index: -1;
         }
 
-        /* Ambient glows */
         .ambient-light {
             position: absolute;
-            width: 500px;
-            height: 500px;
+            width: 600px;
+            height: 600px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.015) 0%, transparent 70%);
-            filter: blur(50px);
-            z-index: -1;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.035) 0%, transparent 70%);
+            filter: blur(80px);
             pointer-events: none;
+            animation: ambient-pulse 15s infinite ease-in-out;
         }
-        .light-top { top: -250px; left: 15%; }
+        .light-top { 
+            top: -200px; 
+            left: 20%; 
+        }
+        .light-mid { 
+            top: 800px; 
+            right: 10%; 
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.025) 0%, transparent 70%);
+            animation: ambient-pulse 18s infinite ease-in-out alternate;
+        }
+        .light-bottom { 
+            bottom: -200px; 
+            left: 10%; 
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.02) 0%, transparent 70%);
+            animation: ambient-pulse 20s infinite ease-in-out;
+        }
 
-        /* Animation reveals */
-        .reveal {
+        @keyframes ambient-pulse {
+            0% { transform: scale(1) translate(0, 0); opacity: 0.8; }
+            50% { transform: scale(1.08) translate(3%, 2%); opacity: 1; }
+            100% { transform: scale(1) translate(0, 0); opacity: 0.8; }
+        }
+
+        /* Exclusive Soundwave/Laser Reveal Animation */
+        .reveal-element {
             opacity: 0;
-            transform: translateY(15px);
-            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: blur(12px);
+            transform: translateY(24px);
+            transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), 
+                        filter 1s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 1s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .reveal.active {
+        .reveal-element.active {
             opacity: 1;
+            filter: blur(0);
             transform: translateY(0);
         }
+
+        /* Staggered Scan-Sweep Animations for Border/Glow effects upon reveal */
+        @keyframes scan-sweep-purple {
+            0% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(139, 92, 246, 0); }
+            30% { border-color: var(--accent-purple); box-shadow: 0 0 15px rgba(139, 92, 246, 0.18); }
+            100% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(139, 92, 246, 0); }
+        }
+
+        @keyframes scan-sweep-blue {
+            0% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+            30% { border-color: var(--accent-blue); box-shadow: 0 0 15px rgba(59, 130, 246, 0.18); }
+            100% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        @keyframes scan-sweep-emerald {
+            0% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
+            30% { border-color: var(--accent-emerald); box-shadow: 0 0 15px rgba(16, 185, 129, 0.18); }
+            100% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Laser Sweep Overlay */
+        .spec-tile::after, .step-card::after, .style-card::after, .provider-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 80px;
+            height: 100%;
+            pointer-events: none;
+            transform: skewX(-25deg);
+            z-index: 2;
+        }
+
+        .specs-bar.active .spec-tile::after {
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.15), transparent);
+            animation: laser-sweep-anim 1.5s cubic-bezier(0.25, 1, 0.5, 1) both;
+        }
+
+        .steps-grid.active .step-card::after {
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.35), rgba(139, 92, 246, 0.15), transparent);
+            animation: laser-sweep-anim 1.5s cubic-bezier(0.25, 1, 0.5, 1) both;
+        }
+
+        .styles-grid.active .style-card::after {
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.35), rgba(139, 92, 246, 0.15), transparent);
+            animation: laser-sweep-anim 1.5s cubic-bezier(0.25, 1, 0.5, 1) both;
+        }
+
+        .providers-grid.active .provider-card::after {
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.35), rgba(16, 185, 129, 0.15), transparent);
+            animation: laser-sweep-anim 1.5s cubic-bezier(0.25, 1, 0.5, 1) both;
+        }
+
+        @keyframes laser-sweep-anim {
+            0% { left: -150%; }
+            100% { left: 200%; }
+        }
+
+        /* Apply sweeps and borders to grid items only when parent is active */
+        .specs-bar.active .spec-tile { animation: scan-sweep-blue 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .steps-grid.active .step-card { animation: scan-sweep-purple 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        
+        .styles-grid.active .style-card.professional { animation: scan-sweep-purple 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .styles-grid.active .style-card.casual { animation: scan-sweep-blue 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .styles-grid.active .style-card.direct { animation: scan-sweep-purple 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        
+        .providers-grid.active .provider-card { animation: scan-sweep-emerald 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+        /* Stagger delays for scan/laser animations */
+        .specs-bar .spec-tile:nth-child(1) { transition-delay: 0.05s; }
+        .specs-bar .spec-tile:nth-child(2) { transition-delay: 0.12s; }
+        .specs-bar .spec-tile:nth-child(3) { transition-delay: 0.19s; }
+        .specs-bar .spec-tile:nth-child(4) { transition-delay: 0.26s; }
+        .specs-bar .spec-tile:nth-child(5) { transition-delay: 0.33s; }
+        .specs-bar .spec-tile:nth-child(6) { transition-delay: 0.4s; }
+
+        .specs-bar.active .spec-tile:nth-child(1)::after { animation-delay: 0.05s; }
+        .specs-bar.active .spec-tile:nth-child(2)::after { animation-delay: 0.12s; }
+        .specs-bar.active .spec-tile:nth-child(3)::after { animation-delay: 0.19s; }
+        .specs-bar.active .spec-tile:nth-child(4)::after { animation-delay: 0.26s; }
+        .specs-bar.active .spec-tile:nth-child(5)::after { animation-delay: 0.33s; }
+        .specs-bar.active .spec-tile:nth-child(6)::after { animation-delay: 0.4s; }
+
+        .steps-grid .step-card:nth-child(1) { transition-delay: 0.05s; }
+        .steps-grid .step-card:nth-child(2) { transition-delay: 0.15s; }
+        .steps-grid .step-card:nth-child(3) { transition-delay: 0.25s; }
+        .steps-grid .step-card:nth-child(4) { transition-delay: 0.35s; }
+
+        .steps-grid.active .step-card:nth-child(1)::after { animation-delay: 0.05s; }
+        .steps-grid.active .step-card:nth-child(2)::after { animation-delay: 0.15s; }
+        .steps-grid.active .step-card:nth-child(3)::after { animation-delay: 0.25s; }
+        .steps-grid.active .step-card:nth-child(4)::after { animation-delay: 0.35s; }
+
+        .styles-grid .style-card:nth-child(1) { transition-delay: 0.05s; }
+        .styles-grid .style-card:nth-child(2) { transition-delay: 0.18s; }
+        .styles-grid .style-card:nth-child(3) { transition-delay: 0.31s; }
+
+        .styles-grid.active .style-card:nth-child(1)::after { animation-delay: 0.05s; }
+        .styles-grid.active .style-card:nth-child(2)::after { animation-delay: 0.18s; }
+        .styles-grid.active .style-card:nth-child(3)::after { animation-delay: 0.31s; }
+
+        .providers-grid .provider-card:nth-child(1) { transition-delay: 0.05s; }
+        .providers-grid .provider-card:nth-child(2) { transition-delay: 0.12s; }
+        .providers-grid .provider-card:nth-child(3) { transition-delay: 0.19s; }
+        .providers-grid .provider-card:nth-child(4) { transition-delay: 0.26s; }
+        .providers-grid .provider-card:nth-child(5) { transition-delay: 0.33s; }
+
+        .providers-grid.active .provider-card:nth-child(1)::after { animation-delay: 0.05s; }
+        .providers-grid.active .provider-card:nth-child(2)::after { animation-delay: 0.12s; }
+        .providers-grid.active .provider-card:nth-child(3)::after { animation-delay: 0.19s; }
+        .providers-grid.active .provider-card:nth-child(4)::after { animation-delay: 0.26s; }
+        .providers-grid.active .provider-card:nth-child(5)::after { animation-delay: 0.33s; }
 
         /* Sticky Frosted Header */
         header {
             width: 100%;
             border-bottom: 1px solid var(--border-color);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             position: sticky;
             top: 0;
             z-index: 100;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(3, 3, 3, 0.75);
+            animation: header-slide-down 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes header-slide-down {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .header-inner {
             width: 92%;
-            max-width: 1500px;
+            max-width: 1440px;
             margin: 0 auto;
-            padding: 20px 0;
+            padding: 16px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -147,34 +298,43 @@
         .logo-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             text-decoration: none;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .logo-group:hover {
+            transform: scale(1.02);
         }
 
         .logo-group img {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
         }
 
         .logo-title {
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 800;
             letter-spacing: -0.02em;
             color: #ffffff;
+            background: linear-gradient(135deg, #ffffff 40%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 24px;
         }
 
         .nav-links a {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 13.5px;
+            font-size: 14px;
             font-weight: 500;
-            transition: color 0.15s;
+            transition: color 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -184,56 +344,184 @@
             color: #ffffff;
         }
 
-        /* Hero Split-Screen Layout (Left: Copy, Right: Live Demo) */
-        .hero-section {
+        .nav-links .nav-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .nav-links .nav-btn:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        /* Section Containers */
+        section {
             width: 92%;
-            max-width: 1500px;
+            max-width: 1440px;
             margin: 0 auto;
-            padding: 60px 0 40px 0;
+            padding: 80px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 50px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .section-tag {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-purple);
+            background: var(--accent-purple-glow);
+            padding: 6px 12px;
+            border-radius: 20px;
+            width: fit-content;
+            margin: 0 auto;
+            border: 1px solid rgba(139, 92, 246, 0.25);
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            color: #ffffff;
+            line-height: 1.25;
+            clip-path: inset(0 50% 0 50%); /* Start clipped from center */
+            transition: letter-spacing 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                        clip-path 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .section-header.active h2 {
+            letter-spacing: -0.02em;
+            clip-path: inset(0 0% 0 0%); /* Open horizontally like sound wave */
+        }
+
+        .section-header p {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        /* Hero Split-Screen Layout */
+        .hero-section {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 48px;
+            gap: 40px;
+            padding: 60px 0 80px 0;
         }
 
         .hero-left {
-            flex: 1 1 45%;
+            flex: 1 1 52%;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
+            animation: hero-fade-in-left 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes hero-fade-in-left {
+            from { opacity: 0; transform: translateX(-40px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
         .hero-left h1 {
-            font-size: 46px;
+            font-size: 54px;
             font-weight: 800;
             line-height: 1.15;
             letter-spacing: -0.03em;
             color: #ffffff;
             margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 60%, rgba(255,255,255,0.6) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .hero-left p {
-            font-size: 16.5px;
+            font-size: 18px;
             color: var(--text-secondary);
             line-height: 1.6;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
 
         .hero-ctas {
             display: flex;
-            gap: 14px;
+            gap: 16px;
+            align-items: center;
             flex-wrap: wrap;
+            width: 100%;
+        }
+
+        /* Open Source Mini Badge next to GitHub button */
+        .github-badge {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--accent-purple);
+            background: var(--accent-purple-glow);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            padding: 4px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+            animation: glow-pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { box-shadow: 0 0 5px rgba(139, 92, 246, 0); border-color: rgba(139, 92, 246, 0.25); }
+            50% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.5); }
+        }
+
+        /* Checked List under CTAs (4 items row) */
+        .hero-checklist {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+
+        .check-item:hover {
+            color: #ffffff;
+        }
+
+        .check-icon {
+            width: 16px;
+            height: 16px;
+            color: var(--accent-emerald);
+            flex-shrink: 0;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            padding: 10px 24px;
-            border-radius: 6px;
-            font-size: 13.5px;
+            justify-content: center;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 600;
             text-decoration: none;
-            transition: all 0.15s;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             cursor: pointer;
             border: none;
         }
@@ -241,118 +529,284 @@
         .btn-primary {
             background-color: #ffffff;
             color: #000000;
+            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.08);
         }
 
         .btn-primary:hover {
             background-color: #eaeaea;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(255, 255, 255, 0.15);
         }
 
         .btn-secondary {
-            background-color: transparent;
+            background-color: rgba(255, 255, 255, 0.03);
             color: #ffffff;
             border: 1px solid var(--border-color);
             gap: 8px;
         }
 
         .btn-secondary:hover {
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: rgba(255, 255, 255, 0.08);
             border-color: var(--border-color-hover);
+            transform: translateY(-2px);
         }
 
-        /* Specs Bar inside Hero Left to prevent empty spacing */
+        /* Modern Detailed Specs Bar */
         .specs-bar {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             border-top: 1px solid var(--border-color);
-            padding-top: 24px;
-            margin-top: 40px;
+            padding-top: 28px;
             gap: 24px;
             width: 100%;
         }
 
         .spec-tile {
-            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spec-tile:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.02);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
 
         .spec-label {
             font-size: 10px;
-            font-weight: 600;
+            font-weight: 800;
             text-transform: uppercase;
             color: var(--text-muted);
-            letter-spacing: 0.05em;
-            display: block;
-            margin-bottom: 4px;
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
         }
 
         .spec-val {
-            font-size: 13.5px;
+            font-size: 15px;
             font-weight: 700;
             color: #ffffff;
+            margin-bottom: 2px;
         }
 
         .spec-sub {
-            font-size: 11px;
+            font-size: 11.5px;
             color: var(--text-secondary);
-            display: block;
-            margin-top: 1px;
+            line-height: 1.4;
         }
 
-        /* Notepad Demo (Right Column) */
+        /* Notepad Demo (Right Column - Larger Viewport) */
         .hero-right {
-            flex: 1 1 50%;
+            flex: 1 1 48%;
             display: flex;
-            justify-content: center;
+            justify-content: flex-end;
             width: 100%;
+            animation: hero-fade-in-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes hero-fade-in-right {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
         .demo-window {
             width: 100%;
-            background-color: var(--card-bg);
+            max-width: 620px;
+            background-color: var(--card-bg-glass);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            height: 335px;
+            height: 385px;
             position: relative;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 40px rgba(139, 92, 246, 0.05);
+            transition: border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .demo-window:hover {
+            border-color: rgba(139, 92, 246, 0.25);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 50px rgba(139, 92, 246, 0.1);
         }
 
         .demo-header {
-            height: 38px;
-            background-color: rgba(255, 255, 255, 0.015);
+            height: 44px;
+            background-color: rgba(255, 255, 255, 0.02);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            padding: 0 16px;
-            gap: 6px;
+            padding: 0 18px;
+            gap: 8px;
         }
 
         .window-dot {
-            width: 7px;
-            height: 7px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
         }
 
         .window-title {
             margin-left: auto;
             margin-right: auto;
-            font-size: 10px;
+            font-size: 11px;
             color: var(--text-muted);
             font-family: 'JetBrains Mono', monospace;
-            font-weight: 500;
-            letter-spacing: 0.05em;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
         .demo-body {
             flex-grow: 1;
             padding: 24px;
             position: relative;
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: rgba(0, 0, 0, 0.3);
             display: flex;
             flex-direction: column;
         }
 
+        /* Keypress Indicator */
+        .keypress-indicator {
+            position: absolute;
+            bottom: 82px; /* Center-bottom just above the app status overlay */
+            left: 50%;
+            transform: translate(-50%, 10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: rgba(10, 10, 14, 0.94);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            padding: 10px 16px;
+            border-radius: 10px;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 20px rgba(139, 92, 246, 0.1);
+            pointer-events: none;
+        }
+
+        .keypress-indicator.visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .keys-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .keypress-indicator .key {
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-bottom-width: 3px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: #ffffff;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            transition: all 0.15s ease;
+        }
+
+        .keypress-indicator .key.active {
+            border-bottom-width: 1px;
+            transform: translateY(2px);
+            box-shadow: 0 0px 2px rgba(0,0,0,0.6);
+            background: var(--accent-purple);
+            border-color: rgba(139, 92, 246, 0.5);
+            text-shadow: 0 0 5px rgba(255,255,255,0.8);
+        }
+
+        .key-desc {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+        }
+
+        /* Simulated Assistant UI inside Demo */
+        .assistant-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -40%) scale(0.95);
+            width: 85%;
+            background: rgba(10, 10, 14, 0.95);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 25px rgba(139, 92, 246, 0.15);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 8;
+        }
+
+        .assistant-overlay.visible {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .assistant-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding-bottom: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-purple);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .assistant-bubble {
+            font-size: 13px;
+            line-height: 1.5;
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .assistant-bubble.user {
+            background: rgba(255, 255, 255, 0.04);
+            color: #ffffff;
+            align-self: flex-start;
+            max-width: 95%;
+        }
+
+        .assistant-bubble.ai {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            color: var(--text-secondary);
+            align-self: flex-start;
+            max-width: 100%;
+        }
+
         .simulated-editor {
-            font-size: 15px;
+            font-size: 16.5px;
             color: var(--text-secondary);
             line-height: 1.65;
             outline: none;
@@ -363,7 +817,7 @@
         .caret {
             display: inline-block;
             width: 2px;
-            height: 17px;
+            height: 18px;
             background-color: #ffffff;
             vertical-align: middle;
             margin-left: 2px;
@@ -373,22 +827,24 @@
         /* Floating Pill overlay matching the app overlay */
         .app-overlay {
             position: absolute;
-            bottom: 20px;
+            bottom: 24px;
             left: 50%;
-            transform: translate(-50%, 12px);
+            transform: translate(-50%, 15px);
             width: 160px;
-            height: 40px;
-            background-color: rgba(10, 10, 10, 0.98);
+            height: 42px;
+            background-color: rgba(10, 10, 14, 0.96);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 20px;
+            border-radius: 24px;
             display: flex;
             align-items: center;
-            padding: 0 14px;
-            gap: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            padding: 0 16px;
+            gap: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 20px rgba(139, 92, 246, 0.1);
             opacity: 0;
-            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .app-overlay.visible {
@@ -397,25 +853,27 @@
         }
 
         .app-overlay.processing {
-            width: 130px;
+            width: 135px;
         }
 
         .app-overlay.done {
-            width: 240px;
-            border-radius: 8px;
-            height: 44px;
+            width: 250px;
+            border-radius: 10px;
+            height: 46px;
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 20px rgba(16, 185, 129, 0.15);
         }
 
         /* Soundwave */
         .soundwave {
             display: none;
             align-items: center;
-            gap: 2.5px;
+            gap: 3px;
         }
 
         .soundwave-bar {
             width: 2px;
-            height: 6px;
+            height: 8px;
             background-color: #ffffff;
             border-radius: 1px;
             animation: wave 0.8s infinite ease-in-out;
@@ -425,14 +883,14 @@
 
         @keyframes wave {
             0%, 100% { height: 4px; }
-            50% { height: 12px; }
+            50% { height: 14px; }
         }
 
         .spinner {
             display: none;
-            width: 12px;
-            height: 12px;
-            border: 1.5px solid rgba(255,255,255,0.2);
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.2);
             border-top-color: #ffffff;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -444,8 +902,8 @@
 
         .done-dot {
             display: none;
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background-color: var(--accent-emerald);
         }
@@ -460,9 +918,9 @@
         .overlay-sublabel {
             font-size: 8px;
             font-weight: 800;
-            color: var(--accent-purple);
+            color: var(--accent-emerald);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             display: none;
         }
 
@@ -470,8 +928,405 @@
             display: block;
         }
 
-        @keyframes blink {
-            50% { opacity: 0; }
+        /* How it Works Section */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .step-card {
+            background-color: var(--card-bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 24px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(139, 92, 246, 0.4);
+            background-color: rgba(255, 255, 255, 0.02);
+            box-shadow: 0 12px 24px rgba(139, 92, 246, 0.06);
+        }
+
+        .step-card h3 {
+            font-size: 16px;
+            font-weight: 750;
+            color: #ffffff;
+            margin-top: 4px;
+        }
+
+        .step-card p {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        .step-card svg {
+            width: 24px;
+            height: 24px;
+            color: var(--accent-purple);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .step-card:hover svg {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        /* Polishing Styles Section */
+        .styles-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+        }
+
+        .style-card {
+            background-color: var(--card-bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .style-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: transparent;
+        }
+
+        .style-card.professional::before { background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue)); }
+        .style-card.casual::before { background: linear-gradient(90deg, var(--accent-blue), var(--accent-emerald)); }
+        .style-card.direct::before { background: linear-gradient(90deg, var(--text-muted), var(--text-secondary)); }
+
+        .style-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-color-hover);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+        }
+
+        .style-card.professional:hover { border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 15px 35px rgba(139, 92, 246, 0.05); }
+        .style-card.casual:hover { border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 15px 35px rgba(59, 130, 246, 0.05); }
+
+        .style-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .style-badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid currentColor;
+        }
+
+        .style-card.professional .style-badge { color: var(--accent-purple); background: var(--accent-purple-glow); }
+        .style-card.casual .style-badge { color: var(--accent-blue); background: var(--accent-blue-glow); }
+        .style-card.direct .style-badge { color: var(--text-secondary); background: rgba(255,255,255,0.05); }
+
+        .style-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .style-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .comparison-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            margin-top: auto;
+            transition: background-color 0.3s ease;
+        }
+
+        .style-card:hover .comparison-container {
+            background-color: rgba(0,0,0,0.35);
+        }
+
+        .comparison-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .comparison-label.before { color: var(--accent-yellow); }
+        .comparison-label.after { color: var(--accent-emerald); }
+
+        .comparison-text {
+            font-size: 12.5px;
+            font-family: 'Segoe UI', sans-serif;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .comparison-text.result {
+            color: #ffffff;
+            font-style: normal;
+        }
+
+        /* API keys configuration section */
+        .config-container {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 60px;
+            align-items: flex-start;
+        }
+
+        .config-left {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .config-step {
+            display: flex;
+            gap: 16px;
+        }
+
+        .config-step-num {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+
+        .config-step:hover .config-step-num {
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+            background: var(--accent-purple-glow);
+        }
+
+        .config-step-content {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .config-step-content h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .config-step-content p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .config-step-content code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #ffffff;
+        }
+
+        /* Info box below steps in API config */
+        .config-info-box {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+            transition: border-color 0.3s ease;
+        }
+
+        .config-info-box:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .config-info-box-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-info-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .config-info-list li {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            position: relative;
+            padding-left: 16px;
+        }
+
+        .config-info-list li::before {
+            content: "•";
+            color: var(--accent-purple);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .providers-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .provider-card {
+            background-color: var(--card-bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .provider-card:hover {
+            background-color: rgba(255, 255, 255, 0.01);
+            transform: translateX(4px);
+        }
+
+        .provider-card:nth-child(1):hover { border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.04); }
+        .provider-card:nth-child(2):hover { border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.04); }
+        .provider-card:nth-child(3):hover { border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.04); }
+        .provider-card:nth-child(4):hover { border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.04); }
+        .provider-card:nth-child(5):hover { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 8px 20px rgba(255, 255, 255, 0.04); }
+
+        .provider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .provider-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .provider-title-group img {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+        }
+
+        .provider-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .provider-tag {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+
+        .provider-tag.recommended {
+            color: var(--accent-emerald);
+            background: var(--accent-emerald-glow);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .provider-tag.free {
+            color: var(--accent-blue);
+            background: var(--accent-blue-glow);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .provider-tag.offline {
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .provider-desc {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .provider-btn-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .btn-link {
+            font-size: 12.5px;
+            color: var(--accent-purple);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.15s;
+        }
+
+        .btn-link:hover {
+            color: #a855f7;
+            text-decoration: underline;
+        }
+
+        .provider-speed {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
         }
 
         /* Divider Line */
@@ -480,118 +1335,110 @@
             height: 1px;
             background-color: var(--border-color);
             width: 92%;
-            max-width: 1500px;
-            margin: 30px auto 40px auto;
-        }
-
-        /* Horizontal Features Grid (Bottom Section) */
-        .features-row-section {
-            width: 92%;
-            max-width: 1500px;
-            margin: 0 auto 50px auto;
-        }
-
-        .features-horizontal {
-            display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 28px;
-        }
-
-        @media(min-width: 600px) {
-            .features-horizontal {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media(min-width: 1024px) {
-            .features-horizontal {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        .feat-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .feat-item h4 {
-            font-size: 14px;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 8px;
-        }
-
-        .feat-item p {
-            font-size: 13.5px;
-            color: var(--text-secondary);
-            line-height: 1.55;
-        }
-
-        .feat-item code {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11.5px;
-            background-color: rgba(255, 255, 255, 0.06);
-            padding: 1px 4px;
-            border-radius: 3px;
-            color: #ffffff;
-        }
-
-        main {
-            flex-grow: 1;
+            max-width: 1440px;
+            margin: 0 auto;
         }
 
         /* Footer */
         footer {
             width: 100%;
             border-top: 1px solid var(--border-color);
-            background-color: #000000;
+            background-color: #030303;
             z-index: 10;
         }
 
         .footer-inner {
             width: 92%;
-            max-width: 1500px;
+            max-width: 1440px;
             margin: 0 auto;
-            padding: 16px 0;
+            padding: 24px 0;
             text-align: center;
             color: var(--text-muted);
-            font-size: 12px;
+            font-size: 12.5px;
+            line-height: 1.5;
         }
 
-        footer a {
+        .footer-inner a {
             color: var(--text-secondary);
             text-decoration: none;
             font-weight: 600;
             transition: color 0.15s;
         }
 
-        footer a:hover {
+        .footer-inner a:hover {
             color: #ffffff;
         }
 
+        /* Custom Thematic Scroll Reveal Styles (Blur Focus & Scan Wave Animation) */
+        .specs-bar .spec-tile { opacity: 0; filter: blur(12px); transform: scale(0.96) translateY(20px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .specs-bar.active .spec-tile { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+
+        .steps-grid .step-card { opacity: 0; filter: blur(12px); transform: scale(0.96) translateY(20px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .steps-grid.active .step-card { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+
+        .styles-grid .style-card { opacity: 0; filter: blur(12px); transform: scale(0.96) translateY(25px); transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+        .styles-grid.active .style-card { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+
+        .providers-grid .provider-card { opacity: 0; filter: blur(12px); transform: scale(0.96) translateY(20px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .providers-grid.active .provider-card { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+
         /* Responsive Layouts */
-        @media(max-width: 900px) {
+        @media(max-width: 1100px) {
+            .config-container {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+            .hero-section {
+                gap: 40px;
+            }
+            .hero-left h1 {
+                font-size: 44px;
+            }
+        }
+
+        @media(max-width: 960px) {
             .hero-section {
                 flex-direction: column;
-                padding-top: 30px;
-                gap: 40px;
+                padding-top: 40px;
+                gap: 50px;
                 text-align: center;
             }
             .hero-left, .hero-right {
                 width: 100%;
-            }
-            .hero-left {
                 align-items: center;
+            }
+            .hero-left h1 {
+                text-align: center;
             }
             .hero-ctas {
                 justify-content: center;
             }
+            .hero-checklist {
+                justify-content: center;
+            }
             .specs-bar {
-                margin-top: 30px;
+                margin-top: 40px;
+                text-align: center;
+            }
+            .steps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .styles-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .style-card {
+                padding: 24px;
             }
         }
 
-        @media(max-width: 600px) {
+        @media(max-width: 640px) {
+            section {
+                padding: 50px 0;
+            }
+            .section-header h2 {
+                font-size: 28px;
+            }
             .hero-left h1 {
                 font-size: 32px;
             }
@@ -599,15 +1446,18 @@
                 font-size: 15px;
             }
             .specs-bar {
-                flex-direction: column;
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .steps-grid {
+                grid-template-columns: 1fr;
                 gap: 16px;
-                text-align: center;
             }
             .header-inner {
-                padding: 16px 0;
+                padding: 14px 0;
             }
             .demo-window {
-                height: 300px;
+                height: 320px;
             }
         }
     </style>
@@ -616,6 +1466,8 @@
 
     <div class="bg-glow-container">
         <div class="ambient-light light-top"></div>
+        <div class="ambient-light light-mid"></div>
+        <div class="ambient-light light-bottom"></div>
     </div>
 
     <header>
@@ -626,57 +1478,88 @@
             </a>
             <div class="nav-links">
                 <a href="https://github.com/cesarkali/Flow-Voice" target="_blank">
-                    <svg height="15" width="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                    <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
                     GitHub
                 </a>
-                <a href="https://caliberda.com.br" target="_blank">Contato</a>
+                <a href="https://caliberda.com.br" target="_blank" class="nav-btn">Contato</a>
             </div>
         </div>
     </header>
 
     <main>
         <!-- Hero Split-Screen -->
-        <section class="hero-section reveal">
+        <section class="hero-section">
             <div class="hero-left">
-                <h1>Dite naturalmente. A IA digita por você.</h1>
-                <p>O FlowVoice roda em segundo plano. Pressione o atalho global, fale e assista ao aplicativo remover erros gramaticais e hesitações, digitando o texto perfeito diretamente sob seu cursor em qualquer programa.</p>
+                <h1>Fale ao invés de digitar.<br>Seja 3x mais produtivo.</h1>
+                <p>Poupe horas de digitação manual todos os dias. O FlowVoice roda silenciosamente em segundo plano: basta pressionar um atalho global, falar no seu próprio ritmo e assistir à inteligência artificial transcrever, polir e digitar o texto impecável em qualquer aplicativo. Escreva e-mails, relatórios, códigos e mensagens na velocidade da fala.</p>
                 
                 <div class="hero-ctas">
                     <a href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" class="btn btn-primary">
-                        Baixar FlowVoice (.exe)
+                        Baixar para Windows (.exe)
                     </a>
+                    
                     <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" class="btn btn-secondary">
                         <svg height="15" width="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-                        Ver no GitHub
+                        Código no GitHub
                     </a>
                 </div>
 
-                <!-- Technical specifications aligned at the bottom -->
-                <div class="specs-bar">
+                <!-- Sleek Checkbox List under CTAs (4 items row) -->
+                <div class="hero-checklist">
+                    <div class="check-item">
+                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        <span>100% Gratuito</span>
+                    </div>
+                    <div class="check-item">
+                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        <span>Código Aberto</span>
+                    </div>
+                    <div class="check-item">
+                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        <span>Sem fins lucrativos</span>
+                    </div>
+                    <div class="check-item">
+                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        <span>Desenvolvido para uso pessoal</span>
+                    </div>
+                </div>
+
+                <!-- Technical and Productivity specifications (Fades in staggered) -->
+                <div class="specs-bar reveal-element">
                     <div class="spec-tile">
-                        <span class="spec-label">Download</span>
+                        <span class="spec-label">Consumo de RAM</span>
+                        <span class="spec-val">~30 MB</span>
+                        <span class="spec-sub">Executa leve e imperceptível em background.</span>
+                    </div>
+                    <div class="spec-tile">
+                        <span class="spec-label">Uso de Processador</span>
+                        <span class="spec-val">&lt; 1% CPU</span>
+                        <span class="spec-sub">Ativo apenas no momento da captura.</span>
+                    </div>
+                    <div class="spec-tile">
+                        <span class="spec-label">Economia de Tempo</span>
+                        <span class="spec-val">Até 70% mais rápido</span>
+                        <span class="spec-sub">Falar economiza horas de digitação manual.</span>
+                    </div>
+                    <div class="spec-tile">
+                        <span class="spec-label">Instalação</span>
                         <span class="spec-val">~92 MB</span>
-                        <span class="spec-sub">Instalador Leve</span>
+                        <span class="spec-sub">Instalador nativo e limpo sem bloatware.</span>
                     </div>
                     <div class="spec-tile">
-                        <span class="spec-label">Recursos</span>
-                        <span class="spec-val">~30MB RAM / &lt;1% CPU</span>
-                        <span class="spec-sub">Extremamente Leve</span>
-                    </div>
-                    <div class="spec-tile">
-                        <span class="spec-label">Sistema</span>
+                        <span class="spec-label">Compatibilidade</span>
                         <span class="spec-val">Windows 10/11</span>
-                        <span class="spec-sub">Executável 64-bit</span>
+                        <span class="spec-sub">Executável nativo 64-bit. (Versão Linux em desenvolvimento)</span>
                     </div>
                     <div class="spec-tile">
-                        <span class="spec-label">Hospedagem</span>
-                        <span class="spec-val">Vercel</span>
-                        <span class="spec-sub">flowvoice.caliberda.com.br</span>
+                        <span class="spec-label">Segurança de Dados</span>
+                        <span class="spec-val">100% Seguro e Local</span>
+                        <span class="spec-sub">Chaves salvas localmente na pasta de usuário.</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Notepad Demo Visual (Now fully looping automatically) -->
+            <!-- Notepad Demo Visual (Increased width/height and aligned right) -->
             <div class="hero-right">
                 <div class="demo-window">
                     <div class="demo-header">
@@ -686,6 +1569,27 @@
                         <span class="window-title" id="demo-window-title">FLOWVOICE - E-MAIL</span>
                     </div>
                     <div class="demo-body">
+                        <!-- Keypress Indicator Simulation -->
+                        <div class="keypress-indicator" id="demo-keypress">
+                            <div class="keys-row">
+                                <span class="key" id="key-ctrl">Ctrl</span> + <span class="key" id="key-shift">Shift</span> + <span class="key" id="key-shortcut">Space</span>
+                            </div>
+                            <span class="key-desc" id="key-desc">Ativar Ditado Inteligente</span>
+                        </div>
+
+                        <!-- Assistant Chat Bubble Simulation -->
+                        <div class="assistant-overlay" id="demo-assistant">
+                            <div class="assistant-header">
+                                <span>⚡ FlowVoice Assistant</span>
+                            </div>
+                            <div class="assistant-bubble user" id="demo-assistant-user">
+                                "pesquisar como configurar o pool de failover no flowvoice"
+                            </div>
+                            <div class="assistant-bubble ai" id="demo-assistant-ai">
+                                "Abra o config.json e defina múltiplos provedores na lista. O app chaveará automaticamente caso ocorra falha."
+                            </div>
+                        </div>
+
                         <div class="simulated-editor" id="demo-notepad"><span class="caret"></span></div>
                         
                         <!-- Floating Pill Overlay -->
@@ -707,27 +1611,250 @@
             </div>
         </section>
 
-        <!-- Divider Line -->
         <hr class="section-divider">
 
-        <!-- Horizontal Features Grid -->
-        <section class="features-row-section reveal">
-            <div class="features-horizontal">
-                <div class="feat-item">
-                    <h4>Atalho Global</h4>
-                    <p>Pressione <code>Ctrl+Shift+Space</code> para ditar em qualquer editor ou aplicativo do Windows.</p>
+        <!-- How it Works Section -->
+        <section>
+            <div class="section-header reveal-element">
+                <span class="section-tag">Fluxo Simples</span>
+                <h2>Como o FlowVoice Funciona?</h2>
+                <p>Veja como é fácil transcrever e formatar sua fala sem precisar abrir painéis ou copiar e colar manualmente.</p>
+            </div>
+            
+            <div class="steps-grid reveal-element">
+                <div class="step-card">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                    <h3>Ative o Atalho</h3>
+                    <p>Posicione seu cursor onde quer digitar e pressione <code>Ctrl + Shift + Space</code> para iniciar a captura.</p>
                 </div>
-                <div class="feat-item">
-                    <h4>Chat Assistente</h4>
-                    <p>Use <code>Ctrl+Shift+U</code> para abrir a barra lateral flutuante e continuar dialogando com a IA.</p>
+                <div class="step-card">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <h3>Fale Naturalmente</h3>
+                    <p>Fale sua frase no seu ritmo habitual. O FlowVoice grava seu áudio em segundo plano com total privacidade.</p>
                 </div>
-                <div class="feat-item">
-                    <h4>Failover de IAs</h4>
-                    <p>Alterne automaticamente entre Gemini, OpenAI ou Groq caso o provedor principal apresente falhas.</p>
+                <div class="step-card">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    <h3>Processamento IA</h3>
+                    <p>Ao soltar o atalho, o áudio é transcrito pelo Whisper e lapidado em tempo recorde por modelos de IA avançados.</p>
                 </div>
-                <div class="feat-item">
-                    <h4>Privacidade Local</h4>
-                    <p>Suas chaves de API são salvas no <code>%APPDATA%</code> e a transcrição Whisper roda de forma offline.</p>
+                <div class="step-card">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <h3>Digitação Direta</h3>
+                    <p>O FlowVoice digita e cola automaticamente o texto final formatado sob o seu cursor sem erros de ortografia.</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <!-- Polishing Styles Section -->
+        <section>
+            <div class="section-header reveal-element">
+                <span class="section-tag">Adaptabilidade</span>
+                <h2>Estilos de Ajuste por IA</h2>
+                <p>Escolha o tom ideal para cada momento. O FlowVoice se adapta a e-mails corporativos, chats rápidos ou transcrições cruas.</p>
+            </div>
+            
+            <div class="styles-grid reveal-element">
+                <!-- Profissional -->
+                <div class="style-card professional">
+                    <div class="style-header">
+                        <h3>Profissional</h3>
+                        <span class="style-badge">Trabalho</span>
+                    </div>
+                    <p>Reescreve o texto de forma formal e executiva. Corrige toda a gramática, ajusta a pontuação e remove hesitações de fala (como "tipo", "é", "hã"), ideal para e-mails de trabalho ou documentos oficiais.</p>
+                    
+                    <div class="comparison-container">
+                        <span class="comparison-label before">● Fala Falada</span>
+                        <p class="comparison-text">"ó fala júlio blz então eu acho que... a gente tem que fechar aquele projeto tipo o quanto antes sabe pra evitar atraso vlw"</p>
+                        <span class="comparison-label after">● Resultado IA</span>
+                        <p class="comparison-text result">"Olá, Júlio. Tudo bem? Acredito que precisamos finalizar aquele projeto o quanto antes para evitarmos atrasos. Obrigado."</p>
+                    </div>
+                </div>
+                
+                <!-- Casual -->
+                <div class="style-card casual">
+                    <div class="style-header">
+                        <h3>Casual</h3>
+                        <span class="style-badge">Coloquial</span>
+                    </div>
+                    <p>Mantém a linguagem natural, gírias e o tom pessoal da sua fala, corrigindo apenas erros gritantes de pontuação e concordância. Perfeito para mensagens no WhatsApp e chats com amigos.</p>
+                    
+                    <div class="comparison-container">
+                        <span class="comparison-label before">● Fala Falada</span>
+                        <p class="comparison-text">"ó fala júlio blz então eu acho que... a gente tem que fechar aquele projeto tipo o quanto antes sabe pra evitar atraso vlw"</p>
+                        <span class="comparison-label after">● Resultado IA</span>
+                        <p class="comparison-text result">"Fala Júlio, beleza? Então, acho que a gente tem que fechar aquele projeto o quanto antes para evitar atraso. Valeu!"</p>
+                    </div>
+                </div>
+                
+                <!-- Direto -->
+                <div class="style-card direct">
+                    <div class="style-header">
+                        <h3>Direto / Cru</h3>
+                        <span class="style-badge">Literal</span>
+                    </div>
+                    <p>Não passa por nenhuma inteligência de polimento textual. Faz apenas a transcrição estritamente literal do áudio (Whisper puro), escrevendo exatamente o que saiu da sua boca.</p>
+                    
+                    <div class="comparison-container">
+                        <span class="comparison-label before">● Fala Falada</span>
+                        <p class="comparison-text">"ó fala júlio blz então eu acho que... a gente tem que fechar aquele projeto tipo o quanto antes sabe pra evitar atraso vlw"</p>
+                        <span class="comparison-label after">● Resultado IA</span>
+                        <p class="comparison-text result">"ó fala júlio blz então eu acho que a gente tem que fechar aquele projeto tipo o quanto antes sabe pra evitar atraso vlw"</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <!-- API keys configuration section -->
+        <section>
+            <div class="section-header reveal-element">
+                <span class="section-tag">Configuração</span>
+                <h2>Como Configurar suas Chaves</h2>
+                <p>O FlowVoice funciona com chaves de API próprias, garantindo que você tenha controle total dos seus limites e custos zero.</p>
+            </div>
+            
+            <div class="config-container">
+                <div class="config-left">
+                    <div class="config-step">
+                        <span class="config-step-num">1</span>
+                        <div class="config-step-content">
+                            <h3>Obtenha uma Chave de API</h3>
+                            <p>Escolha um dos provedores de IA ao lado e gere uma chave. A maioria possui planos ou cotas inteiramente gratuitas.</p>
+                        </div>
+                    </div>
+                    <div class="config-step">
+                        <span class="config-step-num">2</span>
+                        <div class="config-step-content">
+                            <h3>Abra as Configurações do App</h3>
+                            <p>Após instalar, clique com o botão direito no ícone do FlowVoice na **Bandeja do Sistema** (perto do relógio do Windows) e selecione <code>Configurações</code>.</p>
+                        </div>
+                    </div>
+                    <div class="config-step">
+                        <span class="config-step-num">3</span>
+                        <div class="config-step-content">
+                            <h3>Insira a Chave e Salve</h3>
+                            <p>Cole a chave gerada no campo correspondente, clique em <strong>Salvar</strong> e pronto! Suas configurações ficam gravadas de forma segura.</p>
+                        </div>
+                    </div>
+
+                    <!-- Informational Box 1: Why own keys -->
+                    <div class="config-info-box">
+                        <div class="config-info-box-title">
+                            <span>💡</span>
+                            <span>Por que usar chaves de API próprias?</span>
+                        </div>
+                        <ul class="config-info-list">
+                            <li><strong>Custo Zero e Muito Mais Limite:</strong> Provedores como Groq e Google Gemini oferecem limites gratuitos robustos para desenvolvedores e usuários individuais que duram meses ou são ilimitados.</li>
+                            <li><strong>Privacidade Blindada:</strong> O fluxo de áudio vai direto da sua máquina para o servidor oficial da API (Google, OpenAI ou Groq). Não há servidores intermediários lendo ou armazenando seus textos.</li>
+                            <li><strong>Pool de Failover Inteligente:</strong> O FlowVoice permite configurar chaves de múltiplos serviços simultaneamente. Se um provedor ficar instável ou estourar a cota, o app tenta o próximo da fila de forma imperceptível.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Informational Box 2: Extra Tips to fill vertical gap -->
+                    <div class="config-info-box" style="border-color: rgba(59, 130, 246, 0.08); background: rgba(59, 130, 246, 0.01);">
+                        <div class="config-info-box-title">
+                            <span style="color: var(--accent-blue);">⚡</span>
+                            <span>Recursos Adicionais & Dicas</span>
+                        </div>
+                        <ul class="config-info-list">
+                            <li><strong>Tradução Instantânea:</strong> Use o atalho <code>Ctrl + Shift + Y</code> para ditar em português e digitar o texto automaticamente traduzido para o Inglês, Espanhol ou Francês.</li>
+                            <li><strong>Assistente por Voz:</strong> Pressione <code>Ctrl + Shift + U</code> para acionar a barra de chat flutuante, tirando dúvidas ou programando via prompts de voz direto com a IA.</li>
+                            <li><strong>Inicialização com o Sistema:</strong> Habilite nas configurações para que o FlowVoice inicie de forma silenciosa na bandeja junto com o Windows.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="providers-grid reveal-element">
+                    <!-- Groq -->
+                    <div class="provider-card">
+                        <div class="provider-header">
+                            <div class="provider-title-group">
+                                <span style="font-size: 20px;">⚡</span>
+                                <span class="provider-name">Groq API</span>
+                            </div>
+                            <span class="provider-tag recommended">⭐ Melhor Opção Gratuita</span>
+                        </div>
+                        <p class="provider-desc">Atualmente a API do Groq oferece velocidade quase instantânea de transcrição e limites de uso gratuitos muito robustos. Excelente para quem busca desempenho ultra rápido sem pagar nada.</p>
+                        <div class="provider-btn-group">
+                            <a href="https://console.groq.com" target="_blank" class="btn-link">
+                                Obter Chave no Console Groq ↗
+                            </a>
+                            <span class="provider-speed">Transcreve em ~0.4s</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Gemini -->
+                    <div class="provider-card">
+                        <div class="provider-header">
+                            <div class="provider-title-group">
+                                <span style="font-size: 20px;">♊</span>
+                                <span class="provider-name">Google Gemini</span>
+                            </div>
+                            <span class="provider-tag free">Excelente Cota Grátis</span>
+                        </div>
+                        <p class="provider-desc">O Gemini do Google possui uma excelente cota gratuita por minuto através do Google AI Studio. Funciona perfeitamente como provedor principal ou como failover caso a principal apresente indisponibilidade.</p>
+                        <div class="provider-btn-group">
+                            <a href="https://aistudio.google.com" target="_blank" class="btn-link">
+                                Obter Chave no AI Studio ↗
+                            </a>
+                            <span class="provider-speed">Processa em ~0.9s</span>
+                        </div>
+                    </div>
+                    
+                    <!-- OpenAI -->
+                    <div class="provider-card">
+                        <div class="provider-header">
+                            <div class="provider-title-group">
+                                <span style="font-size: 20px;">🧠</span>
+                                <span class="provider-name">OpenAI (ChatGPT)</span>
+                            </div>
+                            <span class="provider-tag">Premium / Pago</span>
+                        </div>
+                        <p class="provider-desc">Utilize os modelos Whisper-1 e GPT-4o-mini da OpenAI. Exige saldo de recarga no painel de desenvolvedores da plataforma, mas entrega uma precisão e estabilidade impecáveis.</p>
+                        <div class="provider-btn-group">
+                            <a href="https://platform.openai.com" target="_blank" class="btn-link">
+                                Obter Chave na OpenAI ↗
+                            </a>
+                            <span class="provider-speed">Processa em ~1.2s</span>
+                        </div>
+                    </div>
+                    
+                    <!-- GitHub Models -->
+                    <div class="provider-card">
+                        <div class="provider-header">
+                            <div class="provider-title-group">
+                                <span style="font-size: 20px;">🐙</span>
+                                <span class="provider-name">GitHub Models</span>
+                            </div>
+                            <span class="provider-tag free">Grátis para Devs</span>
+                        </div>
+                        <p class="provider-desc">Se você é desenvolvedor com conta ativa no GitHub, pode acessar gratuitamente o GPT-4o-mini ou o Llama 3 via tokens pessoais para processar os refinamentos textuais do FlowVoice.</p>
+                        <div class="provider-btn-group">
+                            <a href="https://github.com/marketplace/models" target="_blank" class="btn-link">
+                                Explorar GitHub Models ↗
+                            </a>
+                            <span class="provider-speed">Processa em ~0.8s</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Whisper Local -->
+                    <div class="provider-card">
+                        <div class="provider-header">
+                            <div class="provider-title-group">
+                                <span style="font-size: 20px;">🔒</span>
+                                <span class="provider-name">Whisper Local (Offline)</span>
+                            </div>
+                            <span class="provider-tag offline">100% Offline e Privado</span>
+                        </div>
+                        <p class="provider-desc">Não quer enviar seus áudios para a nuvem? O FlowVoice suporta execução offline da biblioteca <code>faster-whisper</code> rodando diretamente na sua CPU/GPU local. Sem chaves de API necessárias.</p>
+                        <div class="provider-btn-group">
+                            <span class="btn-link" style="cursor: default; text-decoration: none;">Ativável no config.json</span>
+                            <span class="provider-speed">Roda na sua máquina</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -735,41 +1862,56 @@
 
     <footer>
         <div class="footer-inner">
-            <p>© 2026 FlowVoice. Código Aberto no <a href="https://github.com/cesarkali/Flow-Voice" target="_blank">GitHub</a>. Desenvolvido por <a href="https://caliberda.com.br" target="_blank">Júlio Caliberda</a>.</p>
+            <p>© 2026 FlowVoice. Software 100% gratuito de código aberto sob licença MIT. Criado por <a href="https://caliberda.com.br" target="_blank">Júlio Caliberda</a>. Código disponível no <a href="https://github.com/cesarkali/Flow-Voice" target="_blank">GitHub</a>.</p>
         </div>
     </footer>
 
     <!-- Interactive auto-looping simulation script -->
     <script>
-        // Intersection Observer scroll reveals
+        // Intersection Observer scroll reveals (in both directions with Blur Focus and Denoise theme)
         const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('active');
+                } else {
+                    // Animates out when it scrolls out of the viewport in either direction
+                    entry.target.classList.remove('active');
                 }
             });
-        }, { threshold: 0.05 });
+        }, { 
+            rootMargin: "0px 0px -40px 0px", // Triggers transition slightly inside the viewport for fluid visual entering
+            threshold: 0.02
+        });
 
-        document.querySelectorAll('.reveal').forEach(el => {
+        document.querySelectorAll('.reveal-element').forEach(el => {
             revealObserver.observe(el);
         });
 
-        // Autoloop examples database
+        // Autoloop examples database showing different capabilities (Transcribe, Translate, Search/Assistant)
         const demoExamples = [
             {
-                type: "E-mail Profissional",
+                type: "Transcrever",
+                shortcutKey: "Space",
+                shortcutDesc: "Ativar Ditado Inteligente",
                 before: "então queria saber se... é... você recebeu meu relatório ontem a tarde tipo tá com alguns números errados e se puder ver... obrigado",
-                after: "Gostaria de saber se você recebeu o relatório que enviei ontem à tarde. Observei que há alguns números incorretos; se puder verificar, agradeço desde já."
+                after: "Gostaria de saber se você recebeu o relatório que enviei ontem à tarde. Observei que há alguns números incorretos; se puder verificar, agradeço desde já.",
+                statusLabel: "POLINDO"
             },
             {
-                type: "Anotação Rápida",
-                before: "a gente precisa fechar o escopo do projeto até sexta feira sem falta e o júlio vai fazer os testes do instalador e... hum... rodar o build",
-                after: "Precisamos finalizar o escopo do projeto até sexta-feira, sem falta. O Júlio ficará responsável por testar o instalador e executar a compilação do build."
+                type: "Traduzir",
+                shortcutKey: "Y",
+                shortcutDesc: "Traduzir Fala para Inglês",
+                before: "preciso desse relatório traduzido para o inglês até amanhã cedo por favor",
+                after: "I need this report translated into English by tomorrow morning, please.",
+                statusLabel: "TRADUZINDO"
             },
             {
-                type: "Mensagem de Chat",
-                before: "fala cara beleza então... o negócio do banco de dados tá dando erro aqui... acho que é a porta... você consegue dar uma olhada rápida?",
-                after: "Olá! Tudo bem? O banco de dados está apresentando um erro, provavelmente relacionado à porta de conexão. Você conseguiria dar uma olhada rápida?"
+                type: "Pesquisar",
+                shortcutKey: "U",
+                shortcutDesc: "Acionar Assistente de Voz",
+                before: "como configurar o pool de failover no flowvoice",
+                after: "", 
+                statusLabel: "BUSCANDO"
             }
         ];
 
@@ -784,71 +1926,139 @@
             const label = document.getElementById('demo-label');
             const sublabel = document.getElementById('demo-sublabel');
             const windowTitle = document.getElementById('demo-window-title');
+            
+            // Keypress elements
+            const keypress = document.getElementById('demo-keypress');
+            const keyCtrl = document.getElementById('key-ctrl');
+            const keyShift = document.getElementById('key-shift');
+            const keyShortcut = document.getElementById('key-shortcut');
+            const keyDesc = document.getElementById('key-desc');
+            
+            // Assistant element
+            const assistant = document.getElementById('demo-assistant');
 
             const example = demoExamples[currentExampleIndex];
             windowTitle.innerText = `FLOWVOICE - ${example.type.toUpperCase()}`;
 
-            // Reset state
+            // Reset notepad & overlays
             notepad.innerHTML = '<span class="caret"></span>';
             notepad.style.color = "var(--text-secondary)";
             notepad.style.fontStyle = "italic";
+            notepad.style.display = "block";
             
             overlay.className = "app-overlay";
             soundwave.style.display = "none";
             spinner.style.display = "none";
             doneDot.style.display = "none";
             sublabel.style.display = "none";
+            
+            // Hide Assistant Panel
+            assistant.classList.remove('visible');
+            
+            // Reset keypress visual classes
+            keypress.classList.remove('visible');
+            keyCtrl.classList.remove('active');
+            keyShift.classList.remove('active');
+            keyShortcut.classList.remove('active');
 
-            // Step 1: Start Recording after 800ms
+            // Step 1: Show shortcut keys pressing down
             setTimeout(() => {
-                overlay.classList.add('visible');
-                soundwave.style.display = "flex";
-                label.innerText = "GRAVANDO";
+                keyShortcut.innerText = example.shortcutKey;
+                keyDesc.innerText = example.shortcutDesc;
+                keypress.classList.add('visible');
                 
-                let i = 0;
-                const textToType = example.before;
-
-                function typeSpeech() {
-                    if (i < textToType.length) {
-                        notepad.innerHTML = `"${textToType.substring(0, i + 1)}"<span class="caret"></span>`;
-                        i++;
-                        setTimeout(typeSpeech, 30);
-                    } else {
-                        // Step 2: Processing after typing finishes
+                // Staggered keypress lighting up
+                setTimeout(() => keyCtrl.classList.add('active'), 200);
+                setTimeout(() => keyShift.classList.add('active'), 400);
+                setTimeout(() => {
+                    keyShortcut.classList.add('active');
+                    
+                    // Step 2: Start Recording once keys are pressed
+                    setTimeout(() => {
+                        overlay.classList.add('visible');
+                        soundwave.style.display = "flex";
+                        label.innerText = "GRAVANDO";
+                        
+                        // Hide keypress overlay after 1.8 seconds (appear briefly in the center-bottom)
                         setTimeout(() => {
-                            soundwave.style.display = "none";
-                            spinner.style.display = "block";
-                            overlay.className = "app-overlay visible processing";
-                            label.innerText = "POLINDO";
+                            keypress.classList.remove('visible');
+                            // De-highlight keys when it disappears
+                            keyCtrl.classList.remove('active');
+                            keyShift.classList.remove('active');
+                            keyShortcut.classList.remove('active');
+                        }, 1800);
+                        
+                        let i = 0;
+                        const textToType = example.before;
 
-                            // Step 3: Finish and display polished text
-                            setTimeout(() => {
-                                spinner.style.display = "none";
-                                doneDot.style.display = "block";
-                                overlay.className = "app-overlay visible done";
-                                label.innerText = example.after.substring(0, 22) + "...";
-                                sublabel.style.display = "block";
-                                sublabel.innerText = "COPIADO";
-
-                                notepad.innerHTML = `"${example.after}"<span class="caret"></span>`;
-                                notepad.style.color = "#ffffff";
-                                notepad.style.fontStyle = "normal";
-
-                                // Step 4: Keep visible for 4.5 seconds, then move to next
+                        function typeSpeech() {
+                            if (i < textToType.length) {
+                                notepad.innerHTML = `"${textToType.substring(0, i + 1)}"<span class="caret"></span>`;
+                                i++;
+                                setTimeout(typeSpeech, 30);
+                            } else {
+                                // Step 3: De-highlight keys when recording finishes (just in case they are still visible)
+                                keyCtrl.classList.remove('active');
+                                keyShift.classList.remove('active');
+                                keyShortcut.classList.remove('active');
+                                keypress.classList.remove('visible');
+                                
+                                // Step 4: Processing
                                 setTimeout(() => {
-                                    overlay.classList.remove('visible');
-                                    setTimeout(() => {
-                                        currentExampleIndex = (currentExampleIndex + 1) % demoExamples.length;
-                                        runAutoLoop();
-                                    }, 400);
-                                }, 4500);
-                            }, 1200);
-                        }, 600);
-                    }
-                }
+                                    soundwave.style.display = "none";
+                                    spinner.style.display = "block";
+                                    overlay.className = "app-overlay visible processing";
+                                    label.innerText = example.statusLabel;
 
-                typeSpeech();
-            }, 800);
+                                    setTimeout(() => {
+                                        if (example.type === "Pesquisar") {
+                                            // Search mode opens the assistant overlay panel
+                                            spinner.style.display = "none";
+                                            overlay.classList.remove('visible');
+                                            
+                                            // Hide notepad and show assistant panel
+                                            notepad.style.display = "none";
+                                            assistant.classList.add('visible');
+                                            
+                                            // Loop next example after 6 seconds
+                                            setTimeout(() => {
+                                                assistant.classList.remove('visible');
+                                                setTimeout(() => {
+                                                    currentExampleIndex = (currentExampleIndex + 1) % demoExamples.length;
+                                                    runAutoLoop();
+                                                }, 400);
+                                            }, 6000);
+                                        } else {
+                                            // Translation / Transcription modes type polished text
+                                            spinner.style.display = "none";
+                                            doneDot.style.display = "block";
+                                            overlay.className = "app-overlay visible done";
+                                            label.innerText = example.after.substring(0, 22) + "...";
+                                            sublabel.style.display = "block";
+                                            sublabel.innerText = "COPIADO";
+
+                                            notepad.innerHTML = `"${example.after}"<span class="caret"></span>`;
+                                            notepad.style.color = "#ffffff";
+                                            notepad.style.fontStyle = "normal";
+
+                                            // Stay visible, then loop to next
+                                            setTimeout(() => {
+                                                overlay.classList.remove('visible');
+                                                setTimeout(() => {
+                                                    currentExampleIndex = (currentExampleIndex + 1) % demoExamples.length;
+                                                    runAutoLoop();
+                                                }, 400);
+                                            }, 4500);
+                                        }
+                                    }, 1200);
+                                }, 600);
+                            }
+                        }
+
+                        typeSpeech();
+                    }, 500);
+                }, 600);
+            }, 600);
         }
 
         // Run the autoloop immediately on load
