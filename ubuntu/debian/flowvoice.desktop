@@ -7,6 +7,6 @@ Comment=Ditado Inteligente por IA
 Exec=/opt/flowvoice/flowvoice
 Icon=/usr/share/icons/hicolor/256x256/apps/flowvoice.png
 Terminal=false
-Categories=Utility;Audio;Office;
+Categories=Utility;AudioVideo;Audio;Office;
 Keywords=voice;dictation;ai;ditado;transcrição;voz;
 StartupNotify=false

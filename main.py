@@ -142,10 +142,11 @@ class ChatWorker(QThread):
                 except Exception:
                     pass
 
-def get_installer_asset_name():
+def get_installer_asset_name(target_version=None):
     if sys.platform == 'win32':
         return "FlowVoiceSetup.exe"
-    return f"flowvoice_{CURRENT_VERSION}_amd64.deb"
+    version_to_use = target_version if target_version else CURRENT_VERSION
+    return f"flowvoice_{version_to_use}_amd64.deb"
 
 # Helper functions for version updates
 def get_latest_release():
@@ -154,7 +155,6 @@ def get_latest_release():
         url,
         headers={'User-Agent': 'FlowVoice-Updater'}
     )
-    asset_name = get_installer_asset_name()
     try:
         with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode('utf-8'))
@@ -164,6 +164,8 @@ def get_latest_release():
             if not version_match:
                 return None
             latest_ver = version_match.group(1)
+            
+            asset_name = get_installer_asset_name(latest_ver)
             
             download_url = None
             for asset in data.get("assets", []):
@@ -479,7 +481,8 @@ class UpdateDialog(QDialog):
             if sys.platform == 'win32':
                 launch_windows_update(dest_path, self.latest_version)
             else:
-                subprocess.Popen(['xdg-open', dest_path], start_new_session=True)
+                # Invoca pkexec no Ubuntu para solicitar a senha via GUI e instalar o .deb
+                subprocess.Popen(['pkexec', 'apt', 'install', '-y', dest_path], start_new_session=True)
             QTimer.singleShot(150, QApplication.quit)
         except Exception as e:
             self.on_download_error(f"Erro ao abrir instalador: {e}")
