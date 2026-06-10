@@ -155,30 +155,26 @@ def get_latest_release():
         url,
         headers={'User-Agent': 'FlowVoice-Updater'}
     )
-    try:
-        with urllib.request.urlopen(req, timeout=5) as response:
-            data = json.loads(response.read().decode('utf-8'))
-            tag_name = data.get("tag_name", "")
-            # Clean version tag (e.g. "v1.0.1" -> "1.0.1")
-            version_match = re.search(r"(\d+\.\d+\.\d+)", tag_name)
-            if not version_match:
-                return None
-            latest_ver = version_match.group(1)
+    with urllib.request.urlopen(req, timeout=7) as response:
+        data = json.loads(response.read().decode('utf-8'))
+        tag_name = data.get("tag_name", "")
+        # Clean version tag (e.g. "v1.0.1" -> "1.0.1")
+        version_match = re.search(r"(\d+\.\d+\.\d+)", tag_name)
+        if not version_match:
+            return None
+        latest_ver = version_match.group(1)
+        
+        asset_name = get_installer_asset_name(latest_ver)
+        
+        download_url = None
+        for asset in data.get("assets", []):
+            if asset.get("name") == asset_name:
+                download_url = asset.get("browser_download_url")
+                break
+        if not download_url:
+            download_url = f"https://github.com/cesarkali/Flow-Voice/releases/download/{tag_name}/{asset_name}"
             
-            asset_name = get_installer_asset_name(latest_ver)
-            
-            download_url = None
-            for asset in data.get("assets", []):
-                if asset.get("name") == asset_name:
-                    download_url = asset.get("browser_download_url")
-                    break
-            if not download_url:
-                download_url = f"https://github.com/cesarkali/Flow-Voice/releases/download/{tag_name}/{asset_name}"
-                
-            return latest_ver, download_url
-    except Exception as e:
-        print(f"Erro ao verificar atualizações: {e}")
-        return None
+        return latest_ver, download_url
 
 def is_version_newer(current, latest):
     try:
@@ -195,15 +191,18 @@ class UpdateCheckerWorker(QThread):
     error = Signal(str)
     
     def run(self):
-        res = get_latest_release()
-        if res:
-            latest_ver, download_url = res
-            if is_version_newer(CURRENT_VERSION, latest_ver):
-                self.update_available.emit(latest_ver, download_url)
+        try:
+            res = get_latest_release()
+            if res:
+                latest_ver, download_url = res
+                if is_version_newer(CURRENT_VERSION, latest_ver):
+                    self.update_available.emit(latest_ver, download_url)
+                else:
+                    self.no_update_found.emit()
             else:
-                self.no_update_found.emit()
-        else:
-            self.error.emit("Não foi possível conectar ao servidor de atualizações.")
+                self.error.emit("Nenhuma versão válida foi encontrada no GitHub.")
+        except Exception as e:
+            self.error.emit(f"Falha de conexão com o GitHub: {str(e)}")
 
 def get_app_executable_path():
     """Returns the installed FlowVoice executable path for restart after updates."""
@@ -2327,6 +2326,11 @@ class FlowVoiceApp(QApplication):
         action_settings = QAction("Configurações...", self)
         action_settings.triggered.connect(self.show_settings_dialog)
         menu.addAction(action_settings)
+
+        # Ação de Teste para contornar o bloqueio de atalhos do teclado no Ubuntu (Wayland)
+        action_test_record = QAction("🎤 Iniciar Gravação (Teste)", self)
+        action_test_record.triggered.connect(lambda: self.toggle_dictation("default"))
+        menu.addAction(action_test_record)
 
         menu.addSeparator()
 
