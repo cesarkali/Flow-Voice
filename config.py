@@ -1,6 +1,15 @@
 import os
 import json
 
+def _get_default_whisper_device():
+    try:
+        import ctranslate2
+        if ctranslate2.get_cuda_device_count() > 0:
+            return "cuda"
+    except Exception:
+        pass
+    return "cpu"
+
 DEFAULT_CONFIG = {
     "hotkey": "<ctrl>+<shift>+<space>",
     "hotkey_translation": "<ctrl>+<shift>+<y>",
@@ -19,8 +28,8 @@ DEFAULT_CONFIG = {
         "github_models": ""
     },
     "whisper": {
-        "model_size": "base",  # tiny, base, small
-        "device": "cpu"  # cpu, cuda
+        "model_size": "base",  # tiny, base, small, medium, large-v2, large-v3, large-v3-turbo
+        "device": _get_default_whisper_device()
     },
     "local_llm": {
         "ollama_model": "llama3.2",

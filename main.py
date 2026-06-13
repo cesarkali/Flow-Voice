@@ -1,5 +1,42 @@
 import sys
 import os
+import logging
+
+# Suppress Hugging Face Hub warnings and logs
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+
+# Add NVIDIA CUDA/cuDNN DLL paths to search path on Windows
+if sys.platform == 'win32':
+    try:
+        import site
+        site_paths = []
+        try:
+            site_paths.extend(site.getsitepackages())
+        except Exception:
+            pass
+        try:
+            site_paths.append(site.getusersitepackages())
+        except Exception:
+            pass
+            
+        for site_dir in site_paths:
+            if site_dir and os.path.isdir(site_dir):
+                nvidia_base = os.path.join(site_dir, "nvidia")
+                if os.path.isdir(nvidia_base):
+                    for root, dirs, files in os.walk(nvidia_base):
+                        if "bin" in dirs:
+                            bin_path = os.path.join(root, "bin")
+                            try:
+                                if os.path.isdir(bin_path) and any(f.lower().endswith(".dll") for f in os.listdir(bin_path)):
+                                    os.add_dll_directory(bin_path)
+                                    os.environ["PATH"] = bin_path + os.pathsep + os.environ["PATH"]
+                                    print(f"Adicionado diretório de DLL ao path: {bin_path}")
+                            except Exception as e:
+                                print(f"Erro ao adicionar DLL path {bin_path}: {e}")
+    except Exception as e:
+        print(f"Erro ao carregar caminhos de DLL NVIDIA: {e}")
+
 import time
 import subprocess
 import urllib.request
@@ -1385,9 +1422,14 @@ class SettingsDialog(QDialog):
         form_layout.addRow("Chaves GitHub Models:", self.txt_github_models)
 
         self.combo_whisper = QComboBox()
-        self.combo_whisper.addItems(["tiny", "base", "small"])
+        self.combo_whisper.addItems(["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"])
         self.combo_whisper.setCurrentText(self.config_manager.get("whisper", {}).get("model_size", "base"))
         form_layout.addRow("Modelo Whisper (Local):", self.combo_whisper)
+
+        self.combo_whisper_device = QComboBox()
+        self.combo_whisper_device.addItems(["cpu", "cuda"])
+        self.combo_whisper_device.setCurrentText(self.config_manager.get("whisper", {}).get("device", "cpu"))
+        form_layout.addRow("Dispositivo Whisper:", self.combo_whisper_device)
 
         self.combo_mode = QComboBox()
         self.combo_mode.addItems(["Ditado", "Tradução", "Pesquisa"])
@@ -1630,6 +1672,7 @@ class SettingsDialog(QDialog):
         
         whisper_cfg = self.config_manager.get("whisper", {})
         whisper_cfg["model_size"] = self.combo_whisper.currentText()
+        whisper_cfg["device"] = self.combo_whisper_device.currentText()
         self.config_manager.set("whisper", whisper_cfg)
         
         # Save Windows Startup and Mute config
@@ -1697,7 +1740,7 @@ class SoundVisualizer(QWidget):
         
     def set_amplitude(self, value):
         # Scale and clip amplitude
-        self.target_amplitude = min(max(value * 15.0, 0.0), 1.0)
+        self.target_amplitude = min(max(value * 45.0, 0.0), 1.0)
         
     def update_animation(self):
         # Smooth interpolation
@@ -1717,11 +1760,11 @@ class SoundVisualizer(QWidget):
         h = self.height()
         mid_y = h / 2.0
         
-        # 3 overlapping liquid waves with different properties
+        # 3 overlapping vibrant gradient liquid waves
         wave_configs = [
-            (QColor(255, 255, 255, 180), 0.9, 0.0, 0.08),
-            (QColor(255, 255, 255, 90), 0.6, 2.0, 0.12),
-            (QColor(255, 255, 255, 40), 0.3, 4.0, 0.06)
+            (QColor(139, 92, 246, 200), 0.95, 0.0, 0.08), # Vibrant Purple
+            (QColor(236, 72, 153, 160), 0.70, 1.8, 0.12), # Vibrant Pink
+            (QColor(6, 182, 212, 120), 0.45, 3.5, 0.06)   # Cyan
         ]
         
         from PySide6.QtGui import QPainterPath
@@ -1738,7 +1781,7 @@ class SoundVisualizer(QWidget):
                 y = mid_y + taper * max_amp * math.sin(x * freq + self.phase + phase_offset)
                 path.lineTo(x, y)
                 
-            painter.setPen(QPen(color, 1.5))
+            painter.setPen(QPen(color, 2.0))
             painter.setBrush(Qt.NoBrush)
             path_obj = path
             painter.drawPath(path_obj)
@@ -1785,7 +1828,7 @@ class FloatingOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.current_target_w = 220
-        self.current_target_h = 56
+        self.current_target_h = 60
         self.is_showing = False
         self._current_state = None
         self.anim_group = None
@@ -1821,7 +1864,7 @@ class FloatingOverlay(QWidget):
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool | Qt.SubWindow)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_ShowWithoutActivating, True) # Prevents stealing window focus
-        self.setFixedSize(500, 320)
+        self.setFixedSize(500, 450)
 
         # Base Frame container for glassmorphism styling
         self.main_frame = QFrame(self)
@@ -1836,54 +1879,69 @@ class FloatingOverlay(QWidget):
             }
         """)
 
-        # Drop shadow effect
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(16)
-        shadow.setColor(QColor(0, 0, 0, 180))
-        shadow.setOffset(0, 3)
-        self.main_frame.setGraphicsEffect(shadow)
+        # Drop shadow effect with dynamic reference
+        self.shadow_effect = QGraphicsDropShadowEffect(self)
+        self.shadow_effect.setBlurRadius(16)
+        self.shadow_effect.setColor(QColor(0, 0, 0, 180))
+        self.shadow_effect.setOffset(0, 2)
+        self.main_frame.setGraphicsEffect(self.shadow_effect)
 
-        # Layout inside the frame
+        # Layout inside the frame (direct parent, layout-safe!)
         layout = QHBoxLayout(self.main_frame)
-        layout.setContentsMargins(14, 0, 14, 0)
+        layout.setContentsMargins(16, 8, 16, 8)
         layout.setSpacing(10)
 
         # 1. Sound wave visualizer (Siri Waves)
         self.visualizer = SoundVisualizer(self.main_frame)
-        layout.addWidget(self.visualizer)
+        layout.addWidget(self.visualizer, 0, Qt.AlignVCenter)
 
         # 2. Loading spinner (Rotating tail)
         self.spinner = LoadingSpinner(self.main_frame)
-        layout.addWidget(self.spinner)
+        layout.addWidget(self.spinner, 0, Qt.AlignVCenter)
 
         # 3. Static state indicator dot (for done/error states)
         self.indicator = QLabel(self.main_frame)
         self.indicator.setFixedSize(8, 8)
         self.indicator.setStyleSheet("background-color: #ffffff; border-radius: 4px;")
-        layout.addWidget(self.indicator)
+        layout.addWidget(self.indicator, 0, Qt.AlignVCenter)
 
         # 4. Vertical Text Layout for Header and Content
         text_layout = QVBoxLayout()
-        text_layout.setSpacing(1)
+        text_layout.setSpacing(2)
         text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setAlignment(Qt.AlignVCenter)
+        
+        text_layout.addStretch()
 
         self.label_header = QLabel(self.main_frame)
         header_font = QFont("Segoe UI", 7)
         header_font.setBold(True)
         self.label_header.setFont(header_font)
         self.label_header.setStyleSheet("color: rgba(255, 255, 255, 120); letter-spacing: 1px;")
+        self.label_header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         text_layout.addWidget(self.label_header)
 
-        self.label_content = QLabel("GRAVANDO", self.main_frame)
-        content_font = QFont("Segoe UI", 9)
+        self.label_content = QLabel("GRAVANDO...", self.main_frame)
+        content_font = QFont("Segoe UI", 8)
         content_font.setBold(True)
         self.label_content.setFont(content_font)
         self.label_content.setStyleSheet("color: #ffffff; letter-spacing: 0.5px;")
-        self.label_content.setWordWrap(True)
+        self.label_content.setWordWrap(False)
+        self.label_content.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         text_layout.addWidget(self.label_content)
+        
+        text_layout.addStretch()
 
         layout.addLayout(text_layout, 1)
+
+        # Opacity effects directly applied to the labels to avoid custom paint issues with SoundVisualizer
+        from PySide6.QtWidgets import QGraphicsOpacityEffect
+        self.header_opacity = QGraphicsOpacityEffect(self.label_header)
+        self.label_header.setGraphicsEffect(self.header_opacity)
+        self.header_opacity.setOpacity(1.0)
+
+        self.content_opacity = QGraphicsOpacityEffect(self.label_content)
+        self.label_content.setGraphicsEffect(self.content_opacity)
+        self.content_opacity.setOpacity(1.0)
 
         # Set initial state UI visibility
         self.visualizer.hide()
@@ -1894,8 +1952,9 @@ class FloatingOverlay(QWidget):
     def calculate_text_height(self, text, font, width):
         from PySide6.QtGui import QFontMetrics
         metrics = QFontMetrics(font)
-        rect = metrics.boundingRect(0, 0, width, 9999, Qt.TextWordWrap, text)
-        return rect.height()
+        # Use slightly narrower width and apply scaling multiplier for high-DPI safety
+        rect = metrics.boundingRect(0, 0, int(width * 0.95), 9999, Qt.TextWordWrap, text)
+        return int(rect.height() * 1.35) + 6
 
     def get_centered_geometry(self, width, height):
         screen = QApplication.primaryScreen().availableGeometry()
@@ -1919,22 +1978,13 @@ class FloatingOverlay(QWidget):
         self.move(geom.topLeft())
 
     def animate_to_size(self, target_width, target_height):
-        """Smoothly resizes only the inner main_frame inside the fixed window."""
+        """Directly resizes the inner main_frame inside the fixed window."""
+        self._stop_animations()
         self.current_target_w = target_width
         self.current_target_h = target_height
         
         target_geom = self.get_frame_geometry(target_width, target_height)
-        current_geom = self.main_frame.geometry()
-
-        self.frame_anim = QPropertyAnimation(self.main_frame, b"geometry")
-        self.frame_anim.setDuration(280)
-        self.frame_anim.setStartValue(current_geom)
-        self.frame_anim.setEndValue(target_geom)
-        self.frame_anim.setEasingCurve(QEasingCurve.OutCubic)
-
-        self.size_anim_group = QParallelAnimationGroup()
-        self.size_anim_group.addAnimation(self.frame_anim)
-        self.size_anim_group.start()
+        self.main_frame.setGeometry(target_geom)
 
     def show_state(self, state, text=None):
         """Updates the UI look and dimensions based on state: listening, processing, done, error."""
@@ -1942,70 +1992,157 @@ class FloatingOverlay(QWidget):
         if state in self.ACTIVE_STATES:
             self._cancel_dismiss()
 
-        target_w, target_h = 220, 56
+        # Check if overlay is currently visible/showing to decide on fade transitions
+        if not self.isVisible() or not self.is_showing:
+            self.header_opacity.setOpacity(1.0)
+            self.content_opacity.setOpacity(1.0)
+            self.apply_state_change(state, text)
+        else:
+            # Fade out content, apply changes, and fade back in (using explicit lambda binding to avoid late binding)
+            self.fade_out_content(lambda s=state, t=text: self.apply_state_change(s, t))
+
+    def fade_out_content(self, callback):
+        self.header_anim = QPropertyAnimation(self.header_opacity, b"opacity")
+        self.header_anim.setDuration(120)
+        self.header_anim.setStartValue(1.0)
+        self.header_anim.setEndValue(0.0)
+        self.header_anim.setEasingCurve(QEasingCurve.OutCubic)
+
+        self.content_anim = QPropertyAnimation(self.content_opacity, b"opacity")
+        self.content_anim.setDuration(120)
+        self.content_anim.setStartValue(1.0)
+        self.content_anim.setEndValue(0.0)
+        self.content_anim.setEasingCurve(QEasingCurve.OutCubic)
+
+        self.fade_out_group = QParallelAnimationGroup()
+        self.fade_out_group.addAnimation(self.header_anim)
+        self.fade_out_group.addAnimation(self.content_anim)
+        self.fade_out_group.finished.connect(callback)
+        self.fade_out_group.start()
+
+    def fade_in_content(self):
+        self.header_anim = QPropertyAnimation(self.header_opacity, b"opacity")
+        self.header_anim.setDuration(160)
+        self.header_anim.setStartValue(0.0)
+        self.header_anim.setEndValue(1.0)
+        self.header_anim.setEasingCurve(QEasingCurve.OutCubic)
+
+        self.content_anim = QPropertyAnimation(self.content_opacity, b"opacity")
+        self.content_anim.setDuration(160)
+        self.content_anim.setStartValue(0.0)
+        self.content_anim.setEndValue(1.0)
+        self.content_anim.setEasingCurve(QEasingCurve.OutCubic)
+
+        self.fade_in_group = QParallelAnimationGroup()
+        self.fade_in_group.addAnimation(self.header_anim)
+        self.fade_in_group.addAnimation(self.content_anim)
+        self.fade_in_group.start()
+
+    def apply_state_change(self, state, text=None):
+        """Actually applies layout geometry changes and state indicators."""
+        self._stop_animations()
+        target_w, target_h = 220, 60
         is_text_display = False
         
         from PySide6.QtGui import QFontMetrics
         
+        # Determine display text based on prefixes for done/error states
+        display_text = text if text else ""
+        header_text = ""
+        if state == "done" and text and text not in ["CONCLUÍDO!", "COPIADO!"]:
+            if text.startswith("Traduzido: "):
+                header_text = "TRADUÇÃO COPIADA"
+                display_text = text[len("Traduzido: "):]
+            elif text.startswith("Sem IA / Tradução Falhou: "):
+                header_text = "SEM CHAVE / TRADUÇÃO FALHOU"
+                display_text = text[len("Sem IA / Tradução Falhou: "):]
+            elif text.startswith("Sem IA / Texto Cru: "):
+                header_text = "TEXTO CRU COPIADO (SEM IA)"
+                display_text = text[len("Sem IA / Texto Cru: "):]
+            elif text.startswith("Pesquisando: "):
+                header_text = "PESQUISANDO NO GOOGLE"
+                display_text = text[len("Pesquisando: "):]
+            elif text.startswith("Copiado: "):
+                header_text = "TEXTO COPIADO"
+                display_text = text[len("Copiado: "):]
+            else:
+                header_text = "TEXTO COPIADO"
+                display_text = text
+        elif state == "error" and text and text not in ["CONCLUÍDO!", "COPIADO!"]:
+            header_text = "ERRO!"
+            if text.startswith("Erro: "):
+                display_text = text[len("Erro: "):]
+            else:
+                display_text = text
+
         if state in ["listening", "processing"]:
+            # Format text to end with ... if not present
             label_text = text.upper() if text else ("GRAVANDO" if state == "listening" else "POLINDO")
-            metrics = QFontMetrics(self.label_content.font())
+            if not label_text.endswith("..."):
+                label_text += "..."
+                
+            target_font = QFont("Segoe UI", 8)
+            target_font.setBold(True)
+            metrics = QFontMetrics(target_font)
             text_w = metrics.horizontalAdvance(label_text)
             
             if state == "listening":
-                # Dynamically calculate width based on layout elements:
-                # margin_left(14) + visualizer(50) + spacing(10) + text_w + margin_right(14) + padding_buffer(8) + outer_window_delta(20) = text_w + 116
-                target_w = max(text_w + 116, 160)
+                # Left margin (16) + visualizer (50) + spacing (10) + text_w + right margin (16) + padding (12)
+                frame_w = text_w + 104
             else: # processing
-                # margin_left(14) + spinner(20) + spacing(10) + text_w + margin_right(14) + padding_buffer(8) + outer_window_delta(20) = text_w + 86
-                target_w = max(text_w + 86, 130)
+                # Left margin (16) + spinner (20) + spacing (10) + text_w + right margin (16) + padding (12)
+                frame_w = text_w + 74
                 
+            target_w = max(frame_w + 20, 140)
             target_w = min(target_w, 480)
+            target_h = 60
                 
-        elif text and text not in ["CONCLUÍDO!", "COPIADO!"] and state in ["done", "error"]:
-            target_w = 460
+        elif header_text or (text and text not in ["CONCLUÍDO!", "COPIADO!"] and state in ["done", "error"]):
             is_text_display = True
             
-            # Determine display text based on prefixes
-            display_text = text
-            header_text = ""
-            if state == "done":
-                if text.startswith("Traduzido: "):
-                    header_text = "TRADUÇÃO COPIADA"
-                    display_text = text[len("Traduzido: "):]
-                elif text.startswith("Sem IA / Tradução Falhou: "):
-                    header_text = "SEM CHAVE / TRADUÇÃO FALHOU"
-                    display_text = text[len("Sem IA / Tradução Falhou: "):]
-                elif text.startswith("Sem IA / Texto Cru: "):
-                    header_text = "TEXTO CRU COPIADO (SEM IA)"
-                    display_text = text[len("Sem IA / Texto Cru: "):]
-                elif text.startswith("Pesquisando: "):
-                    header_text = "PESQUISANDO NO GOOGLE"
-                    display_text = text[len("Pesquisando: "):]
-                else:
-                    header_text = "TEXTO COPIADO"
-                    display_text = text
-            elif state == "error":
-                header_text = "ERRO!"
-            
-            # Available text width inside frame
-            text_width = 380
-            
-            # Calculate heights
-            header_h = 0
-            if header_text:
-                header_h = self.calculate_text_height(header_text, self.label_header.font(), text_width) + 2
+            # Truncate text to a maximum of 120 characters for clean, premium display
+            max_len = 120
+            if len(display_text) > max_len:
+                display_text = display_text[:max_len].strip() + "..."
                 
-            content_h = self.calculate_text_height(display_text, self.label_content.font(), text_width)
+            # Standard fixed size for the copy/error message modal
+            target_w = 380
+            target_h = 100
             
-            # Use calculated height + margins
-            target_h = max(56, header_h + content_h + 40)
+            header_h = 16 if header_text else 0
+            content_h = 42 # Perfectly accommodates 2-3 lines of wrapped text
+            
+            print(f"[DEBUG OVERLAY] FIXED DYNAMIC state={state}, text={text}, header_text={header_text}, display_text={display_text}, target_w={target_w}, target_h={target_h}")
+            
+        else:
+            # Simple done/error state with small text like "COPIADO!" or "CONCLUÍDO!"
+            label_text = text.upper() if text else ("COPIADO!" if state == "done" else "ERRO!")
+            target_font = QFont("Segoe UI", 8)
+            target_font.setBold(True)
+            metrics = QFontMetrics(target_font)
+            text_w = metrics.horizontalAdvance(label_text)
+            
+            # Left margin (16) + indicator (8) + spacing (10) + text_w + right margin (16) + padding (12)
+            frame_w = text_w + 62
+            target_w = max(frame_w + 20, 130)
+            target_h = 60
             
         self.current_target_w = target_w
         self.current_target_h = target_h
 
-        # Update widget configurations before showing
-        self.update_state_widgets(state, text)
+        # Update widget configurations before showing (passing computed texts)
+        self.update_state_widgets(state, text, header_text, display_text)
+
+        # Set explicit heights to prevent Qt layout stretches from squeezing wrapping labels
+        if state in ["listening", "processing"]:
+            self.label_header.setFixedHeight(0)
+            self.label_content.setFixedHeight(20)
+        elif is_text_display:
+            self.label_header.setFixedHeight(header_h)
+            self.label_content.setFixedHeight(content_h)
+        else:
+            self.label_header.setFixedHeight(0)
+            self.label_content.setFixedHeight(20)
 
         if state in self.ACTIVE_STATES:
             if self.is_showing or self.isVisible():
@@ -2022,6 +2159,9 @@ class FloatingOverlay(QWidget):
             self.main_frame.setGeometry(geom)
             self.fade_in()
 
+        # Fade in the contents after applying all layouts
+        self.fade_in_content()
+
         # Automatic dismiss on done/error state
         if state in ["done", "error"]:
             delay = 3500 if is_text_display else 1500
@@ -2030,62 +2170,168 @@ class FloatingOverlay(QWidget):
             self._cancel_dismiss()
             self._dismiss_timer.start(delay)
 
-    def update_state_widgets(self, state, text=None):
+    def update_state_widgets(self, state, text=None, header_text=None, display_text=None):
         """Hides and shows the correct visual indicator according to the state."""
         if state == "listening":
+            self.main_frame.setStyleSheet("""
+                QFrame#main_frame {
+                    background-color: rgba(10, 10, 10, 242);
+                    border: 1.5px solid rgba(139, 92, 246, 160);
+                    border-radius: 18px;
+                }
+            """)
+            self.shadow_effect.setColor(QColor(139, 92, 246, 110))
+            self.shadow_effect.setBlurRadius(24)
+            
             self.label_header.hide()
-            self.label_content.setText(text.upper() if text else "GRAVANDO")
-            self.label_content.setStyleSheet("color: #ffffff; font-weight: bold; letter-spacing: 0.5px;")
+            label_text = text.upper() if text else "GRAVANDO"
+            if not label_text.endswith("..."):
+                label_text += "..."
+            self.label_content.setText(label_text)
+            self.label_content.setWordWrap(False)
+            
+            # Setup font via API to override stylesheet inheritance cleanly
+            font = QFont("Segoe UI", 8)
+            font.setBold(True)
+            self.label_content.setFont(font)
+            self.label_content.setStyleSheet("color: #ffffff; letter-spacing: 0.5px;")
+            
             self.visualizer.show()
             self.spinner.hide()
             self.indicator.hide()
             
         elif state == "processing":
+            self.main_frame.setStyleSheet("""
+                QFrame#main_frame {
+                    background-color: rgba(10, 10, 10, 242);
+                    border: 1.5px solid rgba(245, 158, 11, 160);
+                    border-radius: 18px;
+                }
+            """)
+            self.shadow_effect.setColor(QColor(245, 158, 11, 90))
+            self.shadow_effect.setBlurRadius(24)
+            
             self.label_header.hide()
-            self.label_content.setText(text.upper() if text else "POLINDO")
-            self.label_content.setStyleSheet("color: #ffffff; font-weight: bold; letter-spacing: 0.5px;")
+            label_text = text.upper() if text else "POLINDO"
+            if not label_text.endswith("..."):
+                label_text += "..."
+            self.label_content.setText(label_text)
+            self.label_content.setWordWrap(False)
+            
+            font = QFont("Segoe UI", 8)
+            font.setBold(True)
+            self.label_content.setFont(font)
+            self.label_content.setStyleSheet("color: #ffffff; letter-spacing: 0.5px;")
+            
             self.visualizer.hide()
             self.spinner.show()
             self.indicator.hide()
             
         elif state == "done":
-            if text and text not in ["CONCLUÍDO!", "COPIADO!"]:
-                if text.startswith("Traduzido: "):
-                    self.label_header.setText("TRADUÇÃO COPIADA")
-                    display_text = text[len("Traduzido: "):]
-                elif text.startswith("Sem IA / Tradução Falhou: "):
-                    self.label_header.setText("SEM CHAVE / TRADUÇÃO FALHOU")
-                    display_text = text[len("Sem IA / Tradução Falhou: "):]
-                elif text.startswith("Sem IA / Texto Cru: "):
-                    self.label_header.setText("TEXTO CRU COPIADO (SEM IA)")
-                    display_text = text[len("Sem IA / Texto Cru: "):]
-                elif text.startswith("Pesquisando: "):
-                    self.label_header.setText("PESQUISANDO NO GOOGLE")
-                    display_text = text[len("Pesquisando: "):]
-                else:
-                    self.label_header.setText("TEXTO COPIADO")
-                    display_text = text
+            self.main_frame.setStyleSheet("""
+                QFrame#main_frame {
+                    background-color: rgba(10, 10, 10, 242);
+                    border: 1.5px solid rgba(16, 185, 129, 160);
+                    border-radius: 18px;
+                }
+            """)
+            self.shadow_effect.setColor(QColor(16, 185, 129, 90))
+            self.shadow_effect.setBlurRadius(24)
+            
+            if header_text or (text and text not in ["CONCLUÍDO!", "COPIADO!"]):
+                if not header_text or not display_text:
+                    if text.startswith("Traduzido: "):
+                        header_text = "TRADUÇÃO COPIADA"
+                        display_text = text[len("Traduzido: "):]
+                    elif text.startswith("Sem IA / Tradução Falhou: "):
+                        header_text = "SEM CHAVE / TRADUÇÃO FALHOU"
+                        display_text = text[len("Sem IA / Tradução Falhou: "):]
+                    elif text.startswith("Sem IA / Texto Cru: "):
+                        header_text = "TEXTO CRU COPIADO (SEM IA)"
+                        display_text = text[len("Sem IA / Texto Cru: "):]
+                    elif text.startswith("Pesquisando: "):
+                        header_text = "PESQUISANDO NO GOOGLE"
+                        display_text = text[len("Pesquisando: "):]
+                    elif text.startswith("Copiado: "):
+                        header_text = "TEXTO COPIADO"
+                        display_text = text[len("Copiado: "):]
+                    else:
+                        header_text = "TEXTO COPIADO"
+                        display_text = text
                 
+                header_font = QFont("Segoe UI", 7)
+                header_font.setBold(True)
+                self.label_header.setFont(header_font)
+                self.label_header.setStyleSheet("color: #34d399; letter-spacing: 1.5px;")
+                self.label_header.setText(header_text)
                 self.label_header.show()
+                
+                content_font = QFont("Segoe UI", 8)
+                content_font.setBold(False)
+                self.label_content.setFont(content_font)
                 self.label_content.setText(display_text)
-                self.label_content.setStyleSheet("color: rgba(255, 255, 255, 220); font-weight: 500;")
+                self.label_content.setStyleSheet("color: rgba(255, 255, 255, 230);")
+                self.label_content.setWordWrap(True)
             else:
                 self.label_header.hide()
                 self.label_content.setText(text if text else "COPIADO!")
-                self.label_content.setStyleSheet("color: #ffffff; font-weight: bold; letter-spacing: 0.5px;")
+                self.label_content.setWordWrap(False)
+                
+                font = QFont("Segoe UI", 8)
+                font.setBold(True)
+                self.label_content.setFont(font)
+                self.label_content.setStyleSheet("color: #ffffff; letter-spacing: 0.5px;")
                 
             self.visualizer.hide()
             self.spinner.hide()
-            self.indicator.setStyleSheet("background-color: #ffffff; border-radius: 4px;")
+            self.indicator.setStyleSheet("background-color: #10b981; border-radius: 4px;")
             self.indicator.show()
             
         elif state == "error":
-            self.label_header.hide()
-            self.label_content.setText(text if text else "ERRO!")
-            self.label_content.setStyleSheet("color: #ff5555; font-weight: bold; letter-spacing: 0.5px;")
+            self.main_frame.setStyleSheet("""
+                QFrame#main_frame {
+                    background-color: rgba(10, 10, 10, 242);
+                    border: 1.5px solid rgba(239, 68, 68, 160);
+                    border-radius: 18px;
+                }
+            """)
+            self.shadow_effect.setColor(QColor(239, 68, 68, 110))
+            self.shadow_effect.setBlurRadius(24)
+            
+            if header_text or (text and text not in ["CONCLUÍDO!", "COPIADO!"]):
+                if not header_text or not display_text:
+                    header_text = "ERRO!"
+                    if text.startswith("Erro: "):
+                        display_text = text[len("Erro: "):]
+                    else:
+                        display_text = text
+                
+                self.label_header.setText(header_text)
+                header_font = QFont("Segoe UI", 7)
+                header_font.setBold(True)
+                self.label_header.setFont(header_font)
+                self.label_header.setStyleSheet("color: #ef4444; letter-spacing: 1.5px;")
+                self.label_header.show()
+                
+                content_font = QFont("Segoe UI", 8)
+                content_font.setBold(False)
+                self.label_content.setFont(content_font)
+                self.label_content.setText(display_text)
+                self.label_content.setStyleSheet("color: rgba(255, 255, 255, 230);")
+                self.label_content.setWordWrap(True)
+            else:
+                self.label_header.hide()
+                self.label_content.setText(text if text else "ERRO!")
+                self.label_content.setWordWrap(False)
+                
+                font = QFont("Segoe UI", 8)
+                font.setBold(True)
+                self.label_content.setFont(font)
+                self.label_content.setStyleSheet("color: #ef4444; letter-spacing: 0.5px;")
+            
             self.visualizer.hide()
             self.spinner.hide()
-            self.indicator.setStyleSheet("background-color: #ff3333; border-radius: 4px;")
+            self.indicator.setStyleSheet("background-color: #ef4444; border-radius: 4px;")
             self.indicator.show()
 
     def fade_in(self):
@@ -2151,7 +2397,7 @@ class FloatingOverlay(QWidget):
         self.hide()
         self.setWindowOpacity(1.0) # Reset to full opacity for next trigger
         # Reset to initial geometry to prevent jumping next time it appears
-        geom = self.get_frame_geometry(220, 56)
+        geom = self.get_frame_geometry(220, 60)
         self.main_frame.setGeometry(geom)
 
     def update_volume_level(self, level):

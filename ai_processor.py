@@ -18,6 +18,7 @@ class AIProcessor:
         self.server_manager = server_manager  # Deprecated but kept for compatibility
         self.whisper_model = None
         self._current_model_size = None
+        self._current_device = None
 
     def transcribe_and_process(self, audio_path, mode="ditado", target_lang="Inglês", status_callback=None):
         """
@@ -29,9 +30,42 @@ class AIProcessor:
             status_callback("Transcrevendo...")
             
         raw_text = self._transcribe_audio(audio_path, status_callback)
+        if raw_text:
+            # Filter out Whisper silence hallucinations
+            lower_text = raw_text.lower().strip()
+            # Remove punctuation for comparison
+            for char in [".", ",", "!", "?", "-", '"', "'", ":"]:
+                lower_text = lower_text.replace(char, "")
+            lower_text = " ".join(lower_text.split()) # normalize spaces
+            
+            # Multi-word hallucination phrases (can be substrings or exact)
+            multi_word_hallucinations = {
+                "legendas por", "legenda por", "legendado por", "subtitles by", "subs by",
+                "obrigado por assistir", "obrigada por assistir", "thank you for watching",
+                "transcrição por", "transcriçao por", "transcrição e legendas", "transcricao e legendas",
+                "adriana zanotto", "pedro negri"
+            }
+            # Single-word hallucinations (only trigger if the entire text consists of one of these words)
+            single_word_hallucinations = {
+                "robert", "sonia", "sônia", "ruberti", "ruberty", "legendas", "legenda", "you", "bye", "obrigado", "obrigada", "assistir",
+                "adriana", "pedro", "zanotto", "negri"
+            }
+            
+            is_hallucination = False
+            # Check if any multi-word hallucination is a substring
+            if any(phrase in lower_text for phrase in multi_word_hallucinations):
+                is_hallucination = True
+            # Check if it's a single word and matches
+            elif lower_text in single_word_hallucinations:
+                is_hallucination = True
+                
+            if is_hallucination:
+                print(f"Hallucination de silêncio detectada e filtrada: '{raw_text}'")
+                raw_text = ""
+                
         if not raw_text:
             print("Transcrição vazia ou não obtida.")
-            return ""
+            raise RuntimeError("Não foi possível detectar uma voz.")
 
         # If mode is search, query the AI to get a direct answer
         if mode == "pesquisa":
@@ -119,17 +153,43 @@ class AIProcessor:
                 model_size = whisper_cfg.get("model_size", "base")
                 device = whisper_cfg.get("device", "cpu")
 
-                # Load or reload model if model size changed or not loaded yet
-                if self.whisper_model is None or self._current_model_size != model_size:
+                # Load or reload model if model size or device changed or not loaded yet
+                if self.whisper_model is None or self._current_model_size != model_size or self._current_device != device:
                     if status_callback:
                         status_callback("Carregando Whisper...")
                     print(f"Carregando Whisper modelo '{model_size}' no dispositivo '{device}'...")
-                    self.whisper_model = WhisperModel(model_size, device=device, compute_type="int8")
+                    
+                    # Compute type: float16 works best on CUDA, int8 on CPU
+                    comp_type = "float16" if device == "cuda" else "int8"
+                    try:
+                        self.whisper_model = WhisperModel(model_size, device=device, compute_type=comp_type)
+                        self._current_device = device
+                    except Exception as first_err:
+                        print(f"Erro ao carregar no dispositivo '{device}' com compute_type={comp_type}: {first_err}.")
+                        if device == "cuda":
+                            print("Tentando fallback para CPU...")
+                            try:
+                                self.whisper_model = WhisperModel(model_size, device="cpu", compute_type="int8")
+                                self._current_device = "cpu"
+                            except Exception as cpu_err:
+                                print(f"Erro no fallback para CPU: {cpu_err}")
+                                raise cpu_err
+                        else:
+                            raise first_err
+                    
                     self._current_model_size = model_size
 
                 if status_callback:
                     status_callback("Transcrevendo...")
-                segments, info = self.whisper_model.transcribe(audio_path, beam_size=5, language="pt")
+                
+                # Use initial_prompt to guide Portuguese (Brazil) grammar, context, and slang, reducing hallucinations
+                pt_prompt = "Transcrição literal de áudio em português do Brasil, incluindo gírias, expressões coloquiais e hesitações."
+                segments, info = self.whisper_model.transcribe(
+                    audio_path,
+                    beam_size=5,
+                    language="pt",
+                    initial_prompt=pt_prompt
+                )
                 text = " ".join([segment.text for segment in segments]).strip()
                 
                 # If local transcription ran successfully without crashing:
@@ -143,9 +203,15 @@ class AIProcessor:
             except RuntimeError as re:
                 if str(re) == "Nenhuma fala detectada.":
                     raise re
+                self.whisper_model = None
+                self._current_model_size = None
+                self._current_device = None
                 local_error = re
                 print(f"Erro na transcrição local faster-whisper: {re}")
             except Exception as e:
+                self.whisper_model = None
+                self._current_model_size = None
+                self._current_device = None
                 local_error = e
                 print(f"Erro na transcrição local faster-whisper: {e}")
 
