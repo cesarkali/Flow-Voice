@@ -19,6 +19,7 @@ class AIProcessor:
         self.whisper_model = None
         self._current_model_size = None
         self._current_device = None
+        self.cuda_failed = False
 
     def transcribe_and_process(self, audio_path, mode="ditado", target_lang="Inglês", status_callback=None):
         """
@@ -153,6 +154,10 @@ class AIProcessor:
                 model_size = whisper_cfg.get("model_size", "base")
                 device = whisper_cfg.get("device", "cpu")
 
+                if device == "cuda" and getattr(self, "cuda_failed", False):
+                    print("CUDA falhou anteriormente nesta sessão. Forçando uso de CPU para evitar travamento.")
+                    device = "cpu"
+
                 # Load or reload model if model size or device changed or not loaded yet
                 if self.whisper_model is None or self._current_model_size != model_size or self._current_device != device:
                     if status_callback:
@@ -167,15 +172,18 @@ class AIProcessor:
                     except Exception as first_err:
                         print(f"Erro ao carregar no dispositivo '{device}' com compute_type={comp_type}: {first_err}.")
                         if device == "cuda":
+                            self.cuda_failed = True
                             print("Tentando fallback para CPU...")
                             try:
                                 self.whisper_model = WhisperModel(model_size, device="cpu", compute_type="int8")
                                 self._current_device = "cpu"
+                                device = "cpu"
                             except Exception as cpu_err:
                                 print(f"Erro no fallback para CPU: {cpu_err}")
                                 raise cpu_err
                         else:
                             raise first_err
+
                     
                     self._current_model_size = model_size
 
@@ -203,12 +211,16 @@ class AIProcessor:
             except RuntimeError as re:
                 if str(re) == "Nenhuma fala detectada.":
                     raise re
+                if device == "cuda" or self._current_device == "cuda":
+                    self.cuda_failed = True
                 self.whisper_model = None
                 self._current_model_size = None
                 self._current_device = None
                 local_error = re
                 print(f"Erro na transcrição local faster-whisper: {re}")
             except Exception as e:
+                if device == "cuda" or self._current_device == "cuda":
+                    self.cuda_failed = True
                 self.whisper_model = None
                 self._current_model_size = None
                 self._current_device = None
@@ -227,6 +239,10 @@ class AIProcessor:
             else:
                 raise RuntimeError("Whisper local não disponível e nenhuma chave de nuvem está configurada.")
 
+        cloud_errors = []
+        if local_error:
+            cloud_errors.append(f"Whisper local: {local_error}")
+
         # 1. Try Groq Whisper API (very fast!)
         for key in groq_keys:
             try:
@@ -242,6 +258,7 @@ class AIProcessor:
                 if text:
                     return text
             except Exception as e:
+                cloud_errors.append(f"Groq Whisper: {e}")
                 print(f"Erro na transcrição via Groq Whisper API: {e}")
 
         # 2. Try Gemini API
@@ -277,6 +294,7 @@ class AIProcessor:
                         pass
                     raise ex
             except Exception as e:
+                cloud_errors.append(f"Gemini Whisper: {e}")
                 print(f"Erro na transcrição via Gemini API: {e}")
 
         # 3. Try OpenAI Whisper API
@@ -294,9 +312,11 @@ class AIProcessor:
                 if text:
                     return text
             except Exception as e:
+                cloud_errors.append(f"OpenAI Whisper: {e}")
                 print(f"Erro na transcrição via OpenAI Whisper API: {e}")
 
-        raise RuntimeError("Não foi possível transcrever o áudio por nenhum método (local ou nuvem).")
+        err_details = " | ".join(cloud_errors)
+        raise RuntimeError(f"Não foi possível transcrever o áudio por nenhum método. Detalhes: {err_details}")
 
     def _refine_text_via_pool(self, text, prompt):
         """
@@ -314,30 +334,27 @@ class AIProcessor:
         # Build list of attempts: each item is (provider, key)
         attempts = []
         
-        # Helper to add keys of a provider
-        def add_keys_for_provider(prov_name, key_list):
-            for k in key_list:
-                attempts.append((prov_name, k))
-
-        # Add preferred provider keys first
+        # 1. Add preferred provider
         if preferred_provider == "gemini":
-            add_keys_for_provider("gemini", gemini_keys)
+            attempts.extend([("gemini", k) for k in gemini_keys])
         elif preferred_provider == "groq":
-            add_keys_for_provider("groq", groq_keys)
+            attempts.extend([("groq", k) for k in groq_keys])
         elif preferred_provider == "github_models":
-            add_keys_for_provider("github_models", github_keys)
+            attempts.extend([("github_models", k) for k in github_keys])
         elif preferred_provider == "openai":
-            add_keys_for_provider("openai", openai_keys)
+            attempts.extend([("openai", k) for k in openai_keys])
 
-        # Add other providers' keys
-        if preferred_provider != "gemini":
-            add_keys_for_provider("gemini", gemini_keys)
+        # 2. Add Groq if it wasn't the preferred one
         if preferred_provider != "groq":
-            add_keys_for_provider("groq", groq_keys)
+            attempts.extend([("groq", k) for k in groq_keys])
+
+        # 3. Add all remaining providers if they weren't preferred
+        if preferred_provider != "gemini":
+            attempts.extend([("gemini", k) for k in gemini_keys])
         if preferred_provider != "github_models":
-            add_keys_for_provider("github_models", github_keys)
+            attempts.extend([("github_models", k) for k in github_keys])
         if preferred_provider != "openai":
-            add_keys_for_provider("openai", openai_keys)
+            attempts.extend([("openai", k) for k in openai_keys])
 
         if not attempts:
             print("Nenhuma chave de API configurada para polimento.")
@@ -452,27 +469,27 @@ class AIProcessor:
 
         attempts = []
         
-        def add_keys_for_provider(prov_name, key_list):
-            for k in key_list:
-                attempts.append((prov_name, k))
-
+        # 1. Add preferred provider
         if preferred_provider == "gemini":
-            add_keys_for_provider("gemini", gemini_keys)
+            attempts.extend([("gemini", k) for k in gemini_keys])
         elif preferred_provider == "groq":
-            add_keys_for_provider("groq", groq_keys)
+            attempts.extend([("groq", k) for k in groq_keys])
         elif preferred_provider == "github_models":
-            add_keys_for_provider("github_models", github_keys)
+            attempts.extend([("github_models", k) for k in github_keys])
         elif preferred_provider == "openai":
-            add_keys_for_provider("openai", openai_keys)
+            attempts.extend([("openai", k) for k in openai_keys])
 
-        if preferred_provider != "gemini":
-            add_keys_for_provider("gemini", gemini_keys)
+        # 2. Add Groq if it wasn't preferred
         if preferred_provider != "groq":
-            add_keys_for_provider("groq", groq_keys)
+            attempts.extend([("groq", k) for k in groq_keys])
+
+        # 3. Add remaining providers
+        if preferred_provider != "gemini":
+            attempts.extend([("gemini", k) for k in gemini_keys])
         if preferred_provider != "github_models":
-            add_keys_for_provider("github_models", github_keys)
+            attempts.extend([("github_models", k) for k in github_keys])
         if preferred_provider != "openai":
-            add_keys_for_provider("openai", openai_keys)
+            attempts.extend([("openai", k) for k in openai_keys])
 
         if not attempts:
             print("Nenhuma chave de API configurada para o chat.")
