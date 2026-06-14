@@ -1739,8 +1739,8 @@ class SoundVisualizer(QWidget):
         self.timer.start(16)
         
     def set_amplitude(self, value):
-        # Scale and clip amplitude
-        self.target_amplitude = min(max(value * 45.0, 0.0), 1.0)
+        # Scale and clip amplitude (increased sensitivity from 45.0 to 75.0)
+        self.target_amplitude = min(max(value * 75.0, 0.0), 1.0)
         
     def update_animation(self):
         # Smooth interpolation
@@ -1787,18 +1787,25 @@ class SoundVisualizer(QWidget):
             painter.drawPath(path_obj)
 
 
-# Rotating Circular Spinner Widget (Mac/Web-style premium fading tail)
 class LoadingSpinner(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedSize(20, 20)
-        self.angle = 0
+        self.setFixedSize(50, 24)
+        self.position = 0.0
+        self.direction = 1
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.rotate)
+        self.timer.timeout.connect(self.update_animation)
         self.timer.start(16) # ~60 FPS
         
-    def rotate(self):
-        self.angle = (self.angle + 6) % 360
+    def update_animation(self):
+        # Sweep back and forth
+        self.position += 0.025 * self.direction
+        if self.position >= 1.0:
+            self.position = 1.0
+            self.direction = -1
+        elif self.position <= 0.0:
+            self.position = 0.0
+            self.direction = 1
         self.update()
         
     def paintEvent(self, event):
@@ -1807,109 +1814,318 @@ class LoadingSpinner(QWidget):
         
         w = self.width()
         h = self.height()
-        radius = 7.0
+        mid_y = h / 2.0
         
-        painter.translate(w / 2.0, h / 2.0)
-        painter.rotate(self.angle)
+        # Draw background track
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(QColor(255, 255, 255, 15)))
+        painter.drawRoundedRect(0, int(mid_y - 2), w, 4, 2, 2)
         
-        # Draw segments with fading opacity for a smooth tail effect
-        for i in range(8):
-            opacity = int(255 * (i / 7.0))
-            color = QColor(255, 255, 255, opacity)
-            pen = QPen(color, 2.0, Qt.SolidLine, Qt.RoundCap)
+        # Draw sweeping neon laser gradient pill
+        from PySide6.QtGui import QLinearGradient
+        grad = QLinearGradient(0, 0, w, 0)
+        
+        pos = self.position
+        # Make the glowing segment move smoothly
+        grad.setColorAt(max(0.0, pos - 0.25), QColor(245, 158, 11, 0))
+        grad.setColorAt(pos, QColor(251, 191, 36, 255))
+        grad.setColorAt(min(1.0, pos + 0.25), QColor(245, 158, 11, 0))
+        
+        painter.setBrush(QBrush(grad))
+        painter.drawRoundedRect(0, int(mid_y - 2), w, 4, 2, 2)
+
+
+# Custom frame with sweeping orange/amber shimmer highlight
+class GlowFrame(QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.is_processing = False
+        self.current_state = "listening"
+        self.shimmer_pos = 0.1
+        self.shimmer_dir = 1
+        self.wave_phase = 0.0
+        self.amplitude = 0.0
+        self.target_amplitude = 0.0
+        self.single_sweep = 1.5
+        self.done_sweep_pos = -0.2
+        self.done_sweep_dir = 1
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_shimmer)
+        self.timer.start(16) # ~60 FPS
+        
+    def set_amplitude(self, amp):
+        # Scale and clip target amplitude
+        self.target_amplitude = min(max(amp * 80.0, 0.0), 1.0)
+        
+    def update_shimmer(self):
+        # Slower wave movement for elegant siri wave (0.045)
+        self.wave_phase += 0.045
+        if self.wave_phase > 6.283:
+            self.wave_phase -= 6.283
+            
+        # Smoothly interpolate amplitude to prevent jumps
+        self.amplitude += (self.target_amplitude - self.amplitude) * 0.2
+            
+        if self.is_processing:
+            # Shift shimmer back and forth (narrower limits to prevent dark pause)
+            self.shimmer_pos += 0.02 * self.shimmer_dir
+            if self.shimmer_pos >= 0.9:
+                self.shimmer_pos = 0.9
+                self.shimmer_dir = -1
+            elif self.shimmer_pos <= 0.1:
+                self.shimmer_pos = 0.1
+                self.shimmer_dir = 1
+                
+        if self.current_state in ["done", "error"]:
+            self.done_sweep_pos += 0.006 * self.done_sweep_dir
+            if self.done_sweep_pos >= 1.2:
+                self.done_sweep_pos = 1.2
+                self.done_sweep_dir = -1
+            elif self.done_sweep_pos <= -0.2:
+                self.done_sweep_pos = -0.2
+                self.done_sweep_dir = 1
+                
+        self.update()
+            
+    def paintEvent(self, event):
+        from PySide6.QtGui import QLinearGradient
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        w = self.width()
+        h = self.height()
+        rect = self.rect()
+        
+        bg_color = QColor(10, 10, 10, 235)
+        
+        if self.current_state == "listening":
+            # Draw standard background
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(bg_color))
+            painter.drawRoundedRect(rect, 18, 18)
+            
+            # Draw Siri waves in the background of the modal
+            mid_y = h / 2.0
+            wave_configs = [
+                (QColor(139, 92, 246, 55), 0.90, 0.0, 0.08),  # Purple
+                (QColor(236, 72, 153, 40), 0.65, 1.8, 0.12),  # Pink
+                (QColor(6, 182, 212, 25), 0.40, 3.5, 0.06)    # Cyan
+            ]
+            from PySide6.QtGui import QPainterPath
+            import math
+            for color, amp_scale, phase_offset, freq in wave_configs:
+                path = QPainterPath()
+                path.moveTo(0, mid_y)
+                
+                # Scale wave height by microphone input amplitude
+                max_amp = (self.amplitude * 0.85 + 0.15) * amp_scale * (h / 2.3)
+                
+                for x in range(0, w + 1, 2):
+                    # Siri wave across entire width with gentle taper at very edges
+                    taper = 0.35 + 0.65 * math.sin((x / w) * math.pi)
+                    y = mid_y + taper * max_amp * math.sin(x * freq + self.wave_phase + phase_offset)
+                    path.lineTo(x, y)
+                    
+                painter.setPen(QPen(color, 1.5))
+                painter.setBrush(Qt.NoBrush)
+                painter.drawPath(path)
+                
+            # Slow, breathing purple border glow (frequency scaled down by 0.6 for calming rhythm)
+            breath = 0.5 + 0.5 * math.sin(self.wave_phase * 0.6)
+            glow_intensity = 0.45 * breath + 0.55 * self.amplitude
+            border_opacity = int(90 + 155 * glow_intensity)
+            
+            pen = QPen(QColor(139, 92, 246, border_opacity), 1.5 + 0.8 * glow_intensity)
             painter.setPen(pen)
-            painter.drawArc(int(-radius), int(-radius), int(radius * 2), int(radius * 2), i * 45 * 16, 30 * 16)
-
-
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 18, 18)
+            
+        else:
+            # Draw standard background and borders for other states
+            if self.current_state == "done":
+                border_color = QColor(16, 185, 129, 160) # Green
+            elif self.current_state == "error":
+                border_color = QColor(239, 68, 68, 160) # Red
+            else:
+                border_color = QColor(255, 255, 255, 30) # Default
+                
+            if self.is_processing:
+                # Draw filled background
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QBrush(bg_color))
+                painter.drawRoundedRect(rect, 18, 18)
+                
+                pos = self.shimmer_pos
+                
+                # Smooth blending near boundaries (keeps minimum glow of 0.2 so it's never empty)
+                fade_factor = 1.0
+                if pos < 0.2:
+                    fade_factor = max(0.2, (pos + 0.1) / 0.3)
+                elif pos > 0.8:
+                    fade_factor = max(0.2, (1.1 - pos) / 0.3)
+                
+                # Draw inside shimmer/glow highlight
+                shimmer_grad = QLinearGradient(0, 0, w, 0)
+                shimmer_grad.setColorAt(max(0.0, min(1.0, pos - 0.3)), QColor(245, 158, 11, 0))
+                shimmer_grad.setColorAt(max(0.0, min(1.0, pos)), QColor(245, 158, 11, int(22 * fade_factor)))
+                shimmer_grad.setColorAt(max(0.0, min(1.0, pos + 0.3)), QColor(245, 158, 11, 0))
+                
+                painter.setBrush(QBrush(shimmer_grad))
+                painter.drawRoundedRect(rect, 18, 18)
+                
+                # Draw sweeping orange/amber gradient border
+                border_grad = QLinearGradient(0, 0, w, 0)
+                border_grad.setColorAt(max(0.0, min(1.0, pos - 0.25)), QColor(255, 255, 255, int(30 * fade_factor)))
+                border_grad.setColorAt(max(0.0, min(1.0, pos)), QColor(245, 158, 11, int(200 * fade_factor)))
+                border_grad.setColorAt(max(0.0, min(1.0, pos + 0.25)), QColor(255, 255, 255, int(30 * fade_factor)))
+                
+                pen = QPen(border_grad, 1.5)
+                painter.setPen(pen)
+                painter.setBrush(Qt.NoBrush)
+                painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 18, 18)
+            else:
+                # Draw standard background
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QBrush(bg_color))
+                painter.drawRoundedRect(rect, 18, 18)
+                
+                # Rotating border highlight
+                import math
+                angle = self.wave_phase * 0.45
+                dx = math.cos(angle)
+                dy = math.sin(angle)
+                
+                cx = w / 2.0
+                cy = h / 2.0
+                
+                # Project the gradient direction based on rotation angle
+                x1 = cx - dx * (w / 1.5)
+                y1 = cy - dy * (h / 1.5)
+                x2 = cx + dx * (w / 1.5)
+                y2 = cy + dy * (h / 1.5)
+                
+                border_grad = QLinearGradient(x1, y1, x2, y2)
+                
+                # Colors based on state
+                base_color = QColor(16, 185, 129, 30) if self.current_state == "done" else QColor(239, 68, 68, 20)
+                active_color = QColor(16, 185, 129, 225) if self.current_state == "done" else QColor(239, 68, 68, 180)
+                glow_color = QColor(16, 185, 129, 14) if self.current_state == "done" else QColor(239, 68, 68, 10)
+                
+                # Gradient stops for the border: a bright segment moving around
+                border_grad.setColorAt(0.0, base_color)
+                border_grad.setColorAt(0.35, base_color)
+                border_grad.setColorAt(0.5, active_color)
+                border_grad.setColorAt(0.65, base_color)
+                border_grad.setColorAt(1.0, base_color)
+                
+                # Inside background sweep glow (also rotating to match)
+                shimmer_grad = QLinearGradient(x1, y1, x2, y2)
+                shimmer_grad.setColorAt(0.0, QColor(0, 0, 0, 0))
+                shimmer_grad.setColorAt(0.35, QColor(0, 0, 0, 0))
+                shimmer_grad.setColorAt(0.5, glow_color)
+                shimmer_grad.setColorAt(0.65, QColor(0, 0, 0, 0))
+                shimmer_grad.setColorAt(1.0, QColor(0, 0, 0, 0))
+                
+                painter.setBrush(QBrush(shimmer_grad))
+                painter.drawRoundedRect(rect, 18, 18)
+                
+                # Gentle breathing for border width
 # Frameless Glassmorphism Overlay (Sleek pill with slide and fade transitions)
 class FloatingOverlay(QWidget):
     ACTIVE_STATES = frozenset({"listening", "processing"})
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.current_target_w = 220
-        self.current_target_h = 60
+        self.current_target_w = 260
+        self.current_target_h = 68
         self.is_showing = False
         self._current_state = None
         self.anim_group = None
         self.size_anim_group = None
         self.frame_anim = None
         self.opacity_anim = None
+        self.text_fade_group = None
         self._dismiss_timer = QTimer(self)
         self._dismiss_timer.setSingleShot(True)
         self._dismiss_timer.timeout.connect(self.fade_out)
         self.init_ui()
 
     def _stop_animations(self):
+        """Stop all running geometry/opacity animations safely."""
         for group in (self.anim_group, self.size_anim_group):
-            if group is not None and group.state() == QAbstractAnimation.State.Running:
-                group.stop()
+            try:
+                if group is not None and group.state() == QAbstractAnimation.State.Running:
+                    group.stop()
+            except RuntimeError:
+                pass
+        try:
+            if hasattr(self, 'opacity_anim') and self.opacity_anim is not None:
+                if self.opacity_anim.state() == QAbstractAnimation.State.Running:
+                    self.opacity_anim.stop()
+        except RuntimeError:
+            self.opacity_anim = None
+        try:
+            if hasattr(self, 'opacity_anim_in') and self.opacity_anim_in is not None:
+                if self.opacity_anim_in.state() == QAbstractAnimation.State.Running:
+                    self.opacity_anim_in.stop()
+        except RuntimeError:
+            self.opacity_anim_in = None
+
+    def _stop_text_animations(self):
+        """Stop running text fade animations and ensure opacity is 1.0 safely."""
+        try:
+            if self.text_fade_group is not None and self.text_fade_group.state() == QAbstractAnimation.State.Running:
+                self.text_fade_group.stop()
+        except RuntimeError:
+            pass
+        self.text_fade_group = None
+        self.header_opacity.setOpacity(1.0)
+        self.content_opacity.setOpacity(1.0)
 
     def _cancel_dismiss(self):
         self._dismiss_timer.stop()
-
-    def _ensure_visible(self):
-        """Keeps the overlay on screen during active recording/processing states."""
-        self._stop_animations()
-        self.setWindowOpacity(1.0)
-        self.is_showing = True
-        self.center_on_screen()
-        geom = self.get_frame_geometry(self.current_target_w, self.current_target_h)
-        self.main_frame.setGeometry(geom)
-        self.show()
-        self.raise_()
 
     def init_ui(self):
         # Frameless, translucent, floating window settings
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool | Qt.SubWindow)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setAttribute(Qt.WA_ShowWithoutActivating, True) # Prevents stealing window focus
+        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
         self.setFixedSize(500, 450)
 
         # Base Frame container for glassmorphism styling
-        self.main_frame = QFrame(self)
+        self.main_frame = GlowFrame(self)
         self.main_frame.setObjectName("main_frame")
-        
-        # Apply premium Vercel-style deep black acrylic style
-        self.main_frame.setStyleSheet("""
-            QFrame#main_frame {
-                background-color: rgba(10, 10, 10, 235);
-                border: 1px solid rgba(255, 255, 255, 30);
-                border-radius: 18px;
-            }
-        """)
 
-        # Drop shadow effect with dynamic reference
+        # Drop shadow effect
         self.shadow_effect = QGraphicsDropShadowEffect(self)
         self.shadow_effect.setBlurRadius(16)
         self.shadow_effect.setColor(QColor(0, 0, 0, 180))
         self.shadow_effect.setOffset(0, 2)
         self.main_frame.setGraphicsEffect(self.shadow_effect)
 
-        # Layout inside the frame (direct parent, layout-safe!)
+        # Layout inside the frame
         layout = QHBoxLayout(self.main_frame)
         layout.setContentsMargins(16, 8, 16, 8)
         layout.setSpacing(10)
 
-        # 1. Sound wave visualizer (Siri Waves)
+        # Sound wave visualizer (Siri Waves)
         self.visualizer = SoundVisualizer(self.main_frame)
         layout.addWidget(self.visualizer, 0, Qt.AlignVCenter)
 
-        # 2. Loading spinner (Rotating tail)
+        # Loading spinner
         self.spinner = LoadingSpinner(self.main_frame)
         layout.addWidget(self.spinner, 0, Qt.AlignVCenter)
 
-        # 3. Static state indicator dot (for done/error states)
+        # Static state indicator dot (done/error)
         self.indicator = QLabel(self.main_frame)
         self.indicator.setFixedSize(8, 8)
         self.indicator.setStyleSheet("background-color: #ffffff; border-radius: 4px;")
         layout.addWidget(self.indicator, 0, Qt.AlignVCenter)
 
-        # 4. Vertical Text Layout for Header and Content
+        # Vertical Text Layout
         text_layout = QVBoxLayout()
         text_layout.setSpacing(2)
         text_layout.setContentsMargins(0, 0, 0, 0)
-        
         text_layout.addStretch()
 
         self.label_header = QLabel(self.main_frame)
@@ -1918,6 +2134,7 @@ class FloatingOverlay(QWidget):
         self.label_header.setFont(header_font)
         self.label_header.setStyleSheet("color: rgba(255, 255, 255, 120); letter-spacing: 1px;")
         self.label_header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.label_header.setFixedHeight(0)
         text_layout.addWidget(self.label_header)
 
         self.label_content = QLabel("GRAVANDO...", self.main_frame)
@@ -1926,49 +2143,40 @@ class FloatingOverlay(QWidget):
         self.label_content.setFont(content_font)
         self.label_content.setStyleSheet("color: #ffffff; letter-spacing: 0.5px;")
         self.label_content.setWordWrap(False)
-        self.label_content.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.label_content.setAlignment(Qt.AlignCenter)
+        self.label_content.setFixedHeight(20)
         text_layout.addWidget(self.label_content)
-        
-        text_layout.addStretch()
 
+        text_layout.addStretch()
         layout.addLayout(text_layout, 1)
 
-        # Opacity effects directly applied to the labels to avoid custom paint issues with SoundVisualizer
-        from PySide6.QtWidgets import QGraphicsOpacityEffect
-        self.header_opacity = QGraphicsOpacityEffect(self.label_header)
-        self.label_header.setGraphicsEffect(self.header_opacity)
-        self.header_opacity.setOpacity(1.0)
+        # NO QGraphicsOpacityEffect on labels — it causes rendering outside parent frame bounds.
+        # Window-level opacity fade (windowOpacity) handles all fade animations.
+        # Dummy objects to avoid breaking code that references header_opacity/content_opacity:
+        class _NoOpOpacity:
+            def setOpacity(self, v): pass
+            def opacity(self): return 1.0
+            def state(self): return 0
+        self.header_opacity = _NoOpOpacity()
+        self.content_opacity = _NoOpOpacity()
 
-        self.content_opacity = QGraphicsOpacityEffect(self.label_content)
-        self.label_content.setGraphicsEffect(self.content_opacity)
-        self.content_opacity.setOpacity(1.0)
-
-        # Set initial state UI visibility
+        # Initial widget visibility
         self.visualizer.hide()
         self.spinner.hide()
         self.indicator.hide()
         self.label_header.hide()
 
-    def calculate_text_height(self, text, font, width):
-        from PySide6.QtGui import QFontMetrics
-        metrics = QFontMetrics(font)
-        # Use slightly narrower width and apply scaling multiplier for high-DPI safety
-        rect = metrics.boundingRect(0, 0, int(width * 0.95), 9999, Qt.TextWordWrap, text)
-        return int(rect.height() * 1.35) + 6
-
     def get_centered_geometry(self, width, height):
         screen = QApplication.primaryScreen().availableGeometry()
         x = screen.x() + (screen.width() - width) // 2
-        # Position 20 pixels above the bottom edge of the available screen area (above taskbar)
         y = screen.y() + screen.height() - height - 20
         return QRect(x, y, width, height)
 
     def get_frame_geometry(self, target_w, target_h):
-        # Center frame horizontally within the fixed window
+        """Returns the geometry of the inner frame, anchored bottom-center inside the fixed window."""
         frame_w = target_w - 20
         frame_h = target_h - 20
         frame_x = (self.width() - frame_w) // 2
-        # Anchor frame's bottom statically to a margin from window bottom (e.g. 10px margin -> bottom at 310)
         frame_y = (self.height() - 10) - frame_h
         return QRect(frame_x, frame_y, frame_w, frame_h)
 
@@ -1978,77 +2186,39 @@ class FloatingOverlay(QWidget):
         self.move(geom.topLeft())
 
     def animate_to_size(self, target_width, target_height):
-        """Directly resizes the inner main_frame inside the fixed window."""
+        """Directly resizes the inner main_frame inside the fixed window with a smooth animation."""
         self._stop_animations()
         self.current_target_w = target_width
         self.current_target_h = target_height
-        
         target_geom = self.get_frame_geometry(target_width, target_height)
-        self.main_frame.setGeometry(target_geom)
+        
+        self.frame_anim = QPropertyAnimation(self.main_frame, b"geometry")
+        self.frame_anim.setDuration(160)
+        self.frame_anim.setStartValue(self.main_frame.geometry())
+        self.frame_anim.setEndValue(target_geom)
+        self.frame_anim.setEasingCurve(QEasingCurve.OutCubic)
+        
+        self.anim_group = QParallelAnimationGroup()
+        self.anim_group.addAnimation(self.frame_anim)
+        self.anim_group.start()
+        
+        if self.main_frame.layout():
+            self.main_frame.layout().activate()
 
     def show_state(self, state, text=None):
-        """Updates the UI look and dimensions based on state: listening, processing, done, error."""
+        """Updates the UI look and dimensions based on state."""
         self._current_state = state
         if state in self.ACTIVE_STATES:
             self._cancel_dismiss()
-
-        # Check if overlay is currently visible/showing to decide on fade transitions
-        if not self.isVisible() or not self.is_showing:
-            self.header_opacity.setOpacity(1.0)
-            self.content_opacity.setOpacity(1.0)
-            self.apply_state_change(state, text)
-        else:
-            # Fade out content, apply changes, and fade back in (using explicit lambda binding to avoid late binding)
-            self.fade_out_content(lambda s=state, t=text: self.apply_state_change(s, t))
-
-    def fade_out_content(self, callback):
-        self.header_anim = QPropertyAnimation(self.header_opacity, b"opacity")
-        self.header_anim.setDuration(120)
-        self.header_anim.setStartValue(1.0)
-        self.header_anim.setEndValue(0.0)
-        self.header_anim.setEasingCurve(QEasingCurve.OutCubic)
-
-        self.content_anim = QPropertyAnimation(self.content_opacity, b"opacity")
-        self.content_anim.setDuration(120)
-        self.content_anim.setStartValue(1.0)
-        self.content_anim.setEndValue(0.0)
-        self.content_anim.setEasingCurve(QEasingCurve.OutCubic)
-
-        self.fade_out_group = QParallelAnimationGroup()
-        self.fade_out_group.addAnimation(self.header_anim)
-        self.fade_out_group.addAnimation(self.content_anim)
-        self.fade_out_group.finished.connect(callback)
-        self.fade_out_group.start()
-
-    def fade_in_content(self):
-        self.header_anim = QPropertyAnimation(self.header_opacity, b"opacity")
-        self.header_anim.setDuration(160)
-        self.header_anim.setStartValue(0.0)
-        self.header_anim.setEndValue(1.0)
-        self.header_anim.setEasingCurve(QEasingCurve.OutCubic)
-
-        self.content_anim = QPropertyAnimation(self.content_opacity, b"opacity")
-        self.content_anim.setDuration(160)
-        self.content_anim.setStartValue(0.0)
-        self.content_anim.setEndValue(1.0)
-        self.content_anim.setEasingCurve(QEasingCurve.OutCubic)
-
-        self.fade_in_group = QParallelAnimationGroup()
-        self.fade_in_group.addAnimation(self.header_anim)
-        self.fade_in_group.addAnimation(self.content_anim)
-        self.fade_in_group.start()
+        self._stop_animations()
+        self.apply_state_change(state, text)
 
     def apply_state_change(self, state, text=None):
-        """Actually applies layout geometry changes and state indicators."""
-        self._stop_animations()
-        target_w, target_h = 220, 60
+        """Applies layout geometry changes and state indicators."""
         is_text_display = False
-        
-        from PySide6.QtGui import QFontMetrics
-        
-        # Determine display text based on prefixes for done/error states
         display_text = text if text else ""
         header_text = ""
+
         if state == "done" and text and text not in ["CONCLUÍDO!", "COPIADO!"]:
             if text.startswith("Traduzido: "):
                 header_text = "TRADUÇÃO COPIADA"
@@ -2070,99 +2240,115 @@ class FloatingOverlay(QWidget):
                 display_text = text
         elif state == "error" and text and text not in ["CONCLUÍDO!", "COPIADO!"]:
             header_text = "ERRO!"
-            if text.startswith("Erro: "):
-                display_text = text[len("Erro: "):]
-            else:
-                display_text = text
+            display_text = text[len("Erro: "):] if text.startswith("Erro: ") else text
 
+        # Determine target dimensions
+        from PySide6.QtGui import QFontMetrics
         if state in ["listening", "processing"]:
-            # Format text to end with ... if not present
+            # Dynamic width based on text
             label_text = text.upper() if text else ("GRAVANDO" if state == "listening" else "POLINDO")
             if not label_text.endswith("..."):
                 label_text += "..."
-                
             target_font = QFont("Segoe UI", 8)
             target_font.setBold(True)
             metrics = QFontMetrics(target_font)
             text_w = metrics.horizontalAdvance(label_text)
-            
-            if state == "listening":
-                # Left margin (16) + visualizer (50) + spacing (10) + text_w + right margin (16) + padding (12)
-                frame_w = text_w + 104
-            else: # processing
-                # Left margin (16) + spinner (20) + spacing (10) + text_w + right margin (16) + padding (12)
-                frame_w = text_w + 74
-                
+            frame_w = text_w + 72
             target_w = max(frame_w + 20, 140)
-            target_w = min(target_w, 480)
+            target_w = min(target_w, 360)
             target_h = 60
-                
         elif header_text or (text and text not in ["CONCLUÍDO!", "COPIADO!"] and state in ["done", "error"]):
             is_text_display = True
-            
-            # Truncate text to a maximum of 120 characters for clean, premium display
             max_len = 120
             if len(display_text) > max_len:
                 display_text = display_text[:max_len].strip() + "..."
-                
-            # Standard fixed size for the copy/error message modal
             target_w = 380
             target_h = 100
-            
-            header_h = 16 if header_text else 0
-            content_h = 42 # Perfectly accommodates 2-3 lines of wrapped text
-            
-            print(f"[DEBUG OVERLAY] FIXED DYNAMIC state={state}, text={text}, header_text={header_text}, display_text={display_text}, target_w={target_w}, target_h={target_h}")
-            
         else:
-            # Simple done/error state with small text like "COPIADO!" or "CONCLUÍDO!"
-            label_text = text.upper() if text else ("COPIADO!" if state == "done" else "ERRO!")
-            target_font = QFont("Segoe UI", 8)
-            target_font.setBold(True)
-            metrics = QFontMetrics(target_font)
-            text_w = metrics.horizontalAdvance(label_text)
-            
-            # Left margin (16) + indicator (8) + spacing (10) + text_w + right margin (16) + padding (12)
-            frame_w = text_w + 62
-            target_w = max(frame_w + 20, 130)
+            target_w = 200
             target_h = 60
-            
+
         self.current_target_w = target_w
         self.current_target_h = target_h
 
-        # Update widget configurations before showing (passing computed texts)
-        self.update_state_widgets(state, text, header_text, display_text)
-
-        # Set explicit heights to prevent Qt layout stretches from squeezing wrapping labels
-        if state in ["listening", "processing"]:
-            self.label_header.setFixedHeight(0)
-            self.label_content.setFixedHeight(20)
-        elif is_text_display:
-            self.label_header.setFixedHeight(header_h)
-            self.label_content.setFixedHeight(content_h)
-        else:
-            self.label_header.setFixedHeight(0)
-            self.label_content.setFixedHeight(20)
-
-        if state in self.ACTIVE_STATES:
-            if self.is_showing or self.isVisible():
-                self._ensure_visible()
+        # Lifecycle (Task Fase 3): only fade_in when hidden
+        if self.is_showing or self.isVisible():
+            self._stop_animations()
+            
+            # Start a brief fade out of the window opacity
+            self.opacity_anim = QPropertyAnimation(self, b"windowOpacity")
+            self.opacity_anim.setDuration(70)
+            self.opacity_anim.setStartValue(self.windowOpacity())
+            self.opacity_anim.setEndValue(0.25)
+            self.opacity_anim.setEasingCurve(QEasingCurve.OutQuad)
+            
+            def on_fade_down():
+                # Apply visual states
+                self.main_frame.current_state = state
+                if state in ["done", "error"]:
+                    self.main_frame.done_sweep_pos = -0.2
+                    self.main_frame.done_sweep_dir = 1
+                
+                # Height settings for labels
+                if state in ["listening", "processing"]:
+                    self.label_header.setFixedHeight(0)
+                    self.label_content.setFixedHeight(20)
+                elif is_text_display:
+                    self.label_header.setFixedHeight(16)
+                    self.label_content.setFixedHeight(42)
+                else:
+                    self.label_header.setFixedHeight(0)
+                    self.label_content.setFixedHeight(20)
+                
+                self.update_text_with_fade(state, text, header_text, display_text)
+                
+                # Animate geometry smoothly
                 self.animate_to_size(target_w, target_h)
-            else:
-                geom = self.get_frame_geometry(target_w, target_h)
-                self.main_frame.setGeometry(geom)
-                self.fade_in()
-        elif self.is_showing:
-            self.animate_to_size(target_w, target_h)
+                
+                # Fade window opacity back in
+                self.opacity_anim_in = QPropertyAnimation(self, b"windowOpacity")
+                self.opacity_anim_in.setDuration(160)
+                self.opacity_anim_in.setStartValue(0.25)
+                self.opacity_anim_in.setEndValue(1.0)
+                self.opacity_anim_in.setEasingCurve(QEasingCurve.OutCubic)
+                
+                if self.anim_group:
+                    self.anim_group.addAnimation(self.opacity_anim_in)
+                else:
+                    self.anim_group = QParallelAnimationGroup()
+                    self.anim_group.addAnimation(self.opacity_anim_in)
+                    self.anim_group.start()
+                
+                if self.main_frame.layout():
+                    self.main_frame.layout().activate()
+            
+            self.opacity_anim.finished.connect(on_fade_down)
+            self.opacity_anim.start()
         else:
+            # First show: apply instantly and fade_in
+            self.main_frame.current_state = state
+            if state in ["done", "error"]:
+                self.main_frame.done_sweep_pos = -0.2
+                self.main_frame.done_sweep_dir = 1
+                
+            if state in ["listening", "processing"]:
+                self.label_header.setFixedHeight(0)
+                self.label_content.setFixedHeight(20)
+            elif is_text_display:
+                self.label_header.setFixedHeight(16)
+                self.label_content.setFixedHeight(42)
+            else:
+                self.label_header.setFixedHeight(0)
+                self.label_content.setFixedHeight(20)
+                
+            self.update_text_with_fade(state, text, header_text, display_text)
+            
             geom = self.get_frame_geometry(target_w, target_h)
             self.main_frame.setGeometry(geom)
+            if self.main_frame.layout():
+                self.main_frame.layout().activate()
             self.fade_in()
 
-        # Fade in the contents after applying all layouts
-        self.fade_in_content()
-
-        # Automatic dismiss on done/error state
         if state in ["done", "error"]:
             delay = 3500 if is_text_display else 1500
             if state == "error":
@@ -2170,16 +2356,21 @@ class FloatingOverlay(QWidget):
             self._cancel_dismiss()
             self._dismiss_timer.start(delay)
 
+    def update_text_with_fade(self, state, text, header_text, display_text):
+        """Apply state widgets immediately. Window-level opacity handles the visual fade."""
+        if self.text_fade_group is not None and hasattr(self.text_fade_group, 'state'):
+            try:
+                if self.text_fade_group.state() == QAbstractAnimation.State.Running:
+                    self.text_fade_group.stop()
+            except Exception:
+                pass
+        self.text_fade_group = None
+        self.update_state_widgets(state, text, header_text, display_text)
+
     def update_state_widgets(self, state, text=None, header_text=None, display_text=None):
         """Hides and shows the correct visual indicator according to the state."""
         if state == "listening":
-            self.main_frame.setStyleSheet("""
-                QFrame#main_frame {
-                    background-color: rgba(10, 10, 10, 242);
-                    border: 1.5px solid rgba(139, 92, 246, 160);
-                    border-radius: 18px;
-                }
-            """)
+            self.main_frame.is_processing = False
             self.shadow_effect.setColor(QColor(139, 92, 246, 110))
             self.shadow_effect.setBlurRadius(24)
             
@@ -2189,6 +2380,7 @@ class FloatingOverlay(QWidget):
                 label_text += "..."
             self.label_content.setText(label_text)
             self.label_content.setWordWrap(False)
+            self.label_content.setAlignment(Qt.AlignCenter)
             
             # Setup font via API to override stylesheet inheritance cleanly
             font = QFont("Segoe UI", 8)
@@ -2196,18 +2388,12 @@ class FloatingOverlay(QWidget):
             self.label_content.setFont(font)
             self.label_content.setStyleSheet("color: #ffffff; letter-spacing: 0.5px;")
             
-            self.visualizer.show()
+            self.visualizer.hide()
             self.spinner.hide()
             self.indicator.hide()
             
         elif state == "processing":
-            self.main_frame.setStyleSheet("""
-                QFrame#main_frame {
-                    background-color: rgba(10, 10, 10, 242);
-                    border: 1.5px solid rgba(245, 158, 11, 160);
-                    border-radius: 18px;
-                }
-            """)
+            self.main_frame.is_processing = True
             self.shadow_effect.setColor(QColor(245, 158, 11, 90))
             self.shadow_effect.setBlurRadius(24)
             
@@ -2217,6 +2403,7 @@ class FloatingOverlay(QWidget):
                 label_text += "..."
             self.label_content.setText(label_text)
             self.label_content.setWordWrap(False)
+            self.label_content.setAlignment(Qt.AlignCenter)
             
             font = QFont("Segoe UI", 8)
             font.setBold(True)
@@ -2224,19 +2411,15 @@ class FloatingOverlay(QWidget):
             self.label_content.setStyleSheet("color: #ffffff; letter-spacing: 0.5px;")
             
             self.visualizer.hide()
-            self.spinner.show()
+            self.spinner.hide()
             self.indicator.hide()
             
         elif state == "done":
-            self.main_frame.setStyleSheet("""
-                QFrame#main_frame {
-                    background-color: rgba(10, 10, 10, 242);
-                    border: 1.5px solid rgba(16, 185, 129, 160);
-                    border-radius: 18px;
-                }
-            """)
+            self.main_frame.is_processing = False
             self.shadow_effect.setColor(QColor(16, 185, 129, 90))
             self.shadow_effect.setBlurRadius(24)
+            self.label_content.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.label_header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             
             if header_text or (text and text not in ["CONCLUÍDO!", "COPIADO!"]):
                 if not header_text or not display_text:
@@ -2288,15 +2471,11 @@ class FloatingOverlay(QWidget):
             self.indicator.show()
             
         elif state == "error":
-            self.main_frame.setStyleSheet("""
-                QFrame#main_frame {
-                    background-color: rgba(10, 10, 10, 242);
-                    border: 1.5px solid rgba(239, 68, 68, 160);
-                    border-radius: 18px;
-                }
-            """)
+            self.main_frame.is_processing = False
             self.shadow_effect.setColor(QColor(239, 68, 68, 110))
             self.shadow_effect.setBlurRadius(24)
+            self.label_content.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.label_header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             
             if header_text or (text and text not in ["CONCLUÍDO!", "COPIADO!"]):
                 if not header_text or not display_text:
@@ -2335,30 +2514,28 @@ class FloatingOverlay(QWidget):
             self.indicator.show()
 
     def fade_in(self):
-        """Triggers a smooth slide-up and fade-in animation of the inner main_frame inside the fixed window."""
+        """Triggers a smooth fade-in of the overlay. Frame is placed directly at target position (no slide)."""
         self.is_showing = True
         self.center_on_screen()
-        
+
+        # Place frame at final target position immediately — prevents text from rendering outside
         target_geom = self.get_frame_geometry(self.current_target_w, self.current_target_h)
-        # Start 15px lower
-        start_geom = QRect(target_geom.x(), target_geom.y() + 15, target_geom.width(), target_geom.height())
-        self.main_frame.setGeometry(start_geom)
+        self.main_frame.setGeometry(target_geom)
+
+        # Force layout calculation at correct position before showing
+        if self.main_frame.layout():
+            self.main_frame.layout().activate()
+
         self.setWindowOpacity(0.0)
         self.show()
-        
-        self.frame_anim = QPropertyAnimation(self.main_frame, b"geometry")
-        self.frame_anim.setDuration(250)
-        self.frame_anim.setStartValue(start_geom)
-        self.frame_anim.setEndValue(target_geom)
-        self.frame_anim.setEasingCurve(QEasingCurve.OutCubic)
-        
+
         self.opacity_anim = QPropertyAnimation(self, b"windowOpacity")
-        self.opacity_anim.setDuration(250)
+        self.opacity_anim.setDuration(220)
         self.opacity_anim.setStartValue(0.0)
         self.opacity_anim.setEndValue(1.0)
-        
+        self.opacity_anim.setEasingCurve(QEasingCurve.OutCubic)
+
         self.anim_group = QParallelAnimationGroup()
-        self.anim_group.addAnimation(self.frame_anim)
         self.anim_group.addAnimation(self.opacity_anim)
         self.anim_group.start()
         
@@ -2396,13 +2573,14 @@ class FloatingOverlay(QWidget):
         self.is_showing = False
         self.hide()
         self.setWindowOpacity(1.0) # Reset to full opacity for next trigger
-        # Reset to initial geometry to prevent jumping next time it appears
-        geom = self.get_frame_geometry(220, 60)
-        self.main_frame.setGeometry(geom)
+        # Reset label opacities to full to avoid getting stuck invisible next time
+        self.header_opacity.setOpacity(1.0)
+        self.content_opacity.setOpacity(1.0)
 
     def update_volume_level(self, level):
         """Passes microphone volume levels to the visualizer."""
         self.visualizer.set_amplitude(level)
+        self.main_frame.set_amplitude(level)
 
 # Helper function to generate a solid color QIcon for system tray
 def create_color_icon(color_hex):
@@ -2491,8 +2669,21 @@ class FlowVoiceApp(QApplication):
 
     @Slot(str, str)
     def show_update_dialog(self, version, download_url):
-        self.update_dialog = UpdateDialog(version, download_url)
-        self.update_dialog.show()
+        if self.tray_icon:
+            self.tray_icon.showMessage(
+                "Atualização Disponível",
+                f"Uma nova versão (v{version}) do FlowVoice está disponível!\nClique para baixar.",
+                QSystemTrayIcon.Information,
+                10000
+            )
+            try:
+                self.tray_icon.messageClicked.disconnect()
+            except Exception:
+                pass
+            
+            from PySide6.QtGui import QDesktopServices
+            from PySide6.QtCore import QUrl
+            self.tray_icon.messageClicked.connect(lambda: QDesktopServices.openUrl(QUrl(download_url)))
 
     def setup_tray(self):
         """Initializes the System Tray Icon and its context menu."""
