@@ -23,6 +23,12 @@ O **FlowVoice** foi projetado para ser executado sem impactar o desempenho do se
 - **Pesquisa Google por Voz**: Pressione `Ctrl + Shift + U` para fazer perguntas faladas. O app busca na IA e abre um **Assistente Chat** interativo para você continuar a conversa.
 - **Múltiplos Provedores (Failover Pool)**: Configure chaves para **Gemini**, **OpenAI**, **Groq** ou **GitHub Models**. Se um provedor falhar, o app automaticamente tenta o próximo na fila.
 - **Transcrição Local (100% Offline)**: Opção de rodar sem chaves de nuvem usando o modelo **Whisper** localmente via GPU/CPU.
+- **Painel de Configurações Interativo**: Painel de controle em abas modernas para gerenciar o app de forma simples:
+  - **⚙️ Geral**: Escolha o tom da transcrição, o idioma padrão da tradução por voz, inicialização automática com o sistema e silenciamento de sons do PC ao gravar.
+  - **🔑 Conexões**: Escolha a IA principal, insira chaves de API (com suporte a múltiplas chaves separadas por vírgula) e consulte atalhos para obter acesso grátis no Groq, GitHub Models e Gemini.
+  - **🖥️ Whisper Local**: Selecione o tamanho do modelo offline (desde `tiny` super rápido a `large-v3` de alta precisão) e ative aceleração por placa Nvidia (`CUDA`).
+  - **⌨️ Atalhos**: Personalize todos os atalhos globais capturando as combinações de teclas diretamente do seu teclado físico.
+- **Verificação Automática de Atualizações**: O sistema busca por novas versões em segundo plano a cada 1 hora sem interromper o uso, mostrando de forma visual e dinâmica no rodapé do painel de configurações o status atual (atualizado ou nova versão disponível).
 - **Integração com o sistema**: Roda silenciosamente na área de notificação (bandeja), com opção de **iniciar junto com o sistema** integrada no menu.
 - **Sistema de Logs**: Todos os eventos e depurações do Whisper local e da IA são salvos de forma organizada em `%APPDATA%\FlowVoice\flowvoice.log` (Windows) ou `~/.config/FlowVoice/flowvoice.log` (Ubuntu).
 
