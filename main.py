@@ -47,7 +47,8 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout, QLabel, 
     QSystemTrayIcon, QMenu, QDialog, QFormLayout, QLineEdit, 
     QComboBox, QPushButton, QMessageBox, QFrame, QGraphicsDropShadowEffect,
-    QTextEdit, QCheckBox, QProgressBar, QScrollArea
+    QTextEdit, QCheckBox, QProgressBar, QScrollArea, QTabWidget,
+    QGraphicsOpacityEffect
 )
 from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect, QAbstractAnimation
 from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen
@@ -1160,9 +1161,10 @@ def is_run_at_startup_enabled():
 
 # Settings/Wizard Dialog
 class SettingsDialog(QDialog):
-    def __init__(self, config_manager, parent=None):
+    def __init__(self, config_manager, app=None, parent=None):
         super().__init__(parent)
         self.config_manager = config_manager
+        self.app = app
         self.drag_position = None
         self.init_ui()
 
@@ -1227,15 +1229,42 @@ class SettingsDialog(QDialog):
         
         return line_edit, h_layout
 
+    def animate_tab_transition(self, index):
+        """Fade-in transition animation when switching tabs, cleaning up the effect afterwards."""
+        widget = self.tabs.widget(index)
+        if widget:
+            try:
+                # Setup graphics opacity effect on the new tab widget
+                effect = QGraphicsOpacityEffect(widget)
+                widget.setGraphicsEffect(effect)
+                
+                self.tab_anim = QPropertyAnimation(effect, b"opacity")
+                self.tab_anim.setDuration(180)
+                self.tab_anim.setStartValue(0.0)
+                self.tab_anim.setEndValue(1.0)
+                self.tab_anim.setEasingCurve(QEasingCurve.OutQuad)
+                
+                # Clean up effect on finish to prevent hover/rendering glitches
+                def on_finished():
+                    try:
+                        widget.setGraphicsEffect(None)
+                    except RuntimeError:
+                        pass
+                
+                self.tab_anim.finished.connect(on_finished)
+                self.tab_anim.start()
+            except RuntimeError:
+                pass
+
     def init_ui(self):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setFixedSize(620, 800)
+        self.setFixedSize(650, 750)
 
         # Main container for shadow and borders
         self.container_frame = QFrame(self)
         self.container_frame.setObjectName("container_frame")
-        self.container_frame.setGeometry(10, 10, 600, 780)
+        self.container_frame.setGeometry(10, 10, 630, 730)
         
         self.container_frame.setStyleSheet("""
             QFrame#container_frame {
@@ -1257,7 +1286,7 @@ class SettingsDialog(QDialog):
             QLabel {
                 color: rgba(255, 255, 255, 220);
                 font-size: 13px;
-                font-weight: 600;
+                font-weight: 700;
                 font-family: 'Segoe UI', sans-serif;
             }
             QLineEdit, QComboBox {
@@ -1314,7 +1343,7 @@ class SettingsDialog(QDialog):
         # Main Layout inside container
         main_layout = QVBoxLayout(self.container_frame)
         main_layout.setContentsMargins(20, 15, 20, 20)
-        main_layout.setSpacing(18)
+        main_layout.setSpacing(14)
 
         # 1. Custom Title Bar Layout
         header_layout = QHBoxLayout()
@@ -1343,126 +1372,10 @@ class SettingsDialog(QDialog):
         sep.setStyleSheet("background-color: rgba(255, 255, 255, 20);")
         main_layout.addWidget(sep)
 
-        # 2. Scroll Area for Inputs
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scroll_area.setStyleSheet("""
-            QScrollArea {
-                background-color: transparent;
-                border: none;
-            }
-            QScrollBar:vertical {
-                border: none;
-                background: transparent;
-                width: 6px;
-                margin: 0px;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(255, 255, 255, 30);
-                min-height: 30px;
-                border-radius: 3px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: rgba(255, 255, 255, 60);
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                border: none;
-                background: none;
-            }
-        """)
-
-        scroll_content = QWidget()
-        scroll_content.setObjectName("scroll_content")
-        scroll_content.setStyleSheet("QWidget#scroll_content { background-color: transparent; }")
-        
-        scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(0, 0, 10, 0)
-        scroll_layout.setSpacing(16)
-
-        form_layout = QFormLayout()
-        form_layout.setVerticalSpacing(14)
-        form_layout.setHorizontalSpacing(15)
-        form_layout.setContentsMargins(0, 5, 0, 5)
-
-        self.combo_provider = QComboBox()
-        self.combo_provider.addItems(["gemini", "openai", "groq", "github_models"])
-        self.combo_provider.setCurrentText(self.config_manager.get("provider", "gemini"))
-        form_layout.addRow("Provedor Preferencial:", self.combo_provider)
-
-        self.combo_style = QComboBox()
-        self.combo_style.addItems(["Profissional", "Casual", "Direto"])
-        self.combo_style.setCurrentText(self.config_manager.get("active_style", "Profissional"))
-        form_layout.addRow("Estilo de Escrita Ativo:", self.combo_style)
-
-        self.txt_gemini = QLineEdit()
-        self.txt_gemini.setEchoMode(QLineEdit.Password)
-        self.txt_gemini.setText(self.config_manager.get_api_key("gemini"))
-        self.txt_gemini.setPlaceholderText("Chaves separadas por vírgula")
-        form_layout.addRow("Chaves Gemini (sep. por vírgula):", self.txt_gemini)
-
-        self.txt_openai = QLineEdit()
-        self.txt_openai.setEchoMode(QLineEdit.Password)
-        self.txt_openai.setText(self.config_manager.get_api_key("openai"))
-        self.txt_openai.setPlaceholderText("Chaves separadas por vírgula")
-        form_layout.addRow("Chaves OpenAI (sep. por vírgula):", self.txt_openai)
-
-        self.txt_groq = QLineEdit()
-        self.txt_groq.setEchoMode(QLineEdit.Password)
-        self.txt_groq.setText(self.config_manager.get_api_key("groq"))
-        self.txt_groq.setPlaceholderText("Chaves separadas por vírgula")
-        form_layout.addRow("Chaves Groq (sep. por vírgula):", self.txt_groq)
-
-        self.txt_github_models = QLineEdit()
-        self.txt_github_models.setEchoMode(QLineEdit.Password)
-        self.txt_github_models.setText(self.config_manager.get_api_key("github_models"))
-        self.txt_github_models.setPlaceholderText("Chaves separadas por vírgula")
-        form_layout.addRow("Chaves GitHub Models:", self.txt_github_models)
-
-        self.combo_whisper = QComboBox()
-        self.combo_whisper.addItems(["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"])
-        self.combo_whisper.setCurrentText(self.config_manager.get("whisper", {}).get("model_size", "base"))
-        form_layout.addRow("Modelo Whisper (Local):", self.combo_whisper)
-
-        self.combo_whisper_device = QComboBox()
-        self.combo_whisper_device.addItems(["cpu", "cuda"])
-        self.combo_whisper_device.setCurrentText(self.config_manager.get("whisper", {}).get("device", "cpu"))
-        form_layout.addRow("Dispositivo Whisper:", self.combo_whisper_device)
-
-        self.combo_mode = QComboBox()
-        self.combo_mode.addItems(["Ditado", "Tradução", "Pesquisa"])
-        mode_map = {"ditado": "Ditado", "traducao": "Tradução", "pesquisa": "Pesquisa"}
-        self.combo_mode.setCurrentText(mode_map.get(self.config_manager.get("operation_mode", "ditado"), "Ditado"))
-        form_layout.addRow("Modo de Operação Padrão:", self.combo_mode)
-
-        self.combo_target_lang = QComboBox()
-        self.combo_target_lang.addItems(["Inglês", "Espanhol", "Francês", "Alemão", "Italiano"])
-        self.combo_target_lang.setCurrentText(self.config_manager.get("translation_target", "Inglês"))
-        form_layout.addRow("Idioma de Tradução:", self.combo_target_lang)
-
-        # Hotkeys with Capture buttons
-        self.txt_hotkey, layout_hk = self.create_hotkey_row("Atalho Ditado Padrão:", "hotkey", "<ctrl>+<shift>+<space>")
-        form_layout.addRow("Atalho Ditado Padrão:", layout_hk)
-
-        self.txt_hotkey_translation, layout_hkt = self.create_hotkey_row("Atalho Tradução:", "hotkey_translation", "<ctrl>+<shift>+<y>")
-        form_layout.addRow("Atalho Tradução:", layout_hkt)
-
-        self.txt_hotkey_pesquisa, layout_hkp = self.create_hotkey_row("Atalho Pesquisa Google:", "hotkey_pesquisa", "<ctrl>+<shift>+<u>")
-        form_layout.addRow("Atalho Pesquisa Google:", layout_hkp)
-
-        startup_label = "Iniciar junto com o Windows" if sys.platform == 'win32' else "Iniciar junto com o sistema"
-        self.chk_startup = QCheckBox(startup_label)
-        self.chk_startup.setChecked(is_run_at_startup_enabled() or self.config_manager.get("start_with_windows", False))
-        
-        self.chk_mute = QCheckBox("Mutar áudio do PC durante a gravação")
-        self.chk_mute.setChecked(self.config_manager.get("mute_on_record", False))
-        
+        # Checkbox style asset check
         base_dir = get_app_data_dir()
         checkmark_path = os.path.join(base_dir, "checkmark.svg").replace("\\", "/")
         
-        # Write checkmark SVG if it doesn't exist yet
         if not os.path.exists(checkmark_path):
             try:
                 with open(checkmark_path, "w", encoding="utf-8") as f:
@@ -1479,6 +1392,7 @@ class SettingsDialog(QDialog):
                 color: rgba(255, 255, 255, 220);
                 font-size: 13px;
                 font-family: 'Segoe UI', sans-serif;
+                font-weight: bold;
                 spacing: 8px;
             }}
             QCheckBox::indicator {{
@@ -1501,15 +1415,138 @@ class SettingsDialog(QDialog):
                 image: url("{checkmark_path}");
             }}
         """
-        self.chk_startup.setStyleSheet(checkbox_style)
-        self.chk_mute.setStyleSheet(checkbox_style)
+
+        # Description Label Helper
+        def create_desc(text):
+            lbl = QLabel(text)
+            lbl.setStyleSheet("color: rgba(255, 255, 255, 120); font-size: 11px; font-weight: normal; margin-top: -2px; margin-bottom: 6px;")
+            lbl.setWordWrap(True)
+            return lbl
+
+        # 2. Tab Widget for Inputs
+        self.tabs = QTabWidget()
+        self.tabs.currentChanged.connect(self.animate_tab_transition)
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid rgba(255, 255, 255, 20);
+                background-color: rgba(255, 255, 255, 4);
+                border-radius: 8px;
+                padding: 10px;
+            }
+            QTabBar::tab {
+                background-color: rgba(255, 255, 255, 8);
+                border: 1px solid rgba(255, 255, 255, 20);
+                border-bottom: none;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+                padding: 6px 12px;
+                color: rgba(255, 255, 255, 160);
+                font-size: 11px;
+                font-weight: bold;
+                font-family: 'Segoe UI', sans-serif;
+                margin-right: 4px;
+            }
+            QTabBar::tab:hover {
+                background-color: rgba(255, 255, 255, 15);
+                color: #ffffff;
+            }
+            QTabBar::tab:selected {
+                background-color: rgba(139, 92, 246, 30);
+                border: 1px solid #8b5cf6;
+                border-bottom: none;
+                color: #ffffff;
+            }
+        """)
+
+        # Tab 1: Geral
+        tab_general = QWidget()
+        layout_general = QVBoxLayout(tab_general)
+        layout_general.setContentsMargins(10, 10, 10, 10)
         
-        form_layout.addRow("", self.chk_startup)
-        form_layout.addRow("", self.chk_mute)
+        form_general = QFormLayout()
+        form_general.setVerticalSpacing(8)
+        form_general.setHorizontalSpacing(15)
+        
+        self.combo_style = QComboBox()
+        self.combo_style.addItems(["Profissional", "Casual", "Direto"])
+        self.combo_style.setCurrentText(self.config_manager.get("active_style", "Profissional"))
+        form_general.addRow("Estilo de Escrita Ativo:", self.combo_style)
+        form_general.addRow("", create_desc("Determina como a IA ajustará o texto. Casual corrige pontuação e mantém gírias. Profissional corrige a gramática inteira e reformula o texto para um tom formal."))
+        
+        self.combo_mode = QComboBox()
+        self.combo_mode.addItems(["Ditado", "Tradução", "Pesquisa"])
+        mode_map = {"ditado": "Ditado", "traducao": "Tradução", "pesquisa": "Pesquisa"}
+        self.combo_mode.setCurrentText(mode_map.get(self.config_manager.get("operation_mode", "ditado"), "Ditado"))
+        form_general.addRow("Modo de Operação Padrão:", self.combo_mode)
+        form_general.addRow("", create_desc("O comportamento do atalho principal: Ditado digita direto sob o cursor, Tradução traduz a fala, Pesquisa abre o assistente por voz."))
+        
+        self.combo_target_lang = QComboBox()
+        self.combo_target_lang.addItems(["Inglês", "Espanhol", "Francês", "Alemão", "Italiano"])
+        self.combo_target_lang.setCurrentText(self.config_manager.get("translation_target", "Inglês"))
+        form_general.addRow("Idioma de Tradução:", self.combo_target_lang)
+        form_general.addRow("", create_desc("O idioma destino para o qual sua voz em Português será traduzida automaticamente (usando o atalho de Tradução)."))
+        
+        startup_label = "Iniciar junto com o Windows" if sys.platform == 'win32' else "Iniciar junto com o sistema"
+        self.chk_startup = QCheckBox(startup_label)
+        self.chk_startup.setChecked(is_run_at_startup_enabled() or self.config_manager.get("start_with_windows", False))
+        self.chk_startup.setStyleSheet(checkbox_style)
+        form_general.addRow("", self.chk_startup)
+        form_general.addRow("", create_desc("Inicia o FlowVoice de forma minimizada na bandeja do sistema sempre que você ligar o computador."))
+        
+        self.chk_mute = QCheckBox("Mutar áudio do PC durante a gravação")
+        self.chk_mute.setChecked(self.config_manager.get("mute_on_record", False))
+        self.chk_mute.setStyleSheet(checkbox_style)
+        form_general.addRow("", self.chk_mute)
+        form_general.addRow("", create_desc("Silencia temporariamente os sons do computador durante a gravação para evitar que ruídos do sistema ou músicas estraguem a transcrição."))
+        
+        layout_general.addLayout(form_general)
+        layout_general.addStretch()
+        self.tabs.addTab(tab_general, "⚙️ Geral")
 
-        scroll_layout.addLayout(form_layout)
-
-        # Info Box for API Keys
+        # Tab 2: Conexões & Chaves
+        tab_keys = QWidget()
+        layout_keys = QVBoxLayout(tab_keys)
+        layout_keys.setContentsMargins(10, 10, 10, 10)
+        
+        form_keys = QFormLayout()
+        form_keys.setVerticalSpacing(8)
+        form_keys.setHorizontalSpacing(15)
+        
+        self.combo_provider = QComboBox()
+        self.combo_provider.addItems(["gemini", "openai", "groq", "github_models"])
+        self.combo_provider.setCurrentText(self.config_manager.get("provider", "gemini"))
+        form_keys.addRow("Provedor Preferencial:", self.combo_provider)
+        form_keys.addRow("", create_desc("A Inteligência Artificial principal usada para polir e corrigir seus textos ditados. Gemini e Groq oferecem limites gratuitos robustos."))
+        
+        self.txt_gemini = QLineEdit()
+        self.txt_gemini.setEchoMode(QLineEdit.Password)
+        self.txt_gemini.setText(self.config_manager.get_api_key("gemini"))
+        self.txt_gemini.setPlaceholderText("Chaves separadas por vírgula")
+        form_keys.addRow("Chaves Gemini:", self.txt_gemini)
+        
+        self.txt_openai = QLineEdit()
+        self.txt_openai.setEchoMode(QLineEdit.Password)
+        self.txt_openai.setText(self.config_manager.get_api_key("openai"))
+        self.txt_openai.setPlaceholderText("Chaves separadas por vírgula")
+        form_keys.addRow("Chaves OpenAI:", self.txt_openai)
+        
+        self.txt_groq = QLineEdit()
+        self.txt_groq.setEchoMode(QLineEdit.Password)
+        self.txt_groq.setText(self.config_manager.get_api_key("groq"))
+        self.txt_groq.setPlaceholderText("Chaves separadas por vírgula")
+        form_keys.addRow("Chaves Groq:", self.txt_groq)
+        
+        self.txt_github_models = QLineEdit()
+        self.txt_github_models.setEchoMode(QLineEdit.Password)
+        self.txt_github_models.setText(self.config_manager.get_api_key("github_models"))
+        self.txt_github_models.setPlaceholderText("Chaves separadas por vírgula")
+        form_keys.addRow("Chaves GitHub Models:", self.txt_github_models)
+        form_keys.addRow("", create_desc("Chaves secretas das plataformas. Você pode inserir mais de uma chave separando por vírgula para ativar o pool de failover automático caso uma IA apresente indisponibilidade."))
+        
+        layout_keys.addLayout(form_keys)
+        layout_keys.addStretch()
+        
+        # Free API Info Box
         info_frame = QFrame()
         info_frame.setStyleSheet("""
             QFrame {
@@ -1519,27 +1556,106 @@ class SettingsDialog(QDialog):
             }
         """)
         info_layout = QVBoxLayout(info_frame)
-        info_layout.setContentsMargins(12, 10, 12, 10)
+        info_layout.setContentsMargins(10, 8, 10, 8)
         info_layout.setSpacing(4)
         
-        lbl_info_title = QLabel("💡 Precisa de chaves de API grátis?")
+        lbl_info_title = QLabel("💡 Como obter chaves de API grátis?")
         lbl_info_title.setStyleSheet("color: #ffffff; font-size: 11px; font-weight: bold; font-family: 'Segoe UI', sans-serif;")
         
         lbl_info_desc = QLabel(
-            "Caso não configure chaves de API, o programa colará apenas o texto cru transcrevido pelo Whisper.<br/>"
-            "• <b>Groq:</b> Acesse <a href='https://console.groq.com/keys' style='color:#8b5cf6; text-decoration:none;'>console.groq.com/keys</a> para gerar chaves grátis super rápidas.<br/>"
-            "• <b>Gemini:</b> Acesse <a href='https://aistudio.google.com' style='color:#8b5cf6; text-decoration:none;'>aistudio.google.com</a> para obter a chave grátis do Google."
+            "• <b>Groq (Recomendado - Grátis & Ultra Rápido):</b> <a href='https://console.groq.com/keys' style='color:#8b5cf6; text-decoration:none;'>console.groq.com/keys</a><br/>"
+            "• <b>GitHub Models (Grátis para Devs):</b> <a href='https://github.com/marketplace/models' style='color:#8b5cf6; text-decoration:none;'>github.com/marketplace/models</a><br/>"
+            "• <b>Google Gemini (Cota Grátis Limitada):</b> <a href='https://aistudio.google.com' style='color:#8b5cf6; text-decoration:none;'>aistudio.google.com</a><br/>"
+            "• <b>OpenAI (Pago / Premium):</b> <a href='https://platform.openai.com' style='color:#8b5cf6; text-decoration:none;'>platform.openai.com</a>"
         )
         lbl_info_desc.setOpenExternalLinks(True)
         lbl_info_desc.setWordWrap(True)
-        lbl_info_desc.setStyleSheet("color: rgba(255, 255, 255, 160); font-size: 11px; font-weight: normal; font-family: 'Segoe UI', sans-serif; line-height: 1.4;")
+        lbl_info_desc.setStyleSheet("color: rgba(255, 255, 255, 140); font-size: 10.5px; font-weight: normal; font-family: 'Segoe UI', sans-serif; line-height: 1.3;")
         
         info_layout.addWidget(lbl_info_title)
         info_layout.addWidget(lbl_info_desc)
-        scroll_layout.addWidget(info_frame)
+        layout_keys.addWidget(info_frame)
+        
+        self.tabs.addTab(tab_keys, "🔑 Conexões")
 
-        self.scroll_area.setWidget(scroll_content)
-        main_layout.addWidget(self.scroll_area)
+        # Tab 3: Whisper Local
+        tab_whisper = QWidget()
+        layout_whisper = QVBoxLayout(tab_whisper)
+        layout_whisper.setContentsMargins(10, 10, 10, 10)
+        
+        form_whisper = QFormLayout()
+        form_whisper.setVerticalSpacing(8)
+        form_whisper.setHorizontalSpacing(15)
+        
+        self.combo_whisper = QComboBox()
+        self.combo_whisper.addItems(["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"])
+        self.combo_whisper.setCurrentText(self.config_manager.get("whisper", {}).get("model_size", "base"))
+        form_whisper.addRow("Modelo Whisper (Local):", self.combo_whisper)
+        form_whisper.addRow("", create_desc("Modelo offline que roda direto no seu PC. Modelos menores (tiny/base) são rápidos, enquanto modelos maiores (large-v3) são muito precisos porém exigem computador forte."))
+        
+        self.combo_whisper_device = QComboBox()
+        self.combo_whisper_device.addItems(["cpu", "cuda"])
+        self.combo_whisper_device.setCurrentText(self.config_manager.get("whisper", {}).get("device", "cpu"))
+        form_whisper.addRow("Dispositivo Whisper:", self.combo_whisper_device)
+        form_whisper.addRow("", create_desc("Dispositivo de hardware: cuda usa placa Nvidia (rápido), cpu usa processador principal (lento)."))
+        
+        layout_whisper.addLayout(form_whisper)
+        layout_whisper.addStretch()
+        self.tabs.addTab(tab_whisper, "🖥️ Whisper Local")
+
+        # Tab 4: Atalhos
+        tab_hotkeys = QWidget()
+        layout_hotkeys = QVBoxLayout(tab_hotkeys)
+        layout_hotkeys.setContentsMargins(10, 10, 10, 10)
+        
+        form_hotkeys = QFormLayout()
+        form_hotkeys.setVerticalSpacing(8)
+        form_hotkeys.setHorizontalSpacing(15)
+        
+        self.txt_hotkey, layout_hk = self.create_hotkey_row("Atalho Ditado Padrão:", "hotkey", "<ctrl>+<shift>+<space>")
+        form_hotkeys.addRow("Atalho Ditado Padrão:", layout_hk)
+        form_hotkeys.addRow("", create_desc("Atalho para iniciar/parar a gravação de ditado padrão."))
+        
+        self.txt_hotkey_translation, layout_hkt = self.create_hotkey_row("Atalho Tradução:", "hotkey_translation", "<ctrl>+<shift>+<y>")
+        form_hotkeys.addRow("Atalho Tradução:", layout_hkt)
+        form_hotkeys.addRow("", create_desc("Atalho para ditar em português e digitar o texto traduzido no destino."))
+        
+        self.txt_hotkey_pesquisa, layout_hkp = self.create_hotkey_row("Atalho Pesquisa Google:", "hotkey_pesquisa", "<ctrl>+<shift>+<u>")
+        form_hotkeys.addRow("Atalho Pesquisa Google:", layout_hkp)
+        form_hotkeys.addRow("", create_desc("Atalho para gravação de pesquisa e abertura do assistente chat por voz."))
+        
+        form_hotkeys.addRow("", create_desc("Instruções: clique em 'Capturar' e pressione as teclas físicas combinadas (ex: Ctrl, Shift, Y) para registrar o novo atalho."))
+        
+        layout_hotkeys.addLayout(form_hotkeys)
+        layout_hotkeys.addStretch()
+        self.tabs.addTab(tab_hotkeys, "⌨️ Atalhos")
+
+        main_layout.addWidget(self.tabs)
+        main_layout.addSpacing(5)
+
+        # Credits & Links
+        credits_layout = QHBoxLayout()
+        credits_layout.setAlignment(Qt.AlignCenter)
+        
+        status_text = f"v{CURRENT_VERSION}"
+        status_color = "rgba(255, 255, 255, 130)"
+        
+        if self.app and getattr(self.app, 'latest_checked_version', None):
+            status_text += f" (Nova versão {self.app.latest_checked_version} disponível!)"
+            status_color = "#34d399"
+        else:
+            status_text += " (Atualizado)"
+            
+        lbl_credits = QLabel(
+            f"Desenvolvido por Júlio Caliberda | <span style='color:{status_color}; font-weight:bold;'>{status_text}</span> | "
+            "<a href='https://github.com/cesarkali/Flow-Voice' style='color:#8b5cf6; text-decoration:none;'>GitHub</a> • "
+            "<a href='https://caliberda.com.br/' style='color:#8b5cf6; text-decoration:none;'>Site</a> • "
+            "<a href='https://www.instagram.com/cesar.kali/' style='color:#8b5cf6; text-decoration:none;'>Instagram</a>"
+        )
+        lbl_credits.setOpenExternalLinks(True)
+        lbl_credits.setStyleSheet("color: rgba(255, 255, 255, 130); font-size: 11px; font-weight: normal;")
+        credits_layout.addWidget(lbl_credits)
+        main_layout.addLayout(credits_layout)
         main_layout.addSpacing(5)
 
         # 3. Action Buttons
@@ -2619,6 +2735,8 @@ class FlowVoiceApp(QApplication):
         self.is_recording = False
         self.ai_worker = None
         self.current_recording_mode = "ditado"
+        self.latest_checked_version = None
+        self.update_download_url = None
 
         # Bridge to route hotkey triggers safely to the main GUI thread
         self.hotkey_bridge = HotkeySignalBridge()
@@ -2639,6 +2757,11 @@ class FlowVoiceApp(QApplication):
         # Check for updates in the background on startup
         self.update_checker = None
         QTimer.singleShot(1500, self.start_background_update_check)
+        
+        # Periodic check every 1 hour (3600000 ms)
+        self.update_timer = QTimer(self)
+        self.update_timer.timeout.connect(self.start_background_update_check)
+        self.update_timer.start(3600000)
 
     def get_hotkeys_map(self):
         """Returns a mapping of hotkeys to their corresponding mode triggers."""
@@ -2664,8 +2787,13 @@ class FlowVoiceApp(QApplication):
 
     def start_background_update_check(self):
         self.update_checker = UpdateCheckerWorker()
-        self.update_checker.update_available.connect(self.show_update_dialog)
+        self.update_checker.update_available.connect(self.on_background_update_available)
         self.update_checker.start()
+
+    def on_background_update_available(self, version, download_url):
+        self.latest_checked_version = version
+        self.update_download_url = download_url
+        self.show_update_dialog(version, download_url)
 
     @Slot(str, str)
     def show_update_dialog(self, version, download_url):
@@ -2818,7 +2946,7 @@ class FlowVoiceApp(QApplication):
         print(f"Idioma de tradução alterado para: {lang_name}")
 
     def show_settings_dialog(self):
-        dialog = SettingsDialog(self.config_manager)
+        dialog = SettingsDialog(self.config_manager, app=self)
         if dialog.exec() == QDialog.Accepted:
             # Re-initialize all hotkeys in the listener
             self.hotkey_listener.update_hotkeys(self.get_hotkeys_map())
