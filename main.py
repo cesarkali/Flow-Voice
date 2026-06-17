@@ -48,10 +48,11 @@ from PySide6.QtWidgets import (
     QSystemTrayIcon, QMenu, QDialog, QFormLayout, QLineEdit, 
     QComboBox, QPushButton, QMessageBox, QFrame, QGraphicsDropShadowEffect,
     QTextEdit, QCheckBox, QProgressBar, QScrollArea, QTabWidget,
-    QGraphicsOpacityEffect
+    QGraphicsOpacityEffect, QStackedWidget
 )
-from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect, QAbstractAnimation
-from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen
+from PySide6.QtCore import Qt, QTimer, QThread, Signal, Slot, QPropertyAnimation, QParallelAnimationGroup, QEasingCurve, QRect, QAbstractAnimation, QUrl
+from PySide6.QtGui import QIcon, QColor, QFont, QAction, QPainter, QBrush, QPen, QPixmap, QDesktopServices
+from PySide6.QtSvg import QSvgRenderer
 from PySide6 import QtSvg
 
 from version import VERSION
@@ -1159,23 +1160,987 @@ def is_run_at_startup_enabled():
 
     return False
 
+class WizardPrimaryBtn(QPushButton):
+    """Animated primary button for the wizard nav."""
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+        self.setFixedHeight(36)
+        self.setCursor(Qt.PointingHandCursor)
+        self._base_style = """
+            QPushButton {{
+                background: {bg};
+                border: none; border-radius: 8px;
+                color: #ffffff; font-size: 12px; font-weight: 700;
+                font-family: 'Segoe UI', sans-serif; padding: 0 22px;
+            }}
+        """
+        self._set_bg("#8b5cf6")
+
+    def _set_bg(self, color):
+        self.setStyleSheet(self._base_style.format(bg=color))
+
+    def enterEvent(self, e):
+        super().enterEvent(e)
+        self._set_bg("#7c3aed")
+        eff = QGraphicsDropShadowEffect(self)
+        eff.setBlurRadius(18); eff.setColor(QColor(139,92,246,120)); eff.setOffset(0,3)
+        self.setGraphicsEffect(eff)
+
+    def leaveEvent(self, e):
+        super().leaveEvent(e)
+        self._set_bg("#8b5cf6")
+        self.setGraphicsEffect(None)
+
+    def mousePressEvent(self, e):
+        super().mousePressEvent(e)
+        self._set_bg("#6d28d9")
+
+    def mouseReleaseEvent(self, e):
+        super().mouseReleaseEvent(e)
+        self._set_bg("#7c3aed")
+
+
+class WizardSecondaryBtn(QPushButton):
+    """Animated secondary (back) button for the wizard nav."""
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+        self.setFixedHeight(36)
+        self.setCursor(Qt.PointingHandCursor)
+        self._idle = "QPushButton { background: transparent; border: 1px solid rgba(255,255,255,22); border-radius: 8px; color: rgba(255,255,255,140); font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; padding: 0 18px; }"
+        self._hover = "QPushButton { background: rgba(255,255,255,10); border: 1px solid rgba(255,255,255,55); border-radius: 8px; color: #ffffff; font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; padding: 0 18px; }"
+        self.setStyleSheet(self._idle)
+
+    def enterEvent(self, e):
+        super().enterEvent(e); self.setStyleSheet(self._hover)
+
+    def leaveEvent(self, e):
+        super().leaveEvent(e); self.setStyleSheet(self._idle)
+
+    def mousePressEvent(self, e):
+        super().mousePressEvent(e)
+        self.setStyleSheet("QPushButton { background: rgba(255,255,255,18); border: 1px solid rgba(255,255,255,70); border-radius: 8px; color: #ffffff; font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; padding: 0 18px; }")
+
+    def mouseReleaseEvent(self, e):
+        super().mouseReleaseEvent(e); self.setStyleSheet(self._hover)
+
+
 # Settings/Wizard Dialog
+class SetupWizard(QDialog):
+    """4-step first-run wizard: Welcome → Provider → Style → Hotkey."""
+
+    def __init__(self, config_manager, app=None, parent=None, allow_close=False):
+        super().__init__(parent)
+        self.config_manager = config_manager
+        self.app = app
+        self.drag_position = None
+        self._step = 0
+        self._allow_close = allow_close
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setFixedSize(740, 590)
+        self._init_ui()
+
+    def _init_ui(self):
+        self.container = QFrame(self)
+        self.container.setGeometry(10, 10, 720, 570)
+        self.container.setStyleSheet("""
+            QFrame {
+                background-color: #0d0d0d;
+                border: 1px solid rgba(255,255,255,25);
+                border-radius: 16px;
+            }
+        """)
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(30)
+        shadow.setColor(QColor(0, 0, 0, 200))
+        shadow.setOffset(0, 6)
+        self.container.setGraphicsEffect(shadow)
+
+        root = QVBoxLayout(self.container)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        # Progress bar (steps) — inside the rounded container, with own margins
+        prog_wrap = QFrame()
+        prog_wrap.setFixedHeight(14)
+        prog_wrap.setStyleSheet("QFrame { background: transparent; border: none; }")
+        prog_wrap_l = QHBoxLayout(prog_wrap)
+        prog_wrap_l.setContentsMargins(16, 5, 16, 0)
+        prog_wrap_l.setSpacing(0)
+
+        self._progress_bar = QFrame()
+        self._progress_bar.setFixedHeight(4)
+        self._progress_bar.setStyleSheet("""
+            QFrame { background: rgba(139,92,246,30); border-radius: 2px; border: none; }
+        """)
+        prog_wrap_l.addWidget(self._progress_bar)
+        root.addWidget(prog_wrap)
+
+        self._progress_fill = QFrame(self._progress_bar)
+        self._progress_fill.setFixedHeight(4)
+        self._progress_fill.setStyleSheet("""
+            QFrame { background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #8b5cf6, stop:1 #ec4899); border-radius: 2px; border: none; }
+        """)
+        self._progress_fill.setGeometry(0, 0, 0, 4)
+
+        # Title bar row with close button
+        title_bar = QFrame()
+        title_bar.setFixedHeight(44)
+        title_bar.setStyleSheet("QFrame { background: transparent; border: none; }")
+        tb_l = QHBoxLayout(title_bar)
+        tb_l.setContentsMargins(20, 0, 12, 0)
+        tb_l.setSpacing(0)
+        tb_l.addStretch()
+        btn_close = QPushButton("✕")
+        btn_close.setFixedSize(28, 28)
+        btn_close.setCursor(Qt.PointingHandCursor if self._allow_close else Qt.ForbiddenCursor)
+        btn_close.setToolTip("Fechar" if self._allow_close else "Configure ao menos um provedor para continuar")
+        if self._allow_close:
+            btn_close.setStyleSheet("""
+                QPushButton { background: transparent; border: none; color: rgba(255,255,255,80); font-size: 13px; font-weight: bold; border-radius: 6px; }
+                QPushButton:hover { background: rgba(255,85,85,30); color: #ff5555; }
+            """)
+            btn_close.clicked.connect(lambda: self.fade_out_and_close(False))
+        else:
+            btn_close.setStyleSheet("""
+                QPushButton { background: transparent; border: none; color: rgba(255,255,255,20); font-size: 13px; font-weight: bold; border-radius: 6px; }
+            """)
+        tb_l.addWidget(btn_close)
+        root.addWidget(title_bar)
+
+        # Steps stack
+        self.stack = QStackedWidget()
+        self.stack.setStyleSheet("background: transparent; border: none;")
+        root.addWidget(self.stack, 1)
+
+        self._build_step_welcome()
+        self._build_step_provider()
+        self._build_step_style()
+        self._build_step_hotkey()
+
+        # Bottom nav
+        nav = QFrame()
+        nav.setFixedHeight(64)
+        nav.setStyleSheet("""
+            QFrame {
+                background: rgba(255,255,255,3);
+                border-top: 1px solid rgba(255,255,255,10);
+                border-bottom-left-radius: 16px;
+                border-bottom-right-radius: 16px;
+            }
+        """)
+        nav_l = QHBoxLayout(nav)
+        nav_l.setContentsMargins(24, 0, 24, 0)
+        nav_l.setSpacing(12)
+
+        self.step_lbl = QLabel("Passo 1 de 4")
+        self.step_lbl.setStyleSheet("color: rgba(255,255,255,60); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        nav_l.addWidget(self.step_lbl)
+        nav_l.addStretch()
+
+        self.btn_back = WizardSecondaryBtn("← Voltar")
+        self.btn_back.setVisible(False)
+        self.btn_back.clicked.connect(self._go_back)
+
+        self.btn_next = WizardPrimaryBtn("Próximo →")
+        self.btn_next.clicked.connect(self._go_next)
+
+        nav_l.addWidget(self.btn_back)
+        nav_l.addWidget(self.btn_next)
+        root.addWidget(nav)
+
+        self._update_progress()
+
+    def _step_frame(self, title, subtitle, emoji=""):
+        w = QWidget()
+        w.setStyleSheet("background: transparent;")
+        l = QVBoxLayout(w)
+        l.setContentsMargins(32, 10, 32, 8)
+        l.setSpacing(0)
+        em = QLabel(emoji)
+        em.setAlignment(Qt.AlignCenter)
+        em.setStyleSheet("font-size: 32px; background: transparent; border: none; margin-bottom: 6px;")
+        t = QLabel(title)
+        t.setAlignment(Qt.AlignCenter)
+        t.setStyleSheet("color: #ffffff; font-size: 19px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        s = QLabel(subtitle)
+        s.setAlignment(Qt.AlignCenter)
+        s.setWordWrap(True)
+        s.setStyleSheet("color: rgba(255,255,255,140); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; margin-top: 6px; margin-bottom: 14px;")
+        l.addWidget(em)
+        l.addWidget(t)
+        l.addWidget(s)
+        return w, l
+
+    def _build_step_welcome(self):
+        w, l = self._step_frame(
+            "Bem-vindo ao FlowVoice! 🎙️",
+            "Vamos configurar tudo em menos de 2 minutos.\nPrecisamos de uma chave de API gratuita para ativar a Inteligência Artificial que vai polir seus textos.",
+            ""
+        )
+        info = QFrame()
+        info.setStyleSheet("QFrame { background: rgba(139,92,246,12); border: 1px solid rgba(139,92,246,40); border-radius: 10px; }")
+        info_l = QVBoxLayout(info)
+        info_l.setContentsMargins(20, 14, 20, 14)
+        info_l.setSpacing(8)
+        for icon, txt in [
+            ("⚡", "Transcrição de voz ultrarrápida com IA"),
+            ("✍️", "Correção gramatical e polimento automático"),
+            ("🔒", "Suas chaves ficam salvas só no seu computador"),
+        ]:
+            row = QHBoxLayout()
+            row.setSpacing(10)
+            li = QLabel(icon)
+            li.setFixedWidth(20)
+            li.setStyleSheet("font-size: 14px; background: transparent; border: none;")
+            lt = QLabel(txt)
+            lt.setStyleSheet("color: rgba(255,255,255,180); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            row.addWidget(li)
+            row.addWidget(lt, 1)
+            info_l.addLayout(row)
+        l.addWidget(info)
+        l.addStretch()
+        self.stack.addWidget(w)
+
+    def _build_step_provider(self):
+        w, l = self._step_frame(
+            "Conecte sua IA",
+            "Selecione o provedor e cole sua chave. Todas as opções têm plano gratuito.",
+            "🔑"
+        )
+
+        def _svg_pixmap(svg_path, size=20):
+            pm = QPixmap(size, size)
+            pm.fill(Qt.transparent)
+            try:
+                from PySide6.QtSvg import QSvgRenderer
+                from PySide6.QtCore import QRectF
+                renderer = QSvgRenderer(svg_path)
+                if renderer.isValid():
+                    painter = QPainter(pm)
+                    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                    renderer.render(painter, QRectF(0, 0, size, size))
+                    painter.end()
+            except Exception as e:
+                print(f"SVG render error {svg_path}: {e}")
+            return pm
+
+        _provider_meta = {
+            "github_models": {"label": "GitHub Models", "icon": get_resource_path("icon_github.svg"), "color": "#6e40c9", "badge_bg": "#1a1a2e", "desc": "Grátis para devs  •  GPT-4o-mini"},
+            "groq":          {"label": "Groq",          "icon": get_resource_path("icon_groq.svg"),   "color": "#f59e0b", "badge_bg": "#1a1a1a", "desc": "Ultra rápido  •  Llama 3.3 70B grátis"},
+            "gemini":        {"label": "Google Gemini", "icon": get_resource_path("icon_gemini.svg"), "color": "#34d399", "badge_bg": "#0d1a15", "desc": "Cota grátis  •  Gemini 1.5 Flash"},
+            "openai":        {"label": "OpenAI",        "icon": get_resource_path("icon_openai.svg"), "color": "#60a5fa", "badge_bg": "#0d0d0d", "desc": "Pago/Premium  •  GPT-4o-mini"},
+        }
+        current_provider = self.config_manager.get("provider", "groq")
+        self._wiz_selected_provider = current_provider
+        self._wiz_provider_cards = {}
+
+        cards_layout = QVBoxLayout()
+        cards_layout.setSpacing(6)
+
+        for pid, meta in _provider_meta.items():
+            card = QFrame()
+            card.setCursor(Qt.PointingHandCursor)
+            is_active = pid == current_provider
+            card.setStyleSheet(f"""
+                QFrame {{
+                    background: {'rgba(139,92,246,18)' if is_active else 'rgba(255,255,255,4)'};
+                    border: {'2px solid ' + meta['color'] if is_active else '1px solid rgba(255,255,255,12)'};
+                    border-radius: 9px;
+                }}
+            """)
+            cl = QHBoxLayout(card)
+            cl.setContentsMargins(14, 10, 14, 10)
+            cl.setSpacing(12)
+
+            # Icon badge: dark rounded square with colored border + SVG logo inside
+            icon_badge = QFrame()
+            icon_badge.setFixedSize(38, 38)
+            icon_badge.setStyleSheet(f"QFrame {{ background: {meta['badge_bg']}; border-radius: 10px; border: 1px solid rgba(255,255,255,15); }}")
+            badge_l = QVBoxLayout(icon_badge)
+            badge_l.setContentsMargins(0, 0, 0, 0)
+            badge_l.setAlignment(Qt.AlignCenter)
+            icon_lbl = QLabel()
+            icon_lbl.setFixedSize(38, 38)
+            icon_lbl.setAlignment(Qt.AlignCenter)
+            pm = _svg_pixmap(meta["icon"], 22)
+            icon_lbl.setPixmap(pm)
+            icon_lbl.setStyleSheet("background: transparent; border: none;")
+            badge_l.addWidget(icon_lbl)
+
+            txt = QVBoxLayout()
+            txt.setSpacing(2)
+            lbl_name = QLabel(meta["label"])
+            lbl_name.setStyleSheet(f"color: {'#ffffff' if is_active else 'rgba(255,255,255,210)'}; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            lbl_desc = QLabel(meta["desc"])
+            lbl_desc.setWordWrap(False)
+            lbl_desc.setStyleSheet("color: rgba(255,255,255,90); font-size: 10px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            txt.addWidget(lbl_name)
+            txt.addWidget(lbl_desc)
+            dot = QLabel("●" if is_active else "○")
+            dot.setFixedWidth(18)
+            dot.setAlignment(Qt.AlignCenter)
+            dot.setStyleSheet(f"color: {meta['color']}; font-size: 13px; background: transparent; border: none;")
+            cl.addWidget(icon_badge)
+            cl.addLayout(txt, 1)
+            cl.addWidget(dot, 0)
+            self._wiz_provider_cards[pid] = (card, dot, lbl_name, meta["color"])
+            # Hover effect
+            _idle_style = card.styleSheet()
+            _active_color = meta["color"]
+            def _make_hover(c, idle, col, p):
+                def _enter(e):
+                    if self._wiz_selected_provider != p:
+                        c.setStyleSheet(f"QFrame {{ background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,28); border-radius: 9px; }}")
+                def _leave(e):
+                    if self._wiz_selected_provider != p:
+                        c.setStyleSheet(idle)
+                c.enterEvent = _enter
+                c.leaveEvent = _leave
+            _make_hover(card, _idle_style, _active_color, pid)
+            card.mousePressEvent = lambda e, p=pid: self._wiz_select_provider(p)
+            cards_layout.addWidget(card)
+
+        l.addLayout(cards_layout)
+        l.addSpacing(12)
+
+        # Key input with show/hide toggle
+        key_row = QHBoxLayout()
+        key_row.setSpacing(6)
+        self.wiz_txt_key = QLineEdit()
+        self.wiz_txt_key.setEchoMode(QLineEdit.Password)
+        self.wiz_txt_key.setText(self.config_manager.get_api_key(current_provider))
+        self.wiz_txt_key.setPlaceholderText("Cole sua chave de API aqui...")
+        self.wiz_txt_key.setFixedHeight(38)
+        self.wiz_txt_key.setStyleSheet("""
+            QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; }
+            QLineEdit:hover { border-color: rgba(139,92,246,120); }
+            QLineEdit:focus { border: 1px solid #8b5cf6; background: rgba(255,255,255,12); }
+        """)
+        btn_toggle_key = QPushButton("👁")
+        btn_toggle_key.setFixedSize(38, 38)
+        btn_toggle_key.setCursor(Qt.PointingHandCursor)
+        btn_toggle_key.setCheckable(True)
+        btn_toggle_key.setStyleSheet("""
+            QPushButton { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 8px; color: rgba(255,255,255,160); font-size: 14px; }
+            QPushButton:hover { background: rgba(255,255,255,15); border-color: rgba(139,92,246,120); }
+            QPushButton:checked { background: rgba(139,92,246,25); border-color: #8b5cf6; }
+        """)
+        def _wiz_toggle_key(checked):
+            if checked:
+                pwd = self.config_manager.get("keys_password", "")
+                if pwd:
+                    # Show inline password prompt
+                    dlg = QDialog(self)
+                    dlg.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+                    dlg.setAttribute(Qt.WA_TranslucentBackground, True)
+                    dlg.setFixedSize(340, 160)
+                    outer = QFrame(dlg)
+                    outer.setGeometry(8, 8, 324, 144)
+                    outer.setStyleSheet("QFrame { background: #141414; border: 1px solid rgba(139,92,246,80); border-radius: 12px; }")
+                    vl = QVBoxLayout(outer)
+                    vl.setContentsMargins(20, 16, 20, 16)
+                    vl.setSpacing(10)
+                    lbl = QLabel("🔐  Digite a senha para revelar")
+                    lbl.setStyleSheet("color: rgba(255,255,255,200); font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+                    pwd_input = QLineEdit()
+                    pwd_input.setEchoMode(QLineEdit.Password)
+                    pwd_input.setPlaceholderText("Senha...")
+                    pwd_input.setFixedHeight(34)
+                    pwd_input.setStyleSheet("QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 7px; padding: 4px 10px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; } QLineEdit:focus { border-color: #8b5cf6; }")
+                    err_lbl = QLabel("")
+                    err_lbl.setStyleSheet("color: #f87171; font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+                    btn_row = QHBoxLayout()
+                    btn_row.setSpacing(8)
+                    b_cancel = QPushButton("Cancelar")
+                    b_cancel.setFixedHeight(30)
+                    b_cancel.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(255,255,255,20); border-radius: 6px; color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: rgba(255,255,255,10); }")
+                    b_ok = QPushButton("Confirmar")
+                    b_ok.setFixedHeight(30)
+                    b_ok.setStyleSheet("QPushButton { background: #8b5cf6; border: none; border-radius: 6px; color: #fff; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: #7c3aed; }")
+                    btn_row.addWidget(b_cancel); btn_row.addWidget(b_ok)
+                    vl.addWidget(lbl); vl.addWidget(pwd_input); vl.addWidget(err_lbl); vl.addLayout(btn_row)
+                    def _confirm():
+                        if pwd_input.text() == pwd:
+                            dlg.accept()
+                        else:
+                            err_lbl.setText("Senha incorreta.")
+                            pwd_input.clear()
+                    b_ok.clicked.connect(_confirm)
+                    b_cancel.clicked.connect(dlg.reject)
+                    pwd_input.returnPressed.connect(_confirm)
+                    if dlg.exec() != QDialog.Accepted:
+                        btn_toggle_key.setChecked(False)
+                        return
+                self.wiz_txt_key.setEchoMode(QLineEdit.Normal)
+            else:
+                self.wiz_txt_key.setEchoMode(QLineEdit.Password)
+        btn_toggle_key.toggled.connect(_wiz_toggle_key)
+        key_row.addWidget(self.wiz_txt_key, 1)
+        key_row.addWidget(btn_toggle_key)
+        l.addLayout(key_row)
+
+        lbl_link = QLabel(
+            "Não tem chave? Obtenha grátis: "
+            "<a href='https://console.groq.com/keys' style='color:#8b5cf6;'>Groq</a>  •  "
+            "<a href='https://github.com/marketplace/models' style='color:#8b5cf6;'>GitHub Models</a>  •  "
+            "<a href='https://aistudio.google.com' style='color:#8b5cf6;'>Gemini</a>"
+        )
+        lbl_link.setOpenExternalLinks(True)
+        lbl_link.setStyleSheet("color: rgba(255,255,255,80); font-size: 10px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; margin-top: 4px;")
+        lbl_link.setWordWrap(True)
+        l.addWidget(lbl_link)
+        l.addStretch()
+        self.stack.addWidget(w)
+
+    def _wiz_select_provider(self, pid):
+        self._wiz_selected_provider = pid
+        _colors = {
+            "github_models": "#6e40c9", "groq": "#f59e0b",
+            "gemini": "#34d399", "openai": "#60a5fa",
+        }
+        for p, (card, dot, lbl_name, color) in self._wiz_provider_cards.items():
+            active = p == pid
+            card.setStyleSheet(f"""
+                QFrame {{
+                    background: {'rgba(139,92,246,18)' if active else 'rgba(255,255,255,4)'};
+                    border: {'2px solid ' + color if active else '1px solid rgba(255,255,255,12)'};
+                    border-radius: 9px;
+                }}
+            """)
+            dot.setText("●" if active else "○")
+            dot.setStyleSheet(f"color: {color}; font-size: 13px; background: transparent; border: none;")
+            lbl_name.setStyleSheet(f"color: {'#ffffff' if active else 'rgba(255,255,255,200)'}; font-size: 12px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        self.wiz_txt_key.setText(self.config_manager.get_api_key(pid))
+
+    def _build_step_style(self):
+        w, l = self._step_frame(
+            "Qual é o seu estilo?",
+            "Escolha como a IA deve formatar os seus textos ditados.",
+            "✍️"
+        )
+        style_data = [
+            ("Profissional", "Reformula para linguagem formal e clara. Ideal para e-mails, documentos e mensagens de trabalho.", "#8b5cf6"),
+            ("Casual", "Corrige só o essencial, mantendo sua voz natural. Ótimo para chats e redes sociais.", "#06b6d4"),
+            ("Direto", "Entrega o texto quase bruto, só com pontuação básica. Para quem quer controle total.", "#34d399"),
+        ]
+        self._style_btns = {}
+        current_style = self.config_manager.get("active_style", "Profissional")
+        for style_name, desc, color in style_data:
+            card = QFrame()
+            card.setObjectName(f"style_card_{style_name}")
+            is_active = style_name == current_style
+            card.setStyleSheet(f"""
+                QFrame {{
+                    background: {'rgba(139,92,246,18)' if is_active else 'rgba(255,255,255,4)'};
+                    border: {'2px solid ' + color if is_active else '1px solid rgba(255,255,255,12)'};
+                    border-radius: 10px;
+                }}
+                QFrame:hover {{ background: rgba(255,255,255,8); border-color: {color}; }}
+            """)
+            card.setCursor(Qt.PointingHandCursor)
+            card_l = QHBoxLayout(card)
+            card_l.setContentsMargins(16, 12, 16, 12)
+            card_l.setSpacing(12)
+            txt_col = QVBoxLayout()
+            txt_col.setSpacing(3)
+            t = QLabel(style_name)
+            t.setStyleSheet(f"color: {'#ffffff' if is_active else 'rgba(255,255,255,200)'}; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            d = QLabel(desc)
+            d.setStyleSheet("color: rgba(255,255,255,120); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            d.setWordWrap(True)
+            txt_col.addWidget(t)
+            txt_col.addWidget(d)
+            card_l.addLayout(txt_col, 1)
+            dot = QLabel("●" if is_active else "○")
+            dot.setStyleSheet(f"color: {color}; font-size: 14px; background: transparent; border: none;")
+            card_l.addWidget(dot)
+            self._style_btns[style_name] = (card, dot, t, color)
+            _idle_s = card.styleSheet()
+            def _make_style_hover(c, col, sn):
+                def _enter(e):
+                    if getattr(self, '_selected_style', None) != sn:
+                        c.setStyleSheet(f"QFrame {{ background: rgba(255,255,255,8); border: 1px solid {col}; border-radius: 10px; }}")
+                def _leave(e):
+                    if getattr(self, '_selected_style', None) != sn:
+                        c.setStyleSheet(f"QFrame {{ background: rgba(255,255,255,4); border: 1px solid rgba(255,255,255,12); border-radius: 10px; }}")
+                c.enterEvent = _enter
+                c.leaveEvent = _leave
+            _make_style_hover(card, color, style_name)
+            card.mousePressEvent = lambda e, s=style_name: self._select_style(s)
+            l.addWidget(card)
+            l.addSpacing(6)
+        l.addStretch()
+        self.stack.addWidget(w)
+
+    def _select_style(self, style_name):
+        for name, (card, dot, title_lbl, color) in self._style_btns.items():
+            active = name == style_name
+            card.setStyleSheet(f"""
+                QFrame {{
+                    background: {'rgba(139,92,246,18)' if active else 'rgba(255,255,255,4)'};
+                    border: {'2px solid ' + color if active else '1px solid rgba(255,255,255,12)'};
+                    border-radius: 10px;
+                }}
+                QFrame:hover {{ background: rgba(255,255,255,8); border-color: {color}; }}
+            """)
+            dot.setText("●" if active else "○")
+            dot.setStyleSheet(f"color: {color}; font-size: 14px; background: transparent; border: none;")
+        self._selected_style = style_name
+
+    def _build_step_hotkey(self):
+        w, l = self._step_frame(
+            "Configure seu atalho",
+            "Este é o atalho que você pressiona para iniciar e parar a gravação.\nO padrão funciona na maioria dos casos — mude só se houver conflito.",
+            "⌨️"
+        )
+        row = QHBoxLayout()
+        row.setSpacing(8)
+        self.wiz_hotkey_edit = HotkeyLineEdit()
+        self.wiz_hotkey_edit.setText(self.config_manager.get("hotkey", "<ctrl>+<shift>+<space>"))
+        self.wiz_hotkey_edit.setFixedHeight(38)
+        self.wiz_hotkey_edit.setStyleSheet("""
+            QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; }
+            QLineEdit:focus { border: 1px solid #8b5cf6; background: rgba(255,255,255,12); }
+        """)
+        btn_cap = QPushButton("Capturar")
+        btn_cap.setFixedHeight(38)
+        btn_cap.setFixedWidth(90)
+        btn_cap.setCursor(Qt.PointingHandCursor)
+        btn_cap.setStyleSheet("""
+            QPushButton { background: rgba(255,255,255,10); border: 1px solid rgba(255,255,255,25); border-radius: 8px; color: rgba(255,255,255,200); font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; }
+            QPushButton:hover { background: rgba(255,255,255,20); border-color: rgba(255,255,255,60); color: #fff; }
+        """)
+        def _on_capture():
+            btn_cap.setText("Gravando...")
+            btn_cap.setStyleSheet("QPushButton { background: rgba(255,85,85,20); border: 1px solid #ff5555; border-radius: 8px; color: #ff5555; font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; }")
+            self.wiz_hotkey_edit.start_recording(self.wiz_hotkey_edit.text(), lambda: (btn_cap.setText("Capturar"), btn_cap.setStyleSheet("")))
+        btn_cap.clicked.connect(_on_capture)
+        row.addWidget(self.wiz_hotkey_edit, 1)
+        row.addWidget(btn_cap)
+        l.addLayout(row)
+        l.addSpacing(12)
+        lbl_done = QLabel("🎉  Tudo pronto! Clique em <b>Finalizar</b> para salvar e começar a usar o FlowVoice.")
+        lbl_done.setWordWrap(True)
+        lbl_done.setStyleSheet("color: rgba(255,255,255,160); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        l.addWidget(lbl_done)
+        l.addStretch()
+        self._selected_style = self.config_manager.get("active_style", "Profissional")
+        self.stack.addWidget(w)
+
+    def _update_progress(self):
+        total_steps = self.stack.count()
+        pct = (self._step + 1) / total_steps
+        bar_w = self._progress_bar.width() if self._progress_bar.width() > 0 else 608
+        target_w = int(bar_w * pct)
+        self._anim_progress = QPropertyAnimation(self._progress_fill, b"geometry")
+        self._anim_progress.setDuration(300)
+        self._anim_progress.setStartValue(self._progress_fill.geometry())
+        self._anim_progress.setEndValue(QRect(0, 0, target_w, 3))
+        self._anim_progress.setEasingCurve(QEasingCurve.OutCubic)
+        self._anim_progress.start()
+        self.step_lbl.setText(f"Passo {self._step + 1} de {total_steps}")
+        self.btn_back.setVisible(self._step > 0)
+        is_last = self._step == total_steps - 1
+        self.btn_next.setText("✅  Finalizar" if is_last else "Próximo →")
+
+    def _animate_step(self, direction=1):
+        widget = self.stack.currentWidget()
+        try:
+            effect = QGraphicsOpacityEffect(widget)
+            widget.setGraphicsEffect(effect)
+            anim = QPropertyAnimation(effect, b"opacity")
+            anim.setDuration(220)
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+            anim.setEasingCurve(QEasingCurve.OutCubic)
+            def _cleanup():
+                try:
+                    widget.setGraphicsEffect(None)
+                except RuntimeError:
+                    pass
+            anim.finished.connect(_cleanup)
+            anim.start()
+            self._step_anim = anim
+        except RuntimeError:
+            pass
+
+    def _go_next(self):
+        if self._step == self.stack.count() - 1:
+            self._save_wizard()
+            return
+        self._step += 1
+        self.stack.setCurrentIndex(self._step)
+        self._update_progress()
+        self._animate_step(1)
+
+    def _go_back(self):
+        if self._step > 0:
+            self._step -= 1
+            self.stack.setCurrentIndex(self._step)
+            self._update_progress()
+            self._animate_step(-1)
+
+    def _save_wizard(self):
+        provider = getattr(self, "_wiz_selected_provider", self.config_manager.get("provider", "groq"))
+        key = self.wiz_txt_key.text().strip()
+        self.config_manager.set("provider", provider)
+        if key:
+            self.config_manager.set_api_key(provider, key)
+        self.config_manager.set("active_style", getattr(self, "_selected_style", "Profissional"))
+        hotkey = self.wiz_hotkey_edit.text().strip()
+        if hotkey:
+            self.config_manager.set("hotkey", hotkey)
+        self.config_manager.set("wizard_completed", True)
+        self.fade_out_and_close(True)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and event.position().y() < 48:
+            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+        else:
+            self.drag_position = None
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton and self.drag_position is not None:
+            self.move(event.globalPosition().toPoint() - self.drag_position)
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self.drag_position = None
+        super().mouseReleaseEvent(event)
+
+    def showEvent(self, event):
+        geom = self.geometry()
+        self.setWindowOpacity(0.0)
+        self.pos_anim = QPropertyAnimation(self, b"geometry")
+        self.pos_anim.setDuration(280)
+        self.pos_anim.setStartValue(QRect(geom.x(), geom.y() + 20, geom.width(), geom.height()))
+        self.pos_anim.setEndValue(geom)
+        self.pos_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self.opacity_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.opacity_anim.setDuration(280)
+        self.opacity_anim.setStartValue(0.0)
+        self.opacity_anim.setEndValue(1.0)
+        self.anim_group = QParallelAnimationGroup()
+        self.anim_group.addAnimation(self.pos_anim)
+        self.anim_group.addAnimation(self.opacity_anim)
+        self.anim_group.start()
+        super().showEvent(event)
+
+    def fade_out_and_close(self, accept_dialog=False):
+        geom = self.geometry()
+        self.pos_anim = QPropertyAnimation(self, b"geometry")
+        self.pos_anim.setDuration(200)
+        self.pos_anim.setStartValue(geom)
+        self.pos_anim.setEndValue(QRect(geom.x(), geom.y() + 12, geom.width(), geom.height()))
+        self.pos_anim.setEasingCurve(QEasingCurve.InCubic)
+        self.opacity_anim = QPropertyAnimation(self, b"windowOpacity")
+        self.opacity_anim.setDuration(200)
+        self.opacity_anim.setStartValue(self.windowOpacity())
+        self.opacity_anim.setEndValue(0.0)
+        self.anim_group = QParallelAnimationGroup()
+        self.anim_group.addAnimation(self.pos_anim)
+        self.anim_group.addAnimation(self.opacity_anim)
+        if accept_dialog:
+            self.anim_group.finished.connect(self.accept)
+        else:
+            self.anim_group.finished.connect(self.reject)
+        self.anim_group.start()
+
+
+class SidebarButton(QPushButton):
+    """Icon + label sidebar nav button with active indicator."""
+    def __init__(self, icon, label, parent=None):
+        super().__init__(parent)
+        self.setCheckable(True)
+        self.setFixedHeight(48)
+        self.setCursor(Qt.PointingHandCursor)
+        self._icon_char = icon
+        self._label = label
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(16, 0, 14, 0)
+        layout.setSpacing(10)
+
+        # Active indicator bar (left edge, positioned as child)
+        self._indicator = QFrame(self)
+        self._indicator.setFixedSize(3, 20)
+        self._indicator.move(0, 14)
+        self._indicator.setStyleSheet("background: #8b5cf6; border-radius: 2px;")
+        self._indicator.setVisible(False)
+        self._indicator.raise_()
+
+        self.icon_lbl = QLabel(icon)
+        self.icon_lbl.setFixedWidth(22)
+        self.icon_lbl.setAlignment(Qt.AlignCenter)
+        self.text_lbl = QLabel(label)
+        layout.addWidget(self.icon_lbl)
+        layout.addWidget(self.text_lbl, 1)
+
+        self._update_colors(False)
+
+    def enterEvent(self, event):
+        super().enterEvent(event)
+        if not self.isChecked():
+            self.setStyleSheet("""
+                SidebarButton { background-color: rgba(255,255,255,9); border: none; border-radius: 8px; }
+            """)
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+        if not self.isChecked():
+            self.setStyleSheet("""
+                SidebarButton { background-color: transparent; border: none; border-radius: 8px; }
+            """)
+
+    def setChecked(self, val):
+        super().setChecked(val)
+        self._update_colors(val)
+
+    def _update_colors(self, active):
+        color = "#ffffff" if active else "rgba(255,255,255,160)"
+        icon_size = "16px"
+        self.icon_lbl.setStyleSheet(f"font-size: {icon_size}; background: transparent; border: none; color: {color};")
+        self.text_lbl.setStyleSheet(f"font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: {color};")
+        if active:
+            self._indicator.setVisible(True)
+            self.setStyleSheet("""
+                SidebarButton { background-color: rgba(139,92,246,20); border: none; border-radius: 8px; }
+            """)
+        else:
+            self._indicator.setVisible(False)
+            self.setStyleSheet("""
+                SidebarButton { background-color: transparent; border: none; border-radius: 8px; }
+            """)
+
+
 class SettingsDialog(QDialog):
     def __init__(self, config_manager, app=None, parent=None):
         super().__init__(parent)
         self.config_manager = config_manager
         self.app = app
         self.drag_position = None
+        self._current_page = 0
+        self._opened = False
         self.init_ui()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self._opened:
+            return
+        self._opened = True
+        # Animate in: fade + rise from slightly below
+        self.setWindowOpacity(0.0)
+        geom = self.geometry()
+        start = QRect(geom.x(), geom.y() + 18, geom.width(), geom.height())
+        self.setGeometry(start)
+        self._open_pos_anim = QPropertyAnimation(self, b"geometry")
+        self._open_pos_anim.setDuration(320)
+        self._open_pos_anim.setStartValue(start)
+        self._open_pos_anim.setEndValue(geom)
+        self._open_pos_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._open_fade_anim = QPropertyAnimation(self, b"windowOpacity")
+        self._open_fade_anim.setDuration(280)
+        self._open_fade_anim.setStartValue(0.0)
+        self._open_fade_anim.setEndValue(1.0)
+        self._open_fade_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._open_anim_group = QParallelAnimationGroup()
+        self._open_anim_group.addAnimation(self._open_pos_anim)
+        self._open_anim_group.addAnimation(self._open_fade_anim)
+        self._open_anim_group.start()
+
+    def _make_scroll_page(self):
+        """Returns a QScrollArea wrapping a plain QWidget for use as a sidebar page."""
+        page = QWidget()
+        page.setStyleSheet("background: transparent;")
+        scroll = QScrollArea()
+        scroll.setWidget(page)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setStyleSheet("""
+            QScrollArea { background: transparent; border: none; }
+            QWidget { background: transparent; }
+            QScrollBar:vertical {
+                background: rgba(255,255,255,6); width: 5px; border-radius: 3px; margin: 0;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(139,92,246,100); border-radius: 3px; min-height: 24px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+        """)
+        return scroll, page
+
+    def _section_label(self, text):
+        lbl = QLabel(text)
+        lbl.setStyleSheet(
+            "color: rgba(139,92,246,220); font-size: 10px; font-weight: 700; "
+            "letter-spacing: 1.5px; font-family: 'Segoe UI', sans-serif; "
+            "border-bottom: 1px solid rgba(139,92,246,40); padding-bottom: 4px; margin-bottom: 2px;"
+        )
+        return lbl
+
+    def _desc(self, text):
+        lbl = QLabel(text)
+        lbl.setStyleSheet(
+            "color: rgba(255,255,255,90); font-size: 11px; font-weight: normal; "
+            "font-family: 'Segoe UI', sans-serif; margin-top: 3px; margin-bottom: 10px;"
+        )
+        lbl.setWordWrap(True)
+        return lbl
+
+    def _field_label(self, text):
+        lbl = QLabel(text)
+        lbl.setStyleSheet(
+            "color: rgba(255,255,255,200); font-size: 12px; font-weight: 600; "
+            "font-family: 'Segoe UI', sans-serif; margin-top: 10px; margin-bottom: 4px;"
+        )
+        return lbl
+
+    def _combo(self, items, current):
+        cb = QComboBox()
+        cb.addItems(items)
+        cb.setCurrentText(current)
+        cb.setCursor(Qt.PointingHandCursor)
+        cb.setFocusPolicy(Qt.StrongFocus)
+        cb.wheelEvent = lambda e: e.ignore()
+        cb.setStyleSheet("""
+            QComboBox {
+                background-color: rgba(255,255,255,8);
+                border: 1px solid rgba(255,255,255,20);
+                border-radius: 7px;
+                padding: 5px 12px;
+                min-height: 32px;
+                color: #ffffff;
+                font-size: 12px;
+                font-family: 'Segoe UI', sans-serif;
+                selection-background-color: transparent;
+            }
+            QComboBox:hover { border: 1px solid rgba(139,92,246,120); }
+            QComboBox:focus { border: 1px solid #8b5cf6; background-color: rgba(255,255,255,12); }
+            QComboBox::drop-down {
+                border: none; width: 28px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 5px solid rgba(255,255,255,120);
+                margin-right: 10px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #1a1a2e;
+                border: 1px solid rgba(139,92,246,80);
+                border-radius: 7px;
+                color: #ffffff;
+                font-size: 12px;
+                font-family: 'Segoe UI', sans-serif;
+                padding: 4px;
+                selection-background-color: rgba(139,92,246,60);
+                selection-color: #ffffff;
+                outline: none;
+            }
+            QComboBox QAbstractItemView::item {
+                min-height: 28px;
+                padding: 4px 8px;
+                border-radius: 4px;
+            }
+            QComboBox QAbstractItemView::item:hover {
+                background-color: rgba(139,92,246,40);
+            }
+        """)
+        return cb
+
+    def _lineedit(self, text="", placeholder="", password=False):
+        le = QLineEdit()
+        le.setText(text)
+        le.setPlaceholderText(placeholder)
+        if password:
+            le.setEchoMode(QLineEdit.Password)
+        _base_style = """
+            QLineEdit {
+                background-color: rgba(255,255,255,8);
+                border: 1px solid rgba(255,255,255,20);
+                border-radius: 8px;
+                padding: 6px 14px;
+                min-height: 34px;
+                color: #ffffff;
+                font-size: 12px;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            QLineEdit:hover { border: 1px solid rgba(139,92,246,140); background-color: rgba(255,255,255,10); }
+            QLineEdit:focus { border: 2px solid #8b5cf6; background-color: rgba(139,92,246,12); padding: 5px 13px; }
+            QLineEdit::placeholder { color: rgba(255,255,255,55); }
+        """
+        le.setStyleSheet(_base_style)
+        # Focus glow: animate drop-shadow via graphics effect on focus/blur
+        def _on_focus_in():
+            eff = QGraphicsDropShadowEffect(le)
+            eff.setBlurRadius(0)
+            eff.setColor(QColor(139, 92, 246, 0))
+            eff.setOffset(0, 0)
+            le.setGraphicsEffect(eff)
+            anim = QPropertyAnimation(eff, b"blurRadius")
+            anim.setDuration(220)
+            anim.setStartValue(0)
+            anim.setEndValue(14)
+            anim.setEasingCurve(QEasingCurve.OutCubic)
+            color_anim = QPropertyAnimation(eff, b"color")
+            color_anim.setDuration(220)
+            color_anim.setStartValue(QColor(139, 92, 246, 0))
+            color_anim.setEndValue(QColor(139, 92, 246, 80))
+            color_anim.setEasingCurve(QEasingCurve.OutCubic)
+            le._glow_group = QParallelAnimationGroup()
+            le._glow_group.addAnimation(anim)
+            le._glow_group.addAnimation(color_anim)
+            le._glow_group.start()
+        def _on_focus_out():
+            eff = le.graphicsEffect()
+            if not eff:
+                return
+            anim = QPropertyAnimation(eff, b"blurRadius")
+            anim.setDuration(180)
+            anim.setStartValue(14)
+            anim.setEndValue(0)
+            anim.setEasingCurve(QEasingCurve.InCubic)
+            anim.finished.connect(lambda: le.setGraphicsEffect(None))
+            le._glow_out = anim
+            anim.start()
+        le.focusInEvent = lambda e, orig=le.focusInEvent: (_on_focus_in(), orig(e))
+        le.focusOutEvent = lambda e, orig=le.focusOutEvent: (_on_focus_out(), orig(e))
+        return le
+
+    def _separator(self):
+        sep = QFrame()
+        sep.setFixedHeight(1)
+        sep.setStyleSheet("background-color: rgba(255,255,255,12); margin: 6px 0;")
+        return sep
 
     def create_hotkey_row(self, label_text, config_key, default_val):
         h_layout = QHBoxLayout()
         h_layout.setSpacing(6)
         h_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         line_edit = HotkeyLineEdit()
         line_edit.setText(self.config_manager.get(config_key, default_val))
-        
+        line_edit.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(255,255,255,8);
+                border: 1px solid rgba(255,255,255,20);
+                border-radius: 7px;
+                padding: 5px 12px;
+                min-height: 32px;
+                color: #ffffff;
+                font-size: 12px;
+                font-family: 'Segoe UI', sans-serif;
+            }
+            QLineEdit:focus { border: 1px solid #8b5cf6; background-color: rgba(255,255,255,12); }
+        """)
+
         btn_capture = QPushButton("Capturar")
         btn_capture.setObjectName("btn_capture")
         btn_capture.setFixedWidth(80)
@@ -1229,153 +2194,110 @@ class SettingsDialog(QDialog):
         
         return line_edit, h_layout
 
-    def animate_tab_transition(self, index):
-        """Fade-in transition animation when switching tabs, cleaning up the effect afterwards."""
-        widget = self.tabs.widget(index)
-        if widget:
+    def _switch_page(self, index):
+        if index == self._current_page:
+            return
+        prev_index = self._current_page
+        self._current_page = index
+
+        # Update sidebar buttons immediately
+        for i, btn in enumerate(self._sidebar_btns):
+            btn.setChecked(i == index)
+            btn._update_colors(i == index)
+
+        # Animate title swap using stylesheet color (avoids compositing issues)
+        new_title = self._page_titles[index]
+        _base_style = "font-size: 12px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; letter-spacing: 0.3px;"
+        steps = 6
+        self._title_fade_steps = steps
+        self._title_fade_i = 0
+        self._title_new = new_title
+
+        def _title_step():
+            i = self._title_fade_i
+            if i <= steps:
+                alpha = int(200 * (1.0 - i / steps))
+                self.page_title_lbl.setStyleSheet(f"color: rgba(139,92,246,{alpha}); {_base_style}")
+                self._title_fade_i += 1
+                QTimer.singleShot(12, _title_step)
+            else:
+                self.page_title_lbl.setText(self._title_new)
+                self._title_fade_i = 0
+                def _title_in():
+                    i2 = self._title_fade_i
+                    if i2 <= steps:
+                        alpha = int(200 * (i2 / steps))
+                        self.page_title_lbl.setStyleSheet(f"color: rgba(139,92,246,{alpha}); {_base_style}")
+                        self._title_fade_i += 1
+                        QTimer.singleShot(12, _title_in)
+                    else:
+                        self.page_title_lbl.setStyleSheet(f"color: rgba(139,92,246,200); {_base_style}")
+                _title_in()
+
+        _title_step()
+
+        # Stop any prior animation and clean up
+        if hasattr(self, '_page_anim_group') and self._page_anim_group is not None:
             try:
-                # Setup graphics opacity effect on the new tab widget
-                effect = QGraphicsOpacityEffect(widget)
-                widget.setGraphicsEffect(effect)
-                
-                self.tab_anim = QPropertyAnimation(effect, b"opacity")
-                self.tab_anim.setDuration(180)
-                self.tab_anim.setStartValue(0.0)
-                self.tab_anim.setEndValue(1.0)
-                self.tab_anim.setEasingCurve(QEasingCurve.OutQuad)
-                
-                # Clean up effect on finish to prevent hover/rendering glitches
-                def on_finished():
-                    try:
-                        widget.setGraphicsEffect(None)
-                    except RuntimeError:
-                        pass
-                
-                self.tab_anim.finished.connect(on_finished)
-                self.tab_anim.start()
+                if self._page_anim_group.state() == QAbstractAnimation.Running:
+                    self._page_anim_group.stop()
             except RuntimeError:
                 pass
+            self._page_anim_group = None
+        for attr in ('_page_anim_prev_w', '_page_anim_target_w'):
+            w = getattr(self, attr, None)
+            if w:
+                try: w.setGraphicsEffect(None)
+                except RuntimeError: pass
+
+        # Switch the stack immediately — no geometry manipulation on stack children
+        self.pages_stack.setCurrentIndex(index)
+
+        # Fade-in only on the incoming widget — no geometry changes on stack children.
+        # Pre-apply opacity=0 BEFORE setCurrentIndex so Qt never renders it visible.
+        in_widget = self.pages_stack.widget(index)
+
+        # Clean up any leftover effect from a prior interrupted transition
+        prev_target = getattr(self, '_page_anim_target_w', None)
+        if prev_target and prev_target is not in_widget:
+            try: prev_target.setGraphicsEffect(None)
+            except RuntimeError: pass
+        if hasattr(self, '_page_anim') and self._page_anim is not None:
+            try:
+                if self._page_anim.state() == QAbstractAnimation.Running:
+                    self._page_anim.stop()
+            except RuntimeError: pass
+            self._page_anim = None
+
+        in_eff = QGraphicsOpacityEffect(in_widget)
+        in_eff.setOpacity(0.0)
+        in_widget.setGraphicsEffect(in_eff)      # invisible before switch
+        self.pages_stack.setCurrentIndex(index)   # switch (in_widget already at opacity 0)
+        self._page_anim_target_w = in_widget
+
+        anim = QPropertyAnimation(in_eff, b"opacity")
+        anim.setDuration(260)
+        anim.setStartValue(0.0)
+        anim.setEndValue(1.0)
+        anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._page_anim = anim
+
+        def _on_done():
+            try: in_widget.setGraphicsEffect(None)
+            except RuntimeError: pass
+            self._page_anim = None
+
+        anim.finished.connect(_on_done)
+        anim.start()
 
     def init_ui(self):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setFixedSize(650, 750)
+        self.setFixedSize(820, 620)
 
-        # Main container for shadow and borders
-        self.container_frame = QFrame(self)
-        self.container_frame.setObjectName("container_frame")
-        self.container_frame.setGeometry(10, 10, 630, 730)
-        
-        self.container_frame.setStyleSheet("""
-            QFrame#container_frame {
-                background-color: rgba(15, 15, 15, 245);
-                border: 1px solid rgba(255, 255, 255, 35);
-                border-radius: 12px;
-            }
-        """)
-
-        # Drop shadow
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(20)
-        shadow.setColor(QColor(0, 0, 0, 220))
-        shadow.setOffset(0, 5)
-        self.container_frame.setGraphicsEffect(shadow)
-
-        # Stylesheet for inner elements
-        self.setStyleSheet("""
-            QLabel {
-                color: rgba(255, 255, 255, 220);
-                font-size: 13px;
-                font-weight: 700;
-                font-family: 'Segoe UI', sans-serif;
-            }
-            QLineEdit, QComboBox {
-                background-color: rgba(255, 255, 255, 8);
-                border: 1px solid rgba(255, 255, 255, 20);
-                border-radius: 6px;
-                padding: 4px 10px;
-                min-height: 28px;
-                color: #ffffff;
-                font-size: 13px;
-                font-family: 'Segoe UI', sans-serif;
-            }
-            QLineEdit:focus, QComboBox:focus {
-                border: 1px solid rgba(255, 255, 255, 100);
-                background-color: rgba(255, 255, 255, 15);
-            }
-            QPushButton#btn_save {
-                background-color: #ffffff;
-                border: none;
-                border-radius: 6px;
-                color: #000000;
-                font-weight: 700;
-                padding: 8px 18px;
-                font-size: 12px;
-            }
-            QPushButton#btn_save:hover {
-                background-color: rgba(255, 255, 255, 220);
-            }
-            QPushButton#btn_cancel {
-                background-color: transparent;
-                border: 1px solid rgba(255, 255, 255, 25);
-                border-radius: 6px;
-                color: rgba(255, 255, 255, 160);
-                padding: 8px 18px;
-                font-size: 12px;
-            }
-            QPushButton#btn_cancel:hover {
-                background-color: rgba(255, 255, 255, 12);
-                color: #ffffff;
-                border: 1px solid rgba(255, 255, 255, 60);
-            }
-            QPushButton#btn_close {
-                background-color: transparent;
-                border: none;
-                color: rgba(255, 255, 255, 120);
-                font-size: 15px;
-                font-weight: bold;
-            }
-            QPushButton#btn_close:hover {
-                color: #ff5555;
-            }
-        """)
-
-        # Main Layout inside container
-        main_layout = QVBoxLayout(self.container_frame)
-        main_layout.setContentsMargins(20, 15, 20, 20)
-        main_layout.setSpacing(14)
-
-        # 1. Custom Title Bar Layout
-        header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, 0)
-        
-        lbl_title = QLabel("FLOWVOICE CONFIGURAÇÕES")
-        title_font = QFont("Segoe UI", 9)
-        title_font.setBold(True)
-        lbl_title.setFont(title_font)
-        lbl_title.setStyleSheet("color: #ffffff; letter-spacing: 1.5px;")
-        header_layout.addWidget(lbl_title)
-        
-        header_layout.addStretch()
-        
-        btn_close = QPushButton("✕")
-        btn_close.setObjectName("btn_close")
-        btn_close.setFixedSize(24, 24)
-        btn_close.clicked.connect(lambda: self.fade_out_and_close(False))
-        header_layout.addWidget(btn_close)
-        
-        main_layout.addLayout(header_layout)
-
-        # Separator line
-        sep = QFrame()
-        sep.setFixedHeight(1)
-        sep.setStyleSheet("background-color: rgba(255, 255, 255, 20);")
-        main_layout.addWidget(sep)
-
-        # Checkbox style asset check
+        # Checkmark SVG for checkboxes
         base_dir = get_app_data_dir()
         checkmark_path = os.path.join(base_dir, "checkmark.svg").replace("\\", "/")
-        
         if not os.path.exists(checkmark_path):
             try:
                 with open(checkmark_path, "w", encoding="utf-8") as f:
@@ -1384,31 +2306,26 @@ class SettingsDialog(QDialog):
                         '<path fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M3 8.5l3.5 3.5 6.5-7"/>'
                         '</svg>'
                     )
-            except Exception as e:
-                print(f"Erro ao criar checkmark.svg: {e}")
-                
-        checkbox_style = f"""
+            except Exception:
+                pass
+
+        self._checkbox_style = f"""
             QCheckBox {{
-                color: rgba(255, 255, 255, 220);
-                font-size: 13px;
+                color: rgba(255,255,255,210);
+                font-size: 12px;
                 font-family: 'Segoe UI', sans-serif;
-                font-weight: bold;
+                font-weight: 600;
                 spacing: 8px;
             }}
             QCheckBox::indicator {{
-                width: 16px;
-                height: 16px;
-                min-width: 16px;
-                max-width: 16px;
-                min-height: 16px;
-                max-height: 16px;
-                border: 1px solid rgba(255, 255, 255, 40);
-                border-radius: 3px;
-                background-color: rgba(255, 255, 255, 10);
+                width: 17px; height: 17px;
+                min-width: 17px; max-width: 17px;
+                min-height: 17px; max-height: 17px;
+                border: 1px solid rgba(255,255,255,40);
+                border-radius: 4px;
+                background-color: rgba(255,255,255,8);
             }}
-            QCheckBox::indicator:unchecked:hover {{
-                border-color: #8b5cf6;
-            }}
+            QCheckBox::indicator:unchecked:hover {{ border-color: #8b5cf6; }}
             QCheckBox::indicator:checked {{
                 background-color: #8b5cf6;
                 border: 1px solid #8b5cf6;
@@ -1416,296 +2333,1099 @@ class SettingsDialog(QDialog):
             }}
         """
 
-        # Description Label Helper
-        def create_desc(text):
-            lbl = QLabel(text)
-            lbl.setStyleSheet("color: rgba(255, 255, 255, 120); font-size: 11px; font-weight: normal; margin-top: -2px; margin-bottom: 6px;")
-            lbl.setWordWrap(True)
-            return lbl
+        # Outer window (for drop shadow)
+        self.container_frame = QFrame(self)
+        self.container_frame.setObjectName("container_frame")
+        self.container_frame.setGeometry(10, 10, 800, 600)
+        self.container_frame.setStyleSheet("""
+            QFrame#container_frame {
+                background-color: #0d0d0d;
+                border: 1px solid rgba(255,255,255,25);
+                border-radius: 14px;
+            }
+        """)
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(30)
+        shadow.setColor(QColor(0, 0, 0, 200))
+        shadow.setOffset(0, 6)
+        self.container_frame.setGraphicsEffect(shadow)
 
-        # 2. Tab Widget for Inputs
-        self.tabs = QTabWidget()
-        self.tabs.currentChanged.connect(self.animate_tab_transition)
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid rgba(255, 255, 255, 20);
-                background-color: rgba(255, 255, 255, 4);
-                border-radius: 8px;
-                padding: 10px;
+        # Root layout: title bar + body
+        root_layout = QVBoxLayout(self.container_frame)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+
+        # ── Title Bar ──────────────────────────────────────────────
+        title_bar = QFrame()
+        title_bar.setFixedHeight(48)
+        title_bar.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255,255,255,4);
+                border-bottom: 1px solid rgba(255,255,255,12);
+                border-top-left-radius: 14px;
+                border-top-right-radius: 14px;
             }
-            QTabBar::tab {
-                background-color: rgba(255, 255, 255, 8);
-                border: 1px solid rgba(255, 255, 255, 20);
-                border-bottom: none;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
-                padding: 6px 12px;
-                color: rgba(255, 255, 255, 160);
+        """)
+        tb_layout = QHBoxLayout(title_bar)
+        tb_layout.setContentsMargins(20, 0, 16, 0)
+        tb_layout.setSpacing(10)
+
+        logo_lbl = QLabel()
+        _icon_path = get_resource_path("icon.png")
+        if os.path.exists(_icon_path):
+            _pix = QIcon(_icon_path).pixmap(20, 20)
+            logo_lbl.setPixmap(_pix)
+        else:
+            logo_lbl.setText("🎙️")
+            logo_lbl.setStyleSheet("font-size: 16px;")
+        logo_lbl.setFixedSize(22, 22)
+        logo_lbl.setAlignment(Qt.AlignCenter)
+        logo_lbl.setStyleSheet("background: transparent; border: none;")
+        title_lbl = QLabel("FlowVoice")
+        title_lbl.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; letter-spacing: 0.5px; background: transparent; border: none;")
+        subtitle_lbl = QLabel("Configurações")
+        subtitle_lbl.setStyleSheet("color: rgba(255,255,255,50); font-size: 12px; font-weight: 400; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+
+        self.page_title_lbl = QLabel("Início")
+        self.page_title_lbl.setStyleSheet("color: rgba(139,92,246,200); font-size: 12px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; letter-spacing: 0.3px;")
+
+        tb_layout.addWidget(logo_lbl)
+        tb_layout.addWidget(title_lbl)
+        tb_layout.addWidget(subtitle_lbl)
+        tb_layout.addSpacing(10)
+        tb_layout.addWidget(self.page_title_lbl)
+        tb_layout.addStretch()
+
+        btn_close = QPushButton("✕")
+        btn_close.setFixedSize(28, 28)
+        btn_close.setCursor(Qt.PointingHandCursor)
+        btn_close.setStyleSheet("""
+            QPushButton { background: transparent; border: none; color: rgba(255,255,255,100); font-size: 14px; font-weight: bold; border-radius: 6px; }
+            QPushButton:hover { background: rgba(255,85,85,30); color: #ff5555; }
+        """)
+        btn_close.clicked.connect(lambda: self.fade_out_and_close(False))
+        tb_layout.addWidget(btn_close)
+        root_layout.addWidget(title_bar)
+
+        # ── Body: Sidebar + Pages ──────────────────────────────────
+        body = QFrame()
+        body.setStyleSheet("QFrame { background: transparent; border: none; }")
+        body_layout = QHBoxLayout(body)
+        body_layout.setContentsMargins(0, 0, 0, 0)
+        body_layout.setSpacing(0)
+
+        # Sidebar
+        sidebar = QFrame()
+        sidebar.setFixedWidth(175)
+        sidebar.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255,255,255,3);
+                border-right: 1px solid rgba(255,255,255,10);
+                border-bottom-left-radius: 14px;
+            }
+        """)
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(10, 16, 10, 16)
+        sidebar_layout.setSpacing(4)
+
+        nav_items = [
+            ("🏠", "Início"),
+            ("⚙️", "Geral"),
+            ("🔑", "Conexões"),
+            ("🖥️", "Whisper Local"),
+            ("⌨️", "Atalhos"),
+        ]
+        self._page_titles = [item[1] for item in nav_items]
+        self._sidebar_btns = []
+        for i, (icon, label) in enumerate(nav_items):
+            btn = SidebarButton(icon, label)
+            btn.setChecked(i == 0)
+            btn._update_colors(i == 0)
+            btn.clicked.connect(lambda checked, idx=i: self._switch_page(idx))
+            sidebar_layout.addWidget(btn)
+            self._sidebar_btns.append(btn)
+
+        sidebar_layout.addStretch()
+
+        # Wizard button at bottom of sidebar
+        btn_wizard = QPushButton("✨  Assistente de Setup")
+        btn_wizard.setCursor(Qt.PointingHandCursor)
+        btn_wizard.setFixedHeight(34)
+        btn_wizard.setStyleSheet("""
+            QPushButton {
+                background: rgba(139,92,246,18);
+                border: 1px solid rgba(139,92,246,60);
+                border-radius: 7px;
+                color: rgba(139,92,246,220);
                 font-size: 11px;
-                font-weight: bold;
+                font-weight: 600;
                 font-family: 'Segoe UI', sans-serif;
-                margin-right: 4px;
             }
-            QTabBar::tab:hover {
-                background-color: rgba(255, 255, 255, 15);
-                color: #ffffff;
-            }
-            QTabBar::tab:selected {
-                background-color: rgba(139, 92, 246, 30);
+            QPushButton:hover {
+                background: rgba(139,92,246,35);
                 border: 1px solid #8b5cf6;
-                border-bottom: none;
                 color: #ffffff;
             }
         """)
+        btn_wizard.clicked.connect(self._open_wizard)
+        sidebar_layout.addWidget(btn_wizard)
 
-        # Tab 1: Geral
-        tab_general = QWidget()
-        layout_general = QVBoxLayout(tab_general)
-        layout_general.setContentsMargins(10, 10, 10, 10)
-        
-        form_general = QFormLayout()
-        form_general.setVerticalSpacing(8)
-        form_general.setHorizontalSpacing(15)
-        
-        self.combo_style = QComboBox()
-        self.combo_style.addItems(["Profissional", "Casual", "Direto"])
-        self.combo_style.setCurrentText(self.config_manager.get("active_style", "Profissional"))
-        form_general.addRow("Estilo de Escrita Ativo:", self.combo_style)
-        form_general.addRow("", create_desc("Determina como a IA ajustará o texto. Casual corrige pontuação e mantém gírias. Profissional corrige a gramática inteira e reformula o texto para um tom formal."))
-        
-        self.combo_mode = QComboBox()
-        self.combo_mode.addItems(["Ditado", "Tradução", "Pesquisa"])
+        body_layout.addWidget(sidebar)
+
+        # Pages stack
+        from PySide6.QtWidgets import QStackedWidget
+        self.pages_stack = QStackedWidget()
+        self.pages_stack.setStyleSheet("QStackedWidget { background: transparent; border: none; }")
+        body_layout.addWidget(self.pages_stack, 1)
+        root_layout.addWidget(body, 1)
+
+        # ── Bottom bar ─────────────────────────────────────────────
+        bottom_bar = QFrame()
+        bottom_bar.setFixedHeight(56)
+        bottom_bar.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255,255,255,3);
+                border-top: 1px solid rgba(255,255,255,10);
+                border-bottom-left-radius: 14px;
+                border-bottom-right-radius: 14px;
+            }
+        """)
+        bb_layout = QHBoxLayout(bottom_bar)
+        bb_layout.setContentsMargins(20, 0, 20, 0)
+        bb_layout.setSpacing(12)
+
+        status_text = f"v{CURRENT_VERSION}"
+        status_color = "rgba(255,255,255,80)"
+        if self.app and getattr(self.app, 'latest_checked_version', None):
+            status_text += f"  •  🔔 v{self.app.latest_checked_version} disponível!"
+            status_color = "#34d399"
+        lbl_ver = QLabel(f"<span style='color:{status_color};'>{status_text}</span>")
+        lbl_ver.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        def _icon_link_btn(svg_path, fallback_char, url, tooltip):
+            btn = QPushButton()
+            btn.setToolTip(tooltip)
+            btn.setFixedSize(28, 28)
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.setStyleSheet("""
+                QPushButton { background: transparent; border: none; border-radius: 6px; color: rgba(255,255,255,120); font-size: 14px; }
+                QPushButton:hover { background: rgba(255,255,255,10); color: #fff; }
+            """)
+            _svg = get_resource_path(svg_path)
+            if os.path.exists(_svg):
+                pm = QPixmap(18, 18)
+                pm.fill(Qt.transparent)
+                try:
+                    from PySide6.QtSvg import QSvgRenderer
+                    from PySide6.QtCore import QRectF
+                    renderer = QSvgRenderer(_svg)
+                    if renderer.isValid():
+                        painter = QPainter(pm)
+                        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                        painter.setOpacity(0.7)
+                        renderer.render(painter, QRectF(0, 0, 18, 18))
+                        painter.end()
+                        icon_lbl = QLabel(btn)
+                        icon_lbl.setPixmap(pm)
+                        icon_lbl.setFixedSize(18, 18)
+                        icon_lbl.move(5, 5)
+                        icon_lbl.setAttribute(Qt.WA_TransparentForMouseEvents)
+                except Exception:
+                    btn.setText(fallback_char)
+            else:
+                btn.setText(fallback_char)
+            btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(url)))
+            return btn
+
+        bb_layout.addWidget(lbl_ver)
+        bb_layout.addSpacing(6)
+        bb_layout.addWidget(_icon_link_btn("icon_github.svg", "⌥", "https://github.com/cesarkali/Flow-Voice", "GitHub"))
+        bb_layout.addWidget(_icon_link_btn("icon_instagram.svg", "📷", "https://www.instagram.com/cesar.kali/", "Instagram"))
+        bb_layout.addWidget(_icon_link_btn("icon_globe.svg", "🌐", "https://caliberda.com.br/", "Site"))
+        bb_layout.addStretch()
+
+        btn_update = QPushButton("🔄  Verificar Atualizações")
+        btn_update.setObjectName("btn_check_update")
+        btn_update.setFixedHeight(32)
+        btn_update.setCursor(Qt.PointingHandCursor)
+        btn_update.clicked.connect(self.check_updates_manually)
+        btn_update.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: 1px solid rgba(139,92,246,80);
+                border-radius: 7px;
+                color: rgba(139,92,246,200);
+                font-size: 11px; font-weight: 600;
+                font-family: 'Segoe UI', sans-serif;
+                padding: 0 14px;
+            }
+            QPushButton:hover { background: rgba(139,92,246,20); border-color: #8b5cf6; color: #fff; }
+        """)
+
+        btn_cancel = QPushButton("Cancelar")
+        btn_cancel.setObjectName("btn_cancel")
+        btn_cancel.setFixedHeight(32)
+        btn_cancel.setCursor(Qt.PointingHandCursor)
+        btn_cancel.clicked.connect(lambda: self.fade_out_and_close(False))
+        btn_cancel.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: 1px solid rgba(255,255,255,20);
+                border-radius: 7px;
+                color: rgba(255,255,255,140);
+                font-size: 11px; font-weight: 600;
+                font-family: 'Segoe UI', sans-serif;
+                padding: 0 18px;
+            }
+            QPushButton:hover { background: rgba(255,255,255,10); border-color: rgba(255,255,255,50); color: #fff; }
+        """)
+
+        btn_save = QPushButton("  Salvar Configurações")
+        btn_save.setObjectName("btn_save")
+        btn_save.setFixedHeight(32)
+        btn_save.setCursor(Qt.PointingHandCursor)
+        btn_save.clicked.connect(self.save_settings)
+        btn_save.setStyleSheet("""
+            QPushButton {
+                background: #8b5cf6;
+                border: none;
+                border-radius: 7px;
+                color: #ffffff;
+                font-size: 11px; font-weight: 700;
+                font-family: 'Segoe UI', sans-serif;
+                padding: 0 18px;
+            }
+            QPushButton:hover { background: #7c3aed; }
+            QPushButton:pressed { background: #6d28d9; }
+        """)
+
+        bb_layout.addWidget(btn_update)
+        bb_layout.addWidget(btn_cancel)
+        bb_layout.addWidget(btn_save)
+        root_layout.addWidget(bottom_bar)
+
+        # ── Build Pages ────────────────────────────────────────────
+        self._build_page_home()
+        self._build_page_general()
+        self._build_page_connections()
+        self._build_page_whisper()
+        self._build_page_hotkeys()
+
+    def _build_page_home(self):
+        scroll, page = self._make_scroll_page()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setSpacing(0)
+
+        # Hero greeting
+        hero = QFrame()
+        hero.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 rgba(139,92,246,30), stop:1 rgba(236,72,153,15));
+                border: 1px solid rgba(139,92,246,50);
+                border-radius: 12px;
+            }
+        """)
+        hero_layout = QVBoxLayout(hero)
+        hero_layout.setContentsMargins(24, 20, 24, 20)
+        hero_layout.setSpacing(6)
+        lbl_hi = QLabel("👋  Bem-vindo ao FlowVoice!")
+        lbl_hi.setStyleSheet("color: #ffffff; font-size: 16px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        lbl_sub = QLabel("Fale — o FlowVoice transcreve, corrige e digita por você. Configure abaixo para começar.")
+        lbl_sub.setStyleSheet("color: rgba(255,255,255,160); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        lbl_sub.setWordWrap(True)
+        hero_layout.addWidget(lbl_hi)
+        hero_layout.addWidget(lbl_sub)
+        layout.addWidget(hero)
+        layout.addSpacing(20)
+
+        # Status cards
+        layout.addWidget(self._section_label("STATUS ATUAL"))
+        layout.addSpacing(10)
+
+        cards_row = QHBoxLayout()
+        cards_row.setSpacing(10)
+
+        provider = self.config_manager.get("provider", "—")
+        style = self.config_manager.get("active_style", "—")
+        mode_raw = self.config_manager.get("operation_mode", "ditado")
+        mode_display = {"ditado": "Ditado", "traducao": "Tradução", "pesquisa": "Pesquisa"}.get(mode_raw, mode_raw)
+        hotkey = self.config_manager.get("hotkey", "—")
+
+        for icon, title, value in [
+            ("🤖", "Provedor IA", provider),
+            ("✍️", "Estilo", style),
+            ("🎯", "Modo", mode_display),
+            ("⌨️", "Atalho", hotkey),
+        ]:
+            card = QFrame()
+            card.setStyleSheet("""
+                QFrame {
+                    background: rgba(255,255,255,5);
+                    border: 1px solid rgba(255,255,255,12);
+                    border-radius: 10px;
+                }
+            """)
+            cl = QVBoxLayout(card)
+            cl.setContentsMargins(14, 12, 14, 12)
+            cl.setSpacing(4)
+            lbl_ic = QLabel(f"{icon}  {title}")
+            lbl_ic.setStyleSheet("color: rgba(255,255,255,100); font-size: 10px; font-weight: 600; letter-spacing: 0.5px; background: transparent; border: none;")
+            lbl_val = QLabel(value)
+            lbl_val.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            cl.addWidget(lbl_ic)
+            cl.addWidget(lbl_val)
+            cards_row.addWidget(card)
+
+        layout.addLayout(cards_row)
+        layout.addSpacing(20)
+
+        # Quick guide
+        layout.addWidget(self._section_label("COMO USAR"))
+        layout.addSpacing(10)
+        steps = [
+            ("1", "Configure sua chave de API", "Vá em Conexões e cole sua chave do Groq (gratuito) ou GitHub Models."),
+            ("2", "Escolha seu estilo", "Em Geral, selecione Profissional para textos formais ou Casual para mensagens do dia a dia."),
+            ("3", "Pressione o atalho e fale", f"Use {hotkey} em qualquer campo de texto para iniciar a gravação. Pressione novamente para parar e digitar."),
+        ]
+        for num, title, desc in steps:
+            step_row = QHBoxLayout()
+            step_row.setSpacing(12)
+            num_lbl = QLabel(num)
+            num_lbl.setFixedSize(28, 28)
+            num_lbl.setAlignment(Qt.AlignCenter)
+            num_lbl.setStyleSheet("background: rgba(139,92,246,40); border: 1px solid rgba(139,92,246,80); border-radius: 14px; color: #ffffff; font-size: 11px; font-weight: 700;")
+            txt_col = QVBoxLayout()
+            txt_col.setSpacing(2)
+            t = QLabel(title)
+            t.setStyleSheet("color: rgba(255,255,255,220); font-size: 12px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            d = QLabel(desc)
+            d.setStyleSheet("color: rgba(255,255,255,100); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            d.setWordWrap(True)
+            txt_col.addWidget(t)
+            txt_col.addWidget(d)
+            step_row.addWidget(num_lbl)
+            step_row.addLayout(txt_col, 1)
+            layout.addLayout(step_row)
+            layout.addSpacing(10)
+
+        layout.addStretch()
+        self.pages_stack.addWidget(scroll)
+
+    def _build_page_general(self):
+        scroll, page = self._make_scroll_page()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setSpacing(0)
+
+        layout.addWidget(self._section_label("COMPORTAMENTO DA IA"))
+        layout.addSpacing(10)
+
+        layout.addWidget(self._field_label("Estilo de Escrita"))
+        self.combo_style = self._combo(["Profissional", "Casual", "Direto"], self.config_manager.get("active_style", "Profissional"))
+        layout.addWidget(self.combo_style)
+        layout.addWidget(self._desc("Profissional reformula para linguagem formal; Casual mantém sua voz natural; Direto entrega o texto quase bruto."))
+        layout.addSpacing(6)
+
+        layout.addWidget(self._field_label("Versão do Prompt"))
+        self.combo_prompt_version = self._combo(["v2 (Beta)", "v1"], "v2 (Beta)" if self.config_manager.get("prompt_version", "v2") == "v2" else "v1")
+        layout.addWidget(self.combo_prompt_version)
+        layout.addWidget(self._desc("v2 Beta: prompts refinados com parágrafos, preservação de termos técnicos em inglês e descarte de falsos começos. v1: versão anterior simples e estável."))
+        layout.addSpacing(14)
+
+        layout.addWidget(self._separator())
+        layout.addSpacing(8)
+        layout.addWidget(self._section_label("OPERAÇÃO PADRÃO"))
+        layout.addSpacing(10)
+
+        layout.addWidget(self._field_label("Modo de Operação"))
         mode_map = {"ditado": "Ditado", "traducao": "Tradução", "pesquisa": "Pesquisa"}
-        self.combo_mode.setCurrentText(mode_map.get(self.config_manager.get("operation_mode", "ditado"), "Ditado"))
-        form_general.addRow("Modo de Operação Padrão:", self.combo_mode)
-        form_general.addRow("", create_desc("O comportamento do atalho principal: Ditado digita direto sob o cursor, Tradução traduz a fala, Pesquisa abre o assistente por voz."))
-        
-        self.combo_target_lang = QComboBox()
-        self.combo_target_lang.addItems(["Inglês", "Espanhol", "Francês", "Alemão", "Italiano"])
-        self.combo_target_lang.setCurrentText(self.config_manager.get("translation_target", "Inglês"))
-        form_general.addRow("Idioma de Tradução:", self.combo_target_lang)
-        form_general.addRow("", create_desc("O idioma destino para o qual sua voz em Português será traduzida automaticamente (usando o atalho de Tradução)."))
-        
+        self.combo_mode = self._combo(["Ditado", "Tradução", "Pesquisa"], mode_map.get(self.config_manager.get("operation_mode", "ditado"), "Ditado"))
+        layout.addWidget(self.combo_mode)
+        layout.addWidget(self._desc("Ditado digita sob o cursor; Tradução traduz sua fala; Pesquisa consulta a IA com acesso à internet."))
+        layout.addSpacing(14)
+
+        layout.addWidget(self._separator())
+        layout.addSpacing(8)
+        layout.addWidget(self._section_label("PESQUISA NA INTERNET"))
+        layout.addSpacing(10)
+
+        # Info banner
+        info_banner = QFrame()
+        info_banner.setStyleSheet("QFrame { background: rgba(139,92,246,10); border: 1px solid rgba(139,92,246,40); border-radius: 8px; }")
+        info_l = QVBoxLayout(info_banner)
+        info_l.setContentsMargins(14, 10, 14, 10)
+        info_l.setSpacing(3)
+        info_title = QLabel("⚡  Apenas o Groq suporta busca na web em tempo real")
+        info_title.setStyleSheet("color: #a78bfa; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        info_body = QLabel(
+            "O modelo <b>compound-beta</b> do Groq inclui acesso nativo à internet (clima, notícias, preços, etc.). "
+            "GitHub Models, OpenAI e Gemini padrão respondem apenas com base em conhecimento de treinamento, sem dados em tempo real."
+        )
+        info_body.setStyleSheet("color: rgba(255,255,255,130); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        info_body.setWordWrap(True)
+        info_l.addWidget(info_title)
+        info_l.addWidget(info_body)
+        layout.addWidget(info_banner)
+        layout.addSpacing(10)
+
+        layout.addWidget(self._field_label("Provedor para Pesquisa"))
+        self.combo_search_provider = self._combo(
+            ["Groq (recomendado — acesso à web)", "Gemini (Google Search)", "Mesmo do ditado"],
+            {"groq": "Groq (recomendado — acesso à web)", "gemini": "Gemini (Google Search)", "auto": "Mesmo do ditado"}.get(
+                self.config_manager.get("search_provider", "groq"), "Groq (recomendado — acesso à web)"
+            )
+        )
+        layout.addWidget(self.combo_search_provider)
+        layout.addWidget(self._desc("Define qual IA responde quando você usa o atalho de Pesquisa."))
+        layout.addSpacing(6)
+
+        layout.addWidget(self._field_label("Modelo Groq para Pesquisa"))
+        self.combo_search_model = self._combo(
+            ["groq/compound (web em tempo real)", "groq/compound-mini (mais rápido)", "llama-3.3-70b-versatile (sem web)"],
+            {
+                "groq/compound": "groq/compound (web em tempo real)",
+                "groq/compound-mini": "groq/compound-mini (mais rápido)",
+                "llama-3.3-70b-versatile": "llama-3.3-70b-versatile (sem web)"
+            }.get(self.config_manager.get("search_model", "groq/compound"), "groq/compound (web em tempo real)")
+        )
+        layout.addWidget(self.combo_search_model)
+        layout.addWidget(self._desc("groq/compound busca a web em tempo real. groq/compound-mini é mais rápido. llama-3.3-70b-versatile não acessa a internet."))
+        layout.addSpacing(6)
+
+        layout.addWidget(self._field_label("Idioma de Tradução"))
+        self.combo_target_lang = self._combo(["Inglês", "Espanhol", "Francês", "Alemão", "Italiano"], self.config_manager.get("translation_target", "Inglês"))
+        layout.addWidget(self.combo_target_lang)
+        layout.addWidget(self._desc("Idioma destino ao usar o atalho de tradução."))
+        layout.addSpacing(14)
+
+        layout.addWidget(self._separator())
+        layout.addSpacing(8)
+        layout.addWidget(self._section_label("SISTEMA"))
+        layout.addSpacing(10)
+
         startup_label = "Iniciar junto com o Windows" if sys.platform == 'win32' else "Iniciar junto com o sistema"
         self.chk_startup = QCheckBox(startup_label)
         self.chk_startup.setChecked(is_run_at_startup_enabled() or self.config_manager.get("start_with_windows", False))
-        self.chk_startup.setStyleSheet(checkbox_style)
-        form_general.addRow("", self.chk_startup)
-        form_general.addRow("", create_desc("Inicia o FlowVoice de forma minimizada na bandeja do sistema sempre que você ligar o computador."))
-        
+        self.chk_startup.setStyleSheet(self._checkbox_style)
+        layout.addWidget(self.chk_startup)
+        layout.addWidget(self._desc("Inicia minimizado na bandeja sempre que o computador ligar."))
+        layout.addSpacing(6)
+
         self.chk_mute = QCheckBox("Mutar áudio do PC durante a gravação")
         self.chk_mute.setChecked(self.config_manager.get("mute_on_record", False))
-        self.chk_mute.setStyleSheet(checkbox_style)
-        form_general.addRow("", self.chk_mute)
-        form_general.addRow("", create_desc("Silencia temporariamente os sons do computador durante a gravação para evitar que ruídos do sistema ou músicas estraguem a transcrição."))
-        
-        layout_general.addLayout(form_general)
-        layout_general.addStretch()
-        self.tabs.addTab(tab_general, "⚙️ Geral")
+        self.chk_mute.setStyleSheet(self._checkbox_style)
+        layout.addWidget(self.chk_mute)
+        layout.addWidget(self._desc("Silencia o sistema durante a gravação para evitar que sons do PC contaminem a transcrição."))
+        layout.addSpacing(14)
 
-        # Tab 2: Conexões & Chaves
-        tab_keys = QWidget()
-        layout_keys = QVBoxLayout(tab_keys)
-        layout_keys.setContentsMargins(10, 10, 10, 10)
-        
-        form_keys = QFormLayout()
-        form_keys.setVerticalSpacing(8)
-        form_keys.setHorizontalSpacing(15)
-        
-        self.combo_provider = QComboBox()
-        self.combo_provider.addItems(["gemini", "openai", "groq", "github_models"])
-        self.combo_provider.setCurrentText(self.config_manager.get("provider", "gemini"))
-        form_keys.addRow("Provedor Preferencial:", self.combo_provider)
-        form_keys.addRow("", create_desc("A Inteligência Artificial principal usada para polir e corrigir seus textos ditados. Gemini e Groq oferecem limites gratuitos robustos."))
-        
-        self.txt_gemini = QLineEdit()
-        self.txt_gemini.setEchoMode(QLineEdit.Password)
-        self.txt_gemini.setText(self.config_manager.get_api_key("gemini"))
-        self.txt_gemini.setPlaceholderText("Chaves separadas por vírgula")
-        form_keys.addRow("Chaves Gemini:", self.txt_gemini)
-        
-        self.txt_openai = QLineEdit()
-        self.txt_openai.setEchoMode(QLineEdit.Password)
-        self.txt_openai.setText(self.config_manager.get_api_key("openai"))
-        self.txt_openai.setPlaceholderText("Chaves separadas por vírgula")
-        form_keys.addRow("Chaves OpenAI:", self.txt_openai)
-        
-        self.txt_groq = QLineEdit()
-        self.txt_groq.setEchoMode(QLineEdit.Password)
-        self.txt_groq.setText(self.config_manager.get_api_key("groq"))
-        self.txt_groq.setPlaceholderText("Chaves separadas por vírgula")
-        form_keys.addRow("Chaves Groq:", self.txt_groq)
-        
-        self.txt_github_models = QLineEdit()
-        self.txt_github_models.setEchoMode(QLineEdit.Password)
-        self.txt_github_models.setText(self.config_manager.get_api_key("github_models"))
-        self.txt_github_models.setPlaceholderText("Chaves separadas por vírgula")
-        form_keys.addRow("Chaves GitHub Models:", self.txt_github_models)
-        form_keys.addRow("", create_desc("Chaves secretas das plataformas. Você pode inserir mais de uma chave separando por vírgula para ativar o pool de failover automático caso uma IA apresente indisponibilidade."))
-        
-        layout_keys.addLayout(form_keys)
-        layout_keys.addStretch()
-        
-        # Free API Info Box
-        info_frame = QFrame()
-        info_frame.setStyleSheet("""
+        layout.addWidget(self._separator())
+        layout.addSpacing(8)
+        layout.addWidget(self._section_label("SEGURANÇA"))
+        layout.addSpacing(10)
+        layout.addWidget(self._field_label("Senha para visualizar chaves de API"))
+
+        # Hidden real field used only for saving; shown/editable only after auth
+        self.txt_keys_password = self._lineedit(self.config_manager.get("keys_password", ""), "", password=True)
+        self.txt_keys_password.hide()
+
+        # Display row: masked preview + change/set button
+        pwd_display_row = QHBoxLayout()
+        pwd_display_row.setSpacing(6)
+        _has_pwd = bool(self.config_manager.get("keys_password", ""))
+        self._pwd_status_lbl = QLabel("●●●●●●●●" if _has_pwd else "Nenhuma senha definida")
+        self._pwd_status_lbl.setStyleSheet("color: %s; font-size: 12px; font-family: 'Segoe UI', sans-serif; background: rgba(255,255,255,5); border: 1px solid rgba(255,255,255,15); border-radius: 7px; padding: 8px 12px;" % ("rgba(255,255,255,160)" if _has_pwd else "rgba(255,255,255,60)"))
+        btn_change_pwd = QPushButton("Alterar" if _has_pwd else "Definir senha")
+        btn_change_pwd.setFixedHeight(36)
+        btn_change_pwd.setCursor(Qt.PointingHandCursor)
+        btn_change_pwd.setStyleSheet("QPushButton { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 7px; color: rgba(255,255,255,160); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 14px; } QPushButton:hover { background: rgba(255,255,255,15); color: #fff; }")
+        btn_remove_pwd = QPushButton("Remover")
+        btn_remove_pwd.setFixedHeight(36)
+        btn_remove_pwd.setCursor(Qt.PointingHandCursor)
+        btn_remove_pwd.setVisible(_has_pwd)
+        btn_remove_pwd.setStyleSheet("QPushButton { background: rgba(239,68,68,10); border: 1px solid rgba(239,68,68,40); border-radius: 7px; color: #f87171; font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: rgba(239,68,68,22); color: #fff; }")
+        pwd_display_row.addWidget(self._pwd_status_lbl, 1)
+        pwd_display_row.addWidget(btn_change_pwd)
+        pwd_display_row.addWidget(btn_remove_pwd)
+        layout.addLayout(pwd_display_row)
+
+        # "Esqueci a senha" link — only shown when a password exists
+        self._btn_forgot_pwd = QPushButton("Esqueci a senha")
+        self._btn_forgot_pwd.setCursor(Qt.PointingHandCursor)
+        self._btn_forgot_pwd.setVisible(_has_pwd)
+        self._btn_forgot_pwd.setStyleSheet("QPushButton { background: transparent; border: none; color: rgba(139,92,246,180); font-size: 11px; font-family: 'Segoe UI', sans-serif; text-align: left; padding: 2px 0; } QPushButton:hover { color: #8b5cf6; }")
+        layout.addWidget(self._btn_forgot_pwd)
+
+        layout.addWidget(self._desc("Se definida, o botão 'Ver Chaves' na aba Conexões pedirá esta senha antes de revelar suas chaves de API. Deixe vazio para desativar a proteção."))
+
+        def _do_change_pwd():
+            current_pwd = self.config_manager.get("keys_password", "")
+            if current_pwd:
+                # Must verify current password first
+                dlg, inp, err_lbl, btn_ok = self._make_pwd_dialog(
+                    "🔐  Confirme sua senha atual",
+                    "Digite a senha atual para poder alterá-la.",
+                    show_reset=False
+                )
+                def _verify():
+                    if inp.text() == current_pwd:
+                        dlg.accept()
+                    else:
+                        err_lbl.setText("Senha incorreta.")
+                        inp.clear(); inp.setFocus()
+                btn_ok.clicked.connect(_verify)
+                inp.returnPressed.connect(_verify)
+                if dlg.exec() != QDialog.Accepted:
+                    return
+            # Now ask for new password
+            dlg2 = QDialog(self)
+            dlg2.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+            dlg2.setAttribute(Qt.WA_TranslucentBackground, True)
+            dlg2.setFixedSize(380, 250)
+            outer2 = QFrame(dlg2)
+            outer2.setGeometry(8, 8, 364, 234)
+            outer2.setStyleSheet("QFrame { background: #0d0d0d; border: 1px solid rgba(255,255,255,25); border-radius: 12px; }")
+            shadow2 = QGraphicsDropShadowEffect(dlg2)
+            shadow2.setBlurRadius(20); shadow2.setColor(QColor(0, 0, 0, 180)); shadow2.setOffset(0, 4)
+            outer2.setGraphicsEffect(shadow2)
+            vl2 = QVBoxLayout(outer2)
+            vl2.setContentsMargins(24, 20, 24, 20)
+            vl2.setSpacing(10)
+            lbl_t = QLabel("🔑  %s" % ("Alterar senha" if current_pwd else "Definir senha"))
+            lbl_t.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            inp_new = QLineEdit()
+            inp_new.setEchoMode(QLineEdit.Password)
+            inp_new.setPlaceholderText("Nova senha...")
+            inp_new.setFixedHeight(36)
+            inp_new.setStyleSheet("QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 7px; padding: 6px 12px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; } QLineEdit:focus { border-color: #8b5cf6; }")
+            inp_conf = QLineEdit()
+            inp_conf.setEchoMode(QLineEdit.Password)
+            inp_conf.setPlaceholderText("Confirmar nova senha...")
+            inp_conf.setFixedHeight(36)
+            inp_conf.setStyleSheet(inp_new.styleSheet())
+            err2 = QLabel("")
+            err2.setStyleSheet("color: #f87171; font-size: 11px; background: transparent; border: none;")
+            btn_row2 = QHBoxLayout()
+            btn_row2.addStretch()
+            btn_c2 = QPushButton("Cancelar")
+            btn_c2.setFixedHeight(32)
+            btn_c2.setCursor(Qt.PointingHandCursor)
+            btn_c2.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(255,255,255,20); border-radius: 7px; color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 14px; } QPushButton:hover { background: rgba(255,255,255,8); color: #fff; }")
+            btn_ok2 = QPushButton("Salvar")
+            btn_ok2.setFixedHeight(32)
+            btn_ok2.setCursor(Qt.PointingHandCursor)
+            btn_ok2.setStyleSheet("QPushButton { background: #8b5cf6; border: none; border-radius: 7px; color: #fff; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; padding: 0 16px; } QPushButton:hover { background: #7c3aed; }")
+            btn_row2.addWidget(btn_c2); btn_row2.addWidget(btn_ok2)
+            vl2.addWidget(lbl_t); vl2.addWidget(inp_new); vl2.addWidget(inp_conf); vl2.addWidget(err2); vl2.addLayout(btn_row2)
+            btn_c2.clicked.connect(dlg2.reject)
+            def _save_new():
+                v1, v2 = inp_new.text(), inp_conf.text()
+                if not v1:
+                    err2.setText("A senha não pode ser vazia.")
+                    return
+                if v1 != v2:
+                    err2.setText("As senhas não coincidem.")
+                    inp_conf.clear(); inp_conf.setFocus()
+                    return
+                dlg2.done(1)
+            btn_ok2.clicked.connect(_save_new)
+            inp_conf.returnPressed.connect(_save_new)
+            if dlg2.exec() != 1:
+                return
+            new_val = inp_new.text()
+            self.txt_keys_password.setText(new_val)
+            self.config_manager.set("keys_password", new_val)
+            self._pwd_status_lbl.setText("●●●●●●●●")
+            self._pwd_status_lbl.setStyleSheet("color: rgba(255,255,255,160); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: rgba(255,255,255,5); border: 1px solid rgba(255,255,255,15); border-radius: 7px; padding: 8px 12px;")
+            btn_change_pwd.setText("Alterar")
+            btn_remove_pwd.setVisible(True)
+            self._btn_forgot_pwd.setVisible(True)
+
+        def _do_remove_pwd():
+            current_pwd = self.config_manager.get("keys_password", "")
+            if current_pwd:
+                dlg, inp, err_lbl, btn_ok = self._make_pwd_dialog("🔐  Confirme para remover a senha")
+                def _verify_remove():
+                    if inp.text() == current_pwd:
+                        dlg.accept()
+                    else:
+                        err_lbl.setText("Senha incorreta.")
+                        inp.clear(); inp.setFocus()
+                btn_ok.clicked.connect(_verify_remove)
+                inp.returnPressed.connect(_verify_remove)
+                if dlg.exec() != QDialog.Accepted:
+                    return
+            self.txt_keys_password.setText("")
+            self.config_manager.set("keys_password", "")
+            self._pwd_status_lbl.setText("Nenhuma senha definida")
+            self._pwd_status_lbl.setStyleSheet("color: rgba(255,255,255,60); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: rgba(255,255,255,5); border: 1px solid rgba(255,255,255,15); border-radius: 7px; padding: 8px 12px;")
+            btn_change_pwd.setText("Definir senha")
+            btn_remove_pwd.setVisible(False)
+            self._btn_forgot_pwd.setVisible(False)
+
+        def _do_forgot_pwd():
+            dlg = QDialog(self)
+            dlg.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+            dlg.setAttribute(Qt.WA_TranslucentBackground, True)
+            dlg.setFixedSize(400, 230)
+            outer = QFrame(dlg)
+            outer.setGeometry(8, 8, 384, 214)
+            outer.setStyleSheet("QFrame { background: #0d0d0d; border: 1px solid rgba(255,255,255,25); border-radius: 12px; }")
+            shadow = QGraphicsDropShadowEffect(dlg)
+            shadow.setBlurRadius(20); shadow.setColor(QColor(0, 0, 0, 180)); shadow.setOffset(0, 4)
+            outer.setGraphicsEffect(shadow)
+            vl = QVBoxLayout(outer)
+            vl.setContentsMargins(24, 20, 24, 20)
+            vl.setSpacing(10)
+            lbl_t = QLabel("⚠️  Esqueceu a senha?")
+            lbl_t.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            lbl_s = QLabel("Não é possível recuperar a senha. A única opção é resetar todas as chaves de API e a senha, voltando ao estado inicial.")
+            lbl_s.setStyleSheet("color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            lbl_s.setWordWrap(True)
+            btn_row = QHBoxLayout()
+            btn_cancel = QPushButton("Cancelar")
+            btn_cancel.setFixedHeight(32); btn_cancel.setCursor(Qt.PointingHandCursor)
+            btn_cancel.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(255,255,255,20); border-radius: 7px; color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 14px; } QPushButton:hover { background: rgba(255,255,255,8); color: #fff; }")
+            btn_reset = QPushButton("Resetar tudo e perder chaves")
+            btn_reset.setFixedHeight(32); btn_reset.setCursor(Qt.PointingHandCursor)
+            btn_reset.setStyleSheet("QPushButton { background: rgba(239,68,68,12); border: 1px solid rgba(239,68,68,50); border-radius: 7px; color: #f87171; font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: rgba(239,68,68,25); color: #fff; }")
+            btn_row.addStretch()
+            btn_row.addWidget(btn_cancel)
+            btn_row.addWidget(btn_reset)
+            vl.addWidget(lbl_t); vl.addWidget(lbl_s); vl.addStretch(); vl.addLayout(btn_row)
+            btn_cancel.clicked.connect(dlg.reject)
+            btn_reset.clicked.connect(dlg.accept)
+            if dlg.exec() != QDialog.Accepted:
+                return
+            # Reset everything
+            for key in ("keys_password", "tavily_api_key"):
+                self.config_manager.set(key, "")
+            for provider in ("groq", "gemini", "openai", "github_models"):
+                self.config_manager.set_api_key(provider, "")
+            # Update UI fields that exist
+            for attr, val in [("txt_keys_password", ""), ("txt_tavily", ""), ("txt_groq", ""), ("txt_gemini", ""), ("txt_openai", ""), ("txt_github_models", "")]:
+                field = getattr(self, attr, None)
+                if field:
+                    field.setText("")
+            self._pwd_status_lbl.setText("Nenhuma senha definida")
+            self._pwd_status_lbl.setStyleSheet("color: rgba(255,255,255,60); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: rgba(255,255,255,5); border: 1px solid rgba(255,255,255,15); border-radius: 7px; padding: 8px 12px;")
+            btn_change_pwd.setText("Definir senha")
+            btn_remove_pwd.setVisible(False)
+            self._btn_forgot_pwd.setVisible(False)
+
+        btn_change_pwd.clicked.connect(_do_change_pwd)
+        btn_remove_pwd.clicked.connect(_do_remove_pwd)
+        self._btn_forgot_pwd.clicked.connect(_do_forgot_pwd)
+
+        layout.addStretch()
+        self.pages_stack.addWidget(scroll)
+
+    def _build_page_connections(self):
+        scroll, page = self._make_scroll_page()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setSpacing(0)
+
+        layout.addWidget(self._section_label("PROVEDOR PREFERENCIAL"))
+        layout.addSpacing(10)
+        layout.addWidget(self._field_label("Provedor de IA para Polimento"))
+        self.combo_provider = self._combo(["github_models", "groq", "gemini", "openai"], self.config_manager.get("provider", "groq"))
+        layout.addWidget(self.combo_provider)
+        layout.addWidget(self._desc("Provedor principal. Se falhar, o sistema tenta os demais automaticamente (failover)."))
+        layout.addSpacing(14)
+
+        layout.addWidget(self._separator())
+        layout.addSpacing(8)
+        layout.addWidget(self._section_label("CHAVES DE API"))
+        layout.addSpacing(6)
+
+        # Info box
+        info = QFrame()
+        info.setStyleSheet("""
             QFrame {
-                background-color: rgba(255, 255, 255, 6);
-                border: 1px dashed rgba(255, 255, 255, 18);
+                background: rgba(139,92,246,12);
+                border: 1px solid rgba(139,92,246,40);
                 border-radius: 8px;
             }
         """)
-        info_layout = QVBoxLayout(info_frame)
-        info_layout.setContentsMargins(10, 8, 10, 8)
-        info_layout.setSpacing(4)
-        
-        lbl_info_title = QLabel("💡 Como obter chaves de API grátis?")
-        lbl_info_title.setStyleSheet("color: #ffffff; font-size: 11px; font-weight: bold; font-family: 'Segoe UI', sans-serif;")
-        
-        lbl_info_desc = QLabel(
-            "• <b>Groq (Recomendado - Grátis & Ultra Rápido):</b> <a href='https://console.groq.com/keys' style='color:#8b5cf6; text-decoration:none;'>console.groq.com/keys</a><br/>"
-            "• <b>GitHub Models (Grátis para Devs):</b> <a href='https://github.com/marketplace/models' style='color:#8b5cf6; text-decoration:none;'>github.com/marketplace/models</a><br/>"
-            "• <b>Google Gemini (Cota Grátis Limitada):</b> <a href='https://aistudio.google.com' style='color:#8b5cf6; text-decoration:none;'>aistudio.google.com</a><br/>"
-            "• <b>OpenAI (Pago / Premium):</b> <a href='https://platform.openai.com' style='color:#8b5cf6; text-decoration:none;'>platform.openai.com</a>"
+        info_l = QVBoxLayout(info)
+        info_l.setContentsMargins(14, 10, 14, 10)
+        info_l.setSpacing(4)
+        lbl_it = QLabel("💡  Como obter suas chaves (todas gratuitas):")
+        lbl_it.setStyleSheet("color: rgba(255,255,255,200); font-size: 11px; font-weight: 700; background: transparent; border: none;")
+        lbl_id = QLabel(
+            "• <b>GitHub Models</b> (recomendado — grátis para devs): "
+            "<a href='https://github.com/marketplace/models' style='color:#8b5cf6;'>github.com/marketplace/models</a><br>"
+            "• <b>Groq</b> (ultra rápido — grátis): "
+            "<a href='https://console.groq.com/keys' style='color:#8b5cf6;'>console.groq.com/keys</a><br>"
+            "• <b>Google Gemini</b> (cota grátis): "
+            "<a href='https://aistudio.google.com' style='color:#8b5cf6;'>aistudio.google.com</a><br>"
+            "• <b>OpenAI</b> (pago/premium): "
+            "<a href='https://platform.openai.com' style='color:#8b5cf6;'>platform.openai.com</a>"
         )
-        lbl_info_desc.setOpenExternalLinks(True)
-        lbl_info_desc.setWordWrap(True)
-        lbl_info_desc.setStyleSheet("color: rgba(255, 255, 255, 140); font-size: 10.5px; font-weight: normal; font-family: 'Segoe UI', sans-serif; line-height: 1.3;")
-        
-        info_layout.addWidget(lbl_info_title)
-        info_layout.addWidget(lbl_info_desc)
-        layout_keys.addWidget(info_frame)
-        
-        self.tabs.addTab(tab_keys, "🔑 Conexões")
+        lbl_id.setOpenExternalLinks(True)
+        lbl_id.setWordWrap(True)
+        lbl_id.setStyleSheet("color: rgba(255,255,255,140); font-size: 11px; background: transparent; border: none;")
+        info_l.addWidget(lbl_it)
+        info_l.addWidget(lbl_id)
+        layout.addWidget(info)
+        layout.addSpacing(14)
 
-        # Tab 3: Whisper Local
-        tab_whisper = QWidget()
-        layout_whisper = QVBoxLayout(tab_whisper)
-        layout_whisper.setContentsMargins(10, 10, 10, 10)
-        
-        form_whisper = QFormLayout()
-        form_whisper.setVerticalSpacing(8)
-        form_whisper.setHorizontalSpacing(15)
-        
-        self.combo_whisper = QComboBox()
-        self.combo_whisper.addItems(["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"])
-        self.combo_whisper.setCurrentText(self.config_manager.get("whisper", {}).get("model_size", "base"))
-        form_whisper.addRow("Modelo Whisper (Local):", self.combo_whisper)
-        form_whisper.addRow("", create_desc("Modelo offline que roda direto no seu PC. Modelos menores (tiny/base) são rápidos, enquanto modelos maiores (large-v3) são muito precisos porém exigem computador forte."))
-        
-        self.combo_whisper_device = QComboBox()
-        self.combo_whisper_device.addItems(["cpu", "cuda"])
-        self.combo_whisper_device.setCurrentText(self.config_manager.get("whisper", {}).get("device", "cpu"))
-        form_whisper.addRow("Dispositivo Whisper:", self.combo_whisper_device)
-        form_whisper.addRow("", create_desc("Dispositivo de hardware: cuda usa placa Nvidia (rápido), cpu usa processador principal (lento)."))
-        
-        layout_whisper.addLayout(form_whisper)
-        layout_whisper.addStretch()
-        self.tabs.addTab(tab_whisper, "🖥️ Whisper Local")
+        for provider_id, label in [
+            ("github_models", "GitHub Models"),
+            ("groq", "Groq"),
+            ("gemini", "Google Gemini"),
+            ("openai", "OpenAI"),
+        ]:
+            layout.addWidget(self._field_label(f"Chave(s) — {label}"))
+            le = self._lineedit(self.config_manager.get_api_key(provider_id), "Cole aqui (várias chaves separadas por vírgula)", password=True)
+            setattr(self, f"txt_{provider_id}", le)
+            layout.addWidget(le)
+            layout.addSpacing(8)
 
-        # Tab 4: Atalhos
-        tab_hotkeys = QWidget()
-        layout_hotkeys = QVBoxLayout(tab_hotkeys)
-        layout_hotkeys.setContentsMargins(10, 10, 10, 10)
-        
-        form_hotkeys = QFormLayout()
-        form_hotkeys.setVerticalSpacing(8)
-        form_hotkeys.setHorizontalSpacing(15)
-        
-        self.txt_hotkey, layout_hk = self.create_hotkey_row("Atalho Ditado Padrão:", "hotkey", "<ctrl>+<shift>+<space>")
-        form_hotkeys.addRow("Atalho Ditado Padrão:", layout_hk)
-        form_hotkeys.addRow("", create_desc("Atalho para iniciar/parar a gravação de ditado padrão."))
-        
-        self.txt_hotkey_translation, layout_hkt = self.create_hotkey_row("Atalho Tradução:", "hotkey_translation", "<ctrl>+<shift>+<y>")
-        form_hotkeys.addRow("Atalho Tradução:", layout_hkt)
-        form_hotkeys.addRow("", create_desc("Atalho para ditar em português e digitar o texto traduzido no destino."))
-        
-        self.txt_hotkey_pesquisa, layout_hkp = self.create_hotkey_row("Atalho Pesquisa Google:", "hotkey_pesquisa", "<ctrl>+<shift>+<u>")
-        form_hotkeys.addRow("Atalho Pesquisa Google:", layout_hkp)
-        form_hotkeys.addRow("", create_desc("Atalho para gravação de pesquisa e abertura do assistente chat por voz."))
-        
-        form_hotkeys.addRow("", create_desc("Instruções: clique em 'Capturar' e pressione as teclas físicas combinadas (ex: Ctrl, Shift, Y) para registrar o novo atalho."))
-        
-        layout_hotkeys.addLayout(form_hotkeys)
-        layout_hotkeys.addStretch()
-        self.tabs.addTab(tab_hotkeys, "⌨️ Atalhos")
+        layout.addWidget(self._desc("Você pode inserir mais de uma chave separadas por vírgula para ativar o pool de failover automático."))
+        layout.addSpacing(14)
 
-        main_layout.addWidget(self.tabs)
-        main_layout.addSpacing(5)
+        layout.addWidget(self._separator())
+        layout.addSpacing(8)
+        layout.addWidget(self._section_label("PESQUISA NA WEB"))
+        layout.addSpacing(10)
 
-        # Credits & Links
-        credits_layout = QHBoxLayout()
-        credits_layout.setAlignment(Qt.AlignCenter)
-        
-        status_text = f"v{CURRENT_VERSION}"
-        status_color = "rgba(255, 255, 255, 130)"
-        
-        if self.app and getattr(self.app, 'latest_checked_version', None):
-            status_text += f" (Nova versão {self.app.latest_checked_version} disponível!)"
-            status_color = "#34d399"
-        else:
-            status_text += " (Atualizado)"
-            
-        lbl_credits = QLabel(
-            f"Desenvolvido por Júlio Caliberda | <span style='color:{status_color}; font-weight:bold;'>{status_text}</span> | "
-            "<a href='https://github.com/cesarkali/Flow-Voice' style='color:#8b5cf6; text-decoration:none;'>GitHub</a> • "
-            "<a href='https://caliberda.com.br/' style='color:#8b5cf6; text-decoration:none;'>Site</a> • "
-            "<a href='https://www.instagram.com/cesar.kali/' style='color:#8b5cf6; text-decoration:none;'>Instagram</a>"
+        tavily_banner = QFrame()
+        tavily_banner.setStyleSheet("QFrame { background: rgba(16,185,129,8); border: 1px solid rgba(16,185,129,35); border-radius: 8px; }")
+        tavily_l = QVBoxLayout(tavily_banner)
+        tavily_l.setContentsMargins(14, 10, 14, 10)
+        tavily_l.setSpacing(3)
+        tavily_title = QLabel("🌐  Tavily — busca na web em tempo real (1.000 buscas/mês grátis)")
+        tavily_title.setStyleSheet("color: #6ee7b7; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        tavily_body = QLabel(
+            "Com a chave Tavily configurada, o modo Pesquisa consulta a internet em tempo real para qualquer pergunta "
+            "(clima, notícias, preços, etc.). Sem a chave, o modo Pesquisa usa apenas o conhecimento de treinamento da IA.<br>"
+            "Obtenha sua chave grátis em: <a href='https://app.tavily.com' style='color:#34d399;'>app.tavily.com</a> — sem cartão de crédito."
         )
-        lbl_credits.setOpenExternalLinks(True)
-        lbl_credits.setStyleSheet("color: rgba(255, 255, 255, 130); font-size: 11px; font-weight: normal;")
-        credits_layout.addWidget(lbl_credits)
-        main_layout.addLayout(credits_layout)
-        main_layout.addSpacing(5)
+        tavily_body.setOpenExternalLinks(True)
+        tavily_body.setWordWrap(True)
+        tavily_body.setStyleSheet("color: rgba(255,255,255,130); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        tavily_l.addWidget(tavily_title)
+        tavily_l.addWidget(tavily_body)
+        layout.addWidget(tavily_banner)
+        layout.addSpacing(10)
 
-        # 3. Action Buttons
-        btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(16)
-        btn_layout.setContentsMargins(0, 10, 0, 0)
-        
-        btn_cancel = QPushButton("Cancelar")
-        btn_cancel.setObjectName("btn_cancel")
-        btn_cancel.setFixedWidth(176)
-        btn_cancel.setFixedHeight(36)
-        btn_cancel.clicked.connect(lambda: self.fade_out_and_close(False))
-        
-        btn_check_update = QPushButton("Verificar Atualizações")
-        btn_check_update.setObjectName("btn_check_update")
-        btn_check_update.setFixedWidth(176)
-        btn_check_update.setFixedHeight(36)
-        btn_check_update.setCursor(Qt.PointingHandCursor)
-        btn_check_update.clicked.connect(self.check_updates_manually)
-        btn_check_update.setStyleSheet("""
-            QPushButton#btn_check_update {
-                background-color: transparent;
-                border: 1px solid rgba(139, 92, 246, 120);
-                border-radius: 6px;
-                color: #8b5cf6;
-                font-size: 12px;
-                font-weight: bold;
+        layout.addWidget(self._field_label("Chave Tavily"))
+        self.txt_tavily = self._lineedit(self.config_manager.get("tavily_api_key", ""), "tvly-...", password=True)
+        layout.addWidget(self.txt_tavily)
+        layout.addWidget(self._desc("Cole aqui sua chave Tavily para habilitar busca real na internet no modo Pesquisa."))
+        layout.addSpacing(10)
+
+        # Test connection button + status label
+        test_row = QHBoxLayout()
+        test_row.setSpacing(10)
+        self._btn_test_conn = QPushButton("🔌  Testar Conexão")
+        self._btn_test_conn.setFixedHeight(34)
+        self._btn_test_conn.setCursor(Qt.PointingHandCursor)
+        self._btn_test_conn.setStyleSheet("""
+            QPushButton {
+                background: rgba(6,182,212,15);
+                border: 1px solid rgba(6,182,212,60);
+                border-radius: 7px;
+                color: rgba(6,182,212,220);
+                font-size: 11px; font-weight: 600;
+                font-family: 'Segoe UI', sans-serif;
+                padding: 0 16px;
             }
-            QPushButton#btn_check_update:hover {
-                background-color: rgba(139, 92, 246, 25);
-                border: 1px solid #8b5cf6;
-                color: #ffffff;
+            QPushButton:hover { background: rgba(6,182,212,30); border-color: #06b6d4; color: #fff; }
+            QPushButton:disabled { opacity: 0.5; }
+        """)
+        self._lbl_conn_status = QLabel("")
+        self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        self._btn_test_conn.clicked.connect(self._test_connection)
+        btn_reveal = QPushButton("🔐  Ver Chaves")
+        btn_reveal.setFixedHeight(34)
+        btn_reveal.setCursor(Qt.PointingHandCursor)
+        btn_reveal.setStyleSheet("""
+            QPushButton {
+                background: rgba(139,92,246,15);
+                border: 1px solid rgba(139,92,246,60);
+                border-radius: 7px;
+                color: rgba(139,92,246,220);
+                font-size: 11px; font-weight: 600;
+                font-family: 'Segoe UI', sans-serif;
+                padding: 0 16px;
+            }
+            QPushButton:hover { background: rgba(139,92,246,30); border-color: #8b5cf6; color: #fff; }
+        """)
+        btn_reveal.clicked.connect(self._reveal_keys)
+        test_row.addWidget(self._btn_test_conn)
+        test_row.addWidget(btn_reveal)
+        test_row.addWidget(self._lbl_conn_status, 1)
+        layout.addLayout(test_row)
+
+        layout.addStretch()
+        self.pages_stack.addWidget(scroll)
+
+    def _make_pwd_dialog(self, title, subtitle="", show_reset=False):
+        """Generic password dialog. Returns (dialog, inp, err_lbl). Caller calls dlg.exec()."""
+        dlg = QDialog(self)
+        dlg.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        dlg.setAttribute(Qt.WA_TranslucentBackground, True)
+        h = 260 if show_reset else 210
+        dlg.setFixedSize(380, h)
+        outer = QFrame(dlg)
+        outer.setGeometry(8, 8, 364, h - 16)
+        outer.setStyleSheet("QFrame { background: #0d0d0d; border: 1px solid rgba(255,255,255,25); border-radius: 12px; }")
+        shadow = QGraphicsDropShadowEffect(dlg)
+        shadow.setBlurRadius(20); shadow.setColor(QColor(0, 0, 0, 180)); shadow.setOffset(0, 4)
+        outer.setGraphicsEffect(shadow)
+        vl = QVBoxLayout(outer)
+        vl.setContentsMargins(24, 20, 24, 20)
+        vl.setSpacing(10)
+        lbl_title = QLabel(title)
+        lbl_title.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        lbl_title.setWordWrap(True)
+        vl.addWidget(lbl_title)
+        if subtitle:
+            lbl_sub = QLabel(subtitle)
+            lbl_sub.setStyleSheet("color: rgba(255,255,255,120); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+            lbl_sub.setWordWrap(True)
+            vl.addWidget(lbl_sub)
+        inp = QLineEdit()
+        inp.setEchoMode(QLineEdit.Password)
+        inp.setPlaceholderText("Senha...")
+        inp.setFixedHeight(36)
+        inp.setStyleSheet("QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 7px; padding: 6px 12px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; } QLineEdit:focus { border-color: #8b5cf6; }")
+        vl.addWidget(inp)
+        err_lbl = QLabel("")
+        err_lbl.setStyleSheet("color: #f87171; font-size: 11px; background: transparent; border: none;")
+        vl.addWidget(err_lbl)
+        btn_row = QHBoxLayout()
+        if show_reset:
+            btn_reset = QPushButton("⚠️ Resetar tudo")
+            btn_reset.setFixedHeight(32)
+            btn_reset.setCursor(Qt.PointingHandCursor)
+            btn_reset.setStyleSheet("QPushButton { background: rgba(239,68,68,12); border: 1px solid rgba(239,68,68,50); border-radius: 7px; color: #f87171; font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: rgba(239,68,68,25); color: #fff; }")
+            btn_reset.clicked.connect(lambda: dlg.done(2))
+            btn_row.addWidget(btn_reset)
+        btn_row.addStretch()
+        btn_cancel = QPushButton("Cancelar")
+        btn_cancel.setFixedHeight(32)
+        btn_cancel.setCursor(Qt.PointingHandCursor)
+        btn_cancel.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(255,255,255,20); border-radius: 7px; color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 14px; } QPushButton:hover { background: rgba(255,255,255,8); color: #fff; }")
+        btn_ok = QPushButton("Confirmar")
+        btn_ok.setFixedHeight(32)
+        btn_ok.setCursor(Qt.PointingHandCursor)
+        btn_ok.setStyleSheet("QPushButton { background: #8b5cf6; border: none; border-radius: 7px; color: #fff; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; padding: 0 16px; } QPushButton:hover { background: #7c3aed; }")
+        btn_row.addWidget(btn_cancel)
+        btn_row.addWidget(btn_ok)
+        vl.addLayout(btn_row)
+        btn_cancel.clicked.connect(dlg.reject)
+        return dlg, inp, err_lbl, btn_ok
+
+    def _reveal_keys(self):
+        """Toggles key visibility after optional password check."""
+        pwd = self.config_manager.get("keys_password", "")
+        key_fields = [
+            self.txt_github_models, self.txt_groq,
+            self.txt_gemini, self.txt_openai, self.txt_tavily,
+        ]
+        currently_visible = key_fields[0].echoMode() == QLineEdit.Normal
+        if currently_visible:
+            for le in key_fields:
+                le.setEchoMode(QLineEdit.Password)
+            return
+        if not pwd:
+            for le in key_fields:
+                le.setEchoMode(QLineEdit.Normal)
+            return
+        dlg, inp, err_lbl, btn_ok = self._make_pwd_dialog("🔐  Digite sua senha para ver as chaves")
+        def _check():
+            if inp.text() == pwd:
+                dlg.accept()
+            else:
+                err_lbl.setText("Senha incorreta.")
+                inp.clear(); inp.setFocus()
+        btn_ok.clicked.connect(_check)
+        inp.returnPressed.connect(_check)
+        if dlg.exec() != QDialog.Accepted:
+            return
+        for le in key_fields:
+            le.setEchoMode(QLineEdit.Normal)
+
+    def _test_connection(self):
+        """Sends a minimal test prompt to the preferred provider and reports status."""
+        self._btn_test_conn.setEnabled(False)
+        self._btn_test_conn.setText("Testando...")
+        self._lbl_conn_status.setText("")
+        self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: rgba(255,255,255,100);")
+
+        provider = self.combo_provider.currentText()
+        key_attr = f"txt_{provider}"
+        key = getattr(self, key_attr, None)
+        key_val = key.text().strip() if key else self.config_manager.get_api_key(provider)
+        if not key_val:
+            self._btn_test_conn.setEnabled(True)
+            self._btn_test_conn.setText("🔌  Testar Conexão")
+            self._lbl_conn_status.setText("⚠️  Nenhuma chave configurada para este provedor.")
+            self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: #f59e0b;")
+            return
+
+        class _TestWorker(QThread):
+            done = Signal(bool, str)
+            def __init__(self, provider, key):
+                super().__init__()
+                self._provider = provider
+                self._key = key
+            def run(self):
+                masked = (self._key[:8] + "...") if len(self._key) > 8 else "..."
+                print(f"[Teste de Conexão] Iniciando teste para provedor: {self._provider}")
+                print(f"[Teste de Conexão] Chave utilizada: {masked}")
+                try:
+                    from openai import OpenAI
+                    import google.generativeai as genai
+                    test_prompt = [{"role": "user", "content": "Reply with just: OK"}]
+                    if self._provider == "gemini":
+                        print("[Teste de Conexão] Enviando requisição para Gemini (gemini-1.5-flash)...")
+                        genai.configure(api_key=self._key)
+                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        r = model.generate_content("Reply with just: OK")
+                        print(f"[Teste de Conexão] Resposta recebida: {r.text.strip()[:60]}")
+                        self.done.emit(bool(r.text), r.text.strip()[:60])
+                    elif self._provider == "groq":
+                        print("[Teste de Conexão] Enviando requisição para Groq (llama-3.3-70b-versatile)...")
+                        client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=self._key)
+                        r = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=test_prompt, max_tokens=10)
+                        resp = r.choices[0].message.content.strip()[:60]
+                        print(f"[Teste de Conexão] Resposta recebida: {resp}")
+                        self.done.emit(True, resp)
+                    elif self._provider == "github_models":
+                        print("[Teste de Conexão] Enviando requisição para GitHub Models (gpt-4o-mini)...")
+                        client = OpenAI(base_url="https://models.inference.ai.azure.com", api_key=self._key)
+                        r = client.chat.completions.create(model="gpt-4o-mini", messages=test_prompt, max_tokens=10)
+                        resp = r.choices[0].message.content.strip()[:60]
+                        print(f"[Teste de Conexão] Resposta recebida: {resp}")
+                        self.done.emit(True, resp)
+                    elif self._provider == "openai":
+                        print("[Teste de Conexão] Enviando requisição para OpenAI (gpt-4o-mini)...")
+                        client = OpenAI(api_key=self._key)
+                        r = client.chat.completions.create(model="gpt-4o-mini", messages=test_prompt, max_tokens=10)
+                        resp = r.choices[0].message.content.strip()[:60]
+                        print(f"[Teste de Conexão] Resposta recebida: {resp}")
+                        self.done.emit(True, resp)
+                    else:
+                        print(f"[Teste de Conexão] Provedor desconhecido: {self._provider}")
+                        self.done.emit(False, "Provedor desconhecido.")
+                except Exception as e:
+                    print(f"[Teste de Conexão] Erro: {e}")
+                    self.done.emit(False, str(e)[:120])
+
+        def _on_done(ok, msg):
+            self._btn_test_conn.setEnabled(True)
+            self._btn_test_conn.setText("🔌  Testar Conexão")
+            if ok:
+                self._lbl_conn_status.setText(f"✅  Conectado! Resposta: \"{msg}\"")
+                self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: #34d399;")
+            else:
+                self._lbl_conn_status.setText(f"❌  Falha: {msg}")
+                self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: #f87171;")
+
+        self._test_worker = _TestWorker(provider, key_val.split(",")[0].strip())
+        self._test_worker.done.connect(_on_done)
+        self._test_worker.start()
+
+    def _build_page_whisper(self):
+        scroll, page = self._make_scroll_page()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setSpacing(0)
+
+        layout.addWidget(self._section_label("TRANSCRIÇÃO LOCAL (OFFLINE)"))
+        layout.addSpacing(6)
+
+        note = QFrame()
+        note.setStyleSheet("""
+            QFrame {
+                background: rgba(6,182,212,10);
+                border: 1px solid rgba(6,182,212,40);
+                border-radius: 8px;
             }
         """)
-        
-        btn_save = QPushButton("Salvar Configurações")
-        btn_save.setObjectName("btn_save")
-        btn_save.setFixedWidth(176)
-        btn_save.setFixedHeight(36)
-        btn_save.clicked.connect(self.save_settings)
-        btn_save.setFocus()
+        note_l = QVBoxLayout(note)
+        note_l.setContentsMargins(14, 10, 14, 10)
+        lbl_n = QLabel(
+            "ℹ️  O Whisper local transcreve seu áudio diretamente no computador, sem internet. "
+            "Modelos menores (tiny/base) são rápidos porém menos precisos; modelos grandes (large-v3) "
+            "são muito precisos mas exigem pelo menos 8 GB de RAM e uma GPU dedicada para boa performance."
+        )
+        lbl_n.setWordWrap(True)
+        lbl_n.setStyleSheet("color: rgba(255,255,255,160); font-size: 11px; background: transparent; border: none;")
+        note_l.addWidget(lbl_n)
+        layout.addWidget(note)
+        layout.addSpacing(14)
 
-        btn_layout.addWidget(btn_cancel)
-        btn_layout.addWidget(btn_check_update)
-        btn_layout.addWidget(btn_save)
-        main_layout.addLayout(btn_layout)
+        layout.addWidget(self._field_label("Modelo Whisper"))
+        self.combo_whisper = self._combo(
+            ["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"],
+            self.config_manager.get("whisper", {}).get("model_size", "base")
+        )
+        layout.addWidget(self.combo_whisper)
+        layout.addWidget(self._desc("tiny/base = rápido e leve | small/medium = bom equilíbrio | large-v3 = máxima precisão"))
+        layout.addSpacing(10)
 
-    # Window Dragging Logic
+        layout.addWidget(self._field_label("Dispositivo de Processamento"))
+        self.combo_whisper_device = self._combo(["cpu", "cuda"], self.config_manager.get("whisper", {}).get("device", "cpu"))
+        layout.addWidget(self.combo_whisper_device)
+        layout.addWidget(self._desc("cpu = processador (sempre funciona) | cuda = GPU Nvidia (muito mais rápido, requer drivers CUDA instalados)"))
+
+        layout.addStretch()
+        self.pages_stack.addWidget(scroll)
+
+    def _build_page_hotkeys(self):
+        scroll, page = self._make_scroll_page()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setSpacing(0)
+
+        layout.addWidget(self._section_label("ATALHOS DE TECLADO"))
+        layout.addSpacing(6)
+
+        hint = QFrame()
+        hint.setStyleSheet("""
+            QFrame {
+                background: rgba(255,255,255,4);
+                border: 1px solid rgba(255,255,255,12);
+                border-radius: 8px;
+            }
+        """)
+        hint_l = QVBoxLayout(hint)
+        hint_l.setContentsMargins(14, 10, 14, 10)
+        lbl_h = QLabel("💡  Clique em <b>Capturar</b> e pressione a combinação desejada no teclado (ex: Ctrl + Shift + Espaço). Pressione Esc para cancelar.")
+        lbl_h.setWordWrap(True)
+        lbl_h.setStyleSheet("color: rgba(255,255,255,150); font-size: 11px; background: transparent; border: none;")
+        hint_l.addWidget(lbl_h)
+        layout.addWidget(hint)
+        layout.addSpacing(16)
+
+        for field_name, label, config_key, default in [
+            ("txt_hotkey", "Ditado (atalho principal)", "hotkey", "<ctrl>+<shift>+<space>"),
+            ("txt_hotkey_translation", "Tradução de voz", "hotkey_translation", "<ctrl>+<shift>+<y>"),
+            ("txt_hotkey_pesquisa", "Pesquisa / Assistente", "hotkey_pesquisa", "<ctrl>+<shift>+<u>"),
+        ]:
+            layout.addWidget(self._field_label(label))
+            le, row = self.create_hotkey_row(label, config_key, default)
+            setattr(self, field_name, le)
+            layout.addLayout(row)
+            layout.addSpacing(12)
+
+        layout.addStretch()
+        self.pages_stack.addWidget(scroll)
+
+    def _open_wizard(self):
+        self.fade_out_and_close(False)
+        wizard = SetupWizard(self.config_manager, self.app, self.parent(), allow_close=True)
+        wizard.exec()
+
+    # Window Dragging
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton and event.position().y() < 40:
+        if event.button() == Qt.LeftButton and event.position().y() < 48:
             self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
             event.accept()
         else:
@@ -1723,47 +3443,20 @@ class SettingsDialog(QDialog):
         self.drag_position = None
         super().mouseReleaseEvent(event)
 
-    # Smooth Window Transitions (Fade & Slide)
-    def showEvent(self, event):
-        geom = self.geometry()
-        self.setWindowOpacity(0.0)
-        
-        self.pos_anim = QPropertyAnimation(self, b"geometry")
-        self.pos_anim.setDuration(220)
-        self.pos_anim.setStartValue(QRect(geom.x(), geom.y() + 15, geom.width(), geom.height()))
-        self.pos_anim.setEndValue(geom)
-        self.pos_anim.setEasingCurve(QEasingCurve.OutCubic)
-        
-        self.opacity_anim = QPropertyAnimation(self, b"windowOpacity")
-        self.opacity_anim.setDuration(220)
-        self.opacity_anim.setStartValue(0.0)
-        self.opacity_anim.setEndValue(1.0)
-        
-        self.anim_group = QParallelAnimationGroup()
-        self.anim_group.addAnimation(self.pos_anim)
-        self.anim_group.addAnimation(self.opacity_anim)
-        self.anim_group.start()
-        super().showEvent(event)
-
     def fade_out_and_close(self, accept_dialog=False):
         geom = self.geometry()
-        target_geom = QRect(geom.x(), geom.y() + 10, geom.width(), geom.height())
-        
         self.pos_anim = QPropertyAnimation(self, b"geometry")
-        self.pos_anim.setDuration(180)
+        self.pos_anim.setDuration(200)
         self.pos_anim.setStartValue(geom)
-        self.pos_anim.setEndValue(target_geom)
+        self.pos_anim.setEndValue(QRect(geom.x(), geom.y() + 12, geom.width(), geom.height()))
         self.pos_anim.setEasingCurve(QEasingCurve.InCubic)
-        
         self.opacity_anim = QPropertyAnimation(self, b"windowOpacity")
-        self.opacity_anim.setDuration(180)
+        self.opacity_anim.setDuration(200)
         self.opacity_anim.setStartValue(self.windowOpacity())
         self.opacity_anim.setEndValue(0.0)
-        
         self.anim_group = QParallelAnimationGroup()
         self.anim_group.addAnimation(self.pos_anim)
         self.anim_group.addAnimation(self.opacity_anim)
-        
         if accept_dialog:
             self.anim_group.finished.connect(self.accept)
         else:
@@ -1771,43 +3464,95 @@ class SettingsDialog(QDialog):
         self.anim_group.start()
 
     def save_settings(self):
-        """Saves current fields to config_manager."""
         self.config_manager.set("provider", self.combo_provider.currentText())
         self.config_manager.set("active_style", self.combo_style.currentText())
+        pv_raw = self.combo_prompt_version.currentText()
+        self.config_manager.set("prompt_version", "v2" if pv_raw.startswith("v2") else "v1")
         self.config_manager.set_api_key("gemini", self.txt_gemini.text().strip())
         self.config_manager.set_api_key("openai", self.txt_openai.text().strip())
         self.config_manager.set_api_key("groq", self.txt_groq.text().strip())
         self.config_manager.set_api_key("github_models", self.txt_github_models.text().strip())
-        
+        self.config_manager.set("tavily_api_key", self.txt_tavily.text().strip())
         reverse_mode_map = {"Ditado": "ditado", "Tradução": "traducao", "Pesquisa": "pesquisa"}
         self.config_manager.set("operation_mode", reverse_mode_map.get(self.combo_mode.currentText(), "ditado"))
         self.config_manager.set("translation_target", self.combo_target_lang.currentText())
+        reverse_search_provider = {
+            "Groq (recomendado — acesso à web)": "groq",
+            "Gemini (Google Search)": "gemini",
+            "Mesmo do ditado": "auto"
+        }
+        self.config_manager.set("search_provider", reverse_search_provider.get(self.combo_search_provider.currentText(), "groq"))
+        reverse_search_model = {
+            "groq/compound (web em tempo real)": "groq/compound",
+            "groq/compound-mini (mais rápido)": "groq/compound-mini",
+            "llama-3.3-70b-versatile (sem web)": "llama-3.3-70b-versatile"
+        }
+        self.config_manager.set("search_model", reverse_search_model.get(self.combo_search_model.currentText(), "groq/compound"))
         self.config_manager.set("hotkey", self.txt_hotkey.text().strip())
         self.config_manager.set("hotkey_translation", self.txt_hotkey_translation.text().strip())
         self.config_manager.set("hotkey_pesquisa", self.txt_hotkey_pesquisa.text().strip())
-        
         whisper_cfg = self.config_manager.get("whisper", {})
         whisper_cfg["model_size"] = self.combo_whisper.currentText()
         whisper_cfg["device"] = self.combo_whisper_device.currentText()
         self.config_manager.set("whisper", whisper_cfg)
-        
-        # Save Windows Startup and Mute config
-        start_with_win = self.chk_startup.isChecked()
-        self.config_manager.set("start_with_windows", start_with_win)
-        set_run_at_startup(start_with_win)
-        
-        mute_on_rec = self.chk_mute.isChecked()
-        self.config_manager.set("mute_on_record", mute_on_rec)
-        
-        self.fade_out_and_close(True)
+        self.config_manager.set("start_with_windows", self.chk_startup.isChecked())
+        set_run_at_startup(self.chk_startup.isChecked())
+        self.config_manager.set("mute_on_record", self.chk_mute.isChecked())
+        self.config_manager.set("keys_password", self.txt_keys_password.text().strip())
+        # Animate save button to "Salvo!" then close
+        btn_save = self.findChild(QPushButton, "btn_save")
+        if btn_save:
+            btn_save.setEnabled(False)
+            btn_save.setText("  ✓ Salvo!")
+            btn_save.setStyleSheet("""
+                QPushButton {
+                    background: #34d399;
+                    border: none;
+                    border-radius: 7px;
+                    color: #ffffff;
+                    font-size: 11px; font-weight: 700;
+                    font-family: 'Segoe UI', sans-serif;
+                    padding: 0 18px;
+                }
+            """)
+            QTimer.singleShot(480, lambda: self.fade_out_and_close(True))
+        else:
+            self.fade_out_and_close(True)
+
+    def _set_update_btn(self, text, color=None, enabled=True):
+        btn = self.findChild(QPushButton, "btn_check_update")
+        if not btn:
+            return
+        btn.setEnabled(enabled)
+        btn.setText(text)
+        if color:
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background: transparent;
+                    border: 1px solid {color};
+                    border-radius: 7px;
+                    color: {color};
+                    font-size: 11px; font-weight: 600;
+                    font-family: 'Segoe UI', sans-serif;
+                    padding: 0 14px;
+                }}
+            """)
+        else:
+            btn.setStyleSheet("""
+                QPushButton {
+                    background: transparent;
+                    border: 1px solid rgba(139,92,246,80);
+                    border-radius: 7px;
+                    color: rgba(139,92,246,200);
+                    font-size: 11px; font-weight: 600;
+                    font-family: 'Segoe UI', sans-serif;
+                    padding: 0 14px;
+                }
+                QPushButton:hover { background: rgba(139,92,246,20); border-color: #8b5cf6; color: #fff; }
+            """)
 
     def check_updates_manually(self):
-        # Find the updates button and disable it during the search
-        btn_update = self.findChild(QPushButton, "btn_check_update")
-        if btn_update:
-            btn_update.setEnabled(False)
-            btn_update.setText("Verificando...")
-        
+        self._set_update_btn("⏳  Verificando...", enabled=False)
         self.manual_checker = UpdateCheckerWorker()
         self.manual_checker.update_available.connect(self.on_manual_update_available)
         self.manual_checker.no_update_found.connect(self.on_manual_no_update)
@@ -1815,28 +3560,19 @@ class SettingsDialog(QDialog):
         self.manual_checker.start()
 
     def on_manual_update_available(self, version, download_url):
-        btn_update = self.findChild(QPushButton, "btn_check_update")
-        if btn_update:
-            btn_update.setEnabled(True)
-            btn_update.setText("Verificar Atualizações")
-            
-        # Show UpdateDialog
+        self._set_update_btn(f"🚀  v{version} disponível!", color="#34d399")
+        QTimer.singleShot(4000, lambda: self._set_update_btn("🔄  Verificar Atualizações"))
         self.update_dialog = UpdateDialog(version, download_url, self)
         self.update_dialog.show()
 
     def on_manual_no_update(self):
-        btn_update = self.findChild(QPushButton, "btn_check_update")
-        if btn_update:
-            btn_update.setEnabled(True)
-            btn_update.setText("Verificar Atualizações")
-        QMessageBox.information(self, "FlowVoice", f"O FlowVoice já está atualizado!\nVersão atual: v{CURRENT_VERSION}")
+        self._set_update_btn("✅  Atualizado!", color="#34d399")
+        QTimer.singleShot(3000, lambda: self._set_update_btn("🔄  Verificar Atualizações"))
 
     def on_manual_update_error(self, err_msg):
-        btn_update = self.findChild(QPushButton, "btn_check_update")
-        if btn_update:
-            btn_update.setEnabled(True)
-            btn_update.setText("Verificar Atualizações")
-        QMessageBox.warning(self, "FlowVoice", f"Não foi possível verificar atualizações:\n{err_msg}")
+        self._set_update_btn("❌  Falha na verificação", color="#f87171")
+        QTimer.singleShot(4000, lambda: self._set_update_btn("🔄  Verificar Atualizações"))
+        print(f"Erro ao verificar atualizações: {err_msg}")
 
 
 
@@ -2751,8 +4487,19 @@ class FlowVoiceApp(QApplication):
         # Configure registry startup value according to config setting
         set_run_at_startup(self.config_manager.get("start_with_windows", True))
 
-        # Initial check: show warning if API keys are missing on cloud providers
-        self.check_api_keys()
+        # Show first-run wizard only for genuinely new users.
+        # If any API key is already configured, the user pre-dates the wizard — skip it.
+        has_any_key = any(
+            self.config_manager.get_api_key(p)
+            for p in ["gemini", "openai", "groq", "github_models"]
+        )
+        wizard_done = self.config_manager.get("wizard_completed", False)
+        if not wizard_done and not has_any_key:
+            QTimer.singleShot(600, self.show_wizard)
+        else:
+            if not wizard_done:
+                self.config_manager.set("wizard_completed", True)
+            self.check_api_keys()
 
         # Check for updates in the background on startup
         self.update_checker = None
@@ -2778,6 +4525,12 @@ class FlowVoiceApp(QApplication):
             h_dict[pesquisa_hk] = lambda: self.hotkey_bridge.triggered.emit("pesquisa")
 
         return h_dict
+
+    def show_wizard(self):
+        wizard = SetupWizard(self.config_manager, app=self)
+        if wizard.exec() == QDialog.Accepted:
+            self.hotkey_listener.update_hotkeys(self.get_hotkeys_map())
+            self.update_menu_checked_states()
 
     def check_api_keys(self):
         """Warns the user if the selected cloud provider lacks an API key."""

@@ -3,31 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlowVoice - Ditado Inteligente por IA no seu Cursor</title>
-    
+    <title>FlowVoice - Ditado por Voz com IA, Tradução e Pesquisa na Web | Gratuito para Windows</title>
+
     <!-- Meta Tags para SEO -->
-    <meta name="description" content="Fale ao invés de digitar. Economize tempo e seja mais produtivo com o FlowVoice. Transcreva, traduza e pesquise por voz direto no seu cursor. Utilitário 100% gratuito para Windows.">
-    <meta name="keywords" content="ditado por voz, transcrição de áudio, inteligência artificial, gemini, whisper, produtividade, windows, ubuntu, linux, flowvoice, voice dictation, whisper dictation, groq, grok, openai, faster-whisper">
+    <meta name="description" content="FlowVoice é um utilitário gratuito e de código aberto para Windows que transcreve sua voz com IA diretamente no cursor, polindo o texto, traduzindo para outros idiomas e pesquisando na internet em tempo real — tudo com um atalho de teclado.">
+    <meta name="keywords" content="ditado por voz windows, transcrição por voz IA, whisper windows, ditado inteligente, flowvoice, voice dictation windows, transcrição automática, polimento de texto IA, pesquisa por voz, tradução por voz, groq whisper, gemini ditado, openai whisper, faster-whisper, ditado gratuito, produtividade windows, assistente voz teclado">
     <meta name="author" content="Júlio Caliberda">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#0a0a0c">
     <link rel="canonical" href="https://flowvoice.caliberda.com.br/">
-    
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "FlowVoice",
+      "operatingSystem": "Windows, Ubuntu",
+      "applicationCategory": "UtilitiesApplication",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+      "description": "Utilitário gratuito de ditado por voz com IA para Windows. Transcreve, polida, traduz e pesquisa na web em tempo real com um atalho de teclado.",
+      "url": "https://flowvoice.caliberda.com.br/",
+      "author": { "@type": "Person", "name": "Júlio Caliberda", "url": "https://caliberda.com.br" },
+      "softwareVersion": "1.9.0",
+      "license": "https://opensource.org/licenses/MIT",
+      "downloadUrl": "https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe",
+      "screenshot": "https://flowvoice.caliberda.com.br/icon.png"
+    }
+    </script>
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://flowvoice.caliberda.com.br/">
-    <meta property="og:title" content="FlowVoice - Ditado Inteligente por IA no seu Cursor">
-    <meta property="og:description" content="Fale ao invés de digitar. Economize tempo e seja mais produtivo com o FlowVoice. Transcreva, traduza e pesquise por voz direto no seu cursor. Utilitário 100% gratuito para Windows.">
+    <meta property="og:title" content="FlowVoice - Ditado por Voz com IA, Tradução e Pesquisa na Web | Gratuito">
+    <meta property="og:description" content="Transcreva, polida, traduza e pesquise na internet com a sua voz — direto no cursor, em qualquer app do Windows. 100% gratuito e de código aberto.">
     <meta property="og:image" content="https://flowvoice.caliberda.com.br/icon.png">
     <meta property="og:image:alt" content="Logotipo do FlowVoice">
     <meta property="og:site_name" content="FlowVoice">
     <meta property="og:locale" content="pt_BR">
-    
+
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://flowvoice.caliberda.com.br/">
-    <meta name="twitter:title" content="FlowVoice - Ditado Inteligente por IA no seu Cursor">
-    <meta name="twitter:description" content="Fale ao invés de digitar. Economize tempo e seja mais produtivo com o FlowVoice. Transcreva, traduza e pesquise por voz direto no seu cursor. Utilitário 100% gratuito para Windows.">
+    <meta name="twitter:title" content="FlowVoice - Ditado por Voz com IA, Tradução e Pesquisa na Web | Gratuito">
+    <meta name="twitter:description" content="Transcreva, polida, traduza e pesquise na internet com a sua voz — direto no cursor, em qualquer app do Windows. 100% gratuito e de código aberto.">
     <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/icon.png">
     
     <!-- Google Fonts -->
@@ -266,12 +285,14 @@
         .providers-grid .provider-card:nth-child(3) { transition-delay: 0.19s; }
         .providers-grid .provider-card:nth-child(4) { transition-delay: 0.26s; }
         .providers-grid .provider-card:nth-child(5) { transition-delay: 0.33s; }
+        .providers-grid .provider-card:nth-child(6) { transition-delay: 0.40s; }
 
         .providers-grid.active .provider-card:nth-child(1)::after { animation-delay: 0.05s; }
         .providers-grid.active .provider-card:nth-child(2)::after { animation-delay: 0.12s; }
         .providers-grid.active .provider-card:nth-child(3)::after { animation-delay: 0.19s; }
         .providers-grid.active .provider-card:nth-child(4)::after { animation-delay: 0.26s; }
         .providers-grid.active .provider-card:nth-child(5)::after { animation-delay: 0.33s; }
+        .providers-grid.active .provider-card:nth-child(6)::after { animation-delay: 0.40s; }
 
         /* Sticky Frosted Header */
         header {
@@ -1483,7 +1504,7 @@
                 <span class="logo-title">FlowVoice</span>
             </a>
             <div class="nav-links">
-                <span style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;">v1.8.2</span>
+                <span style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;">v1.9.0</span>
                 <a href="https://github.com/cesarkali/Flow-Voice" target="_blank">
                     <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
                     GitHub
@@ -1498,7 +1519,7 @@
         <section class="hero-section">
             <div class="hero-left">
                 <h1>Fale ao invés de digitar.<br>Seja 3x mais produtivo.</h1>
-                <p>Poupe horas de digitação manual todos os dias. O FlowVoice roda silenciosamente em segundo plano: basta pressionar um atalho global, falar no seu próprio ritmo e assistir à inteligência artificial transcrever, polir e digitar o texto impecável em qualquer aplicativo. Escreva e-mails, relatórios, códigos e mensagens na velocidade da fala.</p>
+                <p>Poupe horas de digitação manual todos os dias. O FlowVoice roda silenciosamente em segundo plano: pressione um atalho, fale e a IA transcreve, polida e digita em qualquer app — ou pesquisa na internet em tempo real respondendo sua dúvida com dados atualizados.</p>
                 
                 <div class="hero-ctas">
                     <a href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" class="btn btn-primary">
@@ -1511,7 +1532,7 @@
                     </a>
                 </div>
 
-                <!-- Sleek Checkbox List under CTAs (4 items row) -->
+                <!-- Sleek Checkbox List under CTAs (5 items row) -->
                 <div class="hero-checklist">
                     <div class="check-item">
                         <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
@@ -1523,11 +1544,15 @@
                     </div>
                     <div class="check-item">
                         <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        <span>Sem fins lucrativos</span>
+                        <span>Pesquisa na web em tempo real</span>
                     </div>
                     <div class="check-item">
                         <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        <span>Desenvolvido para uso pessoal</span>
+                        <span>Tradução instantânea</span>
+                    </div>
+                    <div class="check-item">
+                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                        <span>Offline 100% privado</span>
                     </div>
                 </div>
 
@@ -1760,15 +1785,15 @@
                         </ul>
                     </div>
 
-                    <!-- Informational Box 2: Extra Tips to fill vertical gap -->
+                    <!-- Informational Box 2: Extra Tips -->
                     <div class="config-info-box" style="border-color: rgba(59, 130, 246, 0.08); background: rgba(59, 130, 246, 0.01);">
                         <div class="config-info-box-title">
                             <span style="color: var(--accent-blue);">⚡</span>
                             <span>Recursos Adicionais & Dicas</span>
                         </div>
                         <ul class="config-info-list">
-                            <li><strong>Tradução Instantânea:</strong> Use o atalho <code>Ctrl + Shift + Y</code> para ditar em português e digitar o texto automaticamente traduzido para o Inglês, Espanhol ou Francês.</li>
-                            <li><strong>Assistente por Voz:</strong> Pressione <code>Ctrl + Shift + U</code> para acionar a barra de chat flutuante, tirando dúvidas ou programando via prompts de voz direto com a IA.</li>
+                            <li><strong>Pesquisa na Web em Tempo Real:</strong> Com <code>Ctrl + Shift + U</code> e uma chave Tavily configurada, o FlowVoice busca dados atualizados na internet — clima, preços, notícias — e sintetiza a resposta com IA antes de colar no cursor.</li>
+                            <li><strong>Tradução Instantânea:</strong> Use <code>Ctrl + Shift + Y</code> para ditar em português e digitar automaticamente traduzido para Inglês, Espanhol, Francês, Alemão ou Italiano.</li>
                             <li><strong>Inicialização com o Sistema:</strong> Habilite nas configurações para que o FlowVoice inicie de forma silenciosa na bandeja junto com o Windows.</li>
                         </ul>
                     </div>
@@ -1847,6 +1872,24 @@
                         </div>
                     </div>
                     
+                    <!-- Tavily -->
+                    <div class="provider-card">
+                        <div class="provider-header">
+                            <div class="provider-title-group">
+                                <span style="font-size: 20px;">🌐</span>
+                                <span class="provider-name">Tavily Search API</span>
+                            </div>
+                            <span class="provider-tag recommended">Pesquisa Web em Tempo Real</span>
+                        </div>
+                        <p class="provider-desc">Habilita a busca real na internet no modo Pesquisa. O FlowVoice consulta o Tavily, obtém resultados atualizados da web e usa o Llama 3.3 (Groq) para sintetizar uma resposta em português direto no cursor. <strong>1.000 buscas grátis/mês.</strong></p>
+                        <div class="provider-btn-group">
+                            <a href="https://app.tavily.com" target="_blank" class="btn-link">
+                                Obter Chave no Tavily ↗
+                            </a>
+                            <span class="provider-speed">Dados em tempo real</span>
+                        </div>
+                    </div>
+
                     <!-- Whisper Local -->
                     <div class="provider-card">
                         <div class="provider-header">
@@ -1858,7 +1901,7 @@
                         </div>
                         <p class="provider-desc">Não quer enviar seus áudios para a nuvem? O FlowVoice suporta execução offline da biblioteca <code>faster-whisper</code> rodando diretamente na sua CPU/GPU local. Sem chaves de API necessárias.</p>
                         <div class="provider-btn-group">
-                            <span class="btn-link" style="cursor: default; text-decoration: none;">Ativável no config.json</span>
+                            <span class="btn-link" style="cursor: default; text-decoration: none;">Ativável nas Configurações</span>
                             <span class="provider-speed">Roda na sua máquina</span>
                         </div>
                     </div>
@@ -1866,6 +1909,35 @@
             </div>
         </section>
     </main>
+
+    <hr class="section-divider">
+
+    <!-- What's New Section -->
+    <section>
+        <div class="section-header reveal-element">
+            <span class="section-tag">Novidades</span>
+            <h2>O que há de novo na v1.9.0</h2>
+            <p>A maior atualização do FlowVoice desde o lançamento. Pesquisa real na web, interface repaginada e mais controle nas suas mãos.</p>
+        </div>
+
+        <div class="steps-grid reveal-element" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="step-card">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                <h3>Pesquisa na Web Real</h3>
+                <p>O modo Pesquisa agora conecta ao <strong>Tavily</strong> para buscar dados reais e atualizados na internet. Clima, preços, notícias, documentação — respondidos em português pela IA com fontes reais.</p>
+            </div>
+            <div class="step-card">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <h3>Senha para Chaves de API</h3>
+                <p>Proteja suas chaves de API com uma senha local. A tela de configurações agora exige autenticação para revelar ou alterar chaves, com opção de reset seguro em caso de esquecimento.</p>
+            </div>
+            <div class="step-card">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+                <h3>Interface Repaginada</h3>
+                <p>Painel de configurações com transições suaves entre abas, ícones SVG dos provedores, ComboBoxes que não mudam ao rolar a página e modal de assistente totalmente redesenhado.</p>
+            </div>
+        </div>
+    </section>
 
     <footer>
         <div class="footer-inner">

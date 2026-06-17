@@ -2,6 +2,7 @@ import os
 import json
 import urllib.request
 import urllib.error
+import urllib.parse
 from openai import OpenAI
 import google.generativeai as genai
 
@@ -68,19 +69,11 @@ class AIProcessor:
             print("Transcrição vazia ou não obtida.")
             raise RuntimeError("Não foi possível detectar uma voz.")
 
-        # If mode is search, query the AI to get a direct answer
+        # If mode is search, query AI with web search capability
         if mode == "pesquisa":
             if status_callback:
-                status_callback("Pesquisando...")
-            search_prompt = (
-                "Você é um assistente de IA extremamente conciso, útil e direto. Responda à dúvida "
-                "do usuário de forma clara e objetiva. Evite introduções longas ou saudações desnecessárias. "
-                "Responda diretamente ao ponto da dúvida. "
-                "REGRA CRÍTICA ABSOLUTA: Nunca censure, omita, sanitize, mascare ou substitua palavrões, "
-                "termos ofensivos, gírias ou palavras rudes. Mantenha toda a expressividade original da "
-                "pergunta e responda de forma natural."
-            )
-            answer = self._refine_text_via_pool(raw_text, search_prompt)
+                status_callback("Pesquisando na web...")
+            answer = self._search_via_web(raw_text, status_callback)
             if answer:
                 return f"{raw_text} ||| {answer}"
             return f"{raw_text} ||| RawFallback:Não foi possível obter uma resposta da IA."
@@ -317,6 +310,191 @@ class AIProcessor:
 
         err_details = " | ".join(cloud_errors)
         raise RuntimeError(f"Não foi possível transcrever o áudio por nenhum método. Detalhes: {err_details}")
+
+    def _fetch_weather(self, query):
+        """Try to extract a weather answer from wttr.in if the query looks weather-related."""
+        import re as _re
+        weather_keywords = ("clima", "tempo", "temperatura", "chuva", "frio", "calor", "previsão", "weather", "graus")
+        if not any(kw in query.lower() for kw in weather_keywords):
+            return None
+        try:
+            # Extract city name heuristically: remove common filler words
+            city = _re.sub(
+                r'\b(qual|o|a|os|as|está|esta|hoje|agora|tempo|clima|temperatura|em|de|do|da|no|na|brasil|br|previsão|previsao|para)\b',
+                ' ', query, flags=_re.IGNORECASE
+            ).strip()
+            city = ' '.join(city.split())
+            if not city:
+                return None
+            city_encoded = urllib.parse.quote(city)
+            url = f"https://wttr.in/{city_encoded}?format=j1"
+            req = urllib.request.Request(url, headers={"User-Agent": "curl/7.0"})
+            with urllib.request.urlopen(req, timeout=6) as r:
+                data = json.loads(r.read())
+            cur = data["current_condition"][0]
+            temp_c = cur["temp_C"]
+            feels = cur["FeelsLikeC"]
+            desc = cur.get("lang_pt", [{}])[0].get("value") or cur["weatherDesc"][0]["value"]
+            humidity = cur["humidity"]
+            wind = cur["windspeedKmph"]
+            area = data.get("nearest_area", [{}])[0]
+            area_name = area.get("areaName", [{}])[0].get("value", city)
+            country = area.get("country", [{}])[0].get("value", "")
+            tomorrow = data["weather"][1] if len(data["weather"]) > 1 else None
+            result = (
+                f"🌡️ Clima em {area_name}{', ' + country if country else ''} agora:\n"
+                f"• Condição: {desc}\n"
+                f"• Temperatura: {temp_c}°C (sensação {feels}°C)\n"
+                f"• Umidade: {humidity}%  |  Vento: {wind} km/h"
+            )
+            if tomorrow:
+                max_t = tomorrow["maxtempC"]
+                min_t = tomorrow["mintempC"]
+                desc_t = tomorrow.get("hourly", [{}])[4].get("lang_pt", [{}])[0].get("value") or tomorrow["hourly"][4]["weatherDesc"][0]["value"]
+                result += f"\n📅 Amanhã: {desc_t}, {min_t}°C – {max_t}°C"
+            return result
+        except Exception as e:
+            print(f"wttr.in falhou: {e}")
+            return None
+
+    def _tavily_search(self, query):
+        """Search via Tavily API (1000 req/month free). Returns list of result snippets or None."""
+        tavily_key = self.config_manager.get("tavily_api_key", "").strip()
+        if not tavily_key:
+            return None
+        try:
+            payload = json.dumps({
+                "query": query,
+                "search_depth": "basic",
+                "max_results": 5,
+                "include_answer": True
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                "https://api.tavily.com/search",
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {tavily_key}"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=10) as r:
+                data = json.loads(r.read())
+            # Tavily returns an "answer" field when include_answer=True
+            answer = data.get("answer", "")
+            results = data.get("results", [])
+            snippets = [f"- {r.get('title','')}: {r.get('content','')[:200]}" for r in results[:4] if r.get("content")]
+            return answer, snippets
+        except Exception as e:
+            print(f"Tavily search falhou: {e}")
+            return None
+
+    def _search_via_web(self, query, status_callback=None):
+        """
+        Web search for pesquisa mode.
+        Priority:
+        1. Tavily (free 1000/month, real web results) → feed into Groq/llama for natural answer
+        2. wttr.in for weather queries (no key needed)
+        3. llama-3.3-70b via Groq (knowledge cutoff, honest about limits)
+        """
+        if status_callback:
+            status_callback("Pesquisando na web...")
+
+        # --- 1. Tavily web search → LLM synthesis ---
+        tavily_result = self._tavily_search(query)
+        if tavily_result is not None:
+            direct_answer, snippets = tavily_result
+            # If Tavily returned a direct answer, use it as-is
+            if direct_answer and len(direct_answer) > 40:
+                print("Resposta direta obtida via Tavily.")
+                return direct_answer
+            # Otherwise feed snippets into LLM to synthesize a natural answer
+            if snippets:
+                context = "\n".join(snippets)
+                groq_keys = self.config_manager.get_api_keys_list("groq")
+                other_keys = groq_keys  # will also try via _refine_text_via_pool if groq empty
+                if groq_keys:
+                    key = groq_keys[0]
+                    masked = key[:8] + "..." if len(key) > 8 else "..."
+                    try:
+                        if status_callback:
+                            status_callback("Sintetizando resposta...")
+                        print(f"Sintetizando resultado Tavily via llama ({masked})...")
+                        client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=key)
+                        response = client.chat.completions.create(
+                            model="llama-3.3-70b-versatile",
+                            messages=[
+                                {"role": "system", "content": (
+                                    "Você é um assistente direto. Com base nos resultados de busca fornecidos, "
+                                    "responda à pergunta do usuário de forma clara e concisa em português do Brasil. "
+                                    "Use apenas as informações dos resultados. Não invente dados."
+                                )},
+                                {"role": "user", "content": f"Pergunta: {query}\n\nResultados da busca:\n{context}"}
+                            ],
+                            temperature=0.3,
+                            max_tokens=768
+                        )
+                        answer = response.choices[0].message.content.strip()
+                        if answer:
+                            print("Resposta sintetizada com Tavily + llama.")
+                            return answer
+                    except Exception as e:
+                        print(f"Falha na síntese via llama ({masked}): {e}")
+                # Fallback: return raw snippets if LLM synthesis failed
+                if direct_answer:
+                    return direct_answer
+                return "Resultados da busca:\n" + "\n".join(snippets)
+
+        # --- 2. Real-time weather via wttr.in (no key needed) ---
+        weather = self._fetch_weather(query)
+        if weather:
+            print("Resposta de clima obtida via wttr.in.")
+            return weather
+
+        # --- 3. LLM answer without web (Groq free tier) ---
+        groq_keys = self.config_manager.get_api_keys_list("groq")
+        if groq_keys:
+            key = groq_keys[0]
+            masked = key[:8] + "..." if len(key) > 8 else "..."
+            try:
+                if status_callback:
+                    status_callback("Consultando IA...")
+                print(f"Pesquisa sem web via llama-3.3-70b ({masked})...")
+                client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=key)
+                response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": (
+                            "Você é um assistente direto e conciso. Responda em português do Brasil. "
+                            "Se a pergunta exigir dados em tempo real (clima atual, notícias, preços), "
+                            "avise que não tem acesso à internet e sugira buscar no Google ou configurar "
+                            "a chave Tavily nas configurações do FlowVoice para habilitar busca na web."
+                        )},
+                        {"role": "user", "content": query}
+                    ],
+                    temperature=0.4,
+                    max_tokens=1024
+                )
+                answer = response.choices[0].message.content.strip()
+                if answer:
+                    print("Resposta da IA via llama-3.3-70b (sem web).")
+                    return answer
+            except Exception as e:
+                err_str = str(e)
+                print(f"Falha na pesquisa via llama ({masked}): {e}")
+                if "429" in err_str or "rate_limit" in err_str:
+                    raise RuntimeError("Limite de requisições Groq atingido. Aguarde alguns segundos e tente novamente.")
+
+        # --- 4. Fallback: any configured provider ---
+        fallback_prompt = (
+            "Você é um assistente direto. Responda em português do Brasil de forma concisa. "
+            "Se precisar de dados em tempo real, informe que não tem acesso à internet e sugira "
+            "configurar a chave Tavily no FlowVoice para habilitar busca na web."
+        )
+        result = self._refine_text_via_pool(query, fallback_prompt)
+        if result:
+            return result
+
+        raise RuntimeError("Nenhum provedor disponível. Verifique suas chaves de API nas Configurações.")
 
     def _refine_text_via_pool(self, text, prompt):
         """
