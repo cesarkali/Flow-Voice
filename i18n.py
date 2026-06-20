@@ -16,8 +16,8 @@ SUPPORTED = ("pt", "en", "es")
 def _get_locales_dir() -> str:
     """Returns the path to the locales/ directory, compatible with PyInstaller."""
     if getattr(sys, "frozen", False):
-        # Running as compiled executable
-        base = os.path.dirname(sys.executable)
+        # PyInstaller extracts bundled files to sys._MEIPASS, not next to the .exe
+        base = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
     else:
         base = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base, "locales")
