@@ -10,7 +10,7 @@ Cada versão publicada deve ter um arquivo `X.Y.Z.md` nesta pasta.
    - `requirements.txt`: `# Versão atual: X.Y.Z`
    - `requirements-linux.txt`: `# Versão atual: X.Y.Z`
    - `README.md` (principal): todas as ocorrências de versão
-   - `website/index.html`: `softwareVersion`, badge `vX.Y.Z` e título da seção "O que há de novo"
+   - `website/index.html`: `softwareVersion`, badge `vX.Y.Z`, título e **conteúdo dos cards** da seção "O que há de novo"
 
 2. Gere o esqueleto das release notes:
    ```bash
