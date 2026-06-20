@@ -1,5 +1,5 @@
 # Dependências de execução — Windows
-# Versão atual: 1.9.0 (version.py)
+# Versão atual: 1.9.1 (version.py)
 # Instalar: py -m pip install -r requirements.txt
 # Executar: py main.py
 # Gerar instalador (.exe): py build-windows.py

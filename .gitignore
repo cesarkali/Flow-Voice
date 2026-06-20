@@ -22,3 +22,4 @@ checkmark.svg
 *.tmp
 website/FlowVoiceSetup.exe
 flowvoice.log
+.claude

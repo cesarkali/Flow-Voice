@@ -3,7 +3,7 @@
 O **FlowVoice** é um utilitário de produtividade leve e elegante para **Windows** e **Ubuntu** que roda em segundo plano na bandeja do sistema. Ele permite que você dite textos por voz em qualquer campo de digitação do sistema (navegador, editores de código, chat do Teams, Word, etc.). O áudio é capturado, transcrito por IA e, opcionalmente, polido e corrigido gramaticalmente de forma automática antes de ser colado diretamente onde está o seu cursor.
 Desenvolvido por: **Júlio Caliberda** ([caliberda.com.br](https://caliberda.com.br)) | Repositório: [GitHub](https://github.com/cesarkali/Flow-Voice)
 
-**Versão atual:** 1.9.0
+**Versão atual:** 1.9.1
 
 ### ⚡ Consumo de Recursos (Leveza)
 O **FlowVoice** foi projetado para ser executado sem impactar o desempenho do seu computador:
@@ -20,12 +20,16 @@ O **FlowVoice** foi projetado para ser executado sem impactar o desempenho do se
   - **Casual**: Corrige a gramática essencial, mantendo a voz natural, coloquial e as gírias do usuário.
   - **Direto/Cru**: Apenas transcreve literalmente cada palavra falada, sem reformulações.
 - **Tradução por Voz**: Pressione `Ctrl + Shift + Y` para ditar e traduzir sua fala automaticamente para Inglês, Espanhol, Francês, Alemão ou Italiano.
-- **Pesquisa Google por Voz**: Pressione `Ctrl + Shift + U` para fazer perguntas faladas. O app busca na IA e abre um **Assistente Chat** interativo para você continuar a conversa.
+- **Pesquisa Web por Voz**: Pressione `Ctrl + Shift + U` para fazer perguntas faladas. O app busca via **Tavily** (quando configurado) ou na IA e abre um **Assistente Chat** interativo para você continuar a conversa.
 - **Múltiplos Provedores (Failover Pool)**: Configure chaves para **Gemini**, **OpenAI**, **Groq** ou **GitHub Models**. Se um provedor falhar, o app automaticamente tenta o próximo na fila.
 - **Transcrição Local (100% Offline)**: Opção de rodar sem chaves de nuvem usando o modelo **Whisper** localmente via GPU/CPU.
+- **Internacionalização (i18n)**: Interface completa disponível em **Português**, **Inglês** e **Espanhol**, com troca de idioma ao vivo sem reiniciar o app.
+- **Assistente de Configuração (Wizard)**: Fluxo guiado de 4 etapas para configurar o app pela primeira vez: idioma → provedor de IA → estilo de transcrição → atalho global.
+- **Proteção por Senha**: Chaves de API podem ser protegidas por senha, com opção de redefinição via e-mail.
 - **Painel de Configurações Interativo**: Painel de controle em abas modernas para gerenciar o app de forma simples:
+  - **🏠 Início**: Painel com status atual (provedor, estilo, modo, atalho).
   - **⚙️ Geral**: Escolha o tom da transcrição, o idioma padrão da tradução por voz, inicialização automática com o sistema e silenciamento de sons do PC ao gravar.
-  - **🔑 Conexões**: Escolha a IA principal, insira chaves de API (com suporte a múltiplas chaves separadas por vírgula) e consulte atalhos para obter acesso grátis no Groq, GitHub Models e Gemini.
+  - **🔑 Conexões**: Escolha a IA principal, insira chaves de API (com suporte a múltiplas chaves separadas por vírgula), configure a chave Tavily para pesquisa web e gerencie senha de proteção das chaves.
   - **🖥️ Whisper Local**: Selecione o tamanho do modelo offline (desde `tiny` super rápido a `large-v3` de alta precisão) e ative aceleração por placa Nvidia (`CUDA`).
   - **⌨️ Atalhos**: Personalize todos os atalhos globais capturando as combinações de teclas diretamente do seu teclado físico.
 - **Verificação Automática de Atualizações**: O sistema busca por novas versões em segundo plano a cada 1 hora sem interromper o uso, mostrando de forma visual e dinâmica no rodapé do painel de configurações o status atual (atualizado ou nova versão disponível).
@@ -49,7 +53,7 @@ O instalador irá:
 Baixe ou gere o pacote `.deb` e instale com:
 
 ```bash
-sudo apt install ./ubuntu/dist/flowvoice_1.9.0_amd64.deb
+sudo apt install ./ubuntu/dist/flowvoice_1.9.1_amd64.deb
 ```
 
 Depois da instalação:
@@ -115,7 +119,7 @@ O script faz automaticamente:
 - Instalador: `dist/FlowVoiceSetup.exe`
 - Executável: `dist/main/main.exe`
 
-### Ubuntu — gerar `flowvoice_1.9.0_amd64.deb`
+### Ubuntu — gerar `flowvoice_1.9.1_amd64.deb`
 
 **Pré-requisitos no Ubuntu:**
 ```bash
@@ -138,14 +142,87 @@ O script faz automaticamente:
 3. Empacota o instalador `.deb`
 
 **Saída:**
-- Pacote: `ubuntu/dist/flowvoice_1.9.0_amd64.deb`
+- Pacote: `ubuntu/dist/flowvoice_1.9.1_amd64.deb`
 
 **Instalar o pacote gerado:**
 ```bash
-sudo apt install ./ubuntu/dist/flowvoice_1.9.0_amd64.deb
+sudo apt install ./ubuntu/dist/flowvoice_1.9.1_amd64.deb
 ```
 
 Documentação adicional do build Ubuntu: [`ubuntu/README.md`](ubuntu/README.md).
+
+---
+
+## 🗂️ Estrutura do Projeto
+
+```
+FlowVoice/
+├── main.py                  # Ponto de entrada; toda a UI (PySide6), lógica de hotkeys, gravação e colagem
+├── ai_processor.py          # Motor de IA: transcrição Whisper, polimento de texto, tradução e pesquisa web
+├── config.py                # ConfigManager — leitura/escrita persistente de config.json com suporte a AppData
+├── recorder.py              # Captura de áudio via sounddevice + escrita de WAV
+├── hotkey.py                # Registro/remoção de hotkeys globais (pynput)
+├── paster.py                # Cola texto via clipboard + simulação de Ctrl+V
+├── i18n.py                  # Internacionalização: carrega locales/*.json, expõe tr() e set_language()
+├── updater.py               # Download e instalação silenciosa de atualizações (Windows)
+├── version.py               # Fonte única da versão: VERSION = "X.Y.Z"
+├── new_release.py           # Gera esqueleto de release notes em releases/
+├── build-windows.py         # Script de build: PyInstaller + Inno Setup → FlowVoiceSetup.exe
+├── installer.iss            # Script Inno Setup para o instalador Windows
+├── main.spec                # Spec do PyInstaller (Windows)
+├── config.example.json      # Modelo de configuração para novos usuários
+│
+├── locales/                 # Strings de UI traduzidas
+│   ├── pt.json              # Português (padrão)
+│   ├── en.json              # Inglês
+│   └── es.json              # Espanhol
+│
+├── icons/                   # Ícones SVG usados na UI
+│   ├── gemini.svg
+│   ├── github.svg
+│   ├── globe.svg
+│   ├── groq.svg
+│   ├── instagram.svg
+│   ├── key.svg
+│   ├── openai.svg
+│   ├── flag_pt.svg
+│   ├── flag_en.svg
+│   └── flag_es.svg
+│
+├── releases/                # Release notes por versão (Markdown)
+│   └── TEMPLATE.md
+│
+├── ubuntu/                  # Build e empacotamento para Ubuntu/Linux
+│   ├── build-deb.sh         # Script de build do pacote .deb
+│   └── README.md            # Documentação do build Ubuntu
+│
+├── website/                 # Site estático do projeto (Vercel)
+│   ├── index.html
+│   ├── icon.png
+│   └── vercel.json
+│
+├── dist/                    # Artefatos de build (gerados)
+│   └── main.exe
+│
+├── requirements.txt         # Dependências Python — Windows
+├── requirements-linux.txt   # Dependências Python — Ubuntu/Linux
+├── icon.ico                 # Ícone do app (Windows)
+├── icon.png                 # Ícone do app (PNG)
+└── checkmark.svg            # Asset SVG auxiliar
+```
+
+### Módulos principais — resumo de responsabilidades
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `main.py` | UI completa (PySide6): overlay flutuante, bandeja, painel de configurações com abas, wizard de setup, diálogo de chat, diálogo de atualização, hotkeys e cola de texto |
+| `ai_processor.py` | Transcrição (Whisper local / API), polimento de texto, tradução, pesquisa web com Tavily + fallback para IA |
+| `config.py` | Leitura/escrita de `config.json`; resolve caminho correto entre desenvolvimento e executável compilado |
+| `recorder.py` | Gravação de áudio com `sounddevice`; salva arquivo WAV temporário |
+| `hotkey.py` | Registra e remove combinações de teclas globais via `pynput` |
+| `paster.py` | Copia texto para clipboard e simula `Ctrl+V` para colar onde o cursor está |
+| `i18n.py` | Carrega `locales/<lang>.json`; `tr(key)` retorna string traduzida; `set_language()` troca idioma ao vivo |
+| `updater.py` | Verifica GitHub Releases, baixa instalador em background e executa atualização silenciosa |
 
 ---
 
@@ -164,11 +241,11 @@ A versão oficial fica em [`version.py`](version.py). Ao publicar uma nova vers�
 
 ### 🔍 Onde atualizar o número da versão ao lançar um release:
 Para atualizar a versão do aplicativo, você deve alterar o número nos seguintes arquivos:
-- [version.py](file:///c:/Dev/ST/version.py): `VERSION = "X.Y.Z"`
-- [installer.iss](file:///c:/Dev/ST/installer.iss): `#define MyAppVersion "X.Y.Z"`
-- [README.md](file:///c:/Dev/ST/README.md): Atualizar a tag `Versão atual`, comandos de instalação `.deb` do Ubuntu e links de release notes.
-- [requirements.txt](file:///c:/Dev/ST/requirements.txt): Linha 2 `# Versão atual: X.Y.Z`
-- [requirements-linux.txt](file:///c:/Dev/ST/requirements-linux.txt): Linha 2 `# Versão atual: X.Y.Z`
-- [website/index.html](file:///c:/Dev/ST/website/index.html): Span com a tag `vX.Y.Z` no nav + seção "O que há de novo" (cards de novidades da versão) + `softwareVersion` no JSON-LD
+- [version.py](version.py): `VERSION = "X.Y.Z"`
+- [installer.iss](installer.iss): `#define MyAppVersion "X.Y.Z"`
+- [README.md](README.md): Atualizar a tag `Versão atual`, comandos de instalação `.deb` do Ubuntu e links de release notes.
+- [requirements.txt](requirements.txt): Linha 2 `# Versão atual: X.Y.Z`
+- [requirements-linux.txt](requirements-linux.txt): Linha 2 `# Versão atual: X.Y.Z`
+- [website/index.html](website/index.html): Span com a tag `vX.Y.Z` no nav + seção "O que há de novo" (cards de novidades da versão) + `softwareVersion` no JSON-LD
 
-Release notes da versão atual: [releases/1.9.0.md](file:///c:/Dev/ST/releases/1.9.0.md)
+Release notes da versão atual: [releases/1.9.1.md](releases/1.9.1.md)

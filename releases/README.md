@@ -5,11 +5,12 @@ Cada versão publicada deve ter um arquivo `X.Y.Z.md` nesta pasta.
 ## Como preparar uma nova versão
 
 1. Atualize a versão nos seguintes arquivos:
-   - `version.py`: `VERSION = "1.7.3"`
-   - `installer.iss`: `#define MyAppVersion "1.7.3"`
-   - `requirements.txt`: `# Versão atual: 1.7.3`
-   - `requirements-linux.txt`: `# Versão atual: 1.7.3`
-   - Todos os arquivos `README.md` (principal e do Ubuntu)
+   - `version.py`: `VERSION = "X.Y.Z"`
+   - `installer.iss`: `#define MyAppVersion "X.Y.Z"`
+   - `requirements.txt`: `# Versão atual: X.Y.Z`
+   - `requirements-linux.txt`: `# Versão atual: X.Y.Z`
+   - `README.md` (principal): todas as ocorrências de versão
+   - `website/index.html`: `softwareVersion`, badge `vX.Y.Z` e título da seção "O que há de novo"
 
 2. Gere o esqueleto das release notes:
    ```bash
