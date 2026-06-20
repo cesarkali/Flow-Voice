@@ -59,6 +59,10 @@ from version import VERSION
 
 CURRENT_VERSION = VERSION
 
+# ── Internationalization — loaded from locales/ JSON files ────────────────────
+from i18n import tr, set_language, get_language
+
+
 # Safe pycaw import for Windows volume control
 try:
     from pycaw.pycaw import AudioUtilities
@@ -1008,7 +1012,7 @@ class HotkeyLineEdit(QLineEdit):
         self.on_stop_cb = on_stop_cb
         self.setFocus()
         self.setText("")
-        self.setPlaceholderText("Pressione as teclas (Esc p/ cancelar)...")
+        self.setPlaceholderText(tr("hotkey_prompt"))
         self.setStyleSheet("""
             QLineEdit {
                 border: 1px solid #ff5555;
@@ -1333,16 +1337,16 @@ class SetupWizard(QDialog):
         nav_l.setContentsMargins(24, 0, 24, 0)
         nav_l.setSpacing(12)
 
-        self.step_lbl = QLabel("Passo 1 de 4")
+        self.step_lbl = QLabel(tr("wiz_step", 1, 4))
         self.step_lbl.setStyleSheet("color: rgba(255,255,255,60); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
         nav_l.addWidget(self.step_lbl)
         nav_l.addStretch()
 
-        self.btn_back = WizardSecondaryBtn("← Voltar")
+        self.btn_back = WizardSecondaryBtn(tr("wiz_btn_back"))
         self.btn_back.setVisible(False)
         self.btn_back.clicked.connect(self._go_back)
 
-        self.btn_next = WizardPrimaryBtn("Próximo →")
+        self.btn_next = WizardPrimaryBtn(tr("wiz_btn_next"))
         self.btn_next.clicked.connect(self._go_next)
 
         nav_l.addWidget(self.btn_back)
@@ -1374,19 +1378,66 @@ class SetupWizard(QDialog):
 
     def _build_step_welcome(self):
         w, l = self._step_frame(
-            "Bem-vindo ao FlowVoice! 🎙️",
-            "Vamos configurar tudo em menos de 2 minutos.\nPrecisamos de uma chave de API gratuita para ativar a Inteligência Artificial que vai polir seus textos.",
+            tr("wiz_welcome_title"),
+            tr("wiz_welcome_desc"),
             ""
         )
+        
+        # Language Selector
+        lang_wrap = QFrame()
+        lang_wrap.setStyleSheet("QFrame { background: rgba(255,255,255,4); border: 1px solid rgba(255,255,255,12); border-radius: 10px; }")
+        lang_l = QHBoxLayout(lang_wrap)
+        lang_l.setContentsMargins(16, 14, 16, 14)
+        lang_l.setSpacing(12)
+        
+        icon_globe = QLabel("🌍")
+        icon_globe.setStyleSheet("font-size: 24px; background: transparent; border: none;")
+        
+        txt_l = QVBoxLayout()
+        txt_l.setSpacing(2)
+        lang_lbl = QLabel(tr("wiz_welcome_lang"))
+        lang_lbl.setStyleSheet("color: rgba(255,255,255,200); font-size: 13px; font-weight: 600; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        lang_desc = QLabel("Selecione seu idioma / Choose your language")
+        lang_desc.setStyleSheet("color: rgba(255,255,255,120); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
+        txt_l.addWidget(lang_lbl)
+        txt_l.addWidget(lang_desc)
+        
+        self.combo_lang = QComboBox()
+        self.combo_lang.setCursor(Qt.PointingHandCursor)
+        self.combo_lang.setFixedWidth(160)
+        self.combo_lang.addItems(["Português (Brasil)", "English (US)", "Español"])
+        cur = get_language()
+        if cur == "en": self.combo_lang.setCurrentIndex(1)
+        elif cur == "es": self.combo_lang.setCurrentIndex(2)
+        else: self.combo_lang.setCurrentIndex(0)
+        
+        # Add SVGs to combo box items
+        self.combo_lang.setItemIcon(0, QIcon(get_resource_path("icons/flag_pt.svg")))
+        self.combo_lang.setItemIcon(1, QIcon(get_resource_path("icons/flag_en.svg")))
+        self.combo_lang.setItemIcon(2, QIcon(get_resource_path("icons/flag_es.svg")))
+        
+        self.combo_lang.setStyleSheet("""
+            QComboBox { background: rgba(255,255,255,10); border: 1px solid rgba(255,255,255,25); border-radius: 6px; color: white; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+            QComboBox::drop-down { border: none; }
+            QComboBox QAbstractItemView { background: #1a1a1a; color: white; selection-background-color: #8b5cf6; outline: none; }
+        """)
+        self.combo_lang.currentIndexChanged.connect(self._on_lang_changed)
+        
+        lang_l.addWidget(icon_globe)
+        lang_l.addLayout(txt_l, 1)
+        lang_l.addWidget(self.combo_lang)
+        l.addWidget(lang_wrap)
+        l.addSpacing(6)
+
         info = QFrame()
         info.setStyleSheet("QFrame { background: rgba(139,92,246,12); border: 1px solid rgba(139,92,246,40); border-radius: 10px; }")
         info_l = QVBoxLayout(info)
         info_l.setContentsMargins(20, 14, 20, 14)
         info_l.setSpacing(8)
         for icon, txt in [
-            ("⚡", "Transcrição de voz ultrarrápida com IA"),
-            ("✍️", "Correção gramatical e polimento automático"),
-            ("🔒", "Suas chaves ficam salvas só no seu computador"),
+            ("⚡", tr("wiz_welcome_feat1")),
+            ("✍️", tr("wiz_welcome_feat2")),
+            ("🔒", tr("wiz_welcome_feat3")),
         ]:
             row = QHBoxLayout()
             row.setSpacing(10)
@@ -1404,9 +1455,9 @@ class SetupWizard(QDialog):
 
     def _build_step_provider(self):
         w, l = self._step_frame(
-            "Conecte sua IA",
-            "Selecione o provedor e cole sua chave. Todas as opções têm plano gratuito.",
-            "🔑"
+            tr("wiz_provider_title"),
+            tr("wiz_provider_desc"),
+            ""
         )
 
         def _svg_pixmap(svg_path, size=20):
@@ -1426,10 +1477,10 @@ class SetupWizard(QDialog):
             return pm
 
         _provider_meta = {
-            "github_models": {"label": "GitHub Models", "icon": get_resource_path("icon_github.svg"), "color": "#6e40c9", "badge_bg": "#1a1a2e", "desc": "Grátis para devs  •  GPT-4o-mini"},
-            "groq":          {"label": "Groq",          "icon": get_resource_path("icon_groq.svg"),   "color": "#f59e0b", "badge_bg": "#1a1a1a", "desc": "Ultra rápido  •  Llama 3.3 70B grátis"},
-            "gemini":        {"label": "Google Gemini", "icon": get_resource_path("icon_gemini.svg"), "color": "#34d399", "badge_bg": "#0d1a15", "desc": "Cota grátis  •  Gemini 1.5 Flash"},
-            "openai":        {"label": "OpenAI",        "icon": get_resource_path("icon_openai.svg"), "color": "#60a5fa", "badge_bg": "#0d0d0d", "desc": "Pago/Premium  •  GPT-4o-mini"},
+            "github_models": {"label": "GitHub Models", "icon": get_resource_path("icons/github.svg"), "color": "#6e40c9", "badge_bg": "#1a1a2e", "desc": tr("wiz_prov_desc_github")},
+            "groq":          {"label": "Groq",          "icon": get_resource_path("icons/groq.svg"),   "color": "#f59e0b", "badge_bg": "#1a1a1a", "desc": tr("wiz_prov_desc_groq")},
+            "gemini":        {"label": "Google Gemini", "icon": get_resource_path("icons/gemini.svg"), "color": "#34d399", "badge_bg": "#0d1a15", "desc": tr("wiz_prov_desc_gemini")},
+            "openai":        {"label": "OpenAI",        "icon": get_resource_path("icons/openai.svg"), "color": "#60a5fa", "badge_bg": "#0d0d0d", "desc": tr("wiz_prov_desc_openai")},
         }
         current_provider = self.config_manager.get("provider", "groq")
         self._wiz_selected_provider = current_provider
@@ -1510,7 +1561,7 @@ class SetupWizard(QDialog):
         self.wiz_txt_key = QLineEdit()
         self.wiz_txt_key.setEchoMode(QLineEdit.Password)
         self.wiz_txt_key.setText(self.config_manager.get_api_key(current_provider))
-        self.wiz_txt_key.setPlaceholderText("Cole sua chave de API aqui...")
+        self.wiz_txt_key.setPlaceholderText(tr("wiz_key_placeholder"))
         self.wiz_txt_key.setFixedHeight(38)
         self.wiz_txt_key.setStyleSheet("""
             QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; }
@@ -1541,21 +1592,21 @@ class SetupWizard(QDialog):
                     vl = QVBoxLayout(outer)
                     vl.setContentsMargins(20, 16, 20, 16)
                     vl.setSpacing(10)
-                    lbl = QLabel("🔐  Digite a senha para revelar")
+                    lbl = QLabel(tr("pwd_prompt_reveal"))
                     lbl.setStyleSheet("color: rgba(255,255,255,200); font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
                     pwd_input = QLineEdit()
                     pwd_input.setEchoMode(QLineEdit.Password)
-                    pwd_input.setPlaceholderText("Senha...")
+                    pwd_input.setPlaceholderText(tr("pwd_placeholder"))
                     pwd_input.setFixedHeight(34)
                     pwd_input.setStyleSheet("QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 7px; padding: 4px 10px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; } QLineEdit:focus { border-color: #8b5cf6; }")
                     err_lbl = QLabel("")
                     err_lbl.setStyleSheet("color: #f87171; font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
                     btn_row = QHBoxLayout()
                     btn_row.setSpacing(8)
-                    b_cancel = QPushButton("Cancelar")
+                    b_cancel = QPushButton(tr("btn_cancel"))
                     b_cancel.setFixedHeight(30)
                     b_cancel.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(255,255,255,20); border-radius: 6px; color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: rgba(255,255,255,10); }")
-                    b_ok = QPushButton("Confirmar")
+                    b_ok = QPushButton(tr("btn_confirm"))
                     b_ok.setFixedHeight(30)
                     b_ok.setStyleSheet("QPushButton { background: #8b5cf6; border: none; border-radius: 6px; color: #fff; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: #7c3aed; }")
                     btn_row.addWidget(b_cancel); btn_row.addWidget(b_ok)
@@ -1564,7 +1615,7 @@ class SetupWizard(QDialog):
                         if pwd_input.text() == pwd:
                             dlg.accept()
                         else:
-                            err_lbl.setText("Senha incorreta.")
+                            err_lbl.setText(tr("pwd_error"))
                             pwd_input.clear()
                     b_ok.clicked.connect(_confirm)
                     b_cancel.clicked.connect(dlg.reject)
@@ -1581,7 +1632,7 @@ class SetupWizard(QDialog):
         l.addLayout(key_row)
 
         lbl_link = QLabel(
-            "Não tem chave? Obtenha grátis: "
+            tr("wiz_get_keys") +
             "<a href='https://console.groq.com/keys' style='color:#8b5cf6;'>Groq</a>  •  "
             "<a href='https://github.com/marketplace/models' style='color:#8b5cf6;'>GitHub Models</a>  •  "
             "<a href='https://aistudio.google.com' style='color:#8b5cf6;'>Gemini</a>"
@@ -1615,21 +1666,21 @@ class SetupWizard(QDialog):
 
     def _build_step_style(self):
         w, l = self._step_frame(
-            "Qual é o seu estilo?",
-            "Escolha como a IA deve formatar os seus textos ditados.",
-            "✍️"
+            tr("wiz_style_title"),
+            tr("wiz_style_desc"),
+            ""
         )
         style_data = [
-            ("Profissional", "Reformula para linguagem formal e clara. Ideal para e-mails, documentos e mensagens de trabalho.", "#8b5cf6"),
-            ("Casual", "Corrige só o essencial, mantendo sua voz natural. Ótimo para chats e redes sociais.", "#06b6d4"),
-            ("Direto", "Entrega o texto quase bruto, só com pontuação básica. Para quem quer controle total.", "#34d399"),
+            ("Profissional", tr("wiz_style_prof_title"), tr("wiz_style_prof_desc"), "#8b5cf6"),
+            ("Casual", tr("wiz_style_casual_title"), tr("wiz_style_casual_desc"), "#06b6d4"),
+            ("Direto", tr("wiz_style_raw_title"), tr("wiz_style_raw_desc"), "#34d399"),
         ]
         self._style_btns = {}
         current_style = self.config_manager.get("active_style", "Profissional")
-        for style_name, desc, color in style_data:
+        for style_key, style_name, desc, color in style_data:
             card = QFrame()
-            card.setObjectName(f"style_card_{style_name}")
-            is_active = style_name == current_style
+            card.setObjectName(f"style_card_{style_key}")
+            is_active = style_key == current_style
             card.setStyleSheet(f"""
                 QFrame {{
                     background: {'rgba(139,92,246,18)' if is_active else 'rgba(255,255,255,4)'};
@@ -1655,7 +1706,7 @@ class SetupWizard(QDialog):
             dot = QLabel("●" if is_active else "○")
             dot.setStyleSheet(f"color: {color}; font-size: 14px; background: transparent; border: none;")
             card_l.addWidget(dot)
-            self._style_btns[style_name] = (card, dot, t, color)
+            self._style_btns[style_key] = (card, dot, t, color)
             _idle_s = card.styleSheet()
             def _make_style_hover(c, col, sn):
                 def _enter(e):
@@ -1666,8 +1717,8 @@ class SetupWizard(QDialog):
                         c.setStyleSheet(f"QFrame {{ background: rgba(255,255,255,4); border: 1px solid rgba(255,255,255,12); border-radius: 10px; }}")
                 c.enterEvent = _enter
                 c.leaveEvent = _leave
-            _make_style_hover(card, color, style_name)
-            card.mousePressEvent = lambda e, s=style_name: self._select_style(s)
+            _make_style_hover(card, color, style_key)
+            card.mousePressEvent = lambda e, s=style_key: self._select_style(s)
             l.addWidget(card)
             l.addSpacing(6)
         l.addStretch()
@@ -1690,9 +1741,9 @@ class SetupWizard(QDialog):
 
     def _build_step_hotkey(self):
         w, l = self._step_frame(
-            "Configure seu atalho",
-            "Este é o atalho que você pressiona para iniciar e parar a gravação.\nO padrão funciona na maioria dos casos — mude só se houver conflito.",
-            "⌨️"
+            tr("wiz_hotkey_title"),
+            tr("wiz_hotkey_desc"),
+            ""
         )
         row = QHBoxLayout()
         row.setSpacing(8)
@@ -1703,7 +1754,7 @@ class SetupWizard(QDialog):
             QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; }
             QLineEdit:focus { border: 1px solid #8b5cf6; background: rgba(255,255,255,12); }
         """)
-        btn_cap = QPushButton("Capturar")
+        btn_cap = QPushButton(tr("btn_capture"))
         btn_cap.setFixedHeight(38)
         btn_cap.setFixedWidth(90)
         btn_cap.setCursor(Qt.PointingHandCursor)
@@ -1712,15 +1763,15 @@ class SetupWizard(QDialog):
             QPushButton:hover { background: rgba(255,255,255,20); border-color: rgba(255,255,255,60); color: #fff; }
         """)
         def _on_capture():
-            btn_cap.setText("Gravando...")
+            btn_cap.setText(tr("btn_capturing"))
             btn_cap.setStyleSheet("QPushButton { background: rgba(255,85,85,20); border: 1px solid #ff5555; border-radius: 8px; color: #ff5555; font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; }")
-            self.wiz_hotkey_edit.start_recording(self.wiz_hotkey_edit.text(), lambda: (btn_cap.setText("Capturar"), btn_cap.setStyleSheet("")))
+            self.wiz_hotkey_edit.start_recording(self.wiz_hotkey_edit.text(), lambda: (btn_cap.setText(tr("btn_capture")), btn_cap.setStyleSheet("")))
         btn_cap.clicked.connect(_on_capture)
         row.addWidget(self.wiz_hotkey_edit, 1)
         row.addWidget(btn_cap)
         l.addLayout(row)
         l.addSpacing(12)
-        lbl_done = QLabel("🎉  Tudo pronto! Clique em <b>Finalizar</b> para salvar e começar a usar o FlowVoice.")
+        lbl_done = QLabel(tr("wiz_done"))
         lbl_done.setWordWrap(True)
         lbl_done.setStyleSheet("color: rgba(255,255,255,160); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
         l.addWidget(lbl_done)
@@ -1739,10 +1790,35 @@ class SetupWizard(QDialog):
         self._anim_progress.setEndValue(QRect(0, 0, target_w, 3))
         self._anim_progress.setEasingCurve(QEasingCurve.OutCubic)
         self._anim_progress.start()
-        self.step_lbl.setText(f"Passo {self._step + 1} de {total_steps}")
+        self.step_lbl.setText(tr("wiz_step", self._step + 1, total_steps))
         self.btn_back.setVisible(self._step > 0)
         is_last = self._step == total_steps - 1
-        self.btn_next.setText("✅  Finalizar" if is_last else "Próximo →")
+        self.btn_next.setText(tr("wiz_btn_finish") if is_last else tr("wiz_btn_next"))
+
+    def _on_lang_changed(self, idx):
+        if idx == 0: lang_code = "pt"
+        elif idx == 1: lang_code = "en"
+        else: lang_code = "es"
+        
+        set_language(lang_code, self.config_manager)
+        
+        # Save state and reload wizard
+        app_ref = self.app
+        config_ref = self.config_manager
+        parent_ref = self.parent()
+        allow_close_ref = self._allow_close
+        step_ref = self._step
+        
+        self.reject()
+        
+        def _reopen():
+            wiz = SetupWizard(config_ref, app_ref, parent_ref, allow_close_ref)
+            wiz._step = step_ref
+            wiz.stack.setCurrentIndex(step_ref)
+            wiz._update_progress()
+            wiz.exec()
+            
+        QTimer.singleShot(100, _reopen)
 
     def _animate_step(self, direction=1):
         widget = self.stack.currentWidget()
@@ -2141,7 +2217,7 @@ class SettingsDialog(QDialog):
             QLineEdit:focus { border: 1px solid #8b5cf6; background-color: rgba(255,255,255,12); }
         """)
 
-        btn_capture = QPushButton("Capturar")
+        btn_capture = QPushButton(tr("btn_capture"))
         btn_capture.setObjectName("btn_capture")
         btn_capture.setFixedWidth(80)
         btn_capture.setStyleSheet("""
@@ -2165,7 +2241,7 @@ class SettingsDialog(QDialog):
         
         def on_capture_clicked(le=line_edit, btn=btn_capture):
             if not le.is_recording:
-                btn.setText("Gravando...")
+                btn.setText(tr("btn_capturing"))
                 btn.setStyleSheet("""
                     QPushButton#btn_capture {
                         background-color: rgba(255, 85, 85, 30);
@@ -2184,7 +2260,7 @@ class SettingsDialog(QDialog):
                 le.stop_recording()
                 
         def restore_button(btn):
-            btn.setText("Capturar")
+            btn.setText(tr("btn_capture"))
             btn.setStyleSheet("")
             
         btn_capture.clicked.connect(lambda: on_capture_clicked(line_edit, btn_capture))
@@ -2383,10 +2459,10 @@ class SettingsDialog(QDialog):
         logo_lbl.setStyleSheet("background: transparent; border: none;")
         title_lbl = QLabel("FlowVoice")
         title_lbl.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; letter-spacing: 0.5px; background: transparent; border: none;")
-        subtitle_lbl = QLabel("Configurações")
+        subtitle_lbl = QLabel(tr("settings"))
         subtitle_lbl.setStyleSheet("color: rgba(255,255,255,50); font-size: 12px; font-weight: 400; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
 
-        self.page_title_lbl = QLabel("Início")
+        self.page_title_lbl = QLabel(tr("nav_home"))
         self.page_title_lbl.setStyleSheet("color: rgba(139,92,246,200); font-size: 12px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; letter-spacing: 0.3px;")
 
         tb_layout.addWidget(logo_lbl)
@@ -2395,6 +2471,29 @@ class SettingsDialog(QDialog):
         tb_layout.addSpacing(10)
         tb_layout.addWidget(self.page_title_lbl)
         tb_layout.addStretch()
+
+        # Language picker button
+        self._lang_btn = QPushButton(tr("language_btn").replace("🇧🇷 ", "").replace("🇺🇸 ", "").replace("🇪🇸 ", "").replace("🌐 ", ""))
+        flag_path = get_resource_path(f"icons/flag_{get_language()}.svg")
+        if os.path.exists(flag_path):
+            self._lang_btn.setIcon(QIcon(flag_path))
+        self._lang_btn.setFixedHeight(26)
+        self._lang_btn.setCursor(Qt.PointingHandCursor)
+        self._lang_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(139,92,246,18);
+                border: 1px solid rgba(139,92,246,60);
+                border-radius: 6px;
+                color: rgba(255,255,255,200);
+                font-size: 11px; font-weight: 600;
+                font-family: 'Segoe UI Emoji', 'Segoe UI', sans-serif;
+                padding: 0 10px;
+            }
+            QPushButton:hover { background: rgba(139,92,246,45); border-color: #8b5cf6; color: #fff; }
+        """)
+        self._lang_btn.clicked.connect(self._show_lang_menu)
+        tb_layout.addWidget(self._lang_btn)
+        tb_layout.addSpacing(6)
 
         btn_close = QPushButton("✕")
         btn_close.setFixedSize(28, 28)
@@ -2429,11 +2528,11 @@ class SettingsDialog(QDialog):
         sidebar_layout.setSpacing(4)
 
         nav_items = [
-            ("🏠", "Início"),
-            ("⚙️", "Geral"),
-            ("🔑", "Conexões"),
-            ("🖥️", "Whisper Local"),
-            ("⌨️", "Atalhos"),
+            ("🏠", tr("nav_home")),
+            ("⚙️", tr("nav_general")),
+            ("🔑", tr("nav_connections")),
+            ("🖥️", tr("nav_whisper")),
+            ("⌨️", tr("nav_hotkeys")),
         ]
         self._page_titles = [item[1] for item in nav_items]
         self._sidebar_btns = []
@@ -2448,7 +2547,7 @@ class SettingsDialog(QDialog):
         sidebar_layout.addStretch()
 
         # Wizard button at bottom of sidebar
-        btn_wizard = QPushButton("✨  Assistente de Setup")
+        btn_wizard = QPushButton(tr("btn_wizard"))
         btn_wizard.setCursor(Qt.PointingHandCursor)
         btn_wizard.setFixedHeight(34)
         btn_wizard.setStyleSheet("""
@@ -2497,7 +2596,7 @@ class SettingsDialog(QDialog):
         status_text = f"v{CURRENT_VERSION}"
         status_color = "rgba(255,255,255,80)"
         if self.app and getattr(self.app, 'latest_checked_version', None):
-            status_text += f"  •  🔔 v{self.app.latest_checked_version} disponível!"
+            status_text += tr("version_update_badge", self.app.latest_checked_version)
             status_color = "#34d399"
         lbl_ver = QLabel(f"<span style='color:{status_color};'>{status_text}</span>")
         lbl_ver.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
@@ -2538,12 +2637,12 @@ class SettingsDialog(QDialog):
 
         bb_layout.addWidget(lbl_ver)
         bb_layout.addSpacing(6)
-        bb_layout.addWidget(_icon_link_btn("icon_github.svg", "⌥", "https://github.com/cesarkali/Flow-Voice", "GitHub"))
-        bb_layout.addWidget(_icon_link_btn("icon_instagram.svg", "📷", "https://www.instagram.com/cesar.kali/", "Instagram"))
-        bb_layout.addWidget(_icon_link_btn("icon_globe.svg", "🌐", "https://caliberda.com.br/", "Site"))
+        bb_layout.addWidget(_icon_link_btn("icons/github.svg", "⌥", "https://github.com/cesarkali/Flow-Voice", "GitHub"))
+        bb_layout.addWidget(_icon_link_btn("icons/instagram.svg", "📷", "https://www.instagram.com/cesar.kali/", "Instagram"))
+        bb_layout.addWidget(_icon_link_btn("icons/globe.svg", "🌐", "https://caliberda.com.br/", "Site"))
         bb_layout.addStretch()
 
-        btn_update = QPushButton("🔄  Verificar Atualizações")
+        btn_update = QPushButton(tr("btn_update"))
         btn_update.setObjectName("btn_check_update")
         btn_update.setFixedHeight(32)
         btn_update.setCursor(Qt.PointingHandCursor)
@@ -2561,7 +2660,7 @@ class SettingsDialog(QDialog):
             QPushButton:hover { background: rgba(139,92,246,20); border-color: #8b5cf6; color: #fff; }
         """)
 
-        btn_cancel = QPushButton("Cancelar")
+        btn_cancel = QPushButton(tr("btn_cancel"))
         btn_cancel.setObjectName("btn_cancel")
         btn_cancel.setFixedHeight(32)
         btn_cancel.setCursor(Qt.PointingHandCursor)
@@ -2579,7 +2678,7 @@ class SettingsDialog(QDialog):
             QPushButton:hover { background: rgba(255,255,255,10); border-color: rgba(255,255,255,50); color: #fff; }
         """)
 
-        btn_save = QPushButton("  Salvar Configurações")
+        btn_save = QPushButton(tr("btn_save"))
         btn_save.setObjectName("btn_save")
         btn_save.setFixedHeight(32)
         btn_save.setCursor(Qt.PointingHandCursor)
@@ -2610,6 +2709,45 @@ class SettingsDialog(QDialog):
         self._build_page_whisper()
         self._build_page_hotkeys()
 
+    def _show_lang_menu(self):
+        """Show language selection popup menu below the language button."""
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #0d0d0d;
+                border: 1px solid rgba(139,92,246,80);
+                border-radius: 8px;
+                padding: 4px;
+                font-family: 'Segoe UI Emoji', 'Segoe UI', sans-serif;
+                font-size: 12px;
+                color: #ffffff;
+            }
+            QMenu::item { padding: 7px 20px; border-radius: 5px; }
+            QMenu::item:selected { background: rgba(139,92,246,40); color: #fff; }
+            QMenu::item:checked { color: #8b5cf6; font-weight: 700; }
+        """)
+        global _LANG
+        for code, label in [("pt", " Português"), ("en", " English"), ("es", " Español")]:
+            act = QAction(label, self, checkable=True)
+            flag_path = get_resource_path(f"icons/flag_{code}.svg")
+            if os.path.exists(flag_path):
+                act.setIcon(QIcon(flag_path))
+            act.setChecked(get_language() == code)
+            act.triggered.connect(lambda checked, c=code: self._change_language(c))
+            menu.addAction(act)
+        btn_pos = self._lang_btn.mapToGlobal(self._lang_btn.rect().bottomLeft())
+        from PySide6.QtCore import QPoint
+        menu.exec(btn_pos + QPoint(0, 4))
+
+    def _change_language(self, lang_code):
+        """Switch UI language, persist to config, and reopen settings."""
+        set_language(lang_code, self.config_manager)
+        # Reopen settings with new language
+        app_ref = self.app
+        config_ref = self.config_manager
+        self.fade_out_and_close(False)
+        QTimer.singleShot(320, lambda: SettingsDialog(config_ref, app=app_ref).exec())
+
     def _build_page_home(self):
         scroll, page = self._make_scroll_page()
         layout = QVBoxLayout(page)
@@ -2629,9 +2767,9 @@ class SettingsDialog(QDialog):
         hero_layout = QVBoxLayout(hero)
         hero_layout.setContentsMargins(24, 20, 24, 20)
         hero_layout.setSpacing(6)
-        lbl_hi = QLabel("👋  Bem-vindo ao FlowVoice!")
+        lbl_hi = QLabel(tr("hero_title"))
         lbl_hi.setStyleSheet("color: #ffffff; font-size: 16px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
-        lbl_sub = QLabel("Fale — o FlowVoice transcreve, corrige e digita por você. Configure abaixo para começar.")
+        lbl_sub = QLabel(tr("hero_sub"))
         lbl_sub.setStyleSheet("color: rgba(255,255,255,160); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
         lbl_sub.setWordWrap(True)
         hero_layout.addWidget(lbl_hi)
@@ -2640,7 +2778,7 @@ class SettingsDialog(QDialog):
         layout.addSpacing(20)
 
         # Status cards
-        layout.addWidget(self._section_label("STATUS ATUAL"))
+        layout.addWidget(self._section_label(tr("sec_status")))
         layout.addSpacing(10)
 
         cards_row = QHBoxLayout()
@@ -2649,14 +2787,14 @@ class SettingsDialog(QDialog):
         provider = self.config_manager.get("provider", "—")
         style = self.config_manager.get("active_style", "—")
         mode_raw = self.config_manager.get("operation_mode", "ditado")
-        mode_display = {"ditado": "Ditado", "traducao": "Tradução", "pesquisa": "Pesquisa"}.get(mode_raw, mode_raw)
+        mode_display = {"ditado": tr("mode_display_ditado"), "traducao": tr("mode_display_traducao"), "pesquisa": tr("mode_display_pesquisa")}.get(mode_raw, mode_raw)
         hotkey = self.config_manager.get("hotkey", "—")
 
         for icon, title, value in [
-            ("🤖", "Provedor IA", provider),
-            ("✍️", "Estilo", style),
-            ("🎯", "Modo", mode_display),
-            ("⌨️", "Atalho", hotkey),
+            ("🤖", tr("card_provider"), provider),
+            ("✍️", tr("card_style"), style),
+            ("🎯", tr("card_mode"), mode_display),
+            ("⌨️", tr("card_shortcut"), hotkey),
         ]:
             card = QFrame()
             card.setStyleSheet("""
@@ -2681,12 +2819,12 @@ class SettingsDialog(QDialog):
         layout.addSpacing(20)
 
         # Quick guide
-        layout.addWidget(self._section_label("COMO USAR"))
+        layout.addWidget(self._section_label(tr("sec_how_to")))
         layout.addSpacing(10)
         steps = [
-            ("1", "Configure sua chave de API", "Vá em Conexões e cole sua chave do Groq (gratuito) ou GitHub Models."),
-            ("2", "Escolha seu estilo", "Em Geral, selecione Profissional para textos formais ou Casual para mensagens do dia a dia."),
-            ("3", "Pressione o atalho e fale", f"Use {hotkey} em qualquer campo de texto para iniciar a gravação. Pressione novamente para parar e digitar."),
+            ("1", tr("step1_title"), tr("step1_desc")),
+            ("2", tr("step2_title"), tr("step2_desc")),
+            ("3", tr("step3_title"), tr("step3_desc", hotkey)),
         ]
         for num, title, desc in steps:
             step_row = QHBoxLayout()
@@ -2718,36 +2856,36 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(28, 28, 28, 28)
         layout.setSpacing(0)
 
-        layout.addWidget(self._section_label("COMPORTAMENTO DA IA"))
+        layout.addWidget(self._section_label(tr("sec_ai_behavior")))
         layout.addSpacing(10)
 
-        layout.addWidget(self._field_label("Estilo de Escrita"))
+        layout.addWidget(self._field_label(tr("field_writing_style")))
         self.combo_style = self._combo(["Profissional", "Casual", "Direto"], self.config_manager.get("active_style", "Profissional"))
         layout.addWidget(self.combo_style)
-        layout.addWidget(self._desc("Profissional reformula para linguagem formal; Casual mantém sua voz natural; Direto entrega o texto quase bruto."))
+        layout.addWidget(self._desc(tr("desc_writing_style")))
         layout.addSpacing(6)
 
-        layout.addWidget(self._field_label("Versão do Prompt"))
+        layout.addWidget(self._field_label(tr("field_prompt_version")))
         self.combo_prompt_version = self._combo(["v2 (Beta)", "v1"], "v2 (Beta)" if self.config_manager.get("prompt_version", "v2") == "v2" else "v1")
         layout.addWidget(self.combo_prompt_version)
-        layout.addWidget(self._desc("v2 Beta: prompts refinados com parágrafos, preservação de termos técnicos em inglês e descarte de falsos começos. v1: versão anterior simples e estável."))
+        layout.addWidget(self._desc(tr("desc_prompt_version")))
         layout.addSpacing(14)
 
         layout.addWidget(self._separator())
         layout.addSpacing(8)
-        layout.addWidget(self._section_label("OPERAÇÃO PADRÃO"))
+        layout.addWidget(self._section_label(tr("sec_default_op")))
         layout.addSpacing(10)
 
-        layout.addWidget(self._field_label("Modo de Operação"))
-        mode_map = {"ditado": "Ditado", "traducao": "Tradução", "pesquisa": "Pesquisa"}
-        self.combo_mode = self._combo(["Ditado", "Tradução", "Pesquisa"], mode_map.get(self.config_manager.get("operation_mode", "ditado"), "Ditado"))
+        layout.addWidget(self._field_label(tr("field_operation_mode")))
+        mode_map = {"ditado": tr("combo_dictation"), "traducao": tr("combo_translation"), "pesquisa": tr("combo_search")}
+        self.combo_mode = self._combo([tr("combo_dictation"), tr("combo_translation"), tr("combo_search")], mode_map.get(self.config_manager.get("operation_mode", "ditado"), tr("combo_dictation")))
         layout.addWidget(self.combo_mode)
-        layout.addWidget(self._desc("Ditado digita sob o cursor; Tradução traduz sua fala; Pesquisa consulta a IA com acesso à internet."))
+        layout.addWidget(self._desc(tr("desc_operation_mode")))
         layout.addSpacing(14)
 
         layout.addWidget(self._separator())
         layout.addSpacing(8)
-        layout.addWidget(self._section_label("PESQUISA NA INTERNET"))
+        layout.addWidget(self._section_label(tr("sec_web_search")))
         layout.addSpacing(10)
 
         # Info banner
@@ -2756,12 +2894,9 @@ class SettingsDialog(QDialog):
         info_l = QVBoxLayout(info_banner)
         info_l.setContentsMargins(14, 10, 14, 10)
         info_l.setSpacing(3)
-        info_title = QLabel("⚡  Apenas o Groq suporta busca na web em tempo real")
+        info_title = QLabel(tr("web_info_title"))
         info_title.setStyleSheet("color: #a78bfa; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
-        info_body = QLabel(
-            "O modelo <b>compound-beta</b> do Groq inclui acesso nativo à internet (clima, notícias, preços, etc.). "
-            "GitHub Models, OpenAI e Gemini padrão respondem apenas com base em conhecimento de treinamento, sem dados em tempo real."
-        )
+        info_body = QLabel(tr("web_info_body"))
         info_body.setStyleSheet("color: rgba(255,255,255,130); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
         info_body.setWordWrap(True)
         info_l.addWidget(info_title)
@@ -2769,61 +2904,67 @@ class SettingsDialog(QDialog):
         layout.addWidget(info_banner)
         layout.addSpacing(10)
 
-        layout.addWidget(self._field_label("Provedor para Pesquisa"))
+        _sp_groq = tr("combo_search_provider_groq")
+        _sp_gemini = tr("combo_search_provider_gemini")
+        _sp_auto = tr("combo_search_provider_auto")
+        layout.addWidget(self._field_label(tr("field_search_provider")))
         self.combo_search_provider = self._combo(
-            ["Groq (recomendado — acesso à web)", "Gemini (Google Search)", "Mesmo do ditado"],
-            {"groq": "Groq (recomendado — acesso à web)", "gemini": "Gemini (Google Search)", "auto": "Mesmo do ditado"}.get(
-                self.config_manager.get("search_provider", "groq"), "Groq (recomendado — acesso à web)"
+            [_sp_groq, _sp_gemini, _sp_auto],
+            {"groq": _sp_groq, "gemini": _sp_gemini, "auto": _sp_auto}.get(
+                self.config_manager.get("search_provider", "groq"), _sp_groq
             )
         )
         layout.addWidget(self.combo_search_provider)
-        layout.addWidget(self._desc("Define qual IA responde quando você usa o atalho de Pesquisa."))
+        layout.addWidget(self._desc(tr("desc_search_provider")))
         layout.addSpacing(6)
 
-        layout.addWidget(self._field_label("Modelo Groq para Pesquisa"))
+        _sm_compound = tr("combo_search_model_compound")
+        _sm_mini = tr("combo_search_model_mini")
+        _sm_llama = tr("combo_search_model_llama")
+        layout.addWidget(self._field_label(tr("field_search_model")))
         self.combo_search_model = self._combo(
-            ["groq/compound (web em tempo real)", "groq/compound-mini (mais rápido)", "llama-3.3-70b-versatile (sem web)"],
+            [_sm_compound, _sm_mini, _sm_llama],
             {
-                "groq/compound": "groq/compound (web em tempo real)",
-                "groq/compound-mini": "groq/compound-mini (mais rápido)",
-                "llama-3.3-70b-versatile": "llama-3.3-70b-versatile (sem web)"
-            }.get(self.config_manager.get("search_model", "groq/compound"), "groq/compound (web em tempo real)")
+                "groq/compound": _sm_compound,
+                "groq/compound-mini": _sm_mini,
+                "llama-3.3-70b-versatile": _sm_llama
+            }.get(self.config_manager.get("search_model", "groq/compound"), _sm_compound)
         )
         layout.addWidget(self.combo_search_model)
-        layout.addWidget(self._desc("groq/compound busca a web em tempo real. groq/compound-mini é mais rápido. llama-3.3-70b-versatile não acessa a internet."))
+        layout.addWidget(self._desc(tr("desc_search_model")))
         layout.addSpacing(6)
 
-        layout.addWidget(self._field_label("Idioma de Tradução"))
+        layout.addWidget(self._field_label(tr("field_translation_lang")))
         self.combo_target_lang = self._combo(["Inglês", "Espanhol", "Francês", "Alemão", "Italiano"], self.config_manager.get("translation_target", "Inglês"))
         layout.addWidget(self.combo_target_lang)
-        layout.addWidget(self._desc("Idioma destino ao usar o atalho de tradução."))
+        layout.addWidget(self._desc(tr("desc_translation_lang")))
         layout.addSpacing(14)
 
         layout.addWidget(self._separator())
         layout.addSpacing(8)
-        layout.addWidget(self._section_label("SISTEMA"))
+        layout.addWidget(self._section_label(tr("sec_system")))
         layout.addSpacing(10)
 
-        startup_label = "Iniciar junto com o Windows" if sys.platform == 'win32' else "Iniciar junto com o sistema"
+        startup_label = tr("field_startup") if sys.platform == 'win32' else tr("field_startup_linux")
         self.chk_startup = QCheckBox(startup_label)
         self.chk_startup.setChecked(is_run_at_startup_enabled() or self.config_manager.get("start_with_windows", False))
         self.chk_startup.setStyleSheet(self._checkbox_style)
         layout.addWidget(self.chk_startup)
-        layout.addWidget(self._desc("Inicia minimizado na bandeja sempre que o computador ligar."))
+        layout.addWidget(self._desc(tr("desc_startup")))
         layout.addSpacing(6)
 
-        self.chk_mute = QCheckBox("Mutar áudio do PC durante a gravação")
+        self.chk_mute = QCheckBox(tr("field_mute"))
         self.chk_mute.setChecked(self.config_manager.get("mute_on_record", False))
         self.chk_mute.setStyleSheet(self._checkbox_style)
         layout.addWidget(self.chk_mute)
-        layout.addWidget(self._desc("Silencia o sistema durante a gravação para evitar que sons do PC contaminem a transcrição."))
+        layout.addWidget(self._desc(tr("desc_mute")))
         layout.addSpacing(14)
 
         layout.addWidget(self._separator())
         layout.addSpacing(8)
-        layout.addWidget(self._section_label("SEGURANÇA"))
+        layout.addWidget(self._section_label(tr("sec_security")))
         layout.addSpacing(10)
-        layout.addWidget(self._field_label("Senha para visualizar chaves de API"))
+        layout.addWidget(self._field_label(tr("field_pwd_label")))
 
         # Hidden real field used only for saving; shown/editable only after auth
         self.txt_keys_password = self._lineedit(self.config_manager.get("keys_password", ""), "", password=True)
@@ -2833,13 +2974,13 @@ class SettingsDialog(QDialog):
         pwd_display_row = QHBoxLayout()
         pwd_display_row.setSpacing(6)
         _has_pwd = bool(self.config_manager.get("keys_password", ""))
-        self._pwd_status_lbl = QLabel("●●●●●●●●" if _has_pwd else "Nenhuma senha definida")
+        self._pwd_status_lbl = QLabel(tr("pwd_masked") if _has_pwd else tr("pwd_no_password"))
         self._pwd_status_lbl.setStyleSheet("color: %s; font-size: 12px; font-family: 'Segoe UI', sans-serif; background: rgba(255,255,255,5); border: 1px solid rgba(255,255,255,15); border-radius: 7px; padding: 8px 12px;" % ("rgba(255,255,255,160)" if _has_pwd else "rgba(255,255,255,60)"))
-        btn_change_pwd = QPushButton("Alterar" if _has_pwd else "Definir senha")
+        btn_change_pwd = QPushButton(tr("pwd_change") if _has_pwd else tr("pwd_set"))
         btn_change_pwd.setFixedHeight(36)
         btn_change_pwd.setCursor(Qt.PointingHandCursor)
         btn_change_pwd.setStyleSheet("QPushButton { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 7px; color: rgba(255,255,255,160); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 14px; } QPushButton:hover { background: rgba(255,255,255,15); color: #fff; }")
-        btn_remove_pwd = QPushButton("Remover")
+        btn_remove_pwd = QPushButton(tr("pwd_remove"))
         btn_remove_pwd.setFixedHeight(36)
         btn_remove_pwd.setCursor(Qt.PointingHandCursor)
         btn_remove_pwd.setVisible(_has_pwd)
@@ -2850,28 +2991,28 @@ class SettingsDialog(QDialog):
         layout.addLayout(pwd_display_row)
 
         # "Esqueci a senha" link — only shown when a password exists
-        self._btn_forgot_pwd = QPushButton("Esqueci a senha")
+        self._btn_forgot_pwd = QPushButton(tr("pwd_forgot"))
         self._btn_forgot_pwd.setCursor(Qt.PointingHandCursor)
         self._btn_forgot_pwd.setVisible(_has_pwd)
         self._btn_forgot_pwd.setStyleSheet("QPushButton { background: transparent; border: none; color: rgba(139,92,246,180); font-size: 11px; font-family: 'Segoe UI', sans-serif; text-align: left; padding: 2px 0; } QPushButton:hover { color: #8b5cf6; }")
         layout.addWidget(self._btn_forgot_pwd)
 
-        layout.addWidget(self._desc("Se definida, o botão 'Ver Chaves' na aba Conexões pedirá esta senha antes de revelar suas chaves de API. Deixe vazio para desativar a proteção."))
+        layout.addWidget(self._desc(tr("desc_pwd")))
 
         def _do_change_pwd():
             current_pwd = self.config_manager.get("keys_password", "")
             if current_pwd:
                 # Must verify current password first
                 dlg, inp, err_lbl, btn_ok = self._make_pwd_dialog(
-                    "🔐  Confirme sua senha atual",
-                    "Digite a senha atual para poder alterá-la.",
+                    tr("pwd_confirm_title"),
+                    tr("pwd_confirm_subtitle"),
                     show_reset=False
                 )
                 def _verify():
                     if inp.text() == current_pwd:
                         dlg.accept()
                     else:
-                        err_lbl.setText("Senha incorreta.")
+                        err_lbl.setText(tr("pwd_wrong_error"))
                         inp.clear(); inp.setFocus()
                 btn_ok.clicked.connect(_verify)
                 inp.returnPressed.connect(_verify)
@@ -2891,27 +3032,27 @@ class SettingsDialog(QDialog):
             vl2 = QVBoxLayout(outer2)
             vl2.setContentsMargins(24, 20, 24, 20)
             vl2.setSpacing(10)
-            lbl_t = QLabel("🔑  %s" % ("Alterar senha" if current_pwd else "Definir senha"))
+            lbl_t = QLabel("🔑  %s" % (tr("pwd_change_title")[5:] if current_pwd else tr("pwd_set_title")[5:]))
             lbl_t.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
             inp_new = QLineEdit()
             inp_new.setEchoMode(QLineEdit.Password)
-            inp_new.setPlaceholderText("Nova senha...")
+            inp_new.setPlaceholderText(tr("pwd_new_placeholder"))
             inp_new.setFixedHeight(36)
             inp_new.setStyleSheet("QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 7px; padding: 6px 12px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; } QLineEdit:focus { border-color: #8b5cf6; }")
             inp_conf = QLineEdit()
             inp_conf.setEchoMode(QLineEdit.Password)
-            inp_conf.setPlaceholderText("Confirmar nova senha...")
+            inp_conf.setPlaceholderText(tr("pwd_confirm_placeholder"))
             inp_conf.setFixedHeight(36)
             inp_conf.setStyleSheet(inp_new.styleSheet())
             err2 = QLabel("")
             err2.setStyleSheet("color: #f87171; font-size: 11px; background: transparent; border: none;")
             btn_row2 = QHBoxLayout()
             btn_row2.addStretch()
-            btn_c2 = QPushButton("Cancelar")
+            btn_c2 = QPushButton(tr("btn_cancel"))
             btn_c2.setFixedHeight(32)
             btn_c2.setCursor(Qt.PointingHandCursor)
             btn_c2.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(255,255,255,20); border-radius: 7px; color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 14px; } QPushButton:hover { background: rgba(255,255,255,8); color: #fff; }")
-            btn_ok2 = QPushButton("Salvar")
+            btn_ok2 = QPushButton(tr("btn_save_short"))
             btn_ok2.setFixedHeight(32)
             btn_ok2.setCursor(Qt.PointingHandCursor)
             btn_ok2.setStyleSheet("QPushButton { background: #8b5cf6; border: none; border-radius: 7px; color: #fff; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; padding: 0 16px; } QPushButton:hover { background: #7c3aed; }")
@@ -2921,10 +3062,10 @@ class SettingsDialog(QDialog):
             def _save_new():
                 v1, v2 = inp_new.text(), inp_conf.text()
                 if not v1:
-                    err2.setText("A senha não pode ser vazia.")
+                    err2.setText(tr("pwd_empty_error"))
                     return
                 if v1 != v2:
-                    err2.setText("As senhas não coincidem.")
+                    err2.setText(tr("pwd_mismatch_error"))
                     inp_conf.clear(); inp_conf.setFocus()
                     return
                 dlg2.done(1)
@@ -2935,16 +3076,16 @@ class SettingsDialog(QDialog):
             new_val = inp_new.text()
             self.txt_keys_password.setText(new_val)
             self.config_manager.set("keys_password", new_val)
-            self._pwd_status_lbl.setText("●●●●●●●●")
+            self._pwd_status_lbl.setText(tr("pwd_masked"))
             self._pwd_status_lbl.setStyleSheet("color: rgba(255,255,255,160); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: rgba(255,255,255,5); border: 1px solid rgba(255,255,255,15); border-radius: 7px; padding: 8px 12px;")
-            btn_change_pwd.setText("Alterar")
+            btn_change_pwd.setText(tr("pwd_change"))
             btn_remove_pwd.setVisible(True)
             self._btn_forgot_pwd.setVisible(True)
 
         def _do_remove_pwd():
             current_pwd = self.config_manager.get("keys_password", "")
             if current_pwd:
-                dlg, inp, err_lbl, btn_ok = self._make_pwd_dialog("🔐  Confirme para remover a senha")
+                dlg, inp, err_lbl, btn_ok = self._make_pwd_dialog(tr("pwd_verify_remove_title"))
                 def _verify_remove():
                     if inp.text() == current_pwd:
                         dlg.accept()
@@ -2957,9 +3098,9 @@ class SettingsDialog(QDialog):
                     return
             self.txt_keys_password.setText("")
             self.config_manager.set("keys_password", "")
-            self._pwd_status_lbl.setText("Nenhuma senha definida")
+            self._pwd_status_lbl.setText(tr("pwd_no_password"))
             self._pwd_status_lbl.setStyleSheet("color: rgba(255,255,255,60); font-size: 12px; font-family: 'Segoe UI', sans-serif; background: rgba(255,255,255,5); border: 1px solid rgba(255,255,255,15); border-radius: 7px; padding: 8px 12px;")
-            btn_change_pwd.setText("Definir senha")
+            btn_change_pwd.setText(tr("pwd_set"))
             btn_remove_pwd.setVisible(False)
             self._btn_forgot_pwd.setVisible(False)
 
@@ -2977,16 +3118,16 @@ class SettingsDialog(QDialog):
             vl = QVBoxLayout(outer)
             vl.setContentsMargins(24, 20, 24, 20)
             vl.setSpacing(10)
-            lbl_t = QLabel("⚠️  Esqueceu a senha?")
+            lbl_t = QLabel(tr("pwd_forgot_title"))
             lbl_t.setStyleSheet("color: #ffffff; font-size: 13px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
-            lbl_s = QLabel("Não é possível recuperar a senha. A única opção é resetar todas as chaves de API e a senha, voltando ao estado inicial.")
+            lbl_s = QLabel(tr("pwd_forgot_body"))
             lbl_s.setStyleSheet("color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
             lbl_s.setWordWrap(True)
             btn_row = QHBoxLayout()
-            btn_cancel = QPushButton("Cancelar")
+            btn_cancel = QPushButton(tr("btn_cancel"))
             btn_cancel.setFixedHeight(32); btn_cancel.setCursor(Qt.PointingHandCursor)
             btn_cancel.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(255,255,255,20); border-radius: 7px; color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 14px; } QPushButton:hover { background: rgba(255,255,255,8); color: #fff; }")
-            btn_reset = QPushButton("Resetar tudo e perder chaves")
+            btn_reset = QPushButton(tr("pwd_reset_all"))
             btn_reset.setFixedHeight(32); btn_reset.setCursor(Qt.PointingHandCursor)
             btn_reset.setStyleSheet("QPushButton { background: rgba(239,68,68,12); border: 1px solid rgba(239,68,68,50); border-radius: 7px; color: #f87171; font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: rgba(239,68,68,25); color: #fff; }")
             btn_row.addStretch()
@@ -3026,17 +3167,17 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(28, 28, 28, 28)
         layout.setSpacing(0)
 
-        layout.addWidget(self._section_label("PROVEDOR PREFERENCIAL"))
+        layout.addWidget(self._section_label(tr("sec_preferred_provider")))
         layout.addSpacing(10)
-        layout.addWidget(self._field_label("Provedor de IA para Polimento"))
+        layout.addWidget(self._field_label(tr("field_ai_provider")))
         self.combo_provider = self._combo(["github_models", "groq", "gemini", "openai"], self.config_manager.get("provider", "groq"))
         layout.addWidget(self.combo_provider)
-        layout.addWidget(self._desc("Provedor principal. Se falhar, o sistema tenta os demais automaticamente (failover)."))
+        layout.addWidget(self._desc(tr("desc_ai_provider")))
         layout.addSpacing(14)
 
         layout.addWidget(self._separator())
         layout.addSpacing(8)
-        layout.addWidget(self._section_label("CHAVES DE API"))
+        layout.addWidget(self._section_label(tr("sec_api_keys")))
         layout.addSpacing(6)
 
         # Info box
@@ -3051,18 +3192,9 @@ class SettingsDialog(QDialog):
         info_l = QVBoxLayout(info)
         info_l.setContentsMargins(14, 10, 14, 10)
         info_l.setSpacing(4)
-        lbl_it = QLabel("💡  Como obter suas chaves (todas gratuitas):")
+        lbl_it = QLabel(tr("conn_info_title"))
         lbl_it.setStyleSheet("color: rgba(255,255,255,200); font-size: 11px; font-weight: 700; background: transparent; border: none;")
-        lbl_id = QLabel(
-            "• <b>GitHub Models</b> (recomendado — grátis para devs): "
-            "<a href='https://github.com/marketplace/models' style='color:#8b5cf6;'>github.com/marketplace/models</a><br>"
-            "• <b>Groq</b> (ultra rápido — grátis): "
-            "<a href='https://console.groq.com/keys' style='color:#8b5cf6;'>console.groq.com/keys</a><br>"
-            "• <b>Google Gemini</b> (cota grátis): "
-            "<a href='https://aistudio.google.com' style='color:#8b5cf6;'>aistudio.google.com</a><br>"
-            "• <b>OpenAI</b> (pago/premium): "
-            "<a href='https://platform.openai.com' style='color:#8b5cf6;'>platform.openai.com</a>"
-        )
+        lbl_id = QLabel(tr("conn_info_body"))
         lbl_id.setOpenExternalLinks(True)
         lbl_id.setWordWrap(True)
         lbl_id.setStyleSheet("color: rgba(255,255,255,140); font-size: 11px; background: transparent; border: none;")
@@ -3077,18 +3209,52 @@ class SettingsDialog(QDialog):
             ("gemini", "Google Gemini"),
             ("openai", "OpenAI"),
         ]:
-            layout.addWidget(self._field_label(f"Chave(s) — {label}"))
-            le = self._lineedit(self.config_manager.get_api_key(provider_id), "Cole aqui (várias chaves separadas por vírgula)", password=True)
+            if provider_id == "github_models":
+                key_icon_path = get_resource_path("icons/github.svg")
+            else:
+                key_icon_path = get_resource_path(f"icons/{provider_id}.svg")
+            
+            row = QHBoxLayout()
+            row.setSpacing(6)
+            row.setContentsMargins(0, 10, 0, 4)
+            
+            icon_lbl = QLabel()
+            icon_lbl.setFixedSize(14, 14)
+            icon_lbl.setStyleSheet("background: transparent; border: none; margin: 0; padding: 0;")
+            
+            pm = QPixmap(14, 14)
+            pm.fill(Qt.transparent)
+            try:
+                from PySide6.QtSvg import QSvgRenderer
+                from PySide6.QtCore import QRectF
+                renderer = QSvgRenderer(key_icon_path)
+                painter = QPainter(pm)
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                renderer.render(painter, QRectF(0, 0, 14, 14))
+                painter.end()
+            except Exception:
+                pass
+            icon_lbl.setPixmap(pm)
+            
+            txt_lbl = QLabel(tr("field_api_key_label", label))
+            txt_lbl.setStyleSheet("color: rgba(255,255,255,200); font-size: 12px; font-weight: 600; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; margin: 0; padding: 0;")
+            
+            row.addWidget(icon_lbl)
+            row.addWidget(txt_lbl, 1)
+            
+            layout.addLayout(row)
+            
+            le = self._lineedit(self.config_manager.get_api_key(provider_id), tr("conn_key_placeholder"), password=True)
             setattr(self, f"txt_{provider_id}", le)
             layout.addWidget(le)
             layout.addSpacing(8)
 
-        layout.addWidget(self._desc("Você pode inserir mais de uma chave separadas por vírgula para ativar o pool de failover automático."))
+        layout.addWidget(self._desc(tr("desc_api_keys")))
         layout.addSpacing(14)
 
         layout.addWidget(self._separator())
         layout.addSpacing(8)
-        layout.addWidget(self._section_label("PESQUISA NA WEB"))
+        layout.addWidget(self._section_label(tr("sec_web_search_conn")))
         layout.addSpacing(10)
 
         tavily_banner = QFrame()
@@ -3096,13 +3262,9 @@ class SettingsDialog(QDialog):
         tavily_l = QVBoxLayout(tavily_banner)
         tavily_l.setContentsMargins(14, 10, 14, 10)
         tavily_l.setSpacing(3)
-        tavily_title = QLabel("🌐  Tavily — busca na web em tempo real (1.000 buscas/mês grátis)")
+        tavily_title = QLabel(tr("tavily_title"))
         tavily_title.setStyleSheet("color: #6ee7b7; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
-        tavily_body = QLabel(
-            "Com a chave Tavily configurada, o modo Pesquisa consulta a internet em tempo real para qualquer pergunta "
-            "(clima, notícias, preços, etc.). Sem a chave, o modo Pesquisa usa apenas o conhecimento de treinamento da IA.<br>"
-            "Obtenha sua chave grátis em: <a href='https://app.tavily.com' style='color:#34d399;'>app.tavily.com</a> — sem cartão de crédito."
-        )
+        tavily_body = QLabel(tr("tavily_body"))
         tavily_body.setOpenExternalLinks(True)
         tavily_body.setWordWrap(True)
         tavily_body.setStyleSheet("color: rgba(255,255,255,130); font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
@@ -3111,16 +3273,16 @@ class SettingsDialog(QDialog):
         layout.addWidget(tavily_banner)
         layout.addSpacing(10)
 
-        layout.addWidget(self._field_label("Chave Tavily"))
+        layout.addWidget(self._field_label(tr("field_tavily_key")))
         self.txt_tavily = self._lineedit(self.config_manager.get("tavily_api_key", ""), "tvly-...", password=True)
         layout.addWidget(self.txt_tavily)
-        layout.addWidget(self._desc("Cole aqui sua chave Tavily para habilitar busca real na internet no modo Pesquisa."))
+        layout.addWidget(self._desc(tr("desc_tavily")))
         layout.addSpacing(10)
 
         # Test connection button + status label
         test_row = QHBoxLayout()
         test_row.setSpacing(10)
-        self._btn_test_conn = QPushButton("🔌  Testar Conexão")
+        self._btn_test_conn = QPushButton(tr("btn_test_conn"))
         self._btn_test_conn.setFixedHeight(34)
         self._btn_test_conn.setCursor(Qt.PointingHandCursor)
         self._btn_test_conn.setStyleSheet("""
@@ -3139,7 +3301,7 @@ class SettingsDialog(QDialog):
         self._lbl_conn_status = QLabel("")
         self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none;")
         self._btn_test_conn.clicked.connect(self._test_connection)
-        btn_reveal = QPushButton("🔐  Ver Chaves")
+        btn_reveal = QPushButton(tr("btn_reveal_keys"))
         btn_reveal.setFixedHeight(34)
         btn_reveal.setCursor(Qt.PointingHandCursor)
         btn_reveal.setStyleSheet("""
@@ -3190,7 +3352,7 @@ class SettingsDialog(QDialog):
             vl.addWidget(lbl_sub)
         inp = QLineEdit()
         inp.setEchoMode(QLineEdit.Password)
-        inp.setPlaceholderText("Senha...")
+        inp.setPlaceholderText(tr("pwd_placeholder"))
         inp.setFixedHeight(36)
         inp.setStyleSheet("QLineEdit { background: rgba(255,255,255,8); border: 1px solid rgba(255,255,255,20); border-radius: 7px; padding: 6px 12px; color: #fff; font-size: 12px; font-family: 'Segoe UI', sans-serif; } QLineEdit:focus { border-color: #8b5cf6; }")
         vl.addWidget(inp)
@@ -3199,18 +3361,18 @@ class SettingsDialog(QDialog):
         vl.addWidget(err_lbl)
         btn_row = QHBoxLayout()
         if show_reset:
-            btn_reset = QPushButton("⚠️ Resetar tudo")
+            btn_reset = QPushButton(tr("pwd_reset_btn"))
             btn_reset.setFixedHeight(32)
             btn_reset.setCursor(Qt.PointingHandCursor)
             btn_reset.setStyleSheet("QPushButton { background: rgba(239,68,68,12); border: 1px solid rgba(239,68,68,50); border-radius: 7px; color: #f87171; font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 12px; } QPushButton:hover { background: rgba(239,68,68,25); color: #fff; }")
             btn_reset.clicked.connect(lambda: dlg.done(2))
             btn_row.addWidget(btn_reset)
         btn_row.addStretch()
-        btn_cancel = QPushButton("Cancelar")
+        btn_cancel = QPushButton(tr("btn_cancel"))
         btn_cancel.setFixedHeight(32)
         btn_cancel.setCursor(Qt.PointingHandCursor)
         btn_cancel.setStyleSheet("QPushButton { background: transparent; border: 1px solid rgba(255,255,255,20); border-radius: 7px; color: rgba(255,255,255,140); font-size: 11px; font-family: 'Segoe UI', sans-serif; padding: 0 14px; } QPushButton:hover { background: rgba(255,255,255,8); color: #fff; }")
-        btn_ok = QPushButton("Confirmar")
+        btn_ok = QPushButton(tr("btn_confirm"))
         btn_ok.setFixedHeight(32)
         btn_ok.setCursor(Qt.PointingHandCursor)
         btn_ok.setStyleSheet("QPushButton { background: #8b5cf6; border: none; border-radius: 7px; color: #fff; font-size: 11px; font-weight: 700; font-family: 'Segoe UI', sans-serif; padding: 0 16px; } QPushButton:hover { background: #7c3aed; }")
@@ -3241,7 +3403,7 @@ class SettingsDialog(QDialog):
             if inp.text() == pwd:
                 dlg.accept()
             else:
-                err_lbl.setText("Senha incorreta.")
+                err_lbl.setText(tr("pwd_wrong_error"))
                 inp.clear(); inp.setFocus()
         btn_ok.clicked.connect(_check)
         inp.returnPressed.connect(_check)
@@ -3253,7 +3415,7 @@ class SettingsDialog(QDialog):
     def _test_connection(self):
         """Sends a minimal test prompt to the preferred provider and reports status."""
         self._btn_test_conn.setEnabled(False)
-        self._btn_test_conn.setText("Testando...")
+        self._btn_test_conn.setText(tr("test_conn_testing"))
         self._lbl_conn_status.setText("")
         self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: rgba(255,255,255,100);")
 
@@ -3263,8 +3425,8 @@ class SettingsDialog(QDialog):
         key_val = key.text().strip() if key else self.config_manager.get_api_key(provider)
         if not key_val:
             self._btn_test_conn.setEnabled(True)
-            self._btn_test_conn.setText("🔌  Testar Conexão")
-            self._lbl_conn_status.setText("⚠️  Nenhuma chave configurada para este provedor.")
+            self._btn_test_conn.setText(tr("btn_test_conn"))
+            self._lbl_conn_status.setText(tr("test_conn_no_key"))
             self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: #f59e0b;")
             return
 
@@ -3319,12 +3481,12 @@ class SettingsDialog(QDialog):
 
         def _on_done(ok, msg):
             self._btn_test_conn.setEnabled(True)
-            self._btn_test_conn.setText("🔌  Testar Conexão")
+            self._btn_test_conn.setText(tr("btn_test_conn"))
             if ok:
-                self._lbl_conn_status.setText(f"✅  Conectado! Resposta: \"{msg}\"")
+                self._lbl_conn_status.setText(tr("test_conn_ok", msg))
                 self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: #34d399;")
             else:
-                self._lbl_conn_status.setText(f"❌  Falha: {msg}")
+                self._lbl_conn_status.setText(tr("test_conn_fail", msg))
                 self._lbl_conn_status.setStyleSheet("font-size: 11px; font-family: 'Segoe UI', sans-serif; background: transparent; border: none; color: #f87171;")
 
         self._test_worker = _TestWorker(provider, key_val.split(",")[0].strip())
@@ -3337,7 +3499,7 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(28, 28, 28, 28)
         layout.setSpacing(0)
 
-        layout.addWidget(self._section_label("TRANSCRIÇÃO LOCAL (OFFLINE)"))
+        layout.addWidget(self._section_label(tr("sec_local_transcription")))
         layout.addSpacing(6)
 
         note = QFrame()
@@ -3350,30 +3512,26 @@ class SettingsDialog(QDialog):
         """)
         note_l = QVBoxLayout(note)
         note_l.setContentsMargins(14, 10, 14, 10)
-        lbl_n = QLabel(
-            "ℹ️  O Whisper local transcreve seu áudio diretamente no computador, sem internet. "
-            "Modelos menores (tiny/base) são rápidos porém menos precisos; modelos grandes (large-v3) "
-            "são muito precisos mas exigem pelo menos 8 GB de RAM e uma GPU dedicada para boa performance."
-        )
+        lbl_n = QLabel(tr("whisper_note"))
         lbl_n.setWordWrap(True)
         lbl_n.setStyleSheet("color: rgba(255,255,255,160); font-size: 11px; background: transparent; border: none;")
         note_l.addWidget(lbl_n)
         layout.addWidget(note)
         layout.addSpacing(14)
 
-        layout.addWidget(self._field_label("Modelo Whisper"))
+        layout.addWidget(self._field_label(tr("field_whisper_model")))
         self.combo_whisper = self._combo(
             ["tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"],
             self.config_manager.get("whisper", {}).get("model_size", "base")
         )
         layout.addWidget(self.combo_whisper)
-        layout.addWidget(self._desc("tiny/base = rápido e leve | small/medium = bom equilíbrio | large-v3 = máxima precisão"))
+        layout.addWidget(self._desc(tr("desc_whisper_model")))
         layout.addSpacing(10)
 
-        layout.addWidget(self._field_label("Dispositivo de Processamento"))
+        layout.addWidget(self._field_label(tr("field_whisper_device")))
         self.combo_whisper_device = self._combo(["cpu", "cuda"], self.config_manager.get("whisper", {}).get("device", "cpu"))
         layout.addWidget(self.combo_whisper_device)
-        layout.addWidget(self._desc("cpu = processador (sempre funciona) | cuda = GPU Nvidia (muito mais rápido, requer drivers CUDA instalados)"))
+        layout.addWidget(self._desc(tr("desc_whisper_device")))
 
         layout.addStretch()
         self.pages_stack.addWidget(scroll)
@@ -3384,7 +3542,7 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(28, 28, 28, 28)
         layout.setSpacing(0)
 
-        layout.addWidget(self._section_label("ATALHOS DE TECLADO"))
+        layout.addWidget(self._section_label(tr("sec_keyboard_shortcuts")))
         layout.addSpacing(6)
 
         hint = QFrame()
@@ -3397,7 +3555,7 @@ class SettingsDialog(QDialog):
         """)
         hint_l = QVBoxLayout(hint)
         hint_l.setContentsMargins(14, 10, 14, 10)
-        lbl_h = QLabel("💡  Clique em <b>Capturar</b> e pressione a combinação desejada no teclado (ex: Ctrl + Shift + Espaço). Pressione Esc para cancelar.")
+        lbl_h = QLabel(tr("hotkey_hint"))
         lbl_h.setWordWrap(True)
         lbl_h.setStyleSheet("color: rgba(255,255,255,150); font-size: 11px; background: transparent; border: none;")
         hint_l.addWidget(lbl_h)
@@ -3405,9 +3563,9 @@ class SettingsDialog(QDialog):
         layout.addSpacing(16)
 
         for field_name, label, config_key, default in [
-            ("txt_hotkey", "Ditado (atalho principal)", "hotkey", "<ctrl>+<shift>+<space>"),
-            ("txt_hotkey_translation", "Tradução de voz", "hotkey_translation", "<ctrl>+<shift>+<y>"),
-            ("txt_hotkey_pesquisa", "Pesquisa / Assistente", "hotkey_pesquisa", "<ctrl>+<shift>+<u>"),
+            ("txt_hotkey", tr("hotkey_dictation_label"), "hotkey", "<ctrl>+<shift>+<space>"),
+            ("txt_hotkey_translation", tr("hotkey_translation_label"), "hotkey_translation", "<ctrl>+<shift>+<y>"),
+            ("txt_hotkey_pesquisa", tr("hotkey_search_label"), "hotkey_pesquisa", "<ctrl>+<shift>+<u>"),
         ]:
             layout.addWidget(self._field_label(label))
             le, row = self.create_hotkey_row(label, config_key, default)
@@ -3503,7 +3661,7 @@ class SettingsDialog(QDialog):
         btn_save = self.findChild(QPushButton, "btn_save")
         if btn_save:
             btn_save.setEnabled(False)
-            btn_save.setText("  ✓ Salvo!")
+            btn_save.setText(tr("saved"))
             btn_save.setStyleSheet("""
                 QPushButton {
                     background: #34d399;
@@ -3519,7 +3677,7 @@ class SettingsDialog(QDialog):
         else:
             self.fade_out_and_close(True)
 
-    def _set_update_btn(self, text, color=None, enabled=True):
+    def _set_update_btn(self, text, color=None, enabled=True):  # noqa: E501
         btn = self.findChild(QPushButton, "btn_check_update")
         if not btn:
             return
@@ -3552,7 +3710,7 @@ class SettingsDialog(QDialog):
             """)
 
     def check_updates_manually(self):
-        self._set_update_btn("⏳  Verificando...", enabled=False)
+        self._set_update_btn(tr("checking_update"), enabled=False)
         self.manual_checker = UpdateCheckerWorker()
         self.manual_checker.update_available.connect(self.on_manual_update_available)
         self.manual_checker.no_update_found.connect(self.on_manual_no_update)
@@ -3560,18 +3718,18 @@ class SettingsDialog(QDialog):
         self.manual_checker.start()
 
     def on_manual_update_available(self, version, download_url):
-        self._set_update_btn(f"🚀  v{version} disponível!", color="#34d399")
-        QTimer.singleShot(4000, lambda: self._set_update_btn("🔄  Verificar Atualizações"))
+        self._set_update_btn(tr("update_available", version), color="#34d399")
+        QTimer.singleShot(4000, lambda: self._set_update_btn(tr("btn_update")))
         self.update_dialog = UpdateDialog(version, download_url, self)
         self.update_dialog.show()
 
     def on_manual_no_update(self):
-        self._set_update_btn("✅  Atualizado!", color="#34d399")
-        QTimer.singleShot(3000, lambda: self._set_update_btn("🔄  Verificar Atualizações"))
+        self._set_update_btn(tr("up_to_date"), color="#34d399")
+        QTimer.singleShot(3000, lambda: self._set_update_btn(tr("btn_update")))
 
     def on_manual_update_error(self, err_msg):
-        self._set_update_btn("❌  Falha na verificação", color="#f87171")
-        QTimer.singleShot(4000, lambda: self._set_update_btn("🔄  Verificar Atualizações"))
+        self._set_update_btn(tr("update_error"), color="#f87171")
+        QTimer.singleShot(4000, lambda: self._set_update_btn(tr("btn_update")))
         print(f"Erro ao verificar atualizações: {err_msg}")
 
 
@@ -4227,7 +4385,7 @@ class FloatingOverlay(QWidget):
             self.shadow_effect.setBlurRadius(24)
             
             self.label_header.hide()
-            label_text = text.upper() if text else "GRAVANDO"
+            label_text = text.upper() if text else tr("overlay_recording")
             if not label_text.endswith("..."):
                 label_text += "..."
             self.label_content.setText(label_text)
@@ -4250,7 +4408,7 @@ class FloatingOverlay(QWidget):
             self.shadow_effect.setBlurRadius(24)
             
             self.label_header.hide()
-            label_text = text.upper() if text else "POLINDO"
+            label_text = text.upper() if text else tr("overlay_processing")
             if not label_text.endswith("..."):
                 label_text += "..."
             self.label_content.setText(label_text)
@@ -4276,22 +4434,22 @@ class FloatingOverlay(QWidget):
             if header_text or (text and text not in ["CONCLUÍDO!", "COPIADO!"]):
                 if not header_text or not display_text:
                     if text.startswith("Traduzido: "):
-                        header_text = "TRADUÇÃO COPIADA"
+                        header_text = tr("overlay_translated_header")
                         display_text = text[len("Traduzido: "):]
                     elif text.startswith("Sem IA / Tradução Falhou: "):
-                        header_text = "SEM CHAVE / TRADUÇÃO FALHOU"
+                        header_text = tr("overlay_no_key_translation")
                         display_text = text[len("Sem IA / Tradução Falhou: "):]
                     elif text.startswith("Sem IA / Texto Cru: "):
-                        header_text = "TEXTO CRU COPIADO (SEM IA)"
+                        header_text = tr("overlay_no_key_raw")
                         display_text = text[len("Sem IA / Texto Cru: "):]
                     elif text.startswith("Pesquisando: "):
-                        header_text = "PESQUISANDO NO GOOGLE"
+                        header_text = tr("overlay_searching_google")
                         display_text = text[len("Pesquisando: "):]
                     elif text.startswith("Copiado: "):
-                        header_text = "TEXTO COPIADO"
+                        header_text = tr("overlay_copied_header")
                         display_text = text[len("Copiado: "):]
                     else:
-                        header_text = "TEXTO COPIADO"
+                        header_text = tr("overlay_copied_header")
                         display_text = text
                 
                 header_font = QFont("Segoe UI", 7)
@@ -4309,7 +4467,7 @@ class FloatingOverlay(QWidget):
                 self.label_content.setWordWrap(True)
             else:
                 self.label_header.hide()
-                self.label_content.setText(text if text else "COPIADO!")
+                self.label_content.setText(text if text else tr("overlay_done"))
                 self.label_content.setWordWrap(False)
                 
                 font = QFont("Segoe UI", 8)
@@ -4331,7 +4489,7 @@ class FloatingOverlay(QWidget):
             
             if header_text or (text and text not in ["CONCLUÍDO!", "COPIADO!"]):
                 if not header_text or not display_text:
-                    header_text = "ERRO!"
+                    header_text = tr("overlay_error_header")
                     if text.startswith("Erro: "):
                         display_text = text[len("Erro: "):]
                     else:
@@ -4457,6 +4615,8 @@ class FlowVoiceApp(QApplication):
 
         # Core Components
         self.config_manager = ConfigManager()
+        # Load persisted UI language
+        set_language(self.config_manager.get("ui_language", "pt"))
         self.level_bridge = AudioLevelBridge()
         self.recorder = AudioRecorder(level_callback=self.level_bridge.level_changed.emit)
         self.processor = AIProcessor(self.config_manager)
@@ -4552,8 +4712,8 @@ class FlowVoiceApp(QApplication):
     def show_update_dialog(self, version, download_url):
         if self.tray_icon:
             self.tray_icon.showMessage(
-                "Atualização Disponível",
-                f"Uma nova versão (v{version}) do FlowVoice está disponível!\nClique para baixar.",
+                tr("update_notif_title"),
+                tr("update_notif_msg", version),
                 QSystemTrayIcon.Information,
                 10000
             )
@@ -4579,7 +4739,7 @@ class FlowVoiceApp(QApplication):
         else:
             self.tray_icon.setIcon(create_color_icon("#ffffff"))
             
-        self.tray_icon.setToolTip("FlowVoice - Ditado Inteligente por IA")
+        self.tray_icon.setToolTip(tr("tray_tooltip"))
 
         # Create menu
         menu = QMenu()
@@ -4604,12 +4764,12 @@ class FlowVoiceApp(QApplication):
         """)
 
         # Style Sub-menu
-        style_menu = menu.addMenu("Estilo de Escrita")
-        self.action_prof = QAction("Profissional", self, checkable=True)
+        style_menu = menu.addMenu(tr("tray_style_menu"))
+        self.action_prof = QAction(tr("tray_style_prof"), self, checkable=True)
         self.action_prof.triggered.connect(lambda: self.change_active_style("Profissional"))
-        self.action_casual = QAction("Casual", self, checkable=True)
+        self.action_casual = QAction(tr("tray_style_casual"), self, checkable=True)
         self.action_casual.triggered.connect(lambda: self.change_active_style("Casual"))
-        self.action_raw = QAction("Direto/Cru", self, checkable=True)
+        self.action_raw = QAction(tr("tray_style_raw"), self, checkable=True)
         self.action_raw.triggered.connect(lambda: self.change_active_style("Direto"))
 
         style_menu.addAction(self.action_prof)
@@ -4617,12 +4777,12 @@ class FlowVoiceApp(QApplication):
         style_menu.addAction(self.action_raw)
 
         # Mode Sub-menu
-        mode_menu = menu.addMenu("Modo de Operação")
-        self.action_mode_dictation = QAction("Ditado", self, checkable=True)
+        mode_menu = menu.addMenu(tr("tray_mode_menu"))
+        self.action_mode_dictation = QAction(tr("tray_mode_dictation"), self, checkable=True)
         self.action_mode_dictation.triggered.connect(lambda: self.change_operation_mode("ditado"))
-        self.action_mode_translation = QAction("Tradução", self, checkable=True)
+        self.action_mode_translation = QAction(tr("tray_mode_translation"), self, checkable=True)
         self.action_mode_translation.triggered.connect(lambda: self.change_operation_mode("traducao"))
-        self.action_mode_search = QAction("Pesquisa Google", self, checkable=True)
+        self.action_mode_search = QAction(tr("tray_mode_search"), self, checkable=True)
         self.action_mode_search.triggered.connect(lambda: self.change_operation_mode("pesquisa"))
 
         mode_menu.addAction(self.action_mode_dictation)
@@ -4630,7 +4790,7 @@ class FlowVoiceApp(QApplication):
         mode_menu.addAction(self.action_mode_search)
 
         # Translation Language Sub-menu
-        lang_menu = menu.addMenu("Idioma de Tradução")
+        lang_menu = menu.addMenu(tr("tray_lang_menu"))
         self.lang_actions = {}
         for lang in ["Inglês", "Espanhol", "Francês", "Alemão", "Italiano"]:
             act = QAction(lang, self, checkable=True)
@@ -4641,19 +4801,19 @@ class FlowVoiceApp(QApplication):
         self.update_menu_checked_states()
 
         # Settings action
-        action_settings = QAction("Configurações...", self)
+        action_settings = QAction(tr("tray_settings"), self)
         action_settings.triggered.connect(self.show_settings_dialog)
         menu.addAction(action_settings)
 
-        # Ação de Teste para contornar o bloqueio de atalhos do teclado no Ubuntu (Wayland)
-        action_test_record = QAction("🎤 Iniciar Gravação (Teste)", self)
+        # Test record action
+        action_test_record = QAction(tr("tray_test_record"), self)
         action_test_record.triggered.connect(lambda: self.toggle_dictation("default"))
         menu.addAction(action_test_record)
 
         menu.addSeparator()
 
         # Quit action
-        action_quit = QAction("Sair", self)
+        action_quit = QAction(tr("tray_quit"), self)
         action_quit.triggered.connect(self.quit_app)
         menu.addAction(action_quit)
 

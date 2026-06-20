@@ -88,6 +88,16 @@ def build_executable() -> None:
     else:
         log("Aviso: icon.png não encontrado; compilando sem ícone personalizado.")
 
+    locales_dir = ROOT / "locales"
+    if locales_dir.is_dir():
+        pyinstaller_args.extend(["--add-data", f"{locales_dir};locales"])
+    icons_dir = ROOT / "icons"
+    if icons_dir.is_dir():
+        pyinstaller_args.extend(["--add-data", f"{icons_dir};icons"])
+    i18n_py = ROOT / "i18n.py"
+    if i18n_py.is_file():
+        pyinstaller_args.extend(["--add-data", f"{i18n_py};."])
+
     pyinstaller_args.append(str(ROOT / "main.py"))
 
     run_step("Compilando executável com PyInstaller...", pyinstaller_args)
