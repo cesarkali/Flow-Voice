@@ -29,6 +29,38 @@ pub fn foreground_window() -> isize {
     }
 }
 
+/// Center of the focused window (physical px), ignoring FlowVoice's own windows.
+pub fn foreground_center(app: &tauri::AppHandle) -> Option<(f64, f64)> {
+    #[cfg(windows)]
+    {
+        use tauri::Manager;
+        use windows::Win32::Foundation::RECT;
+        use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowRect};
+        let fg = unsafe { GetForegroundWindow() };
+        if fg.0.is_null() {
+            return None;
+        }
+        for label in ["main", "overlay", "chat"] {
+            if let Some(w) = app.get_webview_window(label) {
+                if w.hwnd().map(|h| h.0 as isize == fg.0 as isize).unwrap_or(false) {
+                    return None;
+                }
+            }
+        }
+        let mut r = RECT::default();
+        unsafe { GetWindowRect(fg, &mut r) }.ok()?;
+        if r.right <= r.left || r.bottom <= r.top {
+            return None;
+        }
+        return Some((((r.left + r.right) / 2) as f64, ((r.top + r.bottom) / 2) as f64));
+    }
+    #[allow(unreachable_code)]
+    {
+        let _ = app;
+        None
+    }
+}
+
 /// Can we synthesize Ctrl+V here? (Not on Wayland without wtype.)
 pub fn can_paste() -> bool {
     #[cfg(target_os = "linux")]

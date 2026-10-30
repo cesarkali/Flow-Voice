@@ -67,7 +67,7 @@ pub fn start(app: &AppHandle, mode: RecordMode) {
     let stop_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let samples = rec.samples.clone();
     let target = if mode == RecordMode::Translate { Some(s.translation_target.clone()) } else { None };
-    let live = s.stt.live_preview && st.local.installed(&preview_model(&s, &st));
+    let live = s.stt.live_preview && (cloud_stt_keys(app, &s).is_some() || st.local.installed(&preview_model(&s, &st)));
     *st.session.lock() = Some(ActiveSession { rec, mode, target_window, started: Instant::now(), stop_flag: stop_flag.clone() });
 
     windows::show_overlay(app);
@@ -99,7 +99,8 @@ pub fn ensure_preview_model(app: &AppHandle) {
     let st = state(app);
     let s = st.settings();
     let id = s.stt.preview_model.clone();
-    if !s.stt.live_preview || !crate::local_stt::cpu_supported() || st.local.installed(&id) || st.local.any_installed().is_some() {
+    let cloud_ready = cloud_stt_keys(app, &s).is_some();
+    if !s.stt.live_preview || cloud_ready || !crate::local_stt::cpu_supported() || st.local.installed(&id) || st.local.any_installed().is_some() {
         return;
     }
     let local = st.local.clone();
@@ -142,13 +143,125 @@ fn preview_model(s: &Settings, st: &AppState) -> String {
 /// Re-transcribes the tail of the recording every ~0.7 s with a small local model.
 /// Audio is committed at pauses so each pass stays short.
 fn live_preview(app: AppHandle, samples: Arc<parking_lot::Mutex<Vec<f32>>>, stop: Arc<std::sync::atomic::AtomicBool>) {
+    let s = state(&app).settings();
+    match cloud_stt_keys(&app, &s) {
+        Some(target) => cloud_preview(app, samples, stop, target),
+        None => local_preview(app, samples, stop),
+    }
+}
+
+/// Cloud-driven live preview: the phrase being spoken is re-transcribed every ~1.5-3 s with a
+/// fast cloud model (keys rotated to stay inside free rate limits) and finalized at each pause,
+/// so the live text is practically the final transcript.
+fn cloud_preview(
+    app: AppHandle,
+    samples: Arc<parking_lot::Mutex<Vec<f32>>>,
+    stop: Arc<std::sync::atomic::AtomicBool>,
+    (provider, cfg, keys): (String, crate::settings::ProviderSettings, Vec<String>),
+) {
+    let st = state(&app);
+    let s = st.settings();
+    let base_prompt = stt_prompt(&s);
+    let mut fast = cfg.clone();
+    if provider == "groq" {
+        fast.stt_model = "whisper-large-v3-turbo".into();
+    }
+    // About 20 requests/min per key on free tiers: spread ticks across the available keys.
+    let interval = Duration::from_millis((3200 / keys.len().max(1) as u64).clamp(1200, 3200));
+    let cooldown: Vec<parking_lot::Mutex<Option<Instant>>> = keys.iter().map(|_| parking_lot::Mutex::new(None)).collect();
+    let mut next_key = 0usize;
+    let segments: Arc<parking_lot::Mutex<Vec<(String, bool)>>> = Arc::new(parking_lot::Mutex::new(vec![]));
+    let tail_text: Arc<parking_lot::Mutex<String>> = Arc::new(parking_lot::Mutex::new(String::new()));
+    let mut committed_at = 0usize;
+    const SR: usize = audio::SAMPLE_RATE as usize;
+
+    let mut request = |window: &[f32], cfg: &crate::settings::ProviderSettings, prompt: &str| -> Option<String> {
+        for _ in 0..keys.len() {
+            let i = next_key % keys.len();
+            next_key += 1;
+            if cooldown[i].lock().is_some_and(|t| t > Instant::now()) {
+                continue;
+            }
+            let wav = audio::to_wav(window);
+            let res = tauri::async_runtime::block_on(cloud::transcribe(
+                &st.http,
+                &provider,
+                cfg,
+                &keys[i],
+                &wav,
+                &s.speech_language,
+                prompt,
+            ));
+            match res {
+                Ok(t) => return Some(tidy_preview(&text::strip_annotations(&t))),
+                Err(e) if e.key_problem => {
+                    *cooldown[i].lock() = Some(Instant::now() + Duration::from_secs(20));
+                }
+                Err(e) => {
+                    log::warn!("cloud preview: {}", e);
+                    return None;
+                }
+            }
+        }
+        None
+    };
+
+    let mut last_tick = Instant::now() - interval;
+    while !stop.load(Ordering::Relaxed) {
+        std::thread::sleep(Duration::from_millis(120));
+        let window: Vec<f32> = {
+            let all = samples.lock();
+            if all.len() <= committed_at {
+                continue;
+            }
+            all[committed_at..].to_vec()
+        };
+        let level = audio::rms(&window);
+        if window.len() < SR * 8 / 10 || level < 0.0015 {
+            continue;
+        }
+        let tail = &window[window.len().saturating_sub(SR * 6 / 10)..];
+        let pause = window.len() > SR * 2 && audio::rms(tail) < level * 0.25;
+        let long = window.len() > SR * 25;
+        if !(pause || long) && last_tick.elapsed() < interval {
+            continue;
+        }
+        last_tick = Instant::now();
+        // Previous words help the model keep names and context consistent across segments.
+        let context: String = {
+            let segs = segments.lock();
+            let joined = segs.iter().map(|(t, _)| t.as_str()).collect::<Vec<_>>().join(" ");
+            joined.chars().rev().take(240).collect::<Vec<_>>().into_iter().rev().collect()
+        };
+        let prompt = if context.is_empty() { base_prompt.clone() } else { format!("{base_prompt} {context}") };
+        // Finalize at pauses with the accurate model, otherwise use the fast one.
+        let finalize = pause || long;
+        let Some(text) = request(&window, if finalize { &cfg } else { &fast }, &prompt) else { continue };
+        if stop.load(Ordering::Relaxed) {
+            break;
+        }
+        let secs = window.len() as f32 / SR as f32;
+        let bad = text::is_hallucination(&text) || text.chars().count() as f32 > secs * 30.0 + 40.0;
+        let text = if bad { String::new() } else { text };
+        if finalize {
+            segments.lock().push((text, true));
+            tail_text.lock().clear();
+            committed_at += window.len();
+        } else {
+            *tail_text.lock() = text;
+        }
+        emit_preview(&app, &segments, &tail_text, true);
+    }
+}
+
+fn local_preview(app: AppHandle, samples: Arc<parking_lot::Mutex<Vec<f32>>>, stop: Arc<std::sync::atomic::AtomicBool>) {
     let st = state(&app);
     let s = st.settings();
     let model = preview_model(&s, &st);
     let prompt = stt_prompt(&s);
     // Finished segments (split at pauses) and the text still being spoken. Segments start with
     // the fast local guess and are swapped for an accurate cloud transcript when it arrives.
-    let segments: Arc<parking_lot::Mutex<Vec<String>>> = Arc::new(parking_lot::Mutex::new(vec![]));
+    let segments: Arc<parking_lot::Mutex<Vec<(String, bool)>>> = Arc::new(parking_lot::Mutex::new(vec![]));
     let tail_text: Arc<parking_lot::Mutex<String>> = Arc::new(parking_lot::Mutex::new(String::new()));
     let cloud = cloud_stt_target(&app, &s);
     let mut committed_at = 0usize;
@@ -190,7 +303,7 @@ fn live_preview(app: AppHandle, samples: Arc<parking_lot::Mutex<Vec<f32>>>, stop
         if pause || long {
             let idx = {
                 let mut segs = segments.lock();
-                segs.push(shown);
+                segs.push((shown, false));
                 segs.len() - 1
             };
             tail_text.lock().clear();
@@ -207,28 +320,52 @@ fn live_preview(app: AppHandle, samples: Arc<parking_lot::Mutex<Vec<f32>>>, stop
                             return;
                         }
                         if let Some(slot) = segs.lock().get_mut(idx) {
-                            *slot = t;
+                            *slot = (t, true);
                         }
-                        emit_preview(&app2, &segs, &tail2);
+                        emit_preview(&app2, &segs, &tail2, false);
                     }
                 });
             }
         } else {
             *tail_text.lock() = shown;
         }
-        emit_preview(&app, &segments, &tail_text);
+        emit_preview(&app, &segments, &tail_text, false);
     }
 }
 
-fn emit_preview(app: &AppHandle, segments: &parking_lot::Mutex<Vec<String>>, tail: &parking_lot::Mutex<String>) {
-    let mut parts: Vec<String> = segments.lock().iter().filter(|s| !s.is_empty()).cloned().collect();
+fn emit_preview(
+    app: &AppHandle,
+    segments: &parking_lot::Mutex<Vec<(String, bool)>>,
+    tail: &parking_lot::Mutex<String>,
+    tail_is_cloud: bool,
+) {
+    // `stable` = leading characters already confirmed by the cloud (the rest may still change).
+    let mut full = String::new();
+    let mut stable = 0usize;
+    let mut all_confirmed = true;
+    for (text, confirmed) in segments.lock().iter().filter(|(t, _)| !t.is_empty()) {
+        if !full.is_empty() {
+            full.push(' ');
+        }
+        full.push_str(text);
+        if *confirmed && all_confirmed {
+            stable = full.chars().count();
+        } else {
+            all_confirmed = false;
+        }
+    }
     let t = tail.lock().clone();
     if !t.is_empty() {
-        parts.push(t);
+        if !full.is_empty() {
+            full.push(' ');
+        }
+        full.push_str(&t);
+        if tail_is_cloud && all_confirmed {
+            stable = full.chars().count();
+        }
     }
-    let full = parts.join(" ");
-    log::info!("live preview: {} chars", full.chars().count());
-    let _ = app.emit_to("overlay", "overlay-partial", json!({ "text": full }));
+    log::info!("live preview: {} chars ({} stable)", full.chars().count(), stable);
+    let _ = app.emit_to("overlay", "overlay-partial", json!({ "text": full, "stable": stable }));
 }
 
 /// One line, single spaces, first letter capitalized.
@@ -239,6 +376,19 @@ fn tidy_preview(t: &str) -> String {
         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
         None => String::new(),
     }
+}
+
+/// First cloud STT provider with keys, with all of its keys (live preview rotates them).
+fn cloud_stt_keys(app: &AppHandle, s: &Settings) -> Option<(String, crate::settings::ProviderSettings, Vec<String>)> {
+    if s.stt.engine != "cloud" {
+        return None;
+    }
+    let st = state(app);
+    s.stt.cloud_order.iter().find_map(|p| {
+        let cfg = s.providers.get(p)?;
+        let keys = st.keys.get(p);
+        (!keys.is_empty() && !cfg.stt_model.trim().is_empty()).then(|| (p.clone(), cfg.clone(), keys))
+    })
 }
 
 /// First cloud STT provider with a key (for refining live-preview segments).

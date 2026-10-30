@@ -12,6 +12,24 @@
   ];
   const idx = $derived(Math.max(0, LANGS.findIndex((l) => l.code === value)));
 
+  // The thumb measures the active option (names have different widths, bold is wider).
+  let root = $state<HTMLDivElement>();
+  let thumb = $state({ x: 0, w: 0, ready: false });
+  function measure() {
+    const b = root?.querySelector<HTMLElement>(`[data-code="${value}"]`);
+    if (b) thumb = { x: b.offsetLeft, w: b.offsetWidth, ready: true };
+  }
+  $effect(() => {
+    void value;
+    measure();
+  });
+  $effect(() => {
+    if (!root) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(root);
+    return () => ro.disconnect();
+  });
+
   function key(e: KeyboardEvent) {
     const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
     if (!d) return;
@@ -21,8 +39,14 @@
   }
 </script>
 
-<div class="lp" role="radiogroup" aria-label={label} tabindex="-1" onkeydown={key} style:--i={idx}>
-  <span class="thumb" aria-hidden="true"></span>
+<div class="lp" bind:this={root} role="radiogroup" aria-label={label} tabindex="-1" onkeydown={key}>
+  <span
+    class="thumb"
+    class:ready={thumb.ready}
+    aria-hidden="true"
+    style:width="{thumb.w}px"
+    style:transform="translateX({thumb.x}px)"
+  ></span>
   {#each LANGS as l (l.code)}
     <button
       type="button"
@@ -42,8 +66,7 @@
 <style>
   .lp {
     position: relative;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
     padding: 3px;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-lg);
@@ -54,22 +77,28 @@
     position: absolute;
     top: 3px;
     bottom: 3px;
-    left: 3px;
-    width: calc((100% - 6px) / 3);
+    left: 0;
     border-radius: calc(var(--r-lg) - 3px);
     background: var(--surface);
     box-shadow: 0 1px 0 var(--line-strong), 0 0 0 1px var(--accent-line);
-    transform: translateX(calc(var(--i) * 100%));
-    transition: transform 320ms var(--spring);
+    opacity: 0;
+  }
+  .thumb.ready {
+    opacity: 1;
+    transition:
+      transform 320ms var(--spring),
+      width 320ms var(--spring);
   }
   button {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    flex: 1 1 auto;
+    gap: 7px;
     height: 36px;
-    padding: 0 12px;
+    padding: 0 10px;
+    white-space: nowrap;
     border: 0;
     background: none;
     color: var(--text-2);

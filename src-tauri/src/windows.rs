@@ -14,7 +14,8 @@ pub fn setup_overlay(app: &AppHandle) {
     }
 }
 
-/// Monitor the overlay should use right now: the one under the mouse (follow mode) or the primary.
+/// Monitor the overlay should use right now. Follow mode: the screen of the focused window
+/// (where the text will be pasted), else the one under the mouse; otherwise the primary monitor.
 fn target_monitor(app: &AppHandle, w: &tauri::WebviewWindow) -> Option<tauri::Monitor> {
     let follow = app.state::<AppState>().settings().overlay_follow_mouse;
     let under_mouse = || {
@@ -22,9 +23,32 @@ fn target_monitor(app: &AppHandle, w: &tauri::WebviewWindow) -> Option<tauri::Mo
             .ok()
             .and_then(|p| app.monitor_from_point(p.x, p.y).ok().flatten())
     };
-    if follow { under_mouse() } else { None }
+    let under_focus = || {
+        crate::platform::foreground_center(app)
+            .and_then(|(x, y)| app.monitor_from_point(x, y).ok().flatten())
+    };
+    if follow { under_focus().or_else(under_mouse) } else { None }
         .or_else(|| w.primary_monitor().ok().flatten())
         .or_else(under_mouse)
+}
+
+/// While the overlay is visible in follow mode, move it (with a fade) when focus or the mouse
+/// goes to another screen.
+pub fn start_follow_watcher(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_millis(250));
+        let follow = app.state::<AppState>().settings.read().overlay_follow_mouse;
+        let Some(w) = app.get_webview_window("overlay") else { continue };
+        if !follow || !w.is_visible().unwrap_or(false) {
+            continue;
+        }
+        let target = target_monitor(&app, &w).map(|m| monitor_key(&m));
+        let pinned = *app.state::<AppState>().overlay_monitor.lock();
+        if target.is_some() && target != pinned {
+            show_overlay(&app);
+        }
+    });
 }
 
 fn monitor_key(m: &tauri::Monitor) -> (i32, i32) {

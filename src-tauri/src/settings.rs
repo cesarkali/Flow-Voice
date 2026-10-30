@@ -140,7 +140,7 @@ impl Default for Settings {
             overlay_follow_mouse: true,
             dictionary: vec![],
             onboarded: false,
-            schema: 1,
+            schema: 2,
         }
     }
 }
@@ -352,6 +352,11 @@ impl Settings {
                 }
             }
             self.schema = 1;
+        }
+        if self.schema < 2 {
+            // 2.0.x: live preview is cloud-driven (accurate) now, so it's on again.
+            self.stt.live_preview = true;
+            self.schema = 2;
         }
         let defaults = default_providers();
         for (id, def) in defaults {

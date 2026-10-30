@@ -15,6 +15,7 @@
       {
         "label": "main",
         "title": "FlowVoice",
+        "backgroundColor": "#0B0B0C",
         "url": "index.html",
         "width": 980,
         "height": 660,
@@ -29,6 +30,7 @@
       {
         "label": "overlay",
         "title": "FlowVoice Overlay",
+        "backgroundColor": "#00000000",
         "url": "overlay.html",
         "width": 560,
         "height": 300,

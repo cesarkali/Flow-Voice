@@ -100,6 +100,7 @@ pub fn run() {
 
             let handle = app.handle().clone();
             windows::setup_overlay(&handle);
+            windows::start_follow_watcher(&handle);
             tray::setup(&handle)?;
             let failed = hotkeys::register_all(&handle);
             if !failed.is_empty() {
