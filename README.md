@@ -96,6 +96,13 @@ src-tauri/src/  núcleo em Rust
 2. Cadastre uma vez os secrets `TAURI_SIGNING_PRIVATE_KEY` (conteúdo da chave privada do atualizador) e `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` no repositório.
 3. Crie e envie a tag: `git tag v2.0.0 && git push origin v2.0.0`. O GitHub Actions gera os instaladores, o `latest.json` do atualizador e um release em rascunho.
 
+## Apoie o projeto
+
+O FlowVoice é gratuito. Se ele te ajuda, considere apoiar:
+
+- **Pix (Brasil)**: [livepix.gg/caliberda](https://livepix.gg/caliberda)
+- **GitHub Sponsors**: [github.com/sponsors/cesarkali](https://github.com/sponsors/cesarkali)
+
 ## Licença
 
 GPL-3.0 © Júlio Caliberda
