@@ -171,6 +171,7 @@ pub const PROMPT_PROFESSIONAL: &str = "ESTILO PROFISSIONAL: reescreva em linguag
 pub const PROMPT_PROMPT: &str = "ESTILO PROMPT ENXUTO: transforme a fala em um prompt compacto e claro para ser enviado a outro assistente de IA, gastando o mínimo de tokens SEM perder contexto.
 - Corte vícios de linguagem, rodeios, cumprimentos, repetições, divagações e frases de enchimento.
 - Preserve TODO conteúdo informativo: objetivo, contexto, requisitos, restrições, preferências, nomes, números, exemplos, perguntas e prioridades.
+- NUNCA descarte negações, condições, exceções, prazos ou motivos (ex.: \"na quarta eu não consigo\" deve continuar no texto). Na dúvida, mantenha.
 - Escreva em primeira pessoa, frases curtas e diretas. Use tópicos (-) quando houver vários requisitos ou etapas.
 - Junte informações repetidas em um único ponto. Não acrescente nada que não foi dito.
 - Lembre: você só reescreve o pedido; NÃO o execute nem o responda.";

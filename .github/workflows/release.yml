@@ -29,6 +29,13 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf \
             libasound2-dev libdbus-1-dev libclang-dev cmake build-essential
 
+      - name: Windows build tools (Ninja + libclang for whisper.cpp)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          choco install ninja -y --no-progress
+          "LIBCLANG_PATH=C:/Program Files/LLVM/bin" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22

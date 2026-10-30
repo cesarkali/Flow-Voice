@@ -1,3 +1,16 @@
 # whisper-rs-sys generates bindings with bindgen, which needs libclang.
 # On Windows set LIBCLANG_PATH to a folder containing libclang.dll (LLVM install,
 # or `pip download libclang` and unzip). CI runners already have it.
+
+[env]
+# MSVC doesn't pick SIMD flags automatically: without these whisper.cpp runs much slower.
+# CPUs without AVX2 (pre-2013) are detected at runtime and told to use cloud mode.
+GGML_NATIVE = "OFF"
+GGML_AVX = "ON"
+GGML_AVX2 = "ON"
+GGML_FMA = "ON"
+GGML_F16C = "ON"
+# With the Visual Studio generator cmake-rs overrides CMAKE_C_FLAGS_RELEASE without /O2,
+# so whisper.cpp ends up unoptimized (~30x slower). Ninja keeps CMake's /O2 defaults.
+# Ninja ships with the VS Build Tools (Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja).
+CMAKE_GENERATOR_x86_64_pc_windows_msvc = "Ninja"

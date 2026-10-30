@@ -27,6 +27,18 @@ pub const MODELS: [ModelSpec; 5] = [
     ModelSpec { id: "medium-q5_0", label: "Medium", file: "ggml-medium-q5_0.bin", size_mb: 514, note: "Preciso, mais lento que o Turbo", recommended: false },
 ];
 
+/// whisper.cpp is built with AVX2/FMA; older CPUs would crash on the first local call.
+pub fn cpu_supported() -> bool {
+    #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+    {
+        std::is_x86_feature_detected!("avx2") && std::is_x86_feature_detected!("fma")
+    }
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "x86")))]
+    {
+        true
+    }
+}
+
 pub fn spec(id: &str) -> Option<&'static ModelSpec> {
     MODELS.iter().find(|m| m.id == id)
 }
@@ -67,8 +79,9 @@ impl LocalStt {
         spec(id).map(|s| self.dir.join(s.file))
     }
 
+    /// Installed AND runnable on this CPU.
     pub fn installed(&self, id: &str) -> bool {
-        self.path(id).map(|p| p.exists()).unwrap_or(false)
+        cpu_supported() && self.path(id).map(|p| p.exists()).unwrap_or(false)
     }
 
     pub fn list(&self) -> Vec<LocalModelInfo> {
@@ -79,7 +92,7 @@ impl LocalStt {
                 label: m.label.into(),
                 file: m.file.into(),
                 size_mb: m.size_mb,
-                installed: self.installed(m.id),
+                installed: self.path(m.id).map(|p| p.exists()).unwrap_or(false),
                 note: m.note.into(),
                 recommended: m.recommended,
             })
@@ -113,6 +126,9 @@ impl LocalStt {
             if lid == id {
                 return Ok(ctx.clone());
             }
+        }
+        if !cpu_supported() {
+            return Err(anyhow!("este processador não tem AVX2, necessário para o modo local — use a transcrição na nuvem"));
         }
         let path = self.path(id).ok_or_else(|| anyhow!("modelo local desconhecido: {id}"))?;
         if !path.exists() {
@@ -157,8 +173,13 @@ impl LocalStt {
         params.set_suppress_nst(true);
         params.set_no_context(true);
         if fast {
-            params.set_single_segment(false);
             params.set_temperature_inc(0.0);
+            // Encode only the audio we have instead of the fixed 30 s window (big win for the
+            // short clips of the live preview; slightly less accurate, so final passes skip it).
+            let secs = samples.len() as f32 / 16_000.0;
+            if secs < 28.0 {
+                params.set_audio_ctx(((secs.max(1.5) / 30.0 * 1500.0) as i32 + 128).min(1500));
+            }
         }
         if !prompt.trim().is_empty() {
             params.set_initial_prompt(prompt);

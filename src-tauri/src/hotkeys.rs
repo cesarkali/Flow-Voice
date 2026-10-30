@@ -26,9 +26,16 @@ pub fn parse(accelerator: &str) -> Result<Shortcut> {
 pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     let action = BINDINGS.lock().iter().find(|(s, _)| s == shortcut).map(|(_, a)| *a);
     let Some(action) = action else { return };
+    log::info!("hotkey {} {:?}", shortcut.into_string(), event.state());
     let hold = app.state::<AppState>().settings.read().hotkey_mode == "hold";
     match (action, event.state()) {
-        (Action::Cancel, ShortcutState::Pressed) => pipeline::cancel(app),
+        (Action::Cancel, ShortcutState::Pressed) => {
+            if pipeline::is_recording(app) {
+                pipeline::cancel(app);
+            } else {
+                crate::windows::hide_overlay(app);
+            }
+        }
         (Action::Record(mode), ShortcutState::Pressed) => {
             if hold {
                 if !pipeline::is_recording(app) {
@@ -59,7 +66,10 @@ pub fn register_all(app: &AppHandle) -> Vec<String> {
         match parse(&acc) {
             Ok(s) if bindings.iter().any(|(b, _)| *b == s) => failed.push(format!("{acc} (repetido)")),
             Ok(s) => match gs.register(s) {
-                Ok(()) => bindings.push((s, Action::Record(mode))),
+                Ok(()) => {
+                    log::info!("hotkey registered: {acc}");
+                    bindings.push((s, Action::Record(mode)))
+                }
                 Err(e) => {
                     log::warn!("hotkey {acc}: {e}");
                     failed.push(format!("{acc} (em uso por outro programa)"));
@@ -71,7 +81,15 @@ pub fn register_all(app: &AppHandle) -> Vec<String> {
     failed
 }
 
-/// Esc is only grabbed while recording so it keeps working in other apps.
+/// Drops every shortcut (while the user captures a new one in Settings).
+pub fn unregister_all(app: &AppHandle) {
+    let gs = app.global_shortcut();
+    for (s, _) in BINDINGS.lock().drain(..) {
+        let _ = gs.unregister(s);
+    }
+}
+
+/// Esc is only grabbed while the overlay is up so it keeps working in other apps.
 pub fn register_escape(app: &AppHandle, on: bool) {
     let Ok(esc) = parse("Escape") else { return };
     let gs = app.global_shortcut();

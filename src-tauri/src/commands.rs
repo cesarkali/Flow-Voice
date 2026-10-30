@@ -100,6 +100,15 @@ pub fn validate_hotkey(accelerator: String) -> Option<String> {
 }
 
 #[tauri::command]
+pub fn suspend_hotkeys(app: AppHandle, suspend: bool) {
+    if suspend {
+        hotkeys::unregister_all(&app);
+    } else {
+        hotkeys::register_all(&app);
+    }
+}
+
+#[tauri::command]
 pub fn list_input_devices() -> Vec<String> {
     audio::list_input_devices()
 }

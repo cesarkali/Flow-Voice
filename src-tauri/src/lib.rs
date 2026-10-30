@@ -3,6 +3,8 @@ mod cloud;
 mod commands;
 mod hotkeys;
 mod keys;
+#[cfg(test)]
+mod live_tests;
 mod local_stt;
 mod pipeline;
 mod platform;
@@ -136,6 +138,7 @@ pub fn run() {
             commands::reset_styles,
             commands::validate_hotkey,
             commands::list_input_devices,
+            commands::suspend_hotkeys,
             commands::get_key_status,
             commands::set_keys,
             commands::reveal_keys,

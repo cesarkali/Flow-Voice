@@ -38,6 +38,7 @@ pub fn base_url(provider: &str, cfg: &ProviderSettings) -> String {
         "openai" => "https://api.openai.com/v1".to_string(),
         "openrouter" => "https://openrouter.ai/api/v1".to_string(),
         "mistral" => "https://api.mistral.ai/v1".to_string(),
+        "ollama" if cfg.base_url.trim().is_empty() => "http://localhost:11434/v1".to_string(),
         _ => cfg.base_url.clone(),
     };
     url.trim_end_matches('/').to_string()
@@ -73,6 +74,9 @@ fn friendly(provider: &str, status: u16, body: &str) -> ProviderError {
     let lower = api_msg.to_lowercase();
     let (message, key_problem) = match status {
         401 | 403 => ("chave inválida, expirada ou sem permissão".to_string(), true),
+        429 if lower.contains("credit") || lower.contains("billing") || lower.contains("quota") => {
+            ("sem créditos ou cota esgotada nesta conta".to_string(), true)
+        }
         429 => ("limite de uso atingido (tente de novo em instantes ou adicione outra chave)".to_string(), true),
         402 => ("sem créditos na conta".to_string(), true),
         404 => ("modelo não encontrado — confira o nome do modelo nas configurações".to_string(), false),

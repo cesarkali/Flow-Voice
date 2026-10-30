@@ -46,6 +46,7 @@ pub fn show_overlay(app: &AppHandle) {
 }
 
 pub fn hide_overlay(app: &AppHandle) {
+    crate::hotkeys::register_escape(app, false);
     let st = app.state::<AppState>();
     st.overlay_hold.store(false, Ordering::SeqCst);
     st.overlay_gen.fetch_add(1, Ordering::SeqCst);

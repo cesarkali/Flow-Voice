@@ -26,6 +26,7 @@ pub fn emit_overlay(app: &AppHandle, payload: serde_json::Value) {
 
 pub fn overlay_error(app: &AppHandle, message: &str, detail: Option<String>, raw: Option<String>) {
     windows::show_overlay(app);
+    crate::hotkeys::register_escape(app, true);
     emit_overlay(app, json!({ "phase": "error", "message": message, "detail": detail, "raw": raw }));
 }
 
@@ -51,9 +52,11 @@ pub fn start(app: &AppHandle, mode: RecordMode) {
     }
     let s = st.settings();
     let target_window = platform::foreground_window();
+    log::info!("recording start ({mode:?})");
     let rec = match Recording::start(s.input_device.as_deref()) {
         Ok(r) => r,
         Err(e) => {
+            log::error!("mic: {e}");
             overlay_error(app, &e.to_string(), None, None);
             return;
         }
@@ -118,12 +121,13 @@ fn live_preview(app: AppHandle, samples: Arc<parking_lot::Mutex<Vec<f32>>>, stop
             }
             all[committed_at..].to_vec()
         };
-        if window.len() < SR / 2 || audio::rms(&window) < 0.004 {
+        let level = audio::rms(&window);
+        if window.len() < SR / 2 || level < 0.0015 {
             continue;
         }
         // Commit at a trailing pause (≥ 600 ms) once the window has some length, or when it gets long.
         let tail = &window[window.len().saturating_sub(SR * 6 / 10)..];
-        let pause = window.len() > SR * 3 && audio::rms(tail) < 0.006;
+        let pause = window.len() > SR * 3 && audio::rms(tail) < level * 0.25;
         let long = window.len() > SR * 20;
         let text = match st.local.transcribe(&model, &window, &s.speech_language, &prompt, true) {
             Ok(t) => text::strip_annotations(&t),
@@ -155,11 +159,10 @@ pub fn cancel(app: &AppHandle) {
 }
 
 fn after_recording(app: &AppHandle) {
-    let st = state(app);
-    if let Some(prev) = st.muted_prev.lock().take() {
+    let prev = state(app).muted_prev.lock().take();
+    if let Some(prev) = prev {
         platform::mute_speakers(prev);
     }
-    crate::hotkeys::register_escape(app, false);
 }
 
 pub fn stop(app: &AppHandle) {
@@ -168,6 +171,7 @@ pub fn stop(app: &AppHandle) {
     session.stop_flag.store(true, Ordering::SeqCst);
     let duration_ms = session.started.elapsed().as_millis() as u64;
     let samples = session.rec.finish();
+    log::info!("recording stop: {duration_ms} ms, {} samples", samples.len());
     after_recording(app);
     st.busy.store(true, Ordering::SeqCst);
     emit_overlay(app, json!({ "phase": "transcribing" }));
@@ -176,6 +180,7 @@ pub fn stop(app: &AppHandle) {
         let result = process_recording(&app, samples, session.mode, session.target_window, duration_ms).await;
         state(&app).busy.store(false, Ordering::SeqCst);
         if let Err(e) = result {
+            log::warn!("dictation failed: {e}");
             let (message, detail, raw) = match e.downcast::<PipelineError>() {
                 Ok(pe) => (pe.message, pe.detail, pe.raw),
                 Err(e) => (e.to_string(), None, None),
@@ -216,11 +221,13 @@ async fn process_recording(
     }
     let (raw, stt_provider) = transcribe_any(app, &voiced).await?;
     let raw = text::strip_annotations(&raw);
-    if text::is_hallucination(&raw) {
+    let s = state(app).settings();
+    // "Ah." alone is a hesitation, not speech: never send an empty text to the LLM.
+    if text::is_hallucination(&raw) || !text::has_words(&text::remove_fillers(&raw, &s.speech_language)) {
+        log::info!("no speech in transcript: {raw:?}");
         return Err(perr("Nenhuma fala detectada.", None, None));
     }
 
-    let s = state(app).settings();
     if mode == RecordMode::Ask {
         emit_overlay(app, json!({ "phase": "answer", "query": raw }));
         start_chat(app, raw).await;
@@ -262,6 +269,7 @@ async fn process_recording(
     *state(app).last.lock() = Some((result.clone(), target_window));
     let _ = app.emit("history-changed", ());
     emit_overlay(app, json!({ "phase": "done", "result": result }));
+    crate::hotkeys::register_escape(app, true);
     Ok(())
 }
 
@@ -281,6 +289,10 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
 
     let mut text_out = source.clone();
     result.provider = None;
+    if !text::has_words(&source) {
+        result.text = source;
+        return;
+    }
     if let Some(system) = llm_prompt {
         let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
         emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint }));

@@ -58,3 +58,10 @@ lto = true
 opt-level = "s"
 panic = "abort"
 strip = true
+
+# whisper.cpp must be compiled for speed, not size (the cmake build inherits this level).
+[profile.release.package.whisper-rs-sys]
+opt-level = 3
+
+[profile.dev.package.whisper-rs-sys]
+opt-level = 3

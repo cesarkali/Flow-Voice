@@ -36,7 +36,8 @@ pub fn remove_fillers(text: &str, lang: &str) -> String {
         t = PT_TAG_START.replace_all(&t, "$1").into_owned();
         t = PT_TAGS
             .replace_all(&t, |c: &regex::Captures| match &c[1] {
-                "?" => "?".to_string(),
+                // "…à tarde, né?" is a tag, not a real question: end the sentence instead.
+                "?" => ".".to_string(),
                 "," => ",".to_string(),
                 _ => String::new(),
             })
@@ -80,6 +81,10 @@ fn tidy(t: &str) -> String {
     let t = MULTI_SPACE.replace_all(&t, " ");
     let t = LEADING_PUNCT.replace(&t, "");
     t.lines().map(str::trim).collect::<Vec<_>>().join("\n").trim().to_string()
+}
+
+pub fn has_words(text: &str) -> bool {
+    text.chars().any(char::is_alphanumeric)
 }
 
 /// "Cru" style: only words — no punctuation at word boundaries, no line breaks.
@@ -146,6 +151,8 @@ pub fn clean_llm_output(text: &str) -> String {
             t.replace_range(a..b + "</think>".len(), "");
         }
     }
+    let t = t.lines().map(str::trim_end).collect::<Vec<_>>().join("
+");
     let t = t.trim();
     let t = t.strip_prefix("```").and_then(|x| x.strip_suffix("```")).unwrap_or(t).trim();
     let quoted = (t.starts_with('"') && t.ends_with('"')) || (t.starts_with('“') && t.ends_with('”'));
@@ -164,12 +171,19 @@ mod tests {
 
     #[test]
     fn fillers_pt() {
-        assert_eq!(remove_fillers("hã eu queria, tipo, saber se dá, né?", "pt"), "Eu queria, saber se dá?");
+        assert_eq!(remove_fillers("hã eu queria, tipo, saber se dá, né?", "pt"), "Eu queria, saber se dá.");
+        assert_eq!(remove_fillers("marcar na quinta, né? Porque na quarta não dá", "pt"), "Marcar na quinta. Porque na quarta não dá");
         assert_eq!(remove_fillers("eu eu vou lá né", "pt"), "Eu vou lá");
         assert_eq!(remove_fillers("que tipo de coisa é essa", "pt"), "Que tipo de coisa é essa");
         assert_eq!(remove_fillers("um carro novo", "pt"), "Um carro novo");
         assert_eq!(remove_fillers("gosto desse tipo", "pt"), "Gosto desse tipo");
         assert_eq!(remove_fillers("você sabe?", "pt"), "Você sabe?");
+    }
+
+    #[test]
+    fn hesitation_only_is_empty() {
+        assert!(!has_words(&remove_fillers("Ah.", "pt")));
+        assert!(!has_words(&remove_fillers("Hum... hã", "pt")));
     }
 
     #[test]

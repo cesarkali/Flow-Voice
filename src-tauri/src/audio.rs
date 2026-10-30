@@ -197,12 +197,21 @@ pub fn rms(samples: &[f32]) -> f32 {
     (samples.iter().map(|x| x * x).sum::<f32>() / samples.len() as f32).sqrt()
 }
 
-/// Trims leading/trailing near-silence (keeps 200 ms of padding).
+/// Trims leading/trailing near-silence (keeps 200 ms of padding). The threshold adapts to the
+/// mic's noise floor so quiet microphones aren't mistaken for silence.
 pub fn trim_silence(samples: &[f32]) -> &[f32] {
     let win = (SAMPLE_RATE / 50) as usize; // 20 ms
-    let thresh = 0.008;
-    let loud = |chunk: &[f32]| rms(chunk) > thresh;
     let chunks: Vec<&[f32]> = samples.chunks(win).collect();
+    if chunks.is_empty() {
+        return &samples[0..0];
+    }
+    let mut levels: Vec<f32> = chunks.iter().map(|c| rms(c)).collect();
+    let peak = levels.iter().cloned().fold(0.0, f32::max);
+    levels.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let floor = levels[levels.len() / 10];
+    let thresh = (floor * 2.5).max(0.0025);
+    log::info!("audio levels: floor {floor:.4}, peak {peak:.4}, threshold {thresh:.4}");
+    let loud = |chunk: &[f32]| rms(chunk) > thresh;
     let first = chunks.iter().position(|c| loud(c));
     let last = chunks.iter().rposition(|c| loud(c));
     match (first, last) {
