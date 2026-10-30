@@ -536,7 +536,14 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
     let target = result.target.as_deref();
 
     let llm_prompt = match (&style.kind, target) {
-        (StyleKind::Llm, t) => Some(settings::system_prompt(&style.prompt, t, &s.dictionary)),
+        (StyleKind::Llm, t) => {
+            let style_prompt = if style.id == "prompt" {
+                settings::prompt_style_text(&s.prompt_strength)
+            } else {
+                style.prompt.clone()
+            };
+            Some(settings::system_prompt(&style_prompt, t, &s.dictionary))
+        }
         (_, Some(t)) => Some(settings::translation_prompt(t)),
         (_, None) => None,
     };

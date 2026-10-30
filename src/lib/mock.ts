@@ -103,6 +103,7 @@ const DEFAULT_SETTINGS: Settings = {
     custom: { model: "", stt_model: "", base_url: "" },
   },
   active_style: "natural",
+  prompt_strength: "medium",
   styles: [
     ...clone(DEFAULT_STYLES),
     {

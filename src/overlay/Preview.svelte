@@ -2,7 +2,8 @@
   // Browser-only harness: a fake desktop + the real overlay inside a fake native window that
   // follows the overlay_resize requests (dashed outline = window bounds).
   // Query flags: ?scenario=<id> &theme=light &width=compact|normal|wide &pos=top &accent=4FD1FF
-  // &hold (don't auto-stop). Scenarios: live, livefix, longlive, dictate, translate, translong,
+  // &hold (don't auto-stop). livefix = local guess (dimmed) confirmed later by the cloud
+  // (`stable` in overlay-partial). Scenarios: live, livefix, longlive, dictate, translate, translong,
   // ask, transcribing, refining, done, reprocess, error.
   import { onMount } from "svelte";
   import { on } from "../lib/api";
@@ -14,7 +15,7 @@
   const SCENARIOS: { id: Scn; label: string }[] = [
     { id: "live", label: "Ditado + ao vivo" },
     { id: "longlive", label: "Ao vivo longo" },
-    { id: "livefix", label: "Ao vivo + correção" },
+    { id: "livefix", label: "Ao vivo local + confirmação" },
     { id: "dictate", label: "Ditado" },
     { id: "translate", label: "Tradução" },
     { id: "translong", label: "Tradução longa + idiomas" },
@@ -84,12 +85,23 @@
       stopSimulation();
       emit({ phase: "listening", mode: "dictate", style_id: "natural", target: null, live: true });
       const fin: string[] = []; // finished segments (rough → refined)
+      const ok: boolean[] = []; // segment confirmed by the cloud
       let seg = 0;
       let w = 0;
       let t = 0;
       const push = () => {
+        // Like Rust: `stable` = chars of the leading run of confirmed segments.
         const tail = seg < SEGS.length ? SEGS[seg][0].split(" ").slice(0, w).join(" ") : "";
-        mockEmit(EVENTS.overlayPartial, { text: [...fin, tail].join("  ").replace(/^ +| +$/g, "") });
+        let full = "";
+        let stable = 0;
+        let run = true;
+        for (let k = 0; k < fin.length; k++) {
+          full += (full ? " " : "") + fin[k];
+          if (ok[k] && run) stable = Array.from(full).length;
+          else run = false;
+        }
+        if (tail) full += (full ? " " : "") + tail;
+        mockEmit(EVENTS.overlayPartial, { text: full, stable });
       };
       lvl = window.setInterval(() => {
         t += 33;
@@ -101,11 +113,13 @@
         } else {
           const k = seg;
           fin.push(SEGS[k][0]);
+          ok.push(false);
           seg++;
           w = 0;
           // the cloud transcript of segment k lands a bit later and replaces it mid-string
           later(1300, () => {
             fin[k] = SEGS[k][1];
+            ok[k] = true;
             push();
           });
         }
@@ -163,7 +177,9 @@
         mockEmit(EVENTS.overlayLevel, speaking ? 0.38 + Math.abs(Math.sin(t / 110)) * 0.18 + Math.random() * 0.06 : 0.08 + Math.random() * 0.04);
         if (t % 260 < 33 && n < LONG.length) {
           n++;
-          mockEmit(EVENTS.overlayPartial, { text: LONG.slice(0, n).join(" ") });
+          // cloud-driven: everything shown is confirmed
+          const text = LONG.slice(0, n).join(" ");
+          mockEmit(EVENTS.overlayPartial, { text, stable: Array.from(text).length });
         }
       }, 33);
       if (auto)

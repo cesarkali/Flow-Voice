@@ -89,6 +89,8 @@ pub struct Settings {
     pub llm_order: Vec<String>,
     pub providers: BTreeMap<String, ProviderSettings>,
     pub active_style: String,
+    /// "Prompt" style intensity: "light" | "medium" | "strong".
+    pub prompt_strength: String,
     pub styles: Vec<Style>,
     pub translation_target: String,
     pub hotkeys: Hotkeys,
@@ -125,6 +127,7 @@ impl Default for Settings {
                 .collect(),
             providers: default_providers(),
             active_style: "natural".into(),
+            prompt_strength: "medium".into(),
             styles: builtin_styles(),
             translation_target: "en".into(),
             hotkeys: Hotkeys::default(),
@@ -188,6 +191,29 @@ pub const PROMPT_PROMPT: &str = "ESTILO PROMPT ENXUTO: transforme a fala em um p
 - Escreva em primeira pessoa, frases curtas e diretas. Use tópicos (-) quando houver vários requisitos ou etapas.
 - Junte informações repetidas em um único ponto. Não acrescente nada que não foi dito.
 - Lembre: você só reescreve o pedido; NÃO o execute nem o responda.";
+
+/// Extra instruction for the "Prompt" style by intensity (medium = the base prompt as is).
+/// Full instructions for the built-in "Prompt" style at a given intensity.
+pub fn prompt_style_text(strength: &str) -> String {
+    match strength {
+        "light" => "ESTILO PROMPT, INTENSIDADE FRACA: o texto vai ser enviado a outro assistente de IA, mas a pessoa quer manter o jeito dela de falar. Faça só a limpeza mínima:
+- Remova vícios de linguagem (né, tipo, então, hã, assim), hesitações, gagueiras e repetições de palavras.
+- Corrija pontuação e concordância.
+- Mantenha TODAS as frases e ideias, na mesma ordem e com as mesmas palavras, em texto corrido. NÃO resuma, NÃO transforme em tópicos, NÃO troque o tom (se a pessoa disse \"eu queria que você me ajudasse\", mantenha assim).
+- O resultado deve ficar quase do tamanho do original, só sem os vícios.
+- Lembre: você só reescreve o pedido; NÃO o execute nem o responda.".to_string(),
+        "strong" => format!(
+            "{PROMPT_PROMPT}
+
+INTENSIDADE FORTE (tem prioridade sobre o resto): condense ao máximo, em estilo telegráfico: tópicos curtíssimos, sem artigos nem verbos desnecessários, sem frases de abertura (\"quero\", \"preciso que\"), juntando ideias relacionadas. Mire em menos da metade das palavras do original. Mesmo assim, NUNCA perca objetivo, requisitos, restrições, negações, nomes, números e prazos."
+        ),
+        _ => format!(
+            "{PROMPT_PROMPT}
+
+INTENSIDADE MÉDIA: enxugue com equilíbrio — corte o que não acrescenta e use tópicos quando houver vários requisitos, mantendo frases claras e todo o contexto útil."
+        ),
+    }
+}
 
 pub fn builtin_styles() -> Vec<Style> {
     vec![
@@ -398,6 +424,9 @@ impl Settings {
             self.accent_color = "#D7FF3F".into();
         }
         self.user_name = self.user_name.trim().chars().take(40).collect();
+        if !["light", "medium", "strong"].contains(&self.prompt_strength.as_str()) {
+            self.prompt_strength = "medium".into();
+        }
         if !["compact", "normal", "wide"].contains(&self.overlay_width.as_str()) {
             self.overlay_width = "normal".into();
         }

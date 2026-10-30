@@ -8,6 +8,7 @@
   import { api, on } from "../lib/api";
   import { langName, setLanguage, t, TARGET_LANGS } from "../lib/i18n.svelte";
   import Icon from "../lib/icons/Icon.svelte";
+  import Flag from "../lib/ui/Flag.svelte";
   import { applyAccent, applyTheme } from "../lib/theme";
   import { EVENTS, type DictationResult, type OverlayEvent, type Settings } from "../lib/types";
   import { pname } from "../settings/providers";
@@ -42,9 +43,11 @@
   let ev = $state<OverlayEvent>({ phase: "hidden" });
   let settings = $state<Settings | null>(null);
   /** Live transcript as keyed chunks (stable prefix + newer pieces), see setLive(). */
-  type Chunk = { id: number; text: string; kind: "add" | "fix" };
+  /** st = confirmed by the cloud transcript; unconfirmed (local guess) text renders dimmed. */
+  type Chunk = { id: number; text: string; kind: "add" | "fix" | "keep"; st: boolean };
   let chunks = $state<Chunk[]>([]);
   let liveFull = "";
+  let liveStable = 0;
   let chunkSeq = 0;
   let elapsed = $state(0);
   let listenStart = 0;
@@ -64,10 +67,11 @@
   let errSeq = $state(0);
 
   type View = "listening" | "processing" | "done" | "error" | "answer";
-  const visible = $derived(ev.phase !== "hidden");
+  /** Settings (theme/accent) must be applied before the card is ever painted (no light flash). */
+  const visible = $derived(ev.phase !== "hidden" && !!settings);
   let view = $state<View>("listening");
   let lastError = $state<Extract<OverlayEvent, { phase: "error" }> | null>(null);
-  let listenInfo = $state({ mode: "", style: "" });
+  let listenInfo = $state({ mode: "", style: "", target: "" });
   let procLabel = $state("");
 
   const live = $derived(ev.phase === "listening" && ev.live);
@@ -147,6 +151,7 @@
     }
     if (e.phase === "listening") {
       liveFull = "";
+      liveStable = 0;
       chunks = [];
       elapsed = 0;
       listenStart = performance.now();
@@ -160,7 +165,11 @@
           : e.mode === "ask"
             ? t("mode.ask")
             : t("mode.dictate");
-      listenInfo = { mode, style: e.mode === "ask" ? "" : styleName(e.style_id) };
+      listenInfo = {
+        mode,
+        style: e.mode === "ask" ? "" : styleName(e.style_id),
+        target: e.mode === "translate" ? (e.target ?? settings?.translation_target ?? "en") : "",
+      };
     }
     if (e.phase === "transcribing") procLabel = t("ov.transcribing");
     if (e.phase === "refining") procLabel = t("ov.refining", { provider: pname(e.provider) });
@@ -197,39 +206,47 @@
   }
 
   onMount(() => {
-    api.getSettings().then((s) => {
-      settings = s;
-      applyTheme(s.theme);
-      applyAccent(s.accent_color);
-      setLanguage(s.ui_language);
-    });
+    api.getSettings().then(applySettings);
     const subs = [
       on<OverlayEvent>(EVENTS.overlayState, onState),
       on<number>(EVENTS.overlayLevel, (l) => {
         const v = Math.min(1, Math.max(0, Number(l) || 0));
         level = Math.max(level, v);
       }),
-      on<{ text: string }>(EVENTS.overlayPartial, (p) => {
-        if (ev.phase === "listening") setLive(p?.text ?? "");
+      // { text, stable }: `stable` = leading chars (code points) already confirmed by the cloud.
+      on<{ text: string; stable?: number }>(EVENTS.overlayPartial, (p) => {
+        if (ev.phase === "listening") setLive(p?.text ?? "", p?.stable);
       }),
       // Follow-mouse monitor switch: Rust emits "out", moves the window ~140ms later, then "in".
       on<{ phase: "out" | "in" }>(OVERLAY_MOVE, (p) => moveCard(p?.phase)),
-      on<Settings>(EVENTS.settingsChanged, (s) => {
-        settings = s;
-        applyTheme(s.theme);
-        applyAccent(s.accent_color);
-        setLanguage(s.ui_language);
-      }),
+      on<Settings>(EVENTS.settingsChanged, applySettings),
     ];
-    window.addEventListener("resize", healWindow);
+    const ro = new ResizeObserver(onStageResize);
+    if (stageEl) ro.observe(stageEl);
     return () => {
-      window.removeEventListener("resize", healWindow);
+      ro.disconnect();
       subs.forEach((p) => p.then((f) => f()));
     };
   });
 
+  /** Theme/accent switch: colors change in one frame, never through a color transition
+   *  (a dark->light->dark transition is what read as a light flash on the card). */
+  let themeRaf = 0;
+  function applySettings(s: Settings) {
+    const root = document.documentElement;
+    root.classList.add("ov-notrans");
+    applyTheme(s.theme);
+    applyAccent(s.accent_color);
+    setLanguage(s.ui_language);
+    settings = s;
+    cancelAnimationFrame(themeRaf);
+    themeRaf = requestAnimationFrame(() => (themeRaf = requestAnimationFrame(() => root.classList.remove("ov-notrans"))));
+  }
+
   // ------------------------------------------------------------ shell morph + native window size
   let shellEl = $state<HTMLDivElement>();
+  /** Fills the native window (fixed, inset 0): its size is the real window size, also in the preview. */
+  let stageEl = $state<HTMLDivElement>();
   let morphAnim: Animation | null = null;
   let cur = { w: 0, h: 0, r: 0 };
   let sent = { w: 0, h: 0 };
@@ -267,42 +284,127 @@
   function settleWindow(delay = 90) {
     clearTimeout(settleTimer);
     settleTimer = window.setTimeout(() => {
-      if (morphAnim || !visible) return;
+      if (morphAnim || waitFn || !visible) return;
       requestWin(winSize(cur.w, cur.h));
     }, delay);
   }
+  const winNow = () => ({ w: stageEl?.clientWidth ?? innerWidth, h: stageEl?.clientHeight ?? innerHeight });
+  function fits(w: number, h: number) {
+    const n = winSize(w, h);
+    const now = winNow();
+    return now.w + 1 >= n.w && now.h + 1 >= n.h;
+  }
+  // The native resize lands a few frames after the request. Growing the card before that shows
+  // it clipped (square corners) against the old window edge, so growth waits for the window.
+  let waitFn: (() => void) | null = null;
+  let waitNeed = { w: 0, h: 0 };
+  let waitTimer = 0;
+  let waitRaf = 0;
+  function whenFits(w: number, h: number, fn: () => void) {
+    cancelWait();
+    waitNeed = { w, h };
+    waitFn = fn;
+    waitTimer = window.setTimeout(fireWait, 200); // never wait forever (lost/clamped resize)
+  }
+  function cancelWait() {
+    clearTimeout(waitTimer);
+    cancelAnimationFrame(waitRaf);
+    waitFn = null;
+  }
+  function fireWait() {
+    const fn = waitFn;
+    cancelWait();
+    // One frame for the bigger surface to be presented before the card grows into it
+    // (timer fallback: rAF is paused while the webview is occluded/hidden).
+    if (!fn) return;
+    let ran = false;
+    const go = () => {
+      if (ran) return;
+      ran = true;
+      cancelAnimationFrame(waitRaf);
+      clearTimeout(waitTimer);
+      fn();
+    };
+    waitRaf = requestAnimationFrame(go);
+    waitTimer = window.setTimeout(go, 50);
+  }
+  function onStageResize() {
+    if (waitFn && fits(waitNeed.w, waitNeed.h)) fireWait();
+    healWindow();
+  }
   /** Self-heal: if the native window ends up smaller than the card (lost/clamped request), re-send. */
   function healWindow() {
-    if (!visible || morphAnim || !cur.w || healCount >= 2) return;
+    if (!visible || morphAnim || waitFn || !cur.w || healCount >= 2) return;
     const n = winSize(cur.w, cur.h);
-    if (innerWidth + 1 < n.w || innerHeight + 1 < n.h) {
+    const now = winNow();
+    if (now.w + 1 < n.w || now.h + 1 < n.h) {
       healCount++;
       sent = { w: 0, h: 0 };
       requestWin(n);
     }
   }
 
+  /** Appearing while the window is still too small: stay invisible until it has grown. */
+  let holdShow = $state(false);
+  type BoxS = { w: number; h: number; r: number };
+  const setBox = (el: HTMLElement, b: BoxS) => {
+    el.style.width = `${b.w}px`;
+    el.style.height = `${b.h}px`;
+    el.style.borderRadius = `${b.r}px`;
+  };
+
   function morph(w: number, h: number, r: number) {
     const el = shellEl;
     if (!el || !w || !h) return;
     if (w === cur.w && h === cur.h && r === cur.r) return;
-    const instant = snapNext || reduce || !cur.w;
+    let instant = snapNext || reduce || !cur.w;
     // Read the in-flight size before touching anything (one style read, no forced reflow loop).
-    const from = morphAnim
-      ? { w: el.offsetWidth, h: el.offsetHeight, r: parseFloat(getComputedStyle(el).borderTopLeftRadius) || r }
-      : { ...cur };
+    const live = () => ({ w: el.offsetWidth, h: el.offsetHeight, r: parseFloat(getComputedStyle(el).borderTopLeftRadius) || r });
+    let from = morphAnim || waitFn ? live() : { ...cur };
+    // "Appearing" while the old card never actually left the screen (hide + show in the same
+    // tick): morph from what is visible instead of snapping.
+    if (instant && !reduce && el.offsetWidth && parseFloat(getComputedStyle(el).opacity) >= 0.5) {
+      instant = false;
+      from = live();
+    }
     morphAnim?.cancel();
     morphAnim = null;
+    cancelWait();
     cur = { w, h, r };
-    el.style.width = `${w}px`;
-    el.style.height = `${h}px`;
-    el.style.borderRadius = `${r}px`;
-    growWindow(Math.max(w, from.w), Math.max(h, from.h));
+    const needW = Math.max(w, from.w);
+    const needH = Math.max(h, from.h);
+    growWindow(needW, needH);
+    clearTimeout(settleTimer);
     if (instant) {
-      settleWindow(0);
+      if (fits(needW, needH)) {
+        setBox(el, cur);
+        holdShow = false;
+        settleWindow(0);
+      } else {
+        // Snap only once the window is big enough. If the card is (still) on screen keep its
+        // old box meanwhile; if it is appearing, keep it invisible until then.
+        if (parseFloat(getComputedStyle(el).opacity) < 0.5) holdShow = true;
+        const to = cur;
+        whenFits(needW, needH, () => {
+          setBox(el, to);
+          holdShow = false;
+          settleWindow(0);
+        });
+      }
       return;
     }
-    clearTimeout(settleTimer);
+    if (fits(needW, needH)) {
+      runMorph(el, from, cur);
+    } else {
+      // Freeze at the current (in-flight) size until the window has grown.
+      setBox(el, from);
+      const to = cur;
+      whenFits(needW, needH, () => runMorph(el, from, to));
+    }
+  }
+  function runMorph(el: HTMLElement, from: BoxS, to: BoxS) {
+    const { w, h, r } = to;
+    setBox(el, to);
     const a = el.animate(
       [
         { width: `${from.w}px`, height: `${from.h}px`, borderRadius: `${from.r}px` },
@@ -327,7 +429,14 @@
   });
   // Snap stays armed only for the first layout after appearing.
   $effect(() => {
-    if (!visible) return;
+    if (!visible) {
+      untrack(() => {
+        cancelWait();
+        holdShow = false;
+      });
+      return;
+    }
+    if (holdShow) return; // armed again once the window fits and the card is shown
     const id = requestAnimationFrame(() => requestAnimationFrame(() => (snapNext = false)));
     return () => cancelAnimationFrame(id);
   });
@@ -575,11 +684,18 @@
     x = x.replace(/([.!?…]\s+)(\p{Ll})/gu, (_, a: string, b: string) => a + b.toUpperCase());
     return x.charAt(0).toUpperCase() + x.slice(1);
   }
-  function setLive(raw: string) {
+  function setLive(raw: string, stableRaw?: number) {
     const next = normLive(raw);
+    // `stable` counts code points of the raw line; map it through the same normalization.
+    // Missing (older core) = everything is confirmed.
+    const S =
+      stableRaw == null || stableRaw >= raw.length
+        ? next.length
+        : Math.min(next.length, stableRaw <= 0 ? 0 : normLive(Array.from(raw).slice(0, stableRaw).join("")).length);
     const prev = liveFull;
-    if (next === prev) return;
+    if (next === prev && S === liveStable) return;
     liveFull = next;
+    liveStable = S;
     if (!next) {
       chunks = [];
       return;
@@ -597,11 +713,31 @@
       out.push(end <= c ? ch : { ...ch, text: ch.text.slice(0, c - pos) });
       pos = end;
     }
+    const fresh = chunkSeq;
     const rest = next.slice(c);
-    if (rest) out.push({ id: ++chunkSeq, text: rest, kind: appended ? "add" : "fix" });
-    // Fold the oldest (long settled) chunks together; the survivor keeps its key → no re-render.
-    while (out.length > 6) out.splice(0, 2, { ...out[0], text: out[0].text + out[1].text });
-    chunks = out;
+    if (rest) out.push({ id: ++chunkSeq, text: rest, kind: appended ? "add" : "fix", st: false });
+    // Split at the confirmed boundary: a chunk that becomes confirmed keeps its key and only
+    // its class changes (opacity transition, no layout change); the still-unconfirmed remainder
+    // becomes a new chunk with the same look.
+    const split: Chunk[] = [];
+    pos = 0;
+    for (const ch of out) {
+      const end = pos + ch.text.length;
+      if (end <= S) split.push(ch.st ? ch : { ...ch, st: true });
+      else if (pos >= S) split.push(ch.st ? { ...ch, st: false } : ch);
+      else {
+        split.push({ ...ch, text: ch.text.slice(0, S - pos), st: true });
+        split.push({ id: ++chunkSeq, text: ch.text.slice(S - pos), kind: ch.id > fresh ? ch.kind : "keep", st: false });
+      }
+      pos = end;
+    }
+    // Fold the oldest (long settled) neighbours with the same state; the survivor keeps its key.
+    while (split.length > 8) {
+      const i = split.findIndex((ch, k) => k + 1 < split.length && ch.st === split[k + 1].st);
+      if (i < 0) break;
+      split.splice(i, 2, { ...split[i], text: split[i].text + split[i + 1].text });
+    }
+    chunks = split;
   }
   function lineFlip(node: HTMLElement) {
     // When the paragraph gains a line, glide the old lines up instead of jumping (coalesced:
@@ -849,13 +985,13 @@
 
 <svelte:window onkeydown={key} />
 
-<div class="stage {position}" style="--m:{M}px">
+<div class="stage {position}" style="--m:{M}px" bind:this={stageEl}>
   <div class="mover" bind:this={moverEl}>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       bind:this={shellEl}
       class="shell v-{view} w-{settings?.overlay_width ?? 'normal'}"
-      class:hidden={!visible}
+      class:hidden={!visible || holdShow}
       role="region"
       aria-label="FlowVoice"
       aria-live="polite"
@@ -891,7 +1027,9 @@
               <div class="row" style="padding-left:{PAD_L}px">
                 <span class="wslot" style="width:{WAVE_W}px"></span>
                 <div class="meta">
-                  <span class="mode">{listenInfo.mode}</span>
+                  <span class="mode">
+                    {#if listenInfo.target}<span class="iflag"><Flag code={listenInfo.target} size={14} /></span>{/if}{listenInfo.mode}
+                  </span>
                   {#if listenInfo.style}<span class="sty">{listenInfo.style}</span>{/if}
                 </div>
                 <span class="time tnum">{fmt(elapsed)}</span>
@@ -905,7 +1043,7 @@
               {#if hasText}
                 <div class="live" in:rise={{ delay: 120, y: 10 * dir }} out:fadeOut>
                   <div class="lwin">
-                    <p use:lineFlip>{#each chunks as c, i (c.id)}<span class="ck {c.kind}" class:old={i < chunks.length - 4}>{c.text}</span>{/each}</p>
+                    <p use:lineFlip>{#each chunks as c (c.id)}<span class="ck {c.kind}" class:un={!c.st}>{c.text}</span>{/each}</p>
                   </div>
                 </div>
               {/if}
@@ -933,7 +1071,7 @@
                   {:else if showOriginal}
                     {t("ov.showing_original")}
                   {:else if result.target}
-                    {t("ov.translate_to", { lang: langName(result.target) })}
+                    <span class="iflag"><Flag code={result.target} size={16} /></span>{t("ov.translate_to", { lang: langName(result.target) })}
                   {:else}
                     {styleName(result.style_id)}
                   {/if}
@@ -998,7 +1136,7 @@
                           aria-label={t("ovx.lang_tip", { lang: langName(l) })}
                           onclick={() => reprocess(result!.style_id, l)}
                         >
-                          <span class="code">{l.toUpperCase()}</span><span class="ln">{langName(l)}</span>
+                          <Flag code={l} size={18} /><span class="ln">{langName(l)}</span>
                         </button>
                       {/each}
                     {:else}
@@ -1024,7 +1162,8 @@
                         disabled={busy}
                         onclick={() => (picker = true)}
                       >
-                        <Icon name="translate" size={14} />{t("ov.translate")}{result.target ? ` · ${result.target.toUpperCase()}` : ""}
+                        <Icon name="translate" size={14} />{t("ov.translate")}
+                        {#if result.target}<span class="tsep">·</span><Flag code={result.target} size={16} /><span class="code">{result.target.toUpperCase()}</span>{/if}
                       </button>
                       <button
                         type="button"
@@ -1132,6 +1271,17 @@
   :global(html),
   :global(body.overlay) {
     background: transparent !important;
+  }
+
+  :global(html),
+  :global(body.overlay),
+  :global(body.overlay #app) {
+    margin: 0;
+    padding: 0;
+  }
+  :global(.ov-notrans) .stage,
+  :global(.ov-notrans) .stage :global(*) {
+    transition-property: opacity, transform, translate, scale !important;
   }
 
   .stage {
@@ -1374,18 +1524,20 @@
   .w-compact .live p {
     font-size: 13.5px;
   }
-  /* flowing inline text: only opacity/color animate, so wrapping never changes mid-animation */
+  /* flowing inline text: only opacity animates, so wrapping never changes mid-animation.
+     Animations have no fill: once they end, the confirmed/unconfirmed opacity transitions. */
   .ck {
-    transition: color 900ms var(--ease);
+    transition: opacity 700ms var(--ease);
+  }
+  /* local guess not yet confirmed by the cloud (offline/local preview only) */
+  .ck.un {
+    opacity: 0.7;
   }
   .ck.add {
-    animation: ckadd 360ms var(--ease) both;
+    animation: ckadd 380ms var(--ease);
   }
   .ck.fix {
-    animation: ckfix 560ms var(--ease) both;
-  }
-  .ck.old {
-    color: var(--cap-text-2);
+    animation: ckfix 650ms var(--ease);
   }
   @keyframes ckadd {
     from {
@@ -1394,7 +1546,7 @@
   }
   @keyframes ckfix {
     from {
-      opacity: 0.2;
+      opacity: 0.3;
     }
   }
 
@@ -1666,8 +1818,9 @@
   .chip.lang,
   .chipset.langs .back {
     height: 26px;
-    padding: 0 9px;
+    padding: 0 9px 0 7px;
     min-width: 0;
+    gap: 6px;
   }
   .ln {
     min-width: 0;
@@ -1735,6 +1888,26 @@
     font-family: var(--mono);
     font-size: 10px;
     color: var(--cap-text-2);
+  }
+  .tsep {
+    margin: 0 -1px;
+    color: var(--cap-text-2);
+  }
+  .chip.on .code {
+    color: var(--cap-text);
+  }
+  .chip :global(.flag) {
+    border-radius: 2px;
+  }
+  /* inline flag inside a line of text */
+  .iflag {
+    display: inline-block;
+    vertical-align: -2px;
+    margin-right: 6px;
+  }
+  .mode .iflag {
+    vertical-align: -1px;
+    margin-right: 5px;
   }
   .chip.loading {
     color: var(--cap-text);

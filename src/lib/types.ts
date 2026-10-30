@@ -62,6 +62,8 @@ export interface Settings {
   llm_order: LlmProviderId[];
   providers: Record<LlmProviderId, ProviderSettings>;
   active_style: string;
+  /** Intensity of the built-in "prompt" style. */
+  prompt_strength: "light" | "medium" | "strong";
   styles: Style[];
   /** ISO-639-1 target for translation, e.g. "en". */
   translation_target: string;
@@ -182,7 +184,7 @@ export type SettingsPage = "home" | "styles" | "providers" | "speech" | "shortcu
 export const EVENTS = {
   overlayState: "overlay-state", // OverlayEvent
   overlayLevel: "overlay-level", // number 0..1 (~30/s while listening)
-  overlayPartial: "overlay-partial", // { text: string } live transcript
+  overlayPartial: "overlay-partial", // { text: string; stable: number } live transcript (stable = confirmed chars)
   modelProgress: "model-progress", // ModelProgress
   updateProgress: "update-progress", // { downloaded: number; total: number | null }
   navigate: "navigate", // { page: SettingsPage }

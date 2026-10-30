@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Segmented from "../../lib/ui/Segmented.svelte";
   import { cubicOut } from "svelte/easing";
   import { prefersReducedMotion } from "svelte/motion";
   import { fly } from "svelte/transition";
@@ -120,6 +121,21 @@
       </span>
       <span class="on mono" aria-hidden="true">{t("styles.active")}</span>
     </button>
+    {#if st.id === "prompt"}
+      <div class="strength">
+        <span class="label">{t("home.sty_strength")}</span>
+        <Segmented
+          label={t("home.sty_strength")}
+          bind:value={s.prompt_strength}
+          options={[
+            { value: "light", label: t("home.sty_strength_light") },
+            { value: "medium", label: t("home.sty_strength_medium") },
+            { value: "strong", label: t("home.sty_strength_strong") },
+          ]}
+        />
+        <span class="shint">{t(`home.sty_strength_${s.prompt_strength}_hint`)}</span>
+      </div>
+    {/if}
     {#if !st.builtin}
       <div class="acts">
         <Button size="sm" variant="ghost" icon="edit" aria-label={t("styles.edit")} title={t("styles.edit")} onclick={() => openEdit(st)} />
@@ -534,5 +550,23 @@
     .two {
       grid-template-columns: 1fr;
     }
+  }
+  .strength {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    padding: 0 16px 14px 46px;
+  }
+  .strength .label {
+    font: 600 10.5px var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .shint {
+    flex-basis: 100%;
+    color: var(--text-3);
+    font-size: 12px;
   }
 </style>

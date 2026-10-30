@@ -117,3 +117,24 @@ async fn live_names() {
         }
     }
 }
+
+/// Prompt style at the three intensities.
+#[tokio::test]
+#[ignore]
+async fn live_strength() {
+    let http = cloud::http();
+    let cfg = default_providers()["groq"].clone();
+    let key = legacy_keys("groq").into_iter().next().unwrap();
+    let said = "Então, tipo, eu queria que você me ajudasse a montar uma landing page pro meu app de ditado, né, que se chama FlowVoice, e eu queria que ela fosse bem rápida, com animações leves, tipo, nada pesado, e que tivesse uma seção de download pro Windows e pro Linux, e, ah, não pode usar Tailwind, quero CSS puro, e o prazo é até sexta.";
+    let cleaned = crate::text::remove_fillers(said, "pt");
+    for strength in ["light", "medium", "strong"] {
+        let style = crate::settings::prompt_style_text(strength);
+        let msgs = [
+            ChatMsg::new("system", system_prompt(&style, None, &[])),
+            ChatMsg::new("user", format!("<transcricao>\n{cleaned}\n</transcricao>")),
+        ];
+        let out = cloud::chat(&http, "groq", &cfg, &key, &msgs, 0.2, 1500).await.unwrap();
+        println!("\n== {strength} ({} chars):\n{}", out.chars().count(), crate::text::clean_llm_output(&out));
+    }
+    println!("\n== original: {} chars", said.chars().count());
+}
