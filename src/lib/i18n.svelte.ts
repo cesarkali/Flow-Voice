@@ -1,13 +1,18 @@
 // Tiny i18n: t(key, params) reads a rune, so any template using it re-renders
 // when the language changes (live switch, no reload).
 import type { UiLanguage } from "./types";
-import { pt, type Dict } from "./locales/pt";
+import { pt } from "./locales/pt";
 import { en } from "./locales/en";
 import { es } from "./locales/es";
+import { EXTRA, type ExtraKey } from "./locales/x";
 
-export type TKey = keyof typeof pt;
+export type TKey = keyof typeof pt | ExtraKey;
 
-const DICTS: Record<UiLanguage, Dict> = { pt, en, es };
+const DICTS: Record<UiLanguage, Record<string, string>> = { pt: { ...pt }, en: { ...en }, es: { ...es } };
+for (const ext of EXTRA) {
+  for (const lang of ["pt", "en", "es"] as const) Object.assign(DICTS[lang], ext[lang]);
+}
+const PT: Record<string, string> = DICTS.pt;
 const LOCALE: Record<UiLanguage, string> = { pt: "pt-BR", en: "en-US", es: "es" };
 
 export const i18n = $state({ lang: "pt" as UiLanguage });
@@ -19,7 +24,7 @@ export function setLanguage(lang: UiLanguage) {
 }
 
 export function t(key: TKey, params?: Record<string, string | number>): string {
-  let s = DICTS[i18n.lang]?.[key] ?? pt[key] ?? key;
+  let s = DICTS[i18n.lang]?.[key] ?? PT[key] ?? key;
   if (params) for (const k in params) s = s.replaceAll(`{${k}}`, String(params[k]));
   return s;
 }

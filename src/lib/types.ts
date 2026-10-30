@@ -26,6 +26,7 @@ export interface Style {
   description: string;
   /** llm = rewritten by the model; raw = no punctuation/line breaks, no LLM; verbatim = transcript as-is, no LLM */
   kind: StyleKind;
+  /** Always "" for built-in styles (their prompts are internal and not editable). */
   prompt: string;
   builtin: boolean;
 }
@@ -71,6 +72,10 @@ export interface Settings {
   start_with_os: boolean;
   history_enabled: boolean;
   overlay_position: "bottom" | "top";
+  /** Result card width; compact also shrinks text a little. */
+  overlay_width: "compact" | "normal" | "wide";
+  /** true = overlay appears on the monitor under the mouse; false = always on the primary monitor. */
+  overlay_follow_mouse: boolean;
   /** Custom vocabulary: names/terms to bias transcription and the LLM. */
   dictionary: string[];
   onboarded: boolean;

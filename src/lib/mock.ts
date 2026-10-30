@@ -115,6 +115,8 @@ const DEFAULT_SETTINGS: Settings = {
   start_with_os: true,
   history_enabled: true,
   overlay_position: "bottom",
+  overlay_width: "normal",
+  overlay_follow_mouse: false,
   dictionary: ["FlowVoice", "Caliberda", "Tauri", "Svelte"],
   onboarded: true,
 };
