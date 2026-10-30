@@ -40,7 +40,7 @@
 
 <header class="hero">
   <div class="mark">
-    <Logo size={76} />
+    <Logo size={88} animate="loop" />
   </div>
   <div class="ht">
     <h1>FlowVoice <span class="v">2.0</span></h1>

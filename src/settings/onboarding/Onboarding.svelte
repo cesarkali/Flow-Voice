@@ -211,7 +211,7 @@
         {#if step === 1}
           <div class="welcome">
           <div class="wl">
-          <div class="mark"><Logo size={76} /></div>
+          <div class="mark"><Logo size={88} animate="loop" /></div>
           <h1 class="big">{t("ob.welcome_title")}</h1>
           <p class="lead">{t("ob.welcome_body")}</p>
           </div>
