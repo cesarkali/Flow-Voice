@@ -2,7 +2,7 @@
 
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Emitter, Manager, Wry};
+use tauri::{AppHandle, Manager, Wry};
 
 use crate::pipeline;
 use crate::state::{AppState, RecordMode};
@@ -57,7 +57,7 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
                     let mut s = st.settings();
                     s.active_style = id.trim_start_matches("style:").to_string();
                     if let Ok(saved) = st.save_settings(s) {
-                        let _ = app.emit("settings-changed", &saved);
+                        crate::commands::broadcast_settings(app, &saved, None);
                     }
                     refresh(app);
                 }

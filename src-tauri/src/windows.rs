@@ -14,32 +14,46 @@ pub fn setup_overlay(app: &AppHandle) {
     }
 }
 
-/// Places the overlay bottom/top-center on the monitor under the mouse.
-fn place_overlay(app: &AppHandle) {
+/// Places the overlay bottom/top-center on the primary monitor (or the one under the mouse when
+/// the user enabled it). `size` is the logical size just requested, since outer_size() may still
+/// report the previous one right after set_size().
+fn place_overlay(app: &AppHandle, size: Option<(f64, f64)>) {
     let Some(w) = app.get_webview_window("overlay") else { return };
-    let monitor = app
-        .cursor_position()
-        .ok()
-        .and_then(|p| app.monitor_from_point(p.x, p.y).ok().flatten())
-        .or_else(|| w.primary_monitor().ok().flatten());
+    let (top, follow) = {
+        let s = app.state::<AppState>().settings();
+        (s.overlay_position == "top", s.overlay_follow_mouse)
+    };
+    let under_mouse = || {
+        app.cursor_position()
+            .ok()
+            .and_then(|p| app.monitor_from_point(p.x, p.y).ok().flatten())
+    };
+    let monitor = if follow { under_mouse() } else { None }
+        .or_else(|| w.primary_monitor().ok().flatten())
+        .or_else(under_mouse);
     let Some(m) = monitor else { return };
     let scale = m.scale_factor();
     let area = m.work_area();
-    let Ok(size) = w.outer_size() else { return };
-    let top = app.state::<AppState>().settings.read().overlay_position == "top";
-    let x = area.position.x + (area.size.width as i32 - size.width as i32) / 2;
+    let (width, height) = match size {
+        Some((lw, lh)) => ((lw * scale).round() as i32, (lh * scale).round() as i32),
+        None => match w.outer_size() {
+            Ok(sz) => (sz.width as i32, sz.height as i32),
+            Err(_) => return,
+        },
+    };
+    let x = area.position.x + (area.size.width as i32 - width) / 2;
     let margin = (MARGIN * scale) as i32;
     let y = if top {
         area.position.y + margin
     } else {
-        area.position.y + area.size.height as i32 - size.height as i32 - margin
+        area.position.y + area.size.height as i32 - height - margin
     };
     let _ = w.set_position(PhysicalPosition::new(x, y));
 }
 
 pub fn show_overlay(app: &AppHandle) {
     let Some(w) = app.get_webview_window("overlay") else { return };
-    place_overlay(app);
+    place_overlay(app, None);
     if !w.is_visible().unwrap_or(false) {
         crate::platform::show_without_focus(&w);
     }
@@ -68,10 +82,11 @@ pub fn hide_overlay(app: &AppHandle) {
 /// The UI reports its content size so the transparent window never blocks clicks around it.
 pub fn resize_overlay(app: &AppHandle, width: f64, height: f64) {
     let Some(w) = app.get_webview_window("overlay") else { return };
-    let width = width.clamp(120.0, 720.0).ceil();
-    let height = height.clamp(40.0, 520.0).ceil();
+    let width = width.clamp(120.0, 760.0).ceil();
+    let height = height.clamp(40.0, 560.0).ceil();
+    // Position first for the new size, then resize, so the anchored edge never jumps.
+    place_overlay(app, Some((width, height)));
     let _ = w.set_size(LogicalSize::new(width, height));
-    place_overlay(app);
 }
 
 pub fn open_settings(app: &AppHandle, page: Option<String>) {

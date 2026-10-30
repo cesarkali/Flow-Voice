@@ -61,6 +61,11 @@ impl Recording {
         let device_name = device_name.map(str::to_string);
         let s = samples.clone();
         let l = level.clone();
+        // Test hook: FLOWVOICE_FAKE_MIC=<16 kHz mono wav> streams a file in real time instead of the mic.
+        if let Ok(path) = std::env::var("FLOWVOICE_FAKE_MIC") {
+            let thread = std::thread::spawn(move || fake_mic(&path, s, l, stop_rx));
+            return Ok(Self { samples, level, stop_tx, thread: Some(thread) });
+        }
         // cpal streams are !Send on some platforms, so the stream lives on its own thread.
         let thread = std::thread::spawn(move || {
             let stream = match build_stream(device_name.as_deref(), s, l) {
@@ -104,6 +109,29 @@ impl Drop for Recording {
     }
 }
 
+fn fake_mic(path: &str, samples: Arc<Mutex<Vec<f32>>>, level: Arc<AtomicU32>, stop_rx: mpsc::Receiver<()>) {
+    let data: Vec<f32> = match hound::WavReader::open(path) {
+        Ok(mut r) => r.samples::<i16>().filter_map(Result::ok).map(|v| v as f32 / 32768.0).collect(),
+        Err(e) => {
+            log::error!("fake mic: {e}");
+            vec![]
+        }
+    };
+    let chunk = (SAMPLE_RATE / 50) as usize; // 20 ms
+    let mut pos = 0;
+    loop {
+        if stop_rx.recv_timeout(std::time::Duration::from_millis(20)).is_ok() {
+            return;
+        }
+        let end = (pos + chunk).min(data.len());
+        let block: Vec<f32> = if pos < end { data[pos..end].to_vec() } else { vec![0.0; chunk] };
+        pos = end;
+        let lvl = (rms(&block) * 28.0).sqrt().min(1.0);
+        level.store(lvl.to_bits(), Ordering::Relaxed);
+        samples.lock().extend_from_slice(&block);
+    }
+}
+
 fn pick_device(name: Option<&str>) -> Result<cpal::Device> {
     let host = cpal::default_host();
     if let Some(name) = name {
@@ -138,7 +166,8 @@ fn build_stream(name: Option<&str>, samples: Arc<Mutex<Vec<f32>>>, level: Arc<At
         }
         if n > 0 {
             let rms = (sq / n as f32).sqrt();
-            let lvl = (rms * 9.0).sqrt().min(1.0);
+            // Quiet mics peak around rms 0.03 while speaking: map that near the top.
+            let lvl = (rms * 28.0).sqrt().min(1.0);
             level.store(lvl.to_bits(), Ordering::Relaxed);
         }
         samples.lock().extend_from_slice(&out);

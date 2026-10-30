@@ -98,6 +98,7 @@ pub fn run() {
             }
             commands::set_autostart(&handle, s.start_with_os);
 
+            pipeline::ensure_preview_model(&handle);
             // Load the local model ahead of time so the first dictation is instant.
             if s.stt.engine == "local" || s.stt.live_preview {
                 let local = handle.state::<AppState>().local.clone();

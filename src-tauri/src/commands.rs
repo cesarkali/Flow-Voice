@@ -25,15 +25,24 @@ fn err(e: impl std::fmt::Display) -> String {
 
 #[tauri::command]
 pub fn get_settings(state: State<AppState>) -> Settings {
-    state.settings()
+    state.settings().for_ui()
 }
 
 #[tauri::command]
-pub fn save_settings(app: AppHandle, state: State<AppState>, settings: Settings) -> CmdResult<Settings> {
+pub fn save_settings(
+    app: AppHandle,
+    window: tauri::WebviewWindow,
+    state: State<AppState>,
+    settings: Settings,
+) -> CmdResult<Settings> {
     let before = state.settings();
     let saved = state.save_settings(settings).map_err(err)?;
-    apply_settings(&app, &before, &saved)?;
-    Ok(saved)
+    // Settings are saved even if a shortcut couldn't be registered; the UI hears about that separately.
+    if let Err(e) = apply_settings(&app, &before, &saved, Some(window.label())) {
+        log::warn!("{e}");
+        let _ = app.emit("hotkey-error", e);
+    }
+    Ok(saved.for_ui())
 }
 
 #[tauri::command]
@@ -43,12 +52,24 @@ pub fn reset_styles(app: AppHandle, state: State<AppState>) -> CmdResult<Setting
     s.active_style = "natural".into();
     let saved = state.save_settings(s).map_err(err)?;
     tray::refresh(&app);
-    let _ = app.emit("settings-changed", &saved);
-    Ok(saved)
+    broadcast_settings(&app, &saved, None);
+    Ok(saved.for_ui())
+}
+
+/// Tells every window (except the one that just saved) about new settings.
+pub fn broadcast_settings(app: &AppHandle, s: &Settings, except: Option<&str>) {
+    let payload = s.for_ui();
+    let except = except.map(str::to_string);
+    let _ = app.emit_filter("settings-changed", payload, move |target| match (&except, target) {
+        (Some(label), tauri::EventTarget::WebviewWindow { label: l }) => l != label,
+        (Some(label), tauri::EventTarget::Window { label: l }) => l != label,
+        (Some(label), tauri::EventTarget::Webview { label: l }) => l != label,
+        _ => true,
+    });
 }
 
 /// Side effects of a settings change (hotkeys, autostart, tray, model warm-up).
-pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings) -> CmdResult<()> {
+pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings, from_window: Option<&str>) -> CmdResult<()> {
     if before.styles.len() != after.styles.len()
         || before.active_style != after.active_style
         || before.styles.iter().zip(&after.styles).any(|(a, b)| a.name != b.name || a.id != b.id)
@@ -58,6 +79,7 @@ pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings) -> C
     if before.start_with_os != after.start_with_os {
         set_autostart(app, after.start_with_os);
     }
+    crate::pipeline::ensure_preview_model(app);
     let local_wanted = after.stt.engine == "local" || after.stt.live_preview;
     if local_wanted
         && (before.stt.engine != after.stt.engine
@@ -69,7 +91,7 @@ pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings) -> C
         let id = if after.stt.engine == "local" { after.stt.local_model.clone() } else { after.stt.preview_model.clone() };
         std::thread::spawn(move || local.warm_up(&id));
     }
-    let _ = app.emit("settings-changed", after);
+    broadcast_settings(app, after, from_window);
     let hk_changed = before.hotkeys.dictate != after.hotkeys.dictate
         || before.hotkeys.translate != after.hotkeys.translate
         || before.hotkeys.ask != after.hotkeys.ask;

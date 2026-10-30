@@ -94,6 +94,24 @@ pub fn start(app: &AppHandle, mode: RecordMode) {
     }
 }
 
+/// Live preview needs the small local model: fetch it in the background when missing.
+pub fn ensure_preview_model(app: &AppHandle) {
+    let st = state(app);
+    let s = st.settings();
+    let id = s.stt.preview_model.clone();
+    if !s.stt.live_preview || !crate::local_stt::cpu_supported() || st.local.installed(&id) || st.local.any_installed().is_some() {
+        return;
+    }
+    let local = st.local.clone();
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        log::info!("downloading preview model {id}");
+        if let Err(e) = local.download(app, id).await {
+            log::warn!("preview model download failed: {e}");
+        }
+    });
+}
+
 fn preview_model(s: &Settings, st: &AppState) -> String {
     if st.local.installed(&s.stt.preview_model) {
         s.stt.preview_model.clone()
@@ -250,7 +268,7 @@ async fn process_recording(
         duration_ms,
         warnings: vec![],
     };
-    refine_into(app, &mut result, &s).await;
+    refine_into(app, &mut result, &s, true).await;
 
     if s.auto_paste {
         let text = result.text.clone();
@@ -274,7 +292,7 @@ async fn process_recording(
 }
 
 /// Applies style/translation to `result.raw`, filling text/provider/warnings.
-async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings) {
+async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings, show_progress: bool) {
     let style = s.style(&result.style_id);
     let lang = s.speech_language.as_str();
     let cleaned = if s.remove_fillers { text::remove_fillers(&result.raw, lang) } else { result.raw.clone() };
@@ -294,8 +312,10 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
         return;
     }
     if let Some(system) = llm_prompt {
-        let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
-        emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint }));
+        if show_progress {
+            let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
+            emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint }));
+        }
         let user = format!("<transcricao>\n{source}\n</transcricao>");
         let max_tokens = ((source.len() as u32) + 1024).clamp(1024, 8192);
         match llm_chain(app, &[ChatMsg::new("system", system), ChatMsg::new("user", user)], 0.2, max_tokens).await {
@@ -325,12 +345,14 @@ pub async fn reprocess(app: &AppHandle, style_id: String, target: Option<String>
     result.style_id = style_id;
     result.target = target.filter(|t| !t.is_empty());
     result.warnings.clear();
-    result.pasted = false;
-    refine_into(app, &mut result, &s).await;
+    // Keep `pasted` so the card knows the previous version is in the target app (for "Substituir").
+    // The overlay stays on the result card: no progress events, just a final "done".
+    refine_into(app, &mut result, &s, false).await;
     platform::set_clipboard(&result.text).ok();
     state(app).push_history(&result);
     *state(app).last.lock() = Some((result.clone(), window));
     let _ = app.emit("history-changed", ());
+    emit_overlay(app, json!({ "phase": "done", "result": result }));
     Ok(result)
 }
 
