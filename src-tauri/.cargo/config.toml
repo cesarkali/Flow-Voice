@@ -1,0 +1,3 @@
+# whisper-rs-sys generates bindings with bindgen, which needs libclang.
+# On Windows set LIBCLANG_PATH to a folder containing libclang.dll (LLVM install,
+# or `pip download libclang` and unzip). CI runners already have it.

@@ -1,25 +1,30 @@
-# Python files
+# Node / frontend
+node_modules/
+dist/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Updater signing key (never commit)
+*.key
+
+# Legacy Python app
 __pycache__/
 *.pyc
-
-# Virtual environments
 venv/
 .venv/
-env/
-
-# Packaging / Build directories
 build/
-dist/
 *.spec
-ubuntu/build/
-ubuntu/dist/
+legacy/ubuntu/build/
+legacy/ubuntu/dist/
 
-# Application Local Config & Temporary Audio Files
+# Local config, logs and audio
 config.json
 checkmark.svg
+flowvoice.log
 *.wav
 *.mp3
 *.tmp
 website/FlowVoiceSetup.exe
-flowvoice.log
 .claude

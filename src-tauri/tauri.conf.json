@@ -1,0 +1,89 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FlowVoice",
+  "version": "2.0.0",
+  "identifier": "br.com.caliberda.flowvoice",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "FlowVoice",
+        "url": "index.html",
+        "width": 980,
+        "height": 660,
+        "minWidth": 820,
+        "minHeight": 560,
+        "center": true,
+        "decorations": false,
+        "transparent": false,
+        "visible": false,
+        "resizable": true
+      },
+      {
+        "label": "overlay",
+        "title": "FlowVoice Overlay",
+        "url": "overlay.html",
+        "width": 560,
+        "height": 300,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "focus": false,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset:; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "deb"],
+    "createUpdaterArtifacts": true,
+    "publisher": "Júlio Caliberda",
+    "homepage": "https://github.com/cesarkali/Flow-Voice",
+    "copyright": "© 2026 Júlio Caliberda (cesarkali)",
+    "category": "Productivity",
+    "shortDescription": "Ditado por voz com IA em qualquer app",
+    "longDescription": "FlowVoice transcreve sua voz, limpa vícios de linguagem e cola o texto onde está o cursor. Funciona com chaves gratuitas (Groq, Gemini, GitHub Models) ou 100% offline.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["PortugueseBR", "English", "Spanish"],
+        "displayLanguageSelector": false
+      },
+      "webviewInstallMode": { "type": "downloadBootstrapper" }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libasound2t64 | libasound2", "xdotool"]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/cesarkali/Flow-Voice/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZEQjQ1RkYxNjQ1MkNFNTMKUldSVHpsSms4ViswYlc4S0pCVWRTTGl1R282em9aSzBzSW5OVVVjQkEvSVV5eEhYZm5TdmVrOGMK",
+      "windows": { "installMode": "passive" }
+    }
+  }
+}
