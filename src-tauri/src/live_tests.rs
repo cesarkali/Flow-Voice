@@ -138,3 +138,13 @@ async fn live_strength() {
     }
     println!("\n== original: {} chars", said.chars().count());
 }
+
+/// How many keys per provider are stored in the OS vault (no key material printed).
+#[test]
+#[ignore]
+fn live_key_counts() {
+    let store = crate::keys::KeyStore::new(std::env::temp_dir().join("fv-keycount"));
+    for (p, st) in store.status() {
+        println!("{p}: {}", st.count);
+    }
+}

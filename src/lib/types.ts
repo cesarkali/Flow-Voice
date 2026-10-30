@@ -184,6 +184,8 @@ export type SettingsPage = "home" | "styles" | "providers" | "speech" | "shortcu
 export const EVENTS = {
   overlayState: "overlay-state", // OverlayEvent
   overlayLevel: "overlay-level", // number 0..1 (~30/s while listening)
+  overlayPointer: "overlay-pointer", // { inside: boolean } cursor over the overlay hitbox (use instead of DOM hover)
+  overlayMove: "overlay-move", // { phase: "out" | "in" } changing monitors
   overlayPartial: "overlay-partial", // { text: string; stable: number } live transcript (stable = confirmed chars)
   modelProgress: "model-progress", // ModelProgress
   updateProgress: "update-progress", // { downloaded: number; total: number | null }

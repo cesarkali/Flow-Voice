@@ -226,6 +226,19 @@ pub fn rms(samples: &[f32]) -> f32 {
     (samples.iter().map(|x| x * x).sum::<f32>() / samples.len() as f32).sqrt()
 }
 
+/// Brings quiet microphones to a consistent level before transcription (speech recognizers do
+/// noticeably worse on very quiet audio). Peak-based with a ceiling so noise isn't blown up.
+pub fn normalize(samples: &[f32]) -> Vec<f32> {
+    if samples.is_empty() {
+        return vec![];
+    }
+    let mut mags: Vec<f32> = samples.iter().step_by(4).map(|x| x.abs()).collect();
+    mags.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let p = mags[((mags.len() as f32) * 0.995) as usize % mags.len()].max(1e-4);
+    let gain = (0.6 / p).clamp(1.0, 12.0);
+    samples.iter().map(|x| (x * gain).clamp(-0.98, 0.98)).collect()
+}
+
 /// Trims leading/trailing near-silence (keeps 200 ms of padding). The threshold adapts to the
 /// mic's noise floor so quiet microphones aren't mistaken for silence.
 pub fn trim_silence(samples: &[f32]) -> &[f32] {

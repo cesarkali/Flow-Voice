@@ -272,8 +272,22 @@ pub fn overlay_hold(state: State<AppState>, hold: bool) {
 }
 
 #[tauri::command]
-pub fn overlay_resize(app: AppHandle, width: f64, height: f64) {
-    windows::resize_overlay(&app, width, height);
+pub fn overlay_resize(width: f64, height: f64) {
+    // The overlay window has a fixed size now (see windows::OVERLAY_W); kept for older UIs.
+    let _ = (width, height);
+}
+
+#[derive(serde::Deserialize)]
+pub struct HitRect {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
+#[tauri::command]
+pub fn overlay_hitbox(rect: Option<HitRect>) {
+    windows::set_overlay_hitbox(rect.map(|r| (r.x, r.y, r.width, r.height)));
 }
 
 #[tauri::command]

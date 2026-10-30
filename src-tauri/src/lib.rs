@@ -101,6 +101,7 @@ pub fn run() {
             let handle = app.handle().clone();
             windows::setup_overlay(&handle);
             windows::start_follow_watcher(&handle);
+            windows::start_pointer_watcher(&handle);
             tray::setup(&handle)?;
             let failed = hotkeys::register_all(&handle);
             if !failed.is_empty() {
@@ -166,6 +167,7 @@ pub fn run() {
             commands::copy_text,
             commands::overlay_hold,
             commands::overlay_resize,
+            commands::overlay_hitbox,
             commands::dismiss_overlay,
             commands::get_history,
             commands::delete_history_item,

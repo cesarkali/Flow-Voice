@@ -66,8 +66,15 @@ export const api = {
   copyText: (text: string) => call<void>("copy_text", { text }),
   /** Keep the overlay open while the pointer is over it. */
   overlayHold: (hold: boolean) => call<void>("overlay_hold", { hold }),
-  /** Tell Rust how big the overlay content is so the native window can fit it. */
+  /** @deprecated The overlay window has a fixed size now; use overlayHitbox. Kept as a no-op. */
   overlayResize: (width: number, height: number) => call<void>("overlay_resize", { width, height }),
+  /**
+   * The overlay window is fixed-size and transparent; only this rectangle (CSS px, relative to the
+   * window) catches the mouse — everywhere else clicks go through to the apps below.
+   * Send null when nothing is visible. Rust emits `overlay-pointer` { inside } as the cursor enters/leaves it.
+   */
+  overlayHitbox: (rect: { x: number; y: number; width: number; height: number } | null) =>
+    call<void>("overlay_hitbox", { rect }),
   dismissOverlay: () => call<void>("dismiss_overlay"),
 
   // history

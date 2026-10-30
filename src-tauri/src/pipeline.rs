@@ -99,8 +99,7 @@ pub fn ensure_preview_model(app: &AppHandle) {
     let st = state(app);
     let s = st.settings();
     let id = s.stt.preview_model.clone();
-    let cloud_ready = cloud_stt_keys(app, &s).is_some();
-    if !s.stt.live_preview || cloud_ready || !crate::local_stt::cpu_supported() || st.local.installed(&id) || st.local.any_installed().is_some() {
+    if !s.stt.live_preview || !crate::local_stt::cpu_supported() || st.local.installed(&id) || st.local.any_installed().is_some() {
         return;
     }
     let local = st.local.clone();
@@ -150,107 +149,196 @@ fn live_preview(app: AppHandle, samples: Arc<parking_lot::Mutex<Vec<f32>>>, stop
     }
 }
 
-/// Cloud-driven live preview: the phrase being spoken is re-transcribed every ~1.5-3 s with a
-/// fast cloud model (keys rotated to stay inside free rate limits) and finalized at each pause,
-/// so the live text is practically the final transcript.
+/// Cloud-driven live preview. Every tick re-transcribes the WHOLE phrase since the last commit
+/// (Whisper needs context; 1-3 s slices are inaccurate) with the same model as the final pass,
+/// loudness-normalized, with the previous text as context. Requests are pipelined (up to 3 in
+/// flight, keys rotated) so the text refreshes about every second; the newest window wins.
+/// Phrases are committed only at a real pause after >= 12 s (or forced at 28 s).
 fn cloud_preview(
     app: AppHandle,
     samples: Arc<parking_lot::Mutex<Vec<f32>>>,
     stop: Arc<std::sync::atomic::AtomicBool>,
     (provider, cfg, keys): (String, crate::settings::ProviderSettings, Vec<String>),
 ) {
+    struct Shared {
+        committed_at: usize,
+        segments: Vec<String>,
+        tail: String,
+        /// Instant local guess for the audio after the last cloud window (shown dimmed).
+        local_tail: String,
+        applied_end: usize,
+        in_flight: usize,
+        next_key: usize,
+        cooldown: Vec<Option<Instant>>,
+    }
+    const SR: usize = audio::SAMPLE_RATE as usize;
     let st = state(&app);
     let s = st.settings();
     let base_prompt = stt_prompt(&s);
-    let mut fast = cfg.clone();
-    if provider == "groq" {
-        fast.stt_model = "whisper-large-v3-turbo".into();
+    let debug_text = std::env::var_os("FLOWVOICE_LOG_PREVIEW").is_some();
+    // ~20 requests/min per key on free tiers: spread ticks across the available keys.
+    let interval = Duration::from_millis((3000 / keys.len().max(1) as u64).clamp(900, 3000));
+    let max_in_flight = keys.len().clamp(1, 3);
+    if debug_text {
+        log::info!("cloud preview: {provider}, {} key(s), every {} ms", keys.len(), interval.as_millis());
     }
-    // About 20 requests/min per key on free tiers: spread ticks across the available keys.
-    let interval = Duration::from_millis((3200 / keys.len().max(1) as u64).clamp(1200, 3200));
-    let cooldown: Vec<parking_lot::Mutex<Option<Instant>>> = keys.iter().map(|_| parking_lot::Mutex::new(None)).collect();
-    let mut next_key = 0usize;
-    let segments: Arc<parking_lot::Mutex<Vec<(String, bool)>>> = Arc::new(parking_lot::Mutex::new(vec![]));
-    let tail_text: Arc<parking_lot::Mutex<String>> = Arc::new(parking_lot::Mutex::new(String::new()));
-    let mut committed_at = 0usize;
-    const SR: usize = audio::SAMPLE_RATE as usize;
+    let shared = Arc::new(parking_lot::Mutex::new(Shared {
+        committed_at: 0,
+        segments: vec![],
+        tail: String::new(),
+        local_tail: String::new(),
+        applied_end: 0,
+        in_flight: 0,
+        next_key: 0,
+        cooldown: vec![None; keys.len()],
+    }));
+    let keys = Arc::new(keys);
 
-    let mut request = |window: &[f32], cfg: &crate::settings::ProviderSettings, prompt: &str| -> Option<String> {
-        for _ in 0..keys.len() {
-            let i = next_key % keys.len();
-            next_key += 1;
-            if cooldown[i].lock().is_some_and(|t| t > Instant::now()) {
+    let publish = |app: &AppHandle, sh: &Shared| {
+        let mut full = sh.segments.iter().filter(|t| !t.is_empty()).cloned().collect::<Vec<_>>().join(" ");
+        for part in [&sh.tail, &sh.local_tail] {
+            if part.is_empty() {
                 continue;
             }
-            let wav = audio::to_wav(window);
-            let res = tauri::async_runtime::block_on(cloud::transcribe(
-                &st.http,
-                &provider,
-                cfg,
-                &keys[i],
-                &wav,
-                &s.speech_language,
-                prompt,
-            ));
-            match res {
-                Ok(t) => return Some(tidy_preview(&text::strip_annotations(&t))),
-                Err(e) if e.key_problem => {
-                    *cooldown[i].lock() = Some(Instant::now() + Duration::from_secs(20));
-                }
-                Err(e) => {
-                    log::warn!("cloud preview: {}", e);
-                    return None;
-                }
+            if !full.is_empty() {
+                full.push(' ');
             }
+            full.push_str(part);
         }
-        None
+        let n = full.chars().count();
+        let stable = n - sh.local_tail.chars().count().min(n);
+        log::info!("live preview: {n} chars ({stable} stable)");
+        let _ = app.emit_to("overlay", "overlay-partial", json!({ "text": full, "stable": stable }));
     };
+    // Local model for the instant tail (optional: only if it's on disk and the CPU supports it).
+    // Instant local tail is disabled: tested on quiet slang audio it produced wrong words and its
+    // CPU use starved the cloud ticks. Kept for a future, cheaper local model.
+    let local_model: Option<String> = None;
+    let mut last_local = Instant::now();
 
     let mut last_tick = Instant::now() - interval;
     while !stop.load(Ordering::Relaxed) {
-        std::thread::sleep(Duration::from_millis(120));
-        let window: Vec<f32> = {
+        std::thread::sleep(Duration::from_millis(80));
+        if let Some(model) = &local_model {
+            if last_local.elapsed() > Duration::from_millis(450) {
+                last_local = Instant::now();
+                let from = {
+                    let sh = shared.lock();
+                    sh.applied_end.max(sh.committed_at)
+                };
+                let fresh: Vec<f32> = {
+                    let all = samples.lock();
+                    if all.len() > from { all[from..].to_vec() } else { vec![] }
+                };
+                // Only short uncovered tails (the cloud catches up within ~3 s).
+                if fresh.len() > SR * 7 / 10 && fresh.len() < SR * 6 && audio::rms(&fresh) > 0.002 {
+                    if let Ok(t) = st.local.transcribe(model, &audio::normalize(&fresh), &s.speech_language, "", true) {
+                        let t = tidy_preview(&text::strip_annotations(&t));
+                        let mut sh = shared.lock();
+                        let still_fresh = sh.applied_end.max(sh.committed_at) == from;
+                        if still_fresh && !text::is_hallucination(&t) && t.chars().count() < 120 {
+                            // Lowercase start: it continues the sentence the cloud already wrote.
+                            let mut c = t.chars();
+                            sh.local_tail = match c.next() {
+                                Some(f) if !sh.tail.is_empty() || !sh.segments.is_empty() => f.to_lowercase().collect::<String>() + c.as_str(),
+                                Some(f) => f.to_string() + c.as_str(),
+                                None => String::new(),
+                            };
+                            if debug_text {
+                                log::info!("preview local tail: {}", sh.local_tail);
+                            }
+                            publish(&app, &sh);
+                        }
+                    }
+                }
+            }
+        }
+        if last_tick.elapsed() < interval || shared.lock().in_flight >= max_in_flight {
+            continue;
+        }
+        let (start, window) = {
+            let committed_at = shared.lock().committed_at;
             let all = samples.lock();
             if all.len() <= committed_at {
                 continue;
             }
-            all[committed_at..].to_vec()
+            (committed_at, all[committed_at..].to_vec())
         };
-        let level = audio::rms(&window);
-        if window.len() < SR * 8 / 10 || level < 0.0015 {
-            continue;
-        }
-        let tail = &window[window.len().saturating_sub(SR * 6 / 10)..];
-        let pause = window.len() > SR * 2 && audio::rms(tail) < level * 0.25;
-        let long = window.len() > SR * 25;
-        if !(pause || long) && last_tick.elapsed() < interval {
+        // Start only with real speech in the window (avoids "Boa noite." style hallucinations).
+        if audio::trim_silence(&window).len() < SR * 12 / 10 {
             continue;
         }
         last_tick = Instant::now();
-        // Previous words help the model keep names and context consistent across segments.
+        let end = start + window.len();
+        let key_idx = {
+            let mut sh = shared.lock();
+            let now = Instant::now();
+            let n = keys.len();
+            let pick = (0..n).map(|k| (sh.next_key + k) % n).find(|&i| sh.cooldown[i].map_or(true, |t| t <= now));
+            let Some(i) = pick else { continue };
+            sh.next_key = i + 1;
+            sh.in_flight += 1;
+            i
+        };
         let context: String = {
-            let segs = segments.lock();
-            let joined = segs.iter().map(|(t, _)| t.as_str()).collect::<Vec<_>>().join(" ");
+            let sh = shared.lock();
+            let joined = sh.segments.join(" ");
             joined.chars().rev().take(240).collect::<Vec<_>>().into_iter().rev().collect()
         };
         let prompt = if context.is_empty() { base_prompt.clone() } else { format!("{base_prompt} {context}") };
-        // Finalize at pauses with the accurate model, otherwise use the fast one.
-        let finalize = pause || long;
-        let Some(text) = request(&window, if finalize { &cfg } else { &fast }, &prompt) else { continue };
-        if stop.load(Ordering::Relaxed) {
-            break;
-        }
+        // Commit decision is taken from the audio itself (real pause at the end of a long phrase).
+        let level = audio::rms(&window).max(1e-4);
+        let tail = &window[window.len().saturating_sub(SR * 7 / 10)..];
+        let commit = (window.len() > SR * 12 && audio::rms(tail) < level * 0.2) || window.len() > SR * 20;
+
+        let (app2, shared2, keys2, stop2) = (app.clone(), shared.clone(), keys.clone(), stop.clone());
+        let (provider2, cfg2, lang) = (provider.clone(), cfg.clone(), s.speech_language.clone());
         let secs = window.len() as f32 / SR as f32;
-        let bad = text::is_hallucination(&text) || text.chars().count() as f32 > secs * 30.0 + 40.0;
-        let text = if bad { String::new() } else { text };
-        if finalize {
-            segments.lock().push((text, true));
-            tail_text.lock().clear();
-            committed_at += window.len();
-        } else {
-            *tail_text.lock() = text;
-        }
-        emit_preview(&app, &segments, &tail_text, true);
+        tauri::async_runtime::spawn(async move {
+            let wav = audio::to_wav(&audio::normalize(&window));
+            let t0 = Instant::now();
+            let http = state(&app2).http.clone();
+            let res = cloud::transcribe(&http, &provider2, &cfg2, &keys2[key_idx], &wav, &lang, &prompt).await;
+            let ms = t0.elapsed().as_millis();
+            let mut sh = shared2.lock();
+            sh.in_flight -= 1;
+            let text = match res {
+                Ok(t) => tidy_preview(&text::strip_annotations(&t)),
+                Err(e) => {
+                    if e.key_problem {
+                        // Invalid/revoked keys sit out the whole session; rate limits only briefly.
+                        let dead = e.detail.starts_with("HTTP 401") || e.detail.starts_with("HTTP 403");
+                        let wait = if dead { 3600 } else { 20 };
+                        sh.cooldown[key_idx] = Some(Instant::now() + Duration::from_secs(wait));
+                        if debug_text {
+                            log::info!("preview key #{key_idx} cooldown {wait}s: {}", e.detail);
+                        }
+                    } else {
+                        log::warn!("cloud preview: {e}");
+                    }
+                    return;
+                }
+            };
+            // Stale: an older window finishing after a newer one, or a window from before a commit.
+            if stop2.load(Ordering::Relaxed) || start != sh.committed_at || end <= sh.applied_end {
+                return;
+            }
+            sh.applied_end = end;
+            let bad = text::is_hallucination(&text) || text.chars().count() as f32 > secs * 30.0 + 40.0;
+            let text = if bad { String::new() } else { text };
+            if debug_text {
+                log::info!("preview text ({ms} ms, {secs:.1}s audio): {} | {}", sh.segments.join(" "), text);
+            }
+            if commit {
+                sh.segments.push(text);
+                sh.tail.clear();
+                sh.committed_at = end;
+            } else {
+                sh.tail = text;
+            }
+            sh.local_tail.clear();
+            publish(&app2, &sh);
+        });
     }
 }
 
@@ -637,7 +725,8 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
         return Ok((text, "local".into()));
     }
 
-    let wav = audio::to_wav(samples);
+    let normalized = audio::normalize(samples);
+    let wav = audio::to_wav(&normalized);
     let mut errors: Vec<ProviderError> = vec![];
     for provider in &s.stt.cloud_order {
         let keys = st.keys.get(provider);
