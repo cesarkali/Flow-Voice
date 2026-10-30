@@ -162,7 +162,7 @@
           <div class="result" class:ok={r.ok} role="status">
             {#key r}<ProvMark ok={r.ok} size={16} />{/key}
             <div>
-              <span class="what">{testLabel(k)}</span>
+              <span class="what">{t(r.ok ? "sh.res_ok" : "sh.res_fail", { what: t(`sh.res_${k}`) })}</span>
               {#if r.ok}
                 <span class="mono">{r.latency_ms} ms · {r.model}</span>
               {:else}
@@ -180,7 +180,7 @@
       <div class="howto" class:show={howto}>
         <button type="button" class="howbtn" aria-expanded={howto} onclick={() => (howto = !howto)}>
           <span class="hchev" class:on={howto}><Icon name="chevronRight" size={15} /></span>
-          {id === "ollama" ? t("prov.how_to_install") : id === "custom" ? t("prov.custom.name") : t("prov.how_to")}
+          {id === "ollama" ? t("prov.how_to_install") : id === "custom" ? t("sh.how_to_setup") : t("prov.how_to")}
         </button>
         {#if howto}
           <div transition:slide={{ duration: dur(220), easing: easeOut }}>
@@ -278,7 +278,7 @@
       transform var(--t-slow) var(--spring);
   }
   .led.on {
-    background: var(--accent-fg);
+    background: var(--ok);
     transform: scale(1);
   }
   .title {
@@ -311,9 +311,9 @@
       background-color var(--t-slow) var(--ease);
   }
   .st.ok {
-    color: var(--accent-fg);
-    border-color: var(--accent-line);
-    background: var(--accent-soft);
+    color: var(--ok);
+    border-color: var(--ok-line);
+    background: var(--ok-soft);
   }
   .stx {
     grid-area: 1 / 1;
@@ -390,9 +390,9 @@
     margin-top: 1px;
   }
   .result.ok {
-    border-color: var(--accent-line);
-    background: var(--accent-soft);
-    color: var(--accent-fg);
+    border-color: var(--ok-line);
+    background: var(--ok-soft);
+    color: var(--ok);
   }
   .result > div {
     display: flex;

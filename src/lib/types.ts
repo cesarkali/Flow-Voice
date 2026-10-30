@@ -35,6 +35,16 @@ export interface Hotkeys {
   dictate: string;
   translate: string;
   ask: string;
+  /** Edit the selected text by voice ("Comando"). */
+  command: string;
+  /** Paste the last dictation again into the focused app ("" = off). */
+  paste_last: string;
+}
+
+/** "Estilos por aplicativo": dictations into `app` (normalized id, see lib/apps.ts) use `style_id`. */
+export interface AppStyle {
+  app: string;
+  style_id: string;
 }
 
 export interface Settings {
@@ -65,6 +75,9 @@ export interface Settings {
   /** Intensity of the built-in "prompt" style. */
   prompt_strength: "light" | "medium" | "strong";
   styles: Style[];
+  /** Per-app rules: a match overrides active_style for that dictation only. */
+  app_styles: AppStyle[];
+  app_styles_enabled: boolean;
   /** ISO-639-1 target for translation, e.g. "en". */
   translation_target: string;
   hotkeys: Hotkeys;
@@ -98,6 +111,16 @@ export interface KeyStatus {
 
 export type KeyStatusMap = Record<KeyProviderId, KeyStatus>;
 
+/** A retired provider model that FlowVoice replaced by itself (heal.rs). */
+export interface ModelNotice {
+  provider: string;
+  kind: "stt" | "chat";
+  old: string;
+  new: string;
+  message: string;
+  ts: string;
+}
+
 export interface TestResult {
   ok: boolean;
   latency_ms: number;
@@ -113,7 +136,20 @@ export interface LocalModel {
   installed: boolean;
   /** Short hint like "Prévia ao vivo" / "Equilíbrio" / "Máxima precisão". */
   note: string;
+  /** General default (onboarding). */
   recommended: boolean;
+  /** Approximate peak RAM while transcribing. */
+  ram_mb: number;
+  /** Languages it can transcribe; "*" = every Whisper language. */
+  langs: string[];
+  /** Languages it is the best pick for; "*" = every language it supports. */
+  recommended_for: string[];
+  /** 1 (slowest) … 5 (fastest). */
+  speed: number;
+  /** 1 (most mistakes) … 5 (most accurate). */
+  quality: number;
+  /** "whisper small · q5_1" */
+  tech: string;
 }
 
 export interface ModelProgress {
@@ -124,7 +160,8 @@ export interface ModelProgress {
   error: string | null;
 }
 
-export type RecordMode = "dictate" | "translate" | "ask";
+/** command = apply a spoken instruction to the text selected in the target app. */
+export type RecordMode = "dictate" | "translate" | "ask" | "command";
 
 export interface DictationResult {
   id: string;
@@ -140,15 +177,32 @@ export interface DictationResult {
   pasted: boolean;
   duration_ms: number;
   warnings: string[];
+  /** Normalized id of the app the text went to ("outlook"); absent in older history. */
+  app?: string | null;
+  /** Friendly name of that app ("Outlook"). */
+  app_name?: string | null;
+  /** Command mode: the selected text the instruction (`raw`) was applied to. */
+  source?: string | null;
 }
 
 export type OverlayEvent =
-  | { phase: "listening"; mode: RecordMode; style_id: string; target: string | null; live: boolean }
+  | {
+      phase: "listening";
+      mode: RecordMode;
+      style_id: string;
+      target: string | null;
+      live: boolean;
+      /** Friendly name of the focused app, when known. */
+      app?: string | null;
+      /** Command mode: "pending" = being copied (then `overlay-selection`), "at_stop" = copied on release. */
+      selection?: "pending" | "at_stop" | null;
+    }
   | { phase: "transcribing" }
-  | { phase: "refining"; provider: string }
+  | { phase: "refining"; provider: string; mode?: RecordMode }
   | { phase: "done"; result: DictationResult }
   | { phase: "answer"; query: string } // ask mode finished, chat window opened
-  | { phase: "error"; message: string; detail: string | null; raw: string | null }
+  /** hint = the user can fix it (nothing selected…): no "open settings" action. */
+  | { phase: "error"; message: string; detail: string | null; raw: string | null; hint?: boolean }
   | { phase: "hidden" };
 
 export interface ChatSource {
@@ -187,6 +241,7 @@ export const EVENTS = {
   overlayPointer: "overlay-pointer", // { inside: boolean } cursor over the overlay hitbox (use instead of DOM hover)
   overlayMove: "overlay-move", // { phase: "out" | "in" } changing monitors
   overlayPartial: "overlay-partial", // { text: string; stable: number } live transcript (stable = confirmed chars)
+  overlaySelection: "overlay-selection", // { text: string } Command mode: preview of the copied selection
   modelProgress: "model-progress", // ModelProgress
   updateProgress: "update-progress", // { downloaded: number; total: number | null }
   navigate: "navigate", // { page: SettingsPage }
@@ -195,4 +250,5 @@ export const EVENTS = {
   chatUpdated: "chat-updated", // ChatMessage[]
   chatTranscript: "chat-transcript", // { text: string }
   chatRecording: "chat-recording", // { recording: boolean }
+  modelHealed: "model-healed", // ModelNotice: a retired provider model was replaced automatically
 } as const;

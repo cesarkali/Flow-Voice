@@ -40,7 +40,7 @@ pub fn start_follow_watcher(app: &AppHandle) {
         std::thread::sleep(std::time::Duration::from_millis(250));
         let follow = app.state::<AppState>().settings.read().overlay_follow_mouse;
         let Some(w) = app.get_webview_window("overlay") else { continue };
-        if !follow || !w.is_visible().unwrap_or(false) {
+        if !follow || !WANTED.load(Ordering::SeqCst) || !w.is_visible().unwrap_or(false) {
             continue;
         }
         let target = target_monitor(&app, &w).map(|m| monitor_key(&m));
@@ -74,6 +74,9 @@ static HITBOX: once_cell::sync::Lazy<parking_lot::Mutex<Option<(f64, f64, f64, f
     once_cell::sync::Lazy::new(|| parking_lot::Mutex::new(None));
 /// Bumped by every show; a pending delayed hide only runs if no show happened meanwhile.
 static SHOW_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// The overlay is meant to be up (the native window lingers ~240 ms after a hide for the exit
+/// animation; the follow watcher must not "re-show" it during that time).
+static WANTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Places the fixed-size overlay bottom/top-center on its pinned monitor.
 fn place_overlay(app: &AppHandle) {
@@ -98,6 +101,7 @@ pub fn show_overlay(app: &AppHandle) {
     let Some(w) = app.get_webview_window("overlay") else { return };
     let Some(target) = target_monitor(app, &w) else { return };
     SHOW_GEN.fetch_add(1, Ordering::SeqCst);
+    WANTED.store(true, Ordering::SeqCst);
     let key = monitor_key(&target);
     let visible = w.is_visible().unwrap_or(false);
     let previous = app.state::<AppState>().overlay_monitor.lock().replace(key);
@@ -125,6 +129,7 @@ pub fn hide_overlay(app: &AppHandle) {
     let st = app.state::<AppState>();
     st.overlay_hold.store(false, Ordering::SeqCst);
     st.overlay_gen.fetch_add(1, Ordering::SeqCst);
+    WANTED.store(false, Ordering::SeqCst);
     *HITBOX.lock() = None;
     let _ = app.emit_to("overlay", "overlay-state", serde_json::json!({ "phase": "hidden" }));
     // Let the UI play its exit animation before the native window disappears.
@@ -153,9 +158,14 @@ pub fn start_pointer_watcher(app: &AppHandle) {
     std::thread::spawn(move || {
         let mut inside_prev: Option<bool> = None;
         loop {
-            std::thread::sleep(std::time::Duration::from_millis(30));
+            // ~60 Hz while the overlay is up (hover follows the card's morph), almost idle otherwise.
+            let up = WANTED.load(Ordering::SeqCst);
+            std::thread::sleep(std::time::Duration::from_millis(if up { 16 } else { 250 }));
             let Some(w) = app.get_webview_window("overlay") else { continue };
-            if !w.is_visible().unwrap_or(false) {
+            if !up || !w.is_visible().unwrap_or(false) {
+                if inside_prev == Some(true) {
+                    let _ = w.set_ignore_cursor_events(true);
+                }
                 inside_prev = None;
                 continue;
             }

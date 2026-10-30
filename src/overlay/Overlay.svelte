@@ -1,21 +1,24 @@
 <script lang="ts">
-  // The floating dictation overlay. ONE element (.shell) morphs between phases: its size and
-  // radius are animated imperatively (Web Animations, FLIP from the current rendered size) while
-  // the content layers cross-fade on top of it, absolutely positioned so nothing reflows.
-  // The waveform lives outside the layers so the same bars carry over from "listening" into
-  // the processing wave.
+  // The floating dictation overlay. The native window is a FIXED 760×560 transparent canvas
+  // (resizing a transparent WebView2 window is what flickered) that is click-through except over
+  // the card's hitbox. Inside it, ONE element (.shell) is the card: it is anchored bottom- or
+  // top-center and morphs between phases — its size and radius animate imperatively (Web
+  // Animations, FLIP from the current rendered size) while the content layers cross-fade on top
+  // of it, absolutely positioned so nothing reflows. The waveform lives outside the layers so the
+  // same bars carry over from "listening" into the processing wave.
   import { onMount, tick, untrack } from "svelte";
   import { api, on } from "../lib/api";
   import { langName, setLanguage, t, TARGET_LANGS } from "../lib/i18n.svelte";
   import Icon from "../lib/icons/Icon.svelte";
   import Flag from "../lib/ui/Flag.svelte";
+  import { markWarmAccent } from "../lib/ui/appearance-cache";
   import { applyAccent, applyTheme } from "../lib/theme";
   import { EVENTS, type DictationResult, type OverlayEvent, type Settings } from "../lib/types";
   import { pname } from "../settings/providers";
 
   /** Margin between the card and the native window edge (room for the shadow). */
   const M = 22;
-  /** Native window limits enforced by Rust (overlay_resize clamps to these). */
+  /** The native overlay window: FIXED size (Rust windows::OVERLAY_W/H), never resized. */
   const MAX_W = 760;
   const MAX_H = 560;
   const ROW_H = 54;
@@ -25,9 +28,12 @@
   const WAVE_W = BARS * BAR_W + (BARS - 1) * BAR_GAP;
   const PAD_L = 20;
   const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
-  /** Rust: { phase: "out" | "in" } around a follow-mouse monitor switch (not in EVENTS yet). */
-  const OVERLAY_MOVE = "overlay-move";
+  /** Card size morph: gentle start (no first-frame leap), long soft landing. */
+  const MORPH_EASE = "cubic-bezier(0.3, 0.2, 0.15, 1)";
   const MORPH_MS = 460;
+  /** Live transcript: line height and the most lines shown (older lines scroll away under a fade). */
+  const LIVE_LH = 22;
+  const LIVE_LINES = 3;
   /** Bar envelope (center taller) — edges still move so the whole wave feels alive. */
   const ENV = Array.from({ length: BARS }, (_, i) => 0.42 + 0.58 * Math.pow(Math.sin((Math.PI * (i + 0.5)) / BARS), 1.3));
   /** History delay (frames) per bar: speech ripples outward from the center. */
@@ -42,8 +48,8 @@
 
   let ev = $state<OverlayEvent>({ phase: "hidden" });
   let settings = $state<Settings | null>(null);
-  /** Live transcript as keyed chunks (stable prefix + newer pieces), see setLive(). */
-  /** st = confirmed by the cloud transcript; unconfirmed (local guess) text renders dimmed. */
+  /** Live transcript as keyed chunks (stable prefix + newer pieces), see setLive().
+   *  st = confirmed by the cloud transcript; unconfirmed (local guess) text renders dimmed. */
   type Chunk = { id: number; text: string; kind: "add" | "fix" | "keep"; st: boolean };
   let chunks = $state<Chunk[]>([]);
   let liveFull = "";
@@ -59,7 +65,6 @@
   let pending = $state<{ key: string; id: string; seq: number } | null>(null);
   let pseq = 0;
   let picker = $state(false);
-  let hovered = $state(false);
   let cycle = $state(0);
   let copied = $state(false);
   let detailOpen = $state(false);
@@ -71,7 +76,8 @@
   const visible = $derived(ev.phase !== "hidden" && !!settings);
   let view = $state<View>("listening");
   let lastError = $state<Extract<OverlayEvent, { phase: "error" }> | null>(null);
-  let listenInfo = $state({ mode: "", style: "", target: "" });
+  /** quote = the style line shows the Command's selection preview. */
+  let listenInfo = $state({ mode: "", style: "", target: "", app: "", quote: false });
   let procLabel = $state("");
 
   const live = $derived(ev.phase === "listening" && ev.live);
@@ -141,12 +147,7 @@
     if (e.phase === "hidden") {
       snapNext = true;
     } else {
-      if (ev.phase === "hidden") {
-        snapNext = true;
-        // The native window may have been resized/moved while hidden: re-send the size.
-        cur = { w: 0, h: 0, r: 0 };
-        sent = { w: 0, h: 0 };
-      }
+      if (ev.phase === "hidden") snapNext = true;
       view = e.phase === "transcribing" || e.phase === "refining" ? "processing" : e.phase;
     }
     if (e.phase === "listening") {
@@ -164,15 +165,28 @@
           ? t("ov.translate_to", { lang: (e.target ?? settings?.translation_target ?? "en").toUpperCase() })
           : e.mode === "ask"
             ? t("mode.ask")
-            : t("mode.dictate");
+            : e.mode === "command"
+              ? t("mode.command")
+              : t("mode.dictate");
       listenInfo = {
         mode,
-        style: e.mode === "ask" ? "" : styleName(e.style_id),
+        style:
+          e.mode === "ask"
+            ? ""
+            : e.mode === "command"
+              ? e.selection === "at_stop"
+                ? t("ovx.cmd_at_stop")
+                : t("ovx.cmd_reading")
+              : styleName(e.style_id),
         target: e.mode === "translate" ? (e.target ?? settings?.translation_target ?? "en") : "",
+        // the app whose per-app style is in use (a Command shows its selection instead)
+        app: e.mode === "ask" || e.mode === "command" ? "" : (e.app ?? ""),
+        quote: false,
       };
     }
     if (e.phase === "transcribing") procLabel = t("ov.transcribing");
-    if (e.phase === "refining") procLabel = t("ov.refining", { provider: pname(e.provider) });
+    if (e.phase === "refining")
+      procLabel = t(e.mode === "command" ? "ovx.cmd_applying" : "ov.refining", { provider: pname(e.provider) });
     if (e.phase === "answer") procLabel = t("ov.answer");
     if (e.phase === "done") {
       result = e.result;
@@ -198,10 +212,6 @@
         if (ev.phase === "answer") ev = { phase: "hidden" };
       }, 1400);
     }
-    if (e.phase !== "done" && e.phase !== "error" && hovered) {
-      hovered = false;
-      api.overlayHold(false);
-    }
     ev = e;
   }
 
@@ -217,11 +227,18 @@
       on<{ text: string; stable?: number }>(EVENTS.overlayPartial, (p) => {
         if (ev.phase === "listening") setLive(p?.text ?? "", p?.stable);
       }),
+      // Command: preview of the text that was selected in the target app.
+      on<{ text: string }>(EVENTS.overlaySelection, (p) => {
+        if (ev.phase === "listening" && ev.mode === "command" && p?.text) listenInfo = { ...listenInfo, style: `“${p.text}”`, quote: true };
+      }),
       // Follow-mouse monitor switch: Rust emits "out", moves the window ~140ms later, then "in".
-      on<{ phase: "out" | "in" }>(OVERLAY_MOVE, (p) => moveCard(p?.phase)),
+      on<{ phase: "out" | "in" }>(EVENTS.overlayMove, (p) => moveCard(p?.phase)),
+      // Cursor entered/left the hitbox (polled by Rust; DOM hover misses it on a click-through window).
+      on<{ inside: boolean }>(EVENTS.overlayPointer, (p) => (pointerIn = !!p?.inside)),
       on<Settings>(EVENTS.settingsChanged, applySettings),
     ];
-    const ro = new ResizeObserver(onStageResize);
+    // The window never resizes in Rust; this only re-anchors the hitbox if it ever does.
+    const ro = new ResizeObserver(() => visible && hbUpdate());
     if (stageEl) ro.observe(stageEl);
     return () => {
       ro.disconnect();
@@ -237,208 +254,181 @@
     root.classList.add("ov-notrans");
     applyTheme(s.theme);
     applyAccent(s.accent_color);
+    // Red/coral accents: success marks switch to green so they never read as errors.
+    markWarmAccent(s.accent_color);
     setLanguage(s.ui_language);
     settings = s;
     cancelAnimationFrame(themeRaf);
     themeRaf = requestAnimationFrame(() => (themeRaf = requestAnimationFrame(() => root.classList.remove("ov-notrans"))));
   }
 
-  // ------------------------------------------------------------ shell morph + native window size
+  // ------------------------------------------------------------ shell morph
   let shellEl = $state<HTMLDivElement>();
   /** Fills the native window (fixed, inset 0): its size is the real window size, also in the preview. */
   let stageEl = $state<HTMLDivElement>();
   let morphAnim: Animation | null = null;
+  /** The current (incoming) content layer. */
+  let curLayer: HTMLElement | null = null;
+  let curLayerBorn = 0;
   let cur = { w: 0, h: 0, r: 0 };
-  let sent = { w: 0, h: 0 };
   let snapNext = $state(true);
-  let settleTimer = 0;
-  let healCount = 0;
+  /** Duration of the appear transition (.shell.hidden → shown, see CSS). */
+  const APPEAR_MS = 440;
 
-  /** Native size for a card size: integers, even width (Rust centers it → no half-pixel shift). */
-  const winSize = (w: number, h: number) => {
-    let nw = Math.min(MAX_W, Math.ceil(w + M * 2));
-    if (nw % 2) nw = Math.min(MAX_W, nw + 1);
-    return { w: nw, h: Math.min(MAX_H, Math.ceil(h + M * 2)) };
-  };
-  // Resize requests are coalesced per task: several layout passes in one frame → one IPC call.
-  let want: { w: number; h: number } | null = null;
-  function requestWin(n: { w: number; h: number }) {
-    const first = !want;
-    want = n;
-    if (!first) return;
-    queueMicrotask(() => {
-      const n2 = want!;
-      want = null;
-      if (n2.w === sent.w && n2.h === sent.h) return;
-      sent = n2;
-      healCount = 0;
-      api.overlayResize(n2.w, n2.h);
-    });
-  }
-  function growWindow(w: number, h: number) {
-    const n = winSize(w, h);
-    const base = want ?? sent;
-    // Grow to the union first so the morph never clips; shrink only once it has ended.
-    if (n.w > base.w || n.h > base.h) requestWin({ w: Math.max(n.w, base.w), h: Math.max(n.h, base.h) });
-  }
-  function settleWindow(delay = 90) {
-    clearTimeout(settleTimer);
-    settleTimer = window.setTimeout(() => {
-      if (morphAnim || waitFn || !visible) return;
-      requestWin(winSize(cur.w, cur.h));
-    }, delay);
-  }
-  const winNow = () => ({ w: stageEl?.clientWidth ?? innerWidth, h: stageEl?.clientHeight ?? innerHeight });
-  function fits(w: number, h: number) {
-    const n = winSize(w, h);
-    const now = winNow();
-    return now.w + 1 >= n.w && now.h + 1 >= n.h;
-  }
-  // The native resize lands a few frames after the request. Growing the card before that shows
-  // it clipped (square corners) against the old window edge, so growth waits for the window.
-  let waitFn: (() => void) | null = null;
-  let waitNeed = { w: 0, h: 0 };
-  let waitTimer = 0;
-  let waitRaf = 0;
-  function whenFits(w: number, h: number, fn: () => void) {
-    cancelWait();
-    waitNeed = { w, h };
-    waitFn = fn;
-    waitTimer = window.setTimeout(fireWait, 200); // never wait forever (lost/clamped resize)
-  }
-  function cancelWait() {
-    clearTimeout(waitTimer);
-    cancelAnimationFrame(waitRaf);
-    waitFn = null;
-  }
-  function fireWait() {
-    const fn = waitFn;
-    cancelWait();
-    // One frame for the bigger surface to be presented before the card grows into it
-    // (timer fallback: rAF is paused while the webview is occluded/hidden).
-    if (!fn) return;
-    let ran = false;
-    const go = () => {
-      if (ran) return;
-      ran = true;
-      cancelAnimationFrame(waitRaf);
-      clearTimeout(waitTimer);
-      fn();
-    };
-    waitRaf = requestAnimationFrame(go);
-    waitTimer = window.setTimeout(go, 50);
-  }
-  function onStageResize() {
-    if (waitFn && fits(waitNeed.w, waitNeed.h)) fireWait();
-    healWindow();
-  }
-  /** Self-heal: if the native window ends up smaller than the card (lost/clamped request), re-send. */
-  function healWindow() {
-    if (!visible || morphAnim || waitFn || !cur.w || healCount >= 2) return;
-    const n = winSize(cur.w, cur.h);
-    const now = winNow();
-    if (now.w + 1 < n.w || now.h + 1 < n.h) {
-      healCount++;
-      sent = { w: 0, h: 0 };
-      requestWin(n);
-    }
-  }
-
-  /** Appearing while the window is still too small: stay invisible until it has grown. */
-  let holdShow = $state(false);
   type BoxS = { w: number; h: number; r: number };
   const setBox = (el: HTMLElement, b: BoxS) => {
     el.style.width = `${b.w}px`;
     el.style.height = `${b.h}px`;
     el.style.borderRadius = `${b.r}px`;
   };
+  /** In-flight size (computed style reflects the running animation; border-box). */
+  function liveBox(el: HTMLElement, fallbackR: number): BoxS {
+    const cs = getComputedStyle(el);
+    return { w: parseFloat(cs.width) || cur.w, h: parseFloat(cs.height) || cur.h, r: parseFloat(cs.borderTopLeftRadius) || fallbackR };
+  }
 
   function morph(w: number, h: number, r: number) {
     const el = shellEl;
     if (!el || !w || !h) return;
     if (w === cur.w && h === cur.h && r === cur.r) return;
     let instant = snapNext || reduce || !cur.w;
-    // Read the in-flight size before touching anything (one style read, no forced reflow loop).
-    const live = () => ({ w: el.offsetWidth, h: el.offsetHeight, r: parseFloat(getComputedStyle(el).borderTopLeftRadius) || r });
-    let from = morphAnim || waitFn ? live() : { ...cur };
+    let from: BoxS = morphAnim ? liveBox(el, r) : { ...cur };
     // "Appearing" while the old card never actually left the screen (hide + show in the same
     // tick): morph from what is visible instead of snapping.
-    if (instant && !reduce && el.offsetWidth && parseFloat(getComputedStyle(el).opacity) >= 0.5) {
+    if (instant && !reduce && cur.w && parseFloat(getComputedStyle(el).opacity) >= 0.5) {
       instant = false;
-      from = live();
+      from = liveBox(el, r);
     }
     morphAnim?.cancel();
     morphAnim = null;
-    cancelWait();
     cur = { w, h, r };
-    const needW = Math.max(w, from.w);
-    const needH = Math.max(h, from.h);
-    growWindow(needW, needH);
-    clearTimeout(settleTimer);
-    if (instant) {
-      if (fits(needW, needH)) {
-        setBox(el, cur);
-        holdShow = false;
-        settleWindow(0);
-      } else {
-        // Snap only once the window is big enough. If the card is (still) on screen keep its
-        // old box meanwhile; if it is appearing, keep it invisible until then.
-        if (parseFloat(getComputedStyle(el).opacity) < 0.5) holdShow = true;
-        const to = cur;
-        whenFits(needW, needH, () => {
-          setBox(el, to);
-          holdShow = false;
-          settleWindow(0);
-        });
-      }
-      return;
-    }
-    if (fits(needW, needH)) {
-      runMorph(el, from, cur);
-    } else {
-      // Freeze at the current (in-flight) size until the window has grown.
-      setBox(el, from);
-      const to = cur;
-      whenFits(needW, needH, () => runMorph(el, from, to));
-    }
-  }
-  function runMorph(el: HTMLElement, from: BoxS, to: BoxS) {
-    const { w, h, r } = to;
-    setBox(el, to);
+    setBox(el, cur);
+    if (instant) return track(80);
     const a = el.animate(
       [
         { width: `${from.w}px`, height: `${from.h}px`, borderRadius: `${from.r}px` },
         { width: `${w}px`, height: `${h}px`, borderRadius: `${r}px` },
       ],
-      { duration: MORPH_MS, easing: EASE },
+      { duration: MORPH_MS, easing: MORPH_EASE },
     );
     morphAnim = a;
     a.onfinish = () => {
       if (morphAnim === a) morphAnim = null;
-      settleWindow();
     };
+    // Growing into a wider layer (pill → card): the new content is laid out at its final width,
+    // so it would be cropped by the still-narrow card. Scale it with the card instead (FLIP on
+    // the independent `scale` property, composited; the layer's cross-fade runs on `transform`).
+    // Only for a layer that just arrived: a live layer that widens (pill → live text) keeps its
+    // row aligned with the waveform, which lives outside the layer.
+    const layer = curLayer;
+    if (layer?.isConnected && performance.now() - curLayerBorn < 250 && w > from.w * 1.04) {
+      layer.animate([{ scale: `${(from.w / w).toFixed(4)}` }, { scale: "1" }], { duration: MORPH_MS, easing: MORPH_EASE });
+    }
+    // Measured after the animation exists, so the first report is the start frame, not the end.
+    track(MORPH_MS + 40);
   }
 
   $effect(() => {
     if (!visible || !shellEl) return;
     if (measured.key !== layerKey) return; // wait until the new layer has been laid out
     const w = Math.round(targetW);
-    const h = Math.round(measured.h) + 2; // + the 1px border on each side
+    const h = Math.min(MAX_H - M * 2, Math.round(measured.h) + 2); // + the 1px border on each side
     const r = targetR;
     untrack(() => morph(w, h, r));
   });
   // Snap stays armed only for the first layout after appearing.
   $effect(() => {
+    if (!visible) return;
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => (snapNext = false)));
+    return () => cancelAnimationFrame(id);
+  });
+
+  // ---- hitbox: the card's real on-screen box (CSS px relative to the window). Rust makes only
+  // this rect catch the mouse; everything else in the fixed window is click-through. While the
+  // card's box animates (size morph, appear, monitor-move fade) it is re-measured every frame,
+  // so the hitbox follows the visible card instead of covering a start ∪ end envelope.
+  type Rect = { x: number; y: number; width: number; height: number };
+  /** Last rect sent (undefined = nothing sent yet, so the first report always goes out). */
+  let hbSent: Rect | null | undefined = undefined;
+  let trackUntil = 0;
+  let trackRaf = 0;
+  let trackTimer = 0;
+
+  function hbMeasure(): Rect | null {
+    if (!visible || !shellEl || !stageEl) return null;
+    const s = stageEl.getBoundingClientRect();
+    const r = shellEl.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) return null;
+    const x0 = Math.max(0, Math.floor(r.left - s.left));
+    const y0 = Math.max(0, Math.floor(r.top - s.top));
+    const x1 = Math.min(s.width, Math.ceil(r.right - s.left));
+    const y1 = Math.min(s.height, Math.ceil(r.bottom - s.top));
+    return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+  }
+  function hbSend(r: Rect | null) {
+    const s = hbSent;
+    if (s === r) return;
+    if (s && r && s.x === r.x && s.y === r.y && s.width === r.width && s.height === r.height) return;
+    hbSent = r;
+    api.overlayHitbox(r);
+  }
+  const hbUpdate = () => hbSend(hbMeasure());
+  /** The card's box is still moving: its own size morph / appear transition, or the move fade. */
+  const boxAnimating = () => !!shellEl?.getAnimations().length || !!moverEl?.getAnimations().length;
+  /** Follow the card's box every frame for at least the next `ms` and for as long as it animates
+   *  (timer fallback: rAF pauses while the webview is occluded). */
+  function track(ms: number) {
+    trackUntil = Math.max(trackUntil, performance.now() + ms);
+    hbUpdate();
+    if (trackRaf) return;
+    const step = () => {
+      cancelAnimationFrame(trackRaf);
+      clearTimeout(trackTimer);
+      hbUpdate();
+      if ((performance.now() >= trackUntil && !boxAnimating()) || !visible) {
+        trackRaf = 0;
+        return;
+      }
+      trackRaf = requestAnimationFrame(step);
+      trackTimer = window.setTimeout(step, 50);
+    };
+    trackRaf = requestAnimationFrame(step);
+    trackTimer = window.setTimeout(step, 50);
+  }
+  // Shown → follow the appear transition. Hidden → null at once (clicks pass through while the
+  // card fades out).
+  $effect(() => {
     if (!visible) {
       untrack(() => {
-        cancelWait();
-        holdShow = false;
+        cancelAnimationFrame(trackRaf);
+        clearTimeout(trackTimer);
+        trackRaf = 0;
+        trackUntil = 0;
+        pointerIn = false;
+        hbSend(null);
       });
       return;
     }
-    if (holdShow) return; // armed again once the window fits and the card is shown
-    const id = requestAnimationFrame(() => requestAnimationFrame(() => (snapNext = false)));
-    return () => cancelAnimationFrame(id);
+    untrack(() => track(APPEAR_MS + 40));
+  });
+  // Anchor edge flipped (settings): the card moves to the other edge.
+  $effect(() => {
+    void position;
+    untrack(() => visible && track(120));
+  });
+
+  // ---- hover: Rust's overlay-pointer is the only source (the window is click-through outside the
+  // hitbox, so DOM enter/leave events are unreliable). Over a result/error it holds the card open.
+  let pointerIn = $state(false);
+  const hovered = $derived(visible && pointerIn && (view === "done" || view === "error"));
+  let holdSent = false;
+  $effect(() => {
+    const v = hovered;
+    untrack(() => {
+      if (v === holdSent) return;
+      holdSent = v;
+      api.overlayHold(v);
+    });
   });
 
   // In-card FLIP: when a block inside the card changes height (expand text, language picker,
@@ -460,7 +450,7 @@
   }
   const flipAnims = new Map<HTMLElement, Animation>();
   function flip(prev: Map<HTMLElement, Box>, next: Map<HTMLElement, Box>) {
-    const opt = { duration: MORPH_MS, easing: EASE };
+    const opt = { duration: MORPH_MS, easing: MORPH_EASE }; // in step with the shell morph
     next.forEach((n, el) => {
       const o = prev.get(el);
       if (!o) return;
@@ -487,6 +477,10 @@
     let morphReady = false;
     const read = () => {
       if (key !== layerKey) return; // an outgoing layer never drives the size
+      if (curLayer !== node) {
+        curLayer = node;
+        curLayerBorn = performance.now();
+      }
       const w = node.offsetWidth;
       const h = node.offsetHeight;
       const next = snapshot(node);
@@ -536,6 +530,10 @@
   }
   function fadeOut(_: Element, { duration = 120 } = {}) {
     return { duration, css: (k: number) => `opacity:${k}` };
+  }
+  /** Outgoing label: leaves the other way, fast, so it never reads as overlapping the new one. */
+  function sink(_: Element, { y = -6, duration = 110 } = {}) {
+    return { duration, css: (k: number) => `opacity:${k * k};transform:translateY(${(1 - k) * y}px)` };
   }
   /** Outgoing chip set: leaves the flow at once so the card sizes to the incoming set only
    *  (otherwise the card would grow to the union for 100ms and then shrink back). */
@@ -739,24 +737,31 @@
     }
     chunks = split;
   }
+  /** When the paragraph gains a line, the old lines glide instead of jumping. The text window
+   *  grows (with the card morph) up to LIVE_LINES, then older lines scroll up under a top fade.
+   *  Bottom-anchored card, or text already capped: the old lines move up by a line, so they
+   *  glide up in step with the card's top edge. Top-anchored card still growing: the old lines
+   *  stay put and the new line simply fades in. */
   function lineFlip(node: HTMLElement) {
-    // When the paragraph gains a line, glide the old lines up instead of jumping (coalesced:
-    // composite "add" lets a second line arrive mid-glide without a restart).
     let h = node.offsetHeight;
     const ro = new ResizeObserver(() => {
       const nh = node.offsetHeight;
       const d = nh - h;
       h = nh;
-      if (d > 0 && !reduce) {
-        node.animate([{ translate: `0 ${d}px` }, { translate: "0 0" }], { duration: 300, easing: EASE, composite: "add" });
-      }
+      if (d <= 0 || reduce) return;
+      const capped = nh > LIVE_LH * LIVE_LINES + 1;
+      if (position === "top" && !capped) return;
+      // composite "add": a second line arriving mid-glide adds up instead of restarting.
+      node.animate([{ translate: `0 ${d}px` }, { translate: "0 0" }], { duration: MORPH_MS, easing: MORPH_EASE, composite: "add" });
     });
     ro.observe(node);
     return { destroy: () => ro.disconnect() };
   }
 
   // ------------------------------------------------------------ result text (animated swap)
-  const targetText = $derived(result ? (showOriginal ? result.raw : result.text) : "");
+  const isCommand = $derived(result?.mode === "command");
+  /** "Original" = the transcript, or for a Command the text that was selected before it. */
+  const targetText = $derived(result ? (showOriginal ? (isCommand && result.source ? result.source : result.raw) : result.text) : "");
   let shownText = $state("");
   let shownFor = "";
   let textEl = $state<HTMLElement>();
@@ -806,7 +811,7 @@
 
   // ------------------------------------------------------------ result text clamp ("ver tudo")
   // No scrollbars: the text is clamped to a few lines with a fade; "ver tudo" grows the card
-  // (through the normal morph + window resize) up to what the 760×560 native window allows.
+  // (through the normal morph) up to what the fixed 760×560 window allows.
   let expanded = $state(false);
   let overflowing = $state(false);
   let expandLines = $state(0);
@@ -842,7 +847,7 @@
     const el = textEl;
     if (!el) return;
     const lh = parseFloat(getComputedStyle(el).lineHeight) || 21;
-    // Everything in the card except the text box stays; the text gets the rest of the max window.
+    // Everything in the card except the text box stays; the text gets the rest of the window.
     const chrome = measured.h + 2 - el.clientHeight;
     expandLines = Math.max(baseLines, Math.floor((MAX_H - M * 2 - chrome - 24) / lh));
     expanded = true;
@@ -851,7 +856,7 @@
   const wheelScroll = $derived(expanded && overflowing);
 
   // ------------------------------------------------------------ in-card tooltip (no native `title`)
-  // Rendered inside the card, clamped to its bounds (never clipped, never resizes the window).
+  // Rendered inside the card, clamped to its bounds (never clipped, never outside the hitbox).
   let tip = $state<{ text: string; x: number; y: number; on: boolean }>({ text: "", x: 0, y: 0, on: false });
   let tipEl = $state<HTMLElement>();
   let tipTimer = 0;
@@ -884,6 +889,10 @@
     const y = Math.round(above >= 4 ? above : Math.min(r.bottom - c.top + 6, c.height - th - 4));
     tip = { text: tip.text, x, y, on: true };
   }
+  // Pointer left the card (Rust): no tooltip may linger.
+  $effect(() => {
+    if (!pointerIn) untrack(hideTip);
+  });
 
   // ------------------------------------------------------------ monitor switch (overlay-move)
   let moverEl = $state<HTMLDivElement>();
@@ -897,6 +906,8 @@
     const d = dir;
     const outFrame = { opacity: 0, transform: `translateY(${6 * d}px) scale(0.96)` };
     moveAnim?.cancel();
+    // The window itself moves (Rust); inside it the card only shifts by the fade offset.
+    if (visible) track(phase === "out" ? 1000 : 260);
     if (phase === "out") {
       moveAnim = reduce
         ? el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 80, fill: "forwards" })
@@ -924,8 +935,9 @@
   const headTitle = $derived(pastedText === null ? t("ov.copied") : targetText === pastedText ? t("ov.pasted") : t("ovx.pasted_prev"));
 
   function dismiss() {
-    if (hovered) api.overlayHold(false);
-    hovered = false;
+    // Release the hold before Rust hides (the effect would only send it after dismissOverlay).
+    if (holdSent) api.overlayHold((holdSent = false));
+    pointerIn = false;
     ev = { phase: "hidden" };
     snapNext = true;
     api.dismissOverlay();
@@ -966,12 +978,6 @@
     copiedTimer = window.setTimeout(() => (copied = false), 1400);
     cycle++;
   }
-  function hold(v: boolean) {
-    if (view !== "done" && view !== "error") return;
-    if (hovered === v) return;
-    hovered = v;
-    api.overlayHold(v);
-  }
   function key(e: KeyboardEvent) {
     if (e.key !== "Escape" || !visible) return;
     if (picker) {
@@ -991,15 +997,11 @@
     <div
       bind:this={shellEl}
       class="shell v-{view} w-{settings?.overlay_width ?? 'normal'}"
-      class:hidden={!visible || holdShow}
+      class:hidden={!visible}
       role="region"
       aria-label="FlowVoice"
       aria-live="polite"
-      onmouseenter={() => hold(true)}
-      onmouseleave={() => {
-        hold(false);
-        hideTip();
-      }}
+      onpointerleave={hideTip}
     >
       <!-- Persistent waveform: listening bars → processing wave, one set of elements. -->
       <div
@@ -1030,7 +1032,13 @@
                   <span class="mode">
                     {#if listenInfo.target}<span class="iflag"><Flag code={listenInfo.target} size={14} /></span>{/if}{listenInfo.mode}
                   </span>
-                  {#if listenInfo.style}<span class="sty">{listenInfo.style}</span>{/if}
+                  {#if listenInfo.style}
+                    {#key listenInfo.style}
+                      <span class="sty" class:q={listenInfo.quote} in:rise={{ y: 4 * dir, duration: 220 }}
+                        >{listenInfo.style}{#if listenInfo.app}<span class="app">· {listenInfo.app}</span>{/if}</span
+                      >
+                    {/key}
+                  {/if}
                 </div>
                 <span class="time tnum">{fmt(elapsed)}</span>
                 <button type="button" class="stop" aria-label={t("ov.stop")} onclick={() => api.stopRecording()}>
@@ -1042,7 +1050,7 @@
               </div>
               {#if hasText}
                 <div class="live" in:rise={{ delay: 120, y: 10 * dir }} out:fadeOut>
-                  <div class="lwin">
+                  <div class="lwin" style="--llh:{LIVE_LH}px;--llines:{LIVE_LINES}">
                     <p use:lineFlip>{#each chunks as c (c.id)}<span class="ck {c.kind}" class:un={!c.st}>{c.text}</span>{/each}</p>
                   </div>
                 </div>
@@ -1053,7 +1061,7 @@
               <span class="wslot" style="width:{WAVE_W}px"></span>
               <span class="plabel">
                 {#key procLabel}
-                  <span class="pl" in:rise={{ delay: 60, y: 6 * dir }} out:fadeOut={{ duration: 100 }}>{procLabel}</span>
+                  <span class="pl" in:rise={{ delay: 90, y: 7 * dir }} out:sink={{ y: -6 * dir }}>{procLabel}</span>
                 {/key}
               </span>
             </div>
@@ -1069,12 +1077,13 @@
                   {#if busy}
                     <span class="rw">{t("ovx.rewriting")}</span>
                   {:else if showOriginal}
-                    {t("ov.showing_original")}
+                    {isCommand ? t("ovx.showing_source") : t("ov.showing_original")}
                   {:else if result.target}
                     <span class="iflag"><Flag code={result.target} size={16} /></span>{t("ov.translate_to", { lang: langName(result.target) })}
                   {:else}
-                    {styleName(result.style_id)}
+                    {isCommand ? t("mode.command") : styleName(result.style_id)}
                   {/if}
+                  {#if result.app_name && !busy}<span class="app">· {result.app_name}</span>{/if}
                   {#if result.provider && !showOriginal && !busy}<span class="via">· {result.provider}</span>{/if}
                 </span>
                 <button type="button" class="x" aria-label={t("ov.dismiss")} onclick={dismiss}>
@@ -1140,20 +1149,36 @@
                         </button>
                       {/each}
                     {:else}
-                      {#each settings?.styles ?? [] as st, i (st.id)}
+                      {#if isCommand}
+                        <!-- a Command has no styles: re-apply the same instruction to the same selection -->
                         <button
                           type="button"
                           class="chip"
-                          style="--i:{i}"
-                          class:on={!showOriginal && !result.target && result.style_id === st.id}
-                          class:loading={pending?.key === st.id}
+                          data-k="redo"
+                          style="--i:0"
+                          class:loading={pending?.key === "redo"}
                           disabled={busy}
-                          data-tip={st.description || null}
-                          onclick={() => reprocess(st.id, null)}
+                          data-tip={t("ovx.redo_tip")}
+                          onclick={() => reprocess("redo", null)}
                         >
-                          {st.name}
+                          <Icon name="refresh" size={14} />{t("ovx.redo")}
                         </button>
-                      {/each}
+                      {:else}
+                        {#each settings?.styles ?? [] as st, i (st.id)}
+                          <button
+                            type="button"
+                            class="chip"
+                            style="--i:{i}"
+                            class:on={!showOriginal && !result.target && result.style_id === st.id}
+                            class:loading={pending?.key === st.id}
+                            disabled={busy}
+                            data-tip={st.description || null}
+                            onclick={() => reprocess(st.id, null)}
+                          >
+                            {st.name}
+                          </button>
+                        {/each}
+                      {/if}
                       <button
                         type="button"
                         class="chip"
@@ -1171,7 +1196,7 @@
                         class:on={showOriginal}
                         aria-pressed={showOriginal}
                         disabled={busy}
-                        data-tip={showOriginal ? t("ovx.refined_tip") : t("ovx.original_tip")}
+                        data-tip={showOriginal ? t("ovx.refined_tip") : isCommand ? t("ovx.source_tip") : t("ovx.original_tip")}
                         onclick={() => (showOriginal = !showOriginal)}
                       >
                         {t("ov.original")}
@@ -1206,8 +1231,8 @@
             <!-- svelte-ignore a11y_mouse_events_have_key_events, a11y_no_static_element_interactions -->
             <div class="card err" onmouseover={tipOver} onfocusin={tipOver} onfocusout={hideTip} onpointerdown={hideTip}>
               <header data-flip>
-                <span class="badge bad"><Icon name="alert" size={14} stroke={1.8} /></span>
-                <span class="ht">{t("ov.error")}</span>
+                <span class="badge bad" class:hintb={lastError.hint}><Icon name={lastError.hint ? "info" : "alert"} size={14} stroke={1.8} /></span>
+                <span class="ht">{lastError.hint ? t("ovx.hint") : t("ov.error")}</span>
                 <span class="hm"></span>
                 <button type="button" class="x" aria-label={t("ov.dismiss")} onclick={dismiss}>
                   <Icon name="x" size={16} />
@@ -1223,25 +1248,29 @@
                   <pre class="detail" data-flip in:rise={{ y: -4, duration: 220 }}>{lastError.detail}</pre>
                 {/if}
               {/if}
-              <div class="acts" data-flip>
-                <button
-                  type="button"
-                  class="btn"
-                  onclick={() => {
-                    api.openSettings("providers");
-                    dismiss();
-                  }}
-                >
-                  <Icon name="key" size={15} />{t("ov.open_settings")}
-                </button>
-                {#if lastError.raw}
-                  <button type="button" class="btn primary" data-tip={t("ovx.copy_raw_tip")} onclick={() => copy(lastError!.raw!)}>
-                    <Icon name={copied ? "check" : "copy"} size={15} />{copied ? t("c.copied") : t("ov.copy_raw")}
-                  </button>
-                {/if}
-              </div>
+              {#if !lastError.hint || lastError.raw}
+                <div class="acts" data-flip>
+                  {#if !lastError.hint}
+                    <button
+                      type="button"
+                      class="btn"
+                      onclick={() => {
+                        api.openSettings("providers");
+                        dismiss();
+                      }}
+                    >
+                      <Icon name="key" size={15} />{t("ov.open_settings")}
+                    </button>
+                  {/if}
+                  {#if lastError.raw}
+                    <button type="button" class="btn primary" data-tip={t("ovx.copy_raw_tip")} onclick={() => copy(lastError!.raw!)}>
+                      <Icon name={copied ? "check" : "copy"} size={15} />{copied ? t("c.copied") : t("ov.copy_raw")}
+                    </button>
+                  {/if}
+                </div>
+              {/if}
               {@render tipBox()}
-              {@render life(12000)}
+              {@render life(lastError.hint ? 5000 : 12000)}
             </div>
           {/if}
         </div>
@@ -1284,9 +1313,12 @@
     transition-property: opacity, transform, translate, scale !important;
   }
 
+  /* The fixed 760×560 native window: the card is anchored bottom/top-center inside it.
+     Nothing may ever paint or scroll outside the card's box (+ its shadow). */
   .stage {
     position: fixed;
     inset: 0;
+    overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -1328,19 +1360,33 @@
       background-color 260ms var(--ease),
       border-color 260ms var(--ease),
       opacity 220ms var(--ease),
-      transform 420ms var(--spring-soft, var(--spring));
+      transform 420ms var(--spring-soft, var(--spring)),
+      visibility 0s;
     font-size: 13px;
+  }
+  :global([data-theme="light"]) .shell {
+    box-shadow:
+      0 10px 24px -8px rgba(0, 0, 0, 0.28),
+      0 2px 6px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
   }
   .top .shell {
     transform-origin: 50% 0;
   }
+  /* Exit: done in ≤200ms (Rust hides the native window 240ms after "hidden"). Once faded,
+     nothing is painted. */
   .shell.hidden {
     opacity: 0;
+    visibility: hidden;
     transform: translateY(10px) scale(0.94);
     pointer-events: none;
     transition:
       opacity 170ms var(--ease-in, ease-in),
-      transform 200ms var(--ease-in, ease-in);
+      transform 200ms var(--ease-in, ease-in),
+      visibility 0s 200ms;
+  }
+  .shell.hidden :global(*) {
+    animation-play-state: paused !important;
   }
   .top .shell.hidden {
     transform: translateY(-10px) scale(0.94);
@@ -1356,6 +1402,10 @@
     left: 50%;
     translate: -50% 0;
     bottom: 0;
+    transform-origin: 50% 100%;
+  }
+  .top .layer {
+    transform-origin: 50% 0;
   }
   .layer.fit {
     width: max-content;
@@ -1399,8 +1449,12 @@
     border-radius: 2px;
     background: var(--cap-wave);
     transform: scaleY(0.1);
-    will-change: transform;
     transition: background-color 360ms var(--ease);
+  }
+  /* own layers only while the bars actually move */
+  .wave.m-listen i,
+  .wave.m-proc i {
+    will-change: transform;
   }
   .wave.m-proc i {
     background: var(--cap-accent-line);
@@ -1499,27 +1553,33 @@
     height: 30px;
   }
 
+  /* Live text: grows line by line (the card morphs with it) up to --llines, then the oldest
+     lines scroll up under a soft top fade. The 8px top padding is where that fade lives, so a
+     short text is never dimmed. */
   .live {
-    padding: 14px 22px 0;
+    padding: 6px 22px 0;
   }
   .top .live {
-    padding: 0 22px 14px;
+    padding: 0 22px 12px;
   }
   .lwin {
-    height: 44px;
+    box-sizing: border-box;
+    max-height: calc(8px + var(--llh) * var(--llines));
+    padding-top: 8px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, 0.35) 8px, #000 24px);
-    mask-image: linear-gradient(to bottom, transparent 0, rgba(0, 0, 0, 0.35) 8px, #000 24px);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 6px, rgba(0, 0, 0, 0.55) 14px, #000 30px);
+    mask-image: linear-gradient(to bottom, transparent 0, transparent 6px, rgba(0, 0, 0, 0.55) 14px, #000 30px);
   }
   .live p {
     flex: none;
     margin: 0;
     font-size: 14.5px;
-    line-height: 22px;
+    line-height: var(--llh);
     letter-spacing: -0.003em;
+    overflow-wrap: anywhere;
   }
   .w-compact .live p {
     font-size: 13.5px;
@@ -1604,6 +1664,14 @@
     background: var(--cap-accent);
     color: var(--on-accent, #0b0b0c);
   }
+  /* red/coral accent: success must not look like an error */
+  :global(:root[data-warm-accent]) .ok {
+    background: var(--ok);
+    color: #0b0b0c;
+  }
+  :global(:root[data-warm-accent][data-theme="light"]) .ok {
+    color: #fff;
+  }
   .ok :global(path) {
     stroke-dasharray: 22;
     stroke-dashoffset: 22;
@@ -1664,6 +1732,21 @@
   .via {
     font-family: var(--mono);
     font-size: 10.5px;
+  }
+  .sty .app {
+    margin-left: 0.35em;
+    font-weight: 400;
+    color: var(--cap-text-2);
+  }
+  /* Command: the selection preview reads as a quote, not as a style name */
+  .sty.q {
+    font-weight: 400;
+    color: var(--cap-text-2);
+  }
+  .bad.hintb {
+    background: var(--cap-text);
+    color: var(--cap-bg);
+    animation-name: badge;
   }
 
   .tbox {
@@ -1792,7 +1875,7 @@
     color: #c8372d;
   }
 
-  /* chips: wrap, max two rows, never horizontal scroll */
+  /* chips: wrap, never horizontal scroll */
   .chips {
     display: grid;
     position: relative;
@@ -1999,6 +2082,9 @@
     margin: 0;
     font-size: 13.5px;
     line-height: 1.45;
+    max-height: calc(13.5px * 1.45 * 6);
+    overflow: hidden;
+    overflow-wrap: anywhere;
   }
   .dtoggle {
     display: inline-flex;

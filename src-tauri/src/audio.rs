@@ -3,7 +3,7 @@
 use anyhow::{anyhow, Result};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use parking_lot::Mutex;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc;
 use std::sync::Arc;
 
@@ -46,6 +46,10 @@ impl Resampler {
 
 pub struct Recording {
     pub samples: Arc<Mutex<Vec<f32>>>,
+    /// The chosen microphone was not found and the system default is recording instead.
+    pub used_fallback: bool,
+    /// The device failed mid-recording (unplugged, driver reset): the audio may be cut short.
+    pub failed: Arc<AtomicBool>,
     level: Arc<AtomicU32>,
     stop_tx: mpsc::Sender<()>,
     thread: Option<std::thread::JoinHandle<()>>,
@@ -61,14 +65,17 @@ impl Recording {
         let device_name = device_name.map(str::to_string);
         let s = samples.clone();
         let l = level.clone();
+        let failed = Arc::new(AtomicBool::new(false));
+        let f = failed.clone();
         // Test hook: FLOWVOICE_FAKE_MIC=<16 kHz mono wav> streams a file in real time instead of the mic.
         if let Ok(path) = std::env::var("FLOWVOICE_FAKE_MIC") {
             let thread = std::thread::spawn(move || fake_mic(&path, s, l, stop_rx));
-            return Ok(Self { samples, level, stop_tx, thread: Some(thread) });
+            return Ok(Self { samples, used_fallback: false, failed, level, stop_tx, thread: Some(thread) });
         }
         // cpal streams are !Send on some platforms, so the stream lives on its own thread.
+        let (fallback_tx, fallback_rx) = mpsc::channel::<bool>();
         let thread = std::thread::spawn(move || {
-            let stream = match build_stream(device_name.as_deref(), s, l) {
+            let stream = match build_stream(device_name.as_deref(), s, l, f, fallback_tx) {
                 Ok(st) => st,
                 Err(e) => {
                     let _ = ready_tx.send(Err(e));
@@ -84,7 +91,10 @@ impl Recording {
             drop(stream);
         });
         match ready_rx.recv_timeout(std::time::Duration::from_secs(5)) {
-            Ok(Ok(())) => Ok(Self { samples, level, stop_tx, thread: Some(thread) }),
+            Ok(Ok(())) => {
+                let used_fallback = fallback_rx.try_recv().unwrap_or(false);
+                Ok(Self { samples, used_fallback, failed, level, stop_tx, thread: Some(thread) })
+            }
             Ok(Err(e)) => Err(e),
             Err(_) => Err(anyhow!("o microfone não respondeu")),
         }
@@ -132,27 +142,49 @@ fn fake_mic(path: &str, samples: Arc<Mutex<Vec<f32>>>, level: Arc<AtomicU32>, st
     }
 }
 
-fn pick_device(name: Option<&str>) -> Result<cpal::Device> {
-    let host = cpal::default_host();
-    if let Some(name) = name {
-        if let Ok(mut devices) = host.input_devices() {
-            if let Some(d) = devices.find(|d| d.name().map(|n| n == name).unwrap_or(false)) {
-                return Ok(d);
-            }
-        }
-        log::warn!("input device {name} not found, using default");
-    }
-    host.default_input_device().ok_or_else(|| anyhow!("nenhum microfone encontrado"))
+/// Windows renames a re-plugged USB mic "2- USB Audio": compare names without that prefix.
+fn device_key(name: &str) -> String {
+    let t = name.trim();
+    let rest = t.trim_start_matches(|c: char| c.is_ascii_digit());
+    let rest = if rest.len() < t.len() { rest.strip_prefix("- ").unwrap_or(t) } else { t };
+    rest.to_lowercase()
 }
 
-fn build_stream(name: Option<&str>, samples: Arc<Mutex<Vec<f32>>>, level: Arc<AtomicU32>) -> Result<cpal::Stream> {
-    let device = pick_device(name)?;
+/// The named microphone (exact, then ignoring Windows' "N- " prefix), else the default one.
+/// The bool is true when the default had to be used instead of the chosen device.
+fn pick_device(name: Option<&str>) -> Result<(cpal::Device, bool)> {
+    let host = cpal::default_host();
+    if let Some(name) = name {
+        let devices: Vec<cpal::Device> = host.input_devices().map(|it| it.collect()).unwrap_or_default();
+        let exact = devices.iter().position(|d| d.name().map(|n| n == name).unwrap_or(false));
+        let fuzzy = || devices.iter().position(|d| d.name().map(|n| device_key(&n) == device_key(name)).unwrap_or(false));
+        if let Some(i) = exact.or_else(fuzzy) {
+            return Ok((devices.into_iter().nth(i).unwrap(), false));
+        }
+        log::warn!("input device {name} not found, using default");
+        return host.default_input_device().map(|d| (d, true)).ok_or_else(|| anyhow!("nenhum microfone encontrado"));
+    }
+    host.default_input_device().map(|d| (d, false)).ok_or_else(|| anyhow!("nenhum microfone encontrado"))
+}
+
+fn build_stream(
+    name: Option<&str>,
+    samples: Arc<Mutex<Vec<f32>>>,
+    level: Arc<AtomicU32>,
+    failed: Arc<AtomicBool>,
+    fallback_tx: mpsc::Sender<bool>,
+) -> Result<cpal::Stream> {
+    let (device, fallback) = pick_device(name)?;
+    let _ = fallback_tx.send(fallback);
     let config = device.default_input_config().map_err(|e| anyhow!("microfone indisponível: {e}"))?;
     let channels = config.channels() as usize;
     let rate = config.sample_rate().0;
     let format = config.sample_format();
     let stream_config: cpal::StreamConfig = config.into();
-    let err_fn = |e| log::error!("audio stream error: {e}");
+    let err_fn = move |e| {
+        log::error!("audio stream error: {e}");
+        failed.store(true, Ordering::SeqCst);
+    };
 
     let mut resampler = Resampler::new(rate);
     let mut process = move |mono: &mut dyn Iterator<Item = f32>| {
@@ -264,5 +296,15 @@ pub fn trim_silence(samples: &[f32]) -> &[f32] {
             &samples[start..end]
         }
         _ => &samples[0..0],
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn device_key_ignores_windows_prefix() {
+        assert_eq!(super::device_key("2- USB Audio Device"), "usb audio device");
+        assert_eq!(super::device_key("USB Audio Device"), "usb audio device");
+        assert_eq!(super::device_key("3D Mic"), "3d mic");
     }
 }

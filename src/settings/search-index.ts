@@ -52,6 +52,7 @@ const STATIC: SearchEntry[] = [
   { page: "styles", key: "home.sty_builtin_group", kw: "estilos styles prontos builtin" },
   { page: "styles", key: "home.sty_custom_group", kw: "personalizado custom prompt" },
   { page: "styles", key: "home.sty_create", kw: "novo new nuevo prompt instrucao" },
+  { page: "styles", key: "apps.sec", hint: "apps.enable_hint", id: "set-sty-apps", kw: "aplicativo app programa outlook slack por app per app" },
   { page: "styles", key: "styles.translation_target", hint: "styles.translation_hint", kw: "traduzir translate traducir idioma" },
   { page: "styles", key: "styles.remove_fillers", hint: "styles.remove_fillers_hint", kw: "vicios fillers muletillas limpeza" },
   { page: "styles", key: "styles.sec_dictionary", hint: "styles.dictionary_hint", kw: "vocabulario vocabulary termos palavras nomes" },
@@ -76,6 +77,8 @@ const STATIC: SearchEntry[] = [
   { page: "shortcuts", key: "sc.translate", hint: () => t("sc.translate_hint", { lang: "…" }), id: "set-sc-translate", kw: "atalho hotkey traduzir" },
   { page: "shortcuts", key: "sc.ask", hint: "sc.ask_hint", id: "set-sc-ask", kw: "atalho hotkey assistente chat pergunta" },
   { page: "shortcuts", key: "sc.mode", hint: "sc.mode_toggle_hint", id: "set-sc-mode", kw: "segurar hold toggle alternar push to talk" },
+  { page: "shortcuts", key: "sc.command", hint: "sc.command_hint", id: "set-sc-command", kw: "comando command selecao selecionado editar reescrever" },
+  { page: "shortcuts", key: "sc.paste_last", hint: "sc.paste_last_hint", id: "set-sc-paste-last", kw: "colar de novo paste again ultimo repetir" },
 
   // General
   { page: "general", key: "gen.name", hint: "gen.name_hint", kw: "nome name nombre saudacao" },

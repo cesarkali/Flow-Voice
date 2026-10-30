@@ -175,9 +175,9 @@
     animation: enter 260ms var(--ease-out) both;
   }
   .res.ok {
-    border-color: var(--accent-line);
-    background: var(--accent-soft);
-    color: var(--accent-fg);
+    border-color: var(--ok-line);
+    background: var(--ok-soft);
+    color: var(--ok);
   }
   .res div {
     display: flex;

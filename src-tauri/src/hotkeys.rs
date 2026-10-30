@@ -12,6 +12,7 @@ use crate::state::{AppState, RecordMode};
 #[derive(Clone, Copy, PartialEq)]
 enum Action {
     Record(RecordMode),
+    PasteLast,
     Cancel,
 }
 
@@ -32,14 +33,20 @@ pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
         (Action::Cancel, ShortcutState::Pressed) => {
             if pipeline::is_recording(app) {
                 pipeline::cancel(app);
+            } else if pipeline::is_busy(app) {
+                pipeline::cancel_processing(app);
             } else {
                 crate::windows::hide_overlay(app);
             }
         }
+        (Action::PasteLast, ShortcutState::Pressed) => {
+            // Into whatever has focus now (not where the dictation originally went).
+            pipeline::paste_last(app, crate::platform::foreground_window());
+        }
         (Action::Record(mode), ShortcutState::Pressed) => {
             if hold {
                 if !pipeline::is_recording(app) {
-                    pipeline::start(app, mode);
+                    pipeline::start_with(app, mode, true);
                 }
             } else {
                 pipeline::toggle(app, mode);
@@ -50,7 +57,7 @@ pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     }
 }
 
-/// (Re)registers the three recording shortcuts. Returns the ones that failed.
+/// (Re)registers the recording shortcuts and "paste last". Returns the ones that failed.
 pub fn register_all(app: &AppHandle) -> Vec<String> {
     let gs = app.global_shortcut();
     let mut bindings = BINDINGS.lock();
@@ -59,7 +66,14 @@ pub fn register_all(app: &AppHandle) -> Vec<String> {
     }
     let hk = app.state::<AppState>().settings.read().hotkeys.clone();
     let mut failed = vec![];
-    for (acc, mode) in [(hk.dictate, RecordMode::Dictate), (hk.translate, RecordMode::Translate), (hk.ask, RecordMode::Ask)] {
+    let actions = [
+        (hk.dictate, Action::Record(RecordMode::Dictate)),
+        (hk.translate, Action::Record(RecordMode::Translate)),
+        (hk.ask, Action::Record(RecordMode::Ask)),
+        (hk.command, Action::Record(RecordMode::Command)),
+        (hk.paste_last, Action::PasteLast),
+    ];
+    for (acc, action) in actions {
         if acc.trim().is_empty() {
             continue;
         }
@@ -68,7 +82,7 @@ pub fn register_all(app: &AppHandle) -> Vec<String> {
             Ok(s) => match gs.register(s) {
                 Ok(()) => {
                     log::info!("hotkey registered: {acc}");
-                    bindings.push((s, Action::Record(mode)))
+                    bindings.push((s, action))
                 }
                 Err(e) => {
                     log::warn!("hotkey {acc}: {e}");

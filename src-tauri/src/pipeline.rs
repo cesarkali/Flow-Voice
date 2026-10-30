@@ -11,7 +11,8 @@ use crate::audio::{self, Recording};
 use crate::cloud::{self, display_name, ChatMsg, ProviderError};
 use crate::platform;
 use crate::settings::{self, Settings, StyleKind};
-use crate::state::{new_id, ActiveSession, AppState, ChatMessage, ChatSource, DictationResult, RecordMode};
+use crate::apps::AppContext;
+use crate::state::{new_id, ActiveSession, AppState, ChatMessage, ChatSource, DictationResult, RecordMode, Selection};
 use crate::text;
 use crate::windows;
 
@@ -30,6 +31,16 @@ pub fn overlay_error(app: &AppHandle, message: &str, detail: Option<String>, raw
     emit_overlay(app, json!({ "phase": "error", "message": message, "detail": detail, "raw": raw }));
 }
 
+/// A user-side problem (nothing selected, nothing to paste): same card, no "settings" button.
+pub fn overlay_hint(app: &AppHandle, message: &str) {
+    windows::show_overlay(app);
+    crate::hotkeys::register_escape(app, true);
+    emit_overlay(app, json!({ "phase": "error", "message": message, "detail": null, "raw": null, "hint": true }));
+}
+
+const NO_SELECTION: &str = "Selecione um texto antes de usar o Comando.";
+const NO_TERMINAL: &str = "O Comando não funciona em terminais (lá o Ctrl+C interrompe o programa). Use num editor ou campo de texto.";
+
 // ---------------------------------------------------------------- recording
 
 pub fn is_recording(app: &AppHandle) -> bool {
@@ -46,13 +57,29 @@ pub fn toggle(app: &AppHandle, mode: RecordMode) {
 }
 
 pub fn start(app: &AppHandle, mode: RecordMode) {
+    start_with(app, mode, false);
+}
+
+/// `keys_held`: started by a push-to-talk press (the shortcut is still down until the release).
+pub fn start_with(app: &AppHandle, mode: RecordMode, keys_held: bool) {
     let st = state(app);
     if st.busy.load(Ordering::SeqCst) || st.session.lock().is_some() {
         return;
     }
     let s = st.settings();
     let target_window = platform::foreground_window();
-    log::info!("recording start ({mode:?})");
+    let app_ctx = if mode == RecordMode::Ask { None } else { platform::window_app(target_window) };
+    // A per-app rule overrides the active style for this dictation only.
+    let style_id = app_ctx
+        .as_ref()
+        .and_then(|c| crate::apps::rule_style(&s, c))
+        .unwrap_or(&s.active_style)
+        .to_string();
+    log::info!("recording start ({mode:?}, app {:?}, style {style_id})", app_ctx.as_ref().map(|c| &c.id));
+    if mode == RecordMode::Command && app_ctx.as_ref().is_some_and(|c| crate::apps::is_terminal(&c.id)) {
+        overlay_hint(app, NO_TERMINAL);
+        return;
+    }
     let rec = match Recording::start(s.input_device.as_deref()) {
         Ok(r) => r,
         Err(e) => {
@@ -67,15 +94,51 @@ pub fn start(app: &AppHandle, mode: RecordMode) {
     let stop_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let samples = rec.samples.clone();
     let target = if mode == RecordMode::Translate { Some(s.translation_target.clone()) } else { None };
-    let live = s.stt.live_preview && (cloud_stt_keys(app, &s).is_some() || st.local.installed(&preview_model(&s, &st)));
-    *st.session.lock() = Some(ActiveSession { rec, mode, target_window, started: Instant::now(), stop_flag: stop_flag.clone() });
+    let cloud_keys = cloud_stt_keys(app, &s).is_some();
+    let live = s.stt.live_preview && (cloud_keys || st.local.installed(&preview_model(&s, &st)));
+    // The local model is only needed now if it will do the work: load it while the user speaks
+    // (it unloads by itself ~15 s after the last use).
+    if s.stt.engine == "local" || (live && !cloud_keys) {
+        let local = st.local.clone();
+        let id = if s.stt.engine == "local" { s.stt.local_model.clone() } else { preview_model(&s, &st) };
+        std::thread::spawn(move || local.warm_up(&id));
+    }
+    // Command: the selection is copied now in the background (toggle), or when push-to-talk
+    // keys are released (Ctrl+C while the shortcut's modifiers are down would be another combo).
+    let selection_state = match (mode, keys_held) {
+        (RecordMode::Command, false) => Some("pending"),
+        (RecordMode::Command, true) => Some("at_stop"),
+        _ => None,
+    };
+    let selection = Arc::new(parking_lot::Mutex::new(match selection_state {
+        Some("pending") => Selection::Pending,
+        Some(_) => Selection::AtStop,
+        None => Selection::Empty,
+    }));
+    let app_name = app_ctx.as_ref().map(|c| c.name.clone());
+    *st.session.lock() = Some(ActiveSession {
+        rec,
+        mode,
+        target_window,
+        started: Instant::now(),
+        stop_flag: stop_flag.clone(),
+        app: app_ctx,
+        style_id: style_id.clone(),
+        selection: selection.clone(),
+    });
 
     windows::show_overlay(app);
     emit_overlay(
         app,
-        json!({ "phase": "listening", "mode": mode, "style_id": s.active_style, "target": target, "live": live }),
+        json!({
+            "phase": "listening", "mode": mode, "style_id": style_id, "target": target, "live": live,
+            "app": app_name, "selection": selection_state,
+        }),
     );
     crate::hotkeys::register_escape(app, true);
+    if selection_state == Some("pending") {
+        spawn_selection_copy(app, target_window, selection, stop_flag.clone());
+    }
 
     // Mic level for the waveform.
     let app2 = app.clone();
@@ -94,12 +157,107 @@ pub fn start(app: &AppHandle, mode: RecordMode) {
     }
 }
 
-/// Live preview needs the small local model: fetch it in the background when missing.
+/// One line, at most ~60 characters, for the listening card.
+pub(crate) fn selection_preview(t: &str) -> String {
+    let line = t.split_whitespace().collect::<Vec<_>>().join(" ");
+    if line.chars().count() <= 60 {
+        return line;
+    }
+    let cut: String = line.chars().take(58).collect();
+    // Prefer ending on a word boundary when one is close.
+    let cut = match cut.rfind(' ') {
+        Some(i) if i > 40 => cut[..i].to_string(),
+        _ => cut,
+    };
+    format!("{}…", cut.trim_end_matches([',', '.', ';', ':', ' ']))
+}
+
+fn selection_from(r: Result<Option<String>>) -> Selection {
+    match r {
+        Ok(Some(t)) if t.chars().count() > platform::SELECTION_MAX_CHARS => Selection::Failed(format!(
+            "A seleção é grande demais para o Comando (máximo de {} mil caracteres).",
+            platform::SELECTION_MAX_CHARS / 1000
+        )),
+        Ok(Some(t)) => Selection::Got(t),
+        Ok(None) => Selection::Empty,
+        Err(e) => Selection::Failed(e.to_string()),
+    }
+}
+
+/// Toggle-mode Command: copies the selection while the user starts speaking. Without one, the
+/// recording is dropped right away with a hint (no point in transcribing an instruction).
+fn spawn_selection_copy(
+    app: &AppHandle,
+    target: isize,
+    selection: Arc<parking_lot::Mutex<Selection>>,
+    stop_flag: Arc<std::sync::atomic::AtomicBool>,
+) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let sel = selection_from(platform::copy_selection(target));
+        *selection.lock() = sel.clone();
+        let st = state(&app);
+        let mut guard = st.session.lock();
+        // Stopped or cancelled meanwhile: processing (if any) reads the result itself.
+        if !guard.as_ref().is_some_and(|s| Arc::ptr_eq(&s.stop_flag, &stop_flag)) {
+            return;
+        }
+        match sel {
+            Selection::Got(t) => {
+                drop(guard);
+                let _ = app.emit_to("overlay", "overlay-selection", json!({ "text": selection_preview(&t) }));
+            }
+            Selection::Empty | Selection::Failed(_) => {
+                let Some(session) = guard.take() else { return };
+                drop(guard);
+                session.stop_flag.store(true, Ordering::SeqCst);
+                drop(session.rec);
+                after_recording(&app);
+                let msg = match sel {
+                    Selection::Failed(m) => m,
+                    _ => NO_SELECTION.to_string(),
+                };
+                overlay_hint(&app, &msg);
+            }
+            Selection::Pending | Selection::AtStop => {}
+        }
+    });
+}
+
+/// The selection for a stopped Command recording: waits for the background copy, or copies now
+/// (push-to-talk, keys released).
+async fn resolve_selection(selection: &Arc<parking_lot::Mutex<Selection>>, target: isize) -> Result<String> {
+    let deadline = Instant::now() + Duration::from_secs(4);
+    loop {
+        let current = selection.lock().clone();
+        match current {
+            Selection::Got(t) => return Ok(t),
+            Selection::Empty => return Err(perr(NO_SELECTION, None, None)),
+            Selection::Failed(m) => return Err(perr(m, None, None)),
+            Selection::AtStop => {
+                let r = tauri::async_runtime::spawn_blocking(move || platform::copy_selection(target))
+                    .await
+                    .map_err(|e| anyhow!(e.to_string()))?;
+                *selection.lock() = selection_from(r);
+            }
+            Selection::Pending if Instant::now() > deadline => return Err(perr(NO_SELECTION, None, None)),
+            Selection::Pending => tokio::time::sleep(Duration::from_millis(40)).await,
+        }
+    }
+}
+
+/// Without a cloud key the live preview runs on the small local model: fetch it in the
+/// background when missing. With a cloud key the preview is cloud-only, so nothing is downloaded.
 pub fn ensure_preview_model(app: &AppHandle) {
     let st = state(app);
     let s = st.settings();
     let id = s.stt.preview_model.clone();
-    if !s.stt.live_preview || !crate::local_stt::cpu_supported() || st.local.installed(&id) || st.local.any_installed().is_some() {
+    if !s.stt.live_preview
+        || !crate::local_stt::cpu_supported()
+        || cloud_stt_keys(app, &s).is_some()
+        || st.local.installed(&id)
+        || st.local.any_installed().is_some()
+    {
         return;
     }
     let local = st.local.clone();
@@ -114,7 +272,7 @@ pub fn ensure_preview_model(app: &AppHandle) {
 
 /// Whisper "prompt": a short context sentence plus the user's vocabulary. It biases spelling of
 /// proper nouns (people, cities, brands) without changing what was said.
-fn stt_prompt(s: &Settings) -> String {
+pub(crate) fn stt_prompt(s: &Settings) -> String {
     let base = match s.speech_language.as_str() {
         "pt" => "Transcrição em português do Brasil, com pontuação correta e nomes próprios de pessoas, cidades, empresas e produtos escritos corretamente.",
         "en" => "Transcription in English with correct punctuation and correctly spelled names of people, cities, companies and products.",
@@ -135,7 +293,7 @@ fn preview_model(s: &Settings, st: &AppState) -> String {
     if st.local.installed(&s.stt.preview_model) {
         s.stt.preview_model.clone()
     } else {
-        st.local.any_installed().unwrap_or("base-q5_1").to_string()
+        st.local.any_installed_for(&s.speech_language).unwrap_or("base-q5_1").to_string()
     }
 }
 
@@ -144,201 +302,8 @@ fn preview_model(s: &Settings, st: &AppState) -> String {
 fn live_preview(app: AppHandle, samples: Arc<parking_lot::Mutex<Vec<f32>>>, stop: Arc<std::sync::atomic::AtomicBool>) {
     let s = state(&app).settings();
     match cloud_stt_keys(&app, &s) {
-        Some(target) => cloud_preview(app, samples, stop, target),
+        Some(_) => crate::preview::cloud_preview(app, samples, stop),
         None => local_preview(app, samples, stop),
-    }
-}
-
-/// Cloud-driven live preview. Every tick re-transcribes the WHOLE phrase since the last commit
-/// (Whisper needs context; 1-3 s slices are inaccurate) with the same model as the final pass,
-/// loudness-normalized, with the previous text as context. Requests are pipelined (up to 3 in
-/// flight, keys rotated) so the text refreshes about every second; the newest window wins.
-/// Phrases are committed only at a real pause after >= 12 s (or forced at 28 s).
-fn cloud_preview(
-    app: AppHandle,
-    samples: Arc<parking_lot::Mutex<Vec<f32>>>,
-    stop: Arc<std::sync::atomic::AtomicBool>,
-    (provider, cfg, keys): (String, crate::settings::ProviderSettings, Vec<String>),
-) {
-    struct Shared {
-        committed_at: usize,
-        segments: Vec<String>,
-        tail: String,
-        /// Instant local guess for the audio after the last cloud window (shown dimmed).
-        local_tail: String,
-        applied_end: usize,
-        in_flight: usize,
-        next_key: usize,
-        cooldown: Vec<Option<Instant>>,
-    }
-    const SR: usize = audio::SAMPLE_RATE as usize;
-    let st = state(&app);
-    let s = st.settings();
-    let base_prompt = stt_prompt(&s);
-    let debug_text = std::env::var_os("FLOWVOICE_LOG_PREVIEW").is_some();
-    // ~20 requests/min per key on free tiers: spread ticks across the available keys.
-    let interval = Duration::from_millis((3000 / keys.len().max(1) as u64).clamp(900, 3000));
-    let max_in_flight = keys.len().clamp(1, 3);
-    if debug_text {
-        log::info!("cloud preview: {provider}, {} key(s), every {} ms", keys.len(), interval.as_millis());
-    }
-    let shared = Arc::new(parking_lot::Mutex::new(Shared {
-        committed_at: 0,
-        segments: vec![],
-        tail: String::new(),
-        local_tail: String::new(),
-        applied_end: 0,
-        in_flight: 0,
-        next_key: 0,
-        cooldown: vec![None; keys.len()],
-    }));
-    let keys = Arc::new(keys);
-
-    let publish = |app: &AppHandle, sh: &Shared| {
-        let mut full = sh.segments.iter().filter(|t| !t.is_empty()).cloned().collect::<Vec<_>>().join(" ");
-        for part in [&sh.tail, &sh.local_tail] {
-            if part.is_empty() {
-                continue;
-            }
-            if !full.is_empty() {
-                full.push(' ');
-            }
-            full.push_str(part);
-        }
-        let n = full.chars().count();
-        let stable = n - sh.local_tail.chars().count().min(n);
-        log::info!("live preview: {n} chars ({stable} stable)");
-        let _ = app.emit_to("overlay", "overlay-partial", json!({ "text": full, "stable": stable }));
-    };
-    // Local model for the instant tail (optional: only if it's on disk and the CPU supports it).
-    // Instant local tail is disabled: tested on quiet slang audio it produced wrong words and its
-    // CPU use starved the cloud ticks. Kept for a future, cheaper local model.
-    let local_model: Option<String> = None;
-    let mut last_local = Instant::now();
-
-    let mut last_tick = Instant::now() - interval;
-    while !stop.load(Ordering::Relaxed) {
-        std::thread::sleep(Duration::from_millis(80));
-        if let Some(model) = &local_model {
-            if last_local.elapsed() > Duration::from_millis(450) {
-                last_local = Instant::now();
-                let from = {
-                    let sh = shared.lock();
-                    sh.applied_end.max(sh.committed_at)
-                };
-                let fresh: Vec<f32> = {
-                    let all = samples.lock();
-                    if all.len() > from { all[from..].to_vec() } else { vec![] }
-                };
-                // Only short uncovered tails (the cloud catches up within ~3 s).
-                if fresh.len() > SR * 7 / 10 && fresh.len() < SR * 6 && audio::rms(&fresh) > 0.002 {
-                    if let Ok(t) = st.local.transcribe(model, &audio::normalize(&fresh), &s.speech_language, "", true) {
-                        let t = tidy_preview(&text::strip_annotations(&t));
-                        let mut sh = shared.lock();
-                        let still_fresh = sh.applied_end.max(sh.committed_at) == from;
-                        if still_fresh && !text::is_hallucination(&t) && t.chars().count() < 120 {
-                            // Lowercase start: it continues the sentence the cloud already wrote.
-                            let mut c = t.chars();
-                            sh.local_tail = match c.next() {
-                                Some(f) if !sh.tail.is_empty() || !sh.segments.is_empty() => f.to_lowercase().collect::<String>() + c.as_str(),
-                                Some(f) => f.to_string() + c.as_str(),
-                                None => String::new(),
-                            };
-                            if debug_text {
-                                log::info!("preview local tail: {}", sh.local_tail);
-                            }
-                            publish(&app, &sh);
-                        }
-                    }
-                }
-            }
-        }
-        if last_tick.elapsed() < interval || shared.lock().in_flight >= max_in_flight {
-            continue;
-        }
-        let (start, window) = {
-            let committed_at = shared.lock().committed_at;
-            let all = samples.lock();
-            if all.len() <= committed_at {
-                continue;
-            }
-            (committed_at, all[committed_at..].to_vec())
-        };
-        // Start only with real speech in the window (avoids "Boa noite." style hallucinations).
-        if audio::trim_silence(&window).len() < SR * 12 / 10 {
-            continue;
-        }
-        last_tick = Instant::now();
-        let end = start + window.len();
-        let key_idx = {
-            let mut sh = shared.lock();
-            let now = Instant::now();
-            let n = keys.len();
-            let pick = (0..n).map(|k| (sh.next_key + k) % n).find(|&i| sh.cooldown[i].map_or(true, |t| t <= now));
-            let Some(i) = pick else { continue };
-            sh.next_key = i + 1;
-            sh.in_flight += 1;
-            i
-        };
-        let context: String = {
-            let sh = shared.lock();
-            let joined = sh.segments.join(" ");
-            joined.chars().rev().take(240).collect::<Vec<_>>().into_iter().rev().collect()
-        };
-        let prompt = if context.is_empty() { base_prompt.clone() } else { format!("{base_prompt} {context}") };
-        // Commit decision is taken from the audio itself (real pause at the end of a long phrase).
-        let level = audio::rms(&window).max(1e-4);
-        let tail = &window[window.len().saturating_sub(SR * 7 / 10)..];
-        let commit = (window.len() > SR * 12 && audio::rms(tail) < level * 0.2) || window.len() > SR * 20;
-
-        let (app2, shared2, keys2, stop2) = (app.clone(), shared.clone(), keys.clone(), stop.clone());
-        let (provider2, cfg2, lang) = (provider.clone(), cfg.clone(), s.speech_language.clone());
-        let secs = window.len() as f32 / SR as f32;
-        tauri::async_runtime::spawn(async move {
-            let wav = audio::to_wav(&audio::normalize(&window));
-            let t0 = Instant::now();
-            let http = state(&app2).http.clone();
-            let res = cloud::transcribe(&http, &provider2, &cfg2, &keys2[key_idx], &wav, &lang, &prompt).await;
-            let ms = t0.elapsed().as_millis();
-            let mut sh = shared2.lock();
-            sh.in_flight -= 1;
-            let text = match res {
-                Ok(t) => tidy_preview(&text::strip_annotations(&t)),
-                Err(e) => {
-                    if e.key_problem {
-                        // Invalid/revoked keys sit out the whole session; rate limits only briefly.
-                        let dead = e.detail.starts_with("HTTP 401") || e.detail.starts_with("HTTP 403");
-                        let wait = if dead { 3600 } else { 20 };
-                        sh.cooldown[key_idx] = Some(Instant::now() + Duration::from_secs(wait));
-                        if debug_text {
-                            log::info!("preview key #{key_idx} cooldown {wait}s: {}", e.detail);
-                        }
-                    } else {
-                        log::warn!("cloud preview: {e}");
-                    }
-                    return;
-                }
-            };
-            // Stale: an older window finishing after a newer one, or a window from before a commit.
-            if stop2.load(Ordering::Relaxed) || start != sh.committed_at || end <= sh.applied_end {
-                return;
-            }
-            sh.applied_end = end;
-            let bad = text::is_hallucination(&text) || text.chars().count() as f32 > secs * 30.0 + 40.0;
-            let text = if bad { String::new() } else { text };
-            if debug_text {
-                log::info!("preview text ({ms} ms, {secs:.1}s audio): {} | {}", sh.segments.join(" "), text);
-            }
-            if commit {
-                sh.segments.push(text);
-                sh.tail.clear();
-                sh.committed_at = end;
-            } else {
-                sh.tail = text;
-            }
-            sh.local_tail.clear();
-            publish(&app2, &sh);
-        });
     }
 }
 
@@ -457,7 +422,7 @@ fn emit_preview(
 }
 
 /// One line, single spaces, first letter capitalized.
-fn tidy_preview(t: &str) -> String {
+pub(crate) fn tidy_preview(t: &str) -> String {
     let joined = t.split_whitespace().collect::<Vec<_>>().join(" ");
     let mut c = joined.chars();
     match c.next() {
@@ -492,6 +457,43 @@ fn cloud_stt_target(app: &AppHandle, s: &Settings) -> Option<(String, crate::set
     })
 }
 
+/// Identifies the dictation being processed. Esc/cancel bumps it, so a dictation that is still
+/// transcribing or refining in the background can't paste, save or show anything afterwards.
+static DICTATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Upper bound for transcription + refinement; past it the user gets an error instead of a
+/// card stuck on "Transcrevendo…".
+const PROCESS_DEADLINE: Duration = Duration::from_secs(75);
+
+fn is_current(gen: u64) -> bool {
+    DICTATION.load(Ordering::SeqCst) == gen
+}
+
+/// Clears `busy` when the processing task ends, unless a newer dictation took over.
+struct BusyGuard {
+    app: AppHandle,
+    gen: u64,
+}
+
+impl Drop for BusyGuard {
+    fn drop(&mut self) {
+        if is_current(self.gen) {
+            state(&self.app).busy.store(false, Ordering::SeqCst);
+        }
+    }
+}
+
+pub fn is_busy(app: &AppHandle) -> bool {
+    state(app).busy.load(Ordering::SeqCst)
+}
+
+/// Esc while transcribing/refining: drop the result, free the app for a new dictation.
+pub fn cancel_processing(app: &AppHandle) {
+    DICTATION.fetch_add(1, Ordering::SeqCst);
+    state(app).busy.store(false, Ordering::SeqCst);
+    log::info!("processing cancelled");
+    windows::hide_overlay(app);
+}
+
 pub fn cancel(app: &AppHandle) {
     let st = state(app);
     let Some(session) = st.session.lock().take() else { return };
@@ -513,15 +515,43 @@ pub fn stop(app: &AppHandle) {
     let Some(session) = st.session.lock().take() else { return };
     session.stop_flag.store(true, Ordering::SeqCst);
     let duration_ms = session.started.elapsed().as_millis() as u64;
+    let mut warnings = vec![];
+    if session.rec.used_fallback {
+        warnings.push("O microfone escolhido não foi encontrado — gravado com o microfone padrão do sistema.".to_string());
+    }
+    let mic_failed = session.rec.failed.clone();
     let samples = session.rec.finish();
+    if mic_failed.load(Ordering::SeqCst) {
+        warnings.push("O microfone falhou ou foi desconectado durante a gravação — o áudio pode estar incompleto.".to_string());
+    }
     log::info!("recording stop: {duration_ms} ms, {} samples", samples.len());
     after_recording(app);
     st.busy.store(true, Ordering::SeqCst);
+    let gen = DICTATION.fetch_add(1, Ordering::SeqCst) + 1;
     emit_overlay(app, json!({ "phase": "transcribing" }));
+    let job = Job {
+        mode: session.mode,
+        target_window: session.target_window,
+        duration_ms,
+        app: session.app.clone(),
+        style_id: session.style_id.clone(),
+        selection: session.selection.clone(),
+    };
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        let result = process_recording(&app, samples, session.mode, session.target_window, duration_ms).await;
-        state(&app).busy.store(false, Ordering::SeqCst);
+        let _busy = BusyGuard { app: app.clone(), gen };
+        let work = process_recording(&app, samples, job, gen, warnings);
+        let result = match tokio::time::timeout(PROCESS_DEADLINE, work).await {
+            Ok(r) => r,
+            Err(_) => Err(perr(
+                "Demorou demais para transcrever — os serviços não responderam. Tente de novo.",
+                None,
+                None,
+            )),
+        };
+        if !is_current(gen) {
+            return; // cancelled with Esc: stay quiet
+        }
         if let Err(e) = result {
             log::warn!("dictation failed: {e}");
             let (message, detail, raw) = match e.downcast::<PipelineError>() {
@@ -551,22 +581,39 @@ fn perr(message: impl Into<String>, detail: Option<String>, raw: Option<String>)
     anyhow::Error::new(PipelineError { message: message.into(), detail, raw })
 }
 
-async fn process_recording(
-    app: &AppHandle,
-    samples: Vec<f32>,
+/// What a stopped recording carries into processing.
+struct Job {
     mode: RecordMode,
     target_window: isize,
     duration_ms: u64,
-) -> Result<()> {
+    app: Option<AppContext>,
+    style_id: String,
+    selection: Arc<parking_lot::Mutex<Selection>>,
+}
+
+async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u64, warnings: Vec<String>) -> Result<()> {
+    let (mode, target_window, duration_ms) = (job.mode, job.target_window, job.duration_ms);
+    // Command: the selection first — nothing selected means nothing to transcribe for.
+    let source = match mode {
+        RecordMode::Command => Some(resolve_selection(&job.selection, target_window).await?),
+        _ => None,
+    };
+    if !is_current(gen) {
+        return Ok(());
+    }
     let voiced = audio::trim_silence(&samples).to_vec();
     if voiced.len() < (audio::SAMPLE_RATE as usize) / 4 {
         return Err(perr("Nenhuma fala detectada — verifique o microfone.", None, None));
     }
+    let voiced_secs = voiced.len() as f32 / audio::SAMPLE_RATE as f32;
     let (raw, stt_provider) = transcribe_any(app, &voiced).await?;
     let raw = text::strip_annotations(&raw);
     let s = state(app).settings();
+    if !is_current(gen) {
+        return Ok(());
+    }
     // "Ah." alone is a hesitation, not speech: never send an empty text to the LLM.
-    if text::is_hallucination(&raw) || !text::has_words(&text::remove_fillers(&raw, &s.speech_language)) {
+    if text::is_hallucination_voiced(&raw, voiced_secs) || !text::has_words(&text::remove_fillers(&raw, &s.speech_language)) {
         log::info!("no speech in transcript: {raw:?}");
         return Err(perr("Nenhuma fala detectada.", None, None));
     }
@@ -578,7 +625,7 @@ async fn process_recording(
     }
 
     let target = if mode == RecordMode::Translate { Some(s.translation_target.clone()) } else { None };
-    let style = s.style(&s.active_style);
+    let style = s.style(&job.style_id);
     let mut result = DictationResult {
         id: new_id(),
         ts: chrono::Local::now().to_rfc3339(),
@@ -591,9 +638,19 @@ async fn process_recording(
         stt_provider,
         pasted: false,
         duration_ms,
-        warnings: vec![],
+        warnings,
+        app: job.app.as_ref().map(|c| c.id.clone()),
+        app_name: job.app.as_ref().map(|c| c.name.clone()),
+        source,
     };
-    refine_into(app, &mut result, &s, true).await;
+    if mode == RecordMode::Command {
+        command_into(app, &mut result, &s, Some(gen)).await?;
+    } else {
+        refine_into(app, &mut result, &s, Some(gen)).await;
+    }
+    if !is_current(gen) {
+        return Ok(());
+    }
 
     if s.auto_paste {
         let text = result.text.clone();
@@ -601,7 +658,8 @@ async fn process_recording(
             .await
             .map_err(|e| anyhow!(e.to_string()))?;
         match pasted {
-            Ok(p) => result.pasted = p,
+            Ok(true) => result.pasted = true,
+            Ok(false) => result.warnings.push("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.".into()),
             Err(e) => result.warnings.push(e.to_string()),
         }
     } else if let Err(e) = platform::set_clipboard(&result.text) {
@@ -617,7 +675,8 @@ async fn process_recording(
 }
 
 /// Applies style/translation to `result.raw`, filling text/provider/warnings.
-async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings, show_progress: bool) {
+/// `progress`: Some(dictation) shows the "refining" phase while that dictation is still current.
+async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings, progress: Option<u64>) {
     let style = s.style(&result.style_id);
     let lang = s.speech_language.as_str();
     let cleaned = if s.remove_fillers { text::remove_fillers(&result.raw, lang) } else { result.raw.clone() };
@@ -630,7 +689,7 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
             } else {
                 style.prompt.clone()
             };
-            Some(settings::system_prompt(&style_prompt, t, &s.dictionary))
+            Some(settings::system_prompt(&style_prompt, t, &s.dictionary, result.app_name.as_deref()))
         }
         (_, Some(t)) => Some(settings::translation_prompt(t)),
         (_, None) => None,
@@ -644,7 +703,7 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
         return;
     }
     if let Some(system) = llm_prompt {
-        if show_progress {
+        if progress.is_some_and(is_current) {
             let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
             emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint }));
         }
@@ -670,16 +729,56 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
     result.text = text_out;
 }
 
-/// Re-runs the last transcript with another style/target (overlay chips).
+/// "Comando": applies the spoken instruction (`raw`) to the selected text (`source`).
+async fn command_into(app: &AppHandle, result: &mut DictationResult, s: &Settings, progress: Option<u64>) -> Result<()> {
+    let selection = result.source.clone().unwrap_or_default();
+    let instruction =
+        if s.remove_fillers { text::remove_fillers(&result.raw, &s.speech_language) } else { result.raw.clone() };
+    if progress.is_some_and(is_current) {
+        let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
+        emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint, "mode": "command" }));
+    }
+    let system = settings::command_prompt(&s.dictionary, result.app_name.as_deref());
+    let user = settings::command_message(&instruction, &selection, result.target.as_deref());
+    let max_tokens = ((selection.len() as u32) + 1024).clamp(1024, 8192);
+    result.provider = None;
+    match llm_chain(app, &[ChatMsg::new("system", system), ChatMsg::new("user", user)], 0.2, max_tokens).await {
+        Ok((out, provider)) => {
+            let out = text::clean_command_output(&out, &selection);
+            if !text::has_words(&out) && text::has_words(&selection) {
+                return Err(perr("A IA devolveu um texto vazio — nada foi alterado.", None, Some(result.raw.clone())));
+            }
+            result.text = out;
+            result.provider = Some(provider);
+            Ok(())
+        }
+        Err(errors) if errors.is_empty() => Err(perr(
+            "O Comando precisa de uma IA. Adicione uma chave grátis (Groq ou Gemini) em Configurações → Provedores.",
+            None,
+            Some(result.raw.clone()),
+        )),
+        Err(errors) => {
+            let detail = errors.iter().map(|e| format!("{} — {}", e, e.detail)).collect::<Vec<_>>().join("\n");
+            Err(perr(format!("Não foi possível aplicar o comando: {}", errors[0]), Some(detail), Some(result.raw.clone())))
+        }
+    }
+}
+
+/// Re-runs the last transcript with another style/target (overlay chips). A Command result is
+/// re-applied to the same selection (the style is ignored; a target also translates it).
 pub async fn reprocess(app: &AppHandle, style_id: String, target: Option<String>) -> Result<DictationResult> {
     let (mut result, window) = state(app).last.lock().clone().ok_or_else(|| anyhow!("nada para refazer"))?;
     let s = state(app).settings();
-    result.style_id = style_id;
     result.target = target.filter(|t| !t.is_empty());
     result.warnings.clear();
     // Keep `pasted` so the card knows the previous version is in the target app (for "Substituir").
     // The overlay stays on the result card: no progress events, just a final "done".
-    refine_into(app, &mut result, &s, false).await;
+    if result.mode == RecordMode::Command {
+        command_into(app, &mut result, &s, None).await?;
+    } else {
+        result.style_id = style_id;
+        refine_into(app, &mut result, &s, None).await;
+    }
     platform::set_clipboard(&result.text).ok();
     state(app).push_history(&result);
     *state(app).last.lock() = Some((result.clone(), window));
@@ -690,6 +789,34 @@ pub async fn reprocess(app: &AppHandle, style_id: String, target: Option<String>
 
 pub fn last_target_window(app: &AppHandle) -> isize {
     state(app).last.lock().as_ref().map(|(_, w)| *w).unwrap_or(0)
+}
+
+/// "Colar de novo": pastes the last dictation into `target` (the focused window for the hotkey,
+/// the last app window for the tray), not where it originally went.
+pub fn paste_last(app: &AppHandle, target: isize) {
+    if is_recording(app) {
+        return;
+    }
+    let st = state(app);
+    let last = st.last.lock().as_ref().map(|(r, _)| r.text.clone());
+    let text = last.or_else(|| {
+        st.history
+            .lock()
+            .iter()
+            .find(|h| h.mode != RecordMode::Ask && !h.text.trim().is_empty())
+            .map(|h| h.text.clone())
+    });
+    let Some(text) = text.filter(|t| !t.trim().is_empty()) else {
+        overlay_hint(app, "Nenhum ditado para colar ainda.");
+        return;
+    };
+    log::info!("paste last: {} chars", text.chars().count());
+    let app = app.clone();
+    std::thread::spawn(move || match platform::paste(&text, target, false) {
+        Ok(true) => {}
+        Ok(false) => overlay_hint(&app, "Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V."),
+        Err(e) => overlay_error(&app, &e.to_string(), None, None),
+    });
 }
 
 // ---------------------------------------------------------------- speech to text
@@ -703,7 +830,7 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
     let local_model = if st.local.installed(&s.stt.local_model) {
         Some(s.stt.local_model.clone())
     } else {
-        st.local.any_installed().map(str::to_string)
+        st.local.any_installed_for(&s.speech_language).map(str::to_string)
     };
     let run_local = |model: String| {
         let local = st.local.clone();
@@ -734,8 +861,39 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
         if keys.is_empty() || cfg.stt_model.trim().is_empty() {
             continue;
         }
+        let mut cfg = cfg.clone();
+        let mut healed = false;
         for key in keys {
-            match cloud::transcribe(&st.http, provider, cfg, &key, &wav, &lang, &prompt).await {
+            let mut res = cloud::transcribe(&st.http, provider, &cfg, &key, &wav, &lang, &prompt).await;
+            // Retired model: switch to a verified replacement (persisted) and retry once.
+            if let Err(e) = &res {
+                if e.model_gone && !healed {
+                    healed = true;
+                    if let Some(m) = crate::heal::heal(app, provider, crate::heal::Kind::Stt, &cfg.stt_model).await {
+                        cfg.stt_model = m;
+                        res = cloud::transcribe(&st.http, provider, &cfg, &key, &wav, &lang, &prompt).await;
+                    }
+                }
+            }
+            // Rate-limited (often by the live preview a moment ago): a short wait or Groq's other
+            // whisper model (separate limit) beats falling back to a slower provider.
+            if let Err(e) = &res {
+                if e.detail.starts_with("HTTP 429") {
+                    let wait = e.retry_after.unwrap_or(f32::MAX);
+                    if wait <= 3.0 {
+                        log::info!("stt {provider}: rate limited, retrying in {wait:.1}s");
+                        tokio::time::sleep(Duration::from_secs_f32(wait.max(0.3))).await;
+                        res = cloud::transcribe(&st.http, provider, &cfg, &key, &wav, &lang, &prompt).await;
+                    } else if provider == "groq" {
+                        let alt = if cfg.stt_model.contains("turbo") { "whisper-large-v3" } else { "whisper-large-v3-turbo" };
+                        log::info!("stt groq: rate limited, trying {alt}");
+                        let mut alt_cfg = cfg.clone();
+                        alt_cfg.stt_model = alt.into();
+                        res = cloud::transcribe(&st.http, provider, &alt_cfg, &key, &wav, &lang, &prompt).await;
+                    }
+                }
+            }
+            match res {
                 Ok(t) => return Ok((t, provider.clone())),
                 Err(e) => {
                     log::warn!("stt {provider} failed: {} ({})", e.message, e.detail);
@@ -807,18 +965,36 @@ pub async fn llm_chain_with(
         if !configured(app, &s, provider) {
             continue;
         }
+        let configured_model = s.providers[provider].model.clone();
         let mut cfg = s.providers[provider].clone();
         if strong {
-            cfg.model = cloud::strong_model(provider, &cfg.model);
+            cfg.model = crate::heal::strong_model(provider, &cfg.model);
         }
-        let cfg = &cfg;
         let effort = if strong { "medium" } else { "low" };
         let mut keys = st.keys.get(provider);
         if keys.is_empty() {
             keys.push(String::new()); // ollama / keyless custom endpoint
         }
+        let mut healed = false;
         for key in keys {
-            match cloud::chat_with_effort(&st.http, provider, cfg, &key, messages, temperature, max_tokens, effort).await {
+            let mut res = cloud::chat_with_effort(&st.http, provider, &cfg, &key, messages, temperature, max_tokens, effort).await;
+            if let Err(e) = &res {
+                if e.model_gone && !healed {
+                    healed = true;
+                    let replacement = if cfg.model != configured_model {
+                        // The assistant's stronger pick is gone: fall back to the configured model.
+                        crate::heal::invalidate(provider);
+                        Some(configured_model.clone())
+                    } else {
+                        crate::heal::heal(app, provider, crate::heal::Kind::Chat, &cfg.model).await
+                    };
+                    if let Some(m) = replacement {
+                        cfg.model = m;
+                        res = cloud::chat_with_effort(&st.http, provider, &cfg, &key, messages, temperature, max_tokens, effort).await;
+                    }
+                }
+            }
+            match res {
                 Ok(text) => return Ok((text, display_name(provider).to_string())),
                 Err(e) => {
                     log::warn!("llm {provider} failed: {} ({})", e.message, e.detail);
@@ -934,10 +1110,25 @@ pub async fn chat_toggle_recording(app: &AppHandle) -> Result<bool> {
             }
             let (raw, _) = transcribe_any(app, &voiced).await?;
             let raw = text::strip_annotations(&raw);
-            if !text::is_hallucination(&raw) {
+            if !text::is_hallucination_voiced(&raw, voiced.len() as f32 / audio::SAMPLE_RATE as f32) {
                 let _ = app.emit_to("chat", "chat-transcript", json!({ "text": raw }));
             }
             Ok(false)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn selection_preview_is_one_short_line() {
+        assert_eq!(selection_preview("  Oi,\n  tudo   bem? "), "Oi, tudo bem?");
+        let long = "Prezado cliente, conforme conversamos na reunião de ontem, segue em anexo a proposta revisada";
+        let p = selection_preview(long);
+        assert!(p.ends_with('…'));
+        assert!(p.chars().count() <= 60, "{p}");
+        assert!(long.starts_with(p.trim_end_matches('…')));
     }
 }

@@ -15,6 +15,7 @@
   import Select from "../../lib/ui/Select.svelte";
   import TagInput from "../../lib/ui/TagInput.svelte";
   import Toggle from "../../lib/ui/Toggle.svelte";
+  import AppStyles from "./AppStyles.svelte";
 
   let { onnavigate: _ }: { onnavigate?: (p: SettingsPage) => void } = $props();
   const s = $derived(app.settings!);
@@ -78,11 +79,14 @@
     if (!st) return;
     s.styles = s.styles.filter((x) => x.id !== st.id);
     if (s.active_style === st.id) s.active_style = s.styles.find((x) => x.builtin)?.id ?? "natural";
+    // Per-app rules that used it go too (Rust drops them on save anyway).
+    if (s.app_styles.some((r) => r.style_id === st.id)) s.app_styles = s.app_styles.filter((r) => r.style_id !== st.id);
   }
 
   // ------------------------------------------------------------ radio keyboard nav (roving)
   function radioKey(e: KeyboardEvent) {
     if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
+    if (!(e.target as HTMLElement).closest(".pick")) return; // e.g. the intensity segmented control
     e.preventDefault();
     const ids = s.styles.map((x) => x.id);
     const i = ids.indexOf(s.active_style);
@@ -121,25 +125,33 @@
       </span>
       <span class="on mono" aria-hidden="true">{t("styles.active")}</span>
     </button>
-    {#if st.id === "prompt"}
-      <div class="strength">
-        <span class="label">{t("home.sty_strength")}</span>
-        <Segmented
-          label={t("home.sty_strength")}
-          bind:value={s.prompt_strength}
-          options={[
-            { value: "light", label: t("home.sty_strength_light") },
-            { value: "medium", label: t("home.sty_strength_medium") },
-            { value: "strong", label: t("home.sty_strength_strong") },
-          ]}
-        />
-        <span class="shint">{t(`home.sty_strength_${s.prompt_strength}_hint`)}</span>
-      </div>
-    {/if}
     {#if !st.builtin}
       <div class="acts">
         <Button size="sm" variant="ghost" icon="edit" aria-label={t("styles.edit")} title={t("styles.edit")} onclick={() => openEdit(st)} />
         <Button size="sm" variant="ghost" icon="trash" aria-label={t("styles.delete")} title={t("styles.delete")} onclick={() => askDelete(st)} />
+      </div>
+    {/if}
+    {#if st.id === "prompt"}
+      <!-- intensity: its own line under the text, revealed only while Prompt is the active style -->
+      <div class="strength-wrap" class:open={active} inert={!active}>
+        <div class="strength">
+          <div class="strength-row">
+            <span class="slabel">{t("home.sty_strength")}</span>
+            <Segmented
+              size="sm"
+              label={t("home.sty_strength")}
+              bind:value={s.prompt_strength}
+              options={[
+                { value: "light", label: t("home.sty_strength_light") },
+                { value: "medium", label: t("home.sty_strength_medium") },
+                { value: "strong", label: t("home.sty_strength_strong") },
+              ]}
+            />
+          </div>
+          {#key s.prompt_strength}
+            <p class="shint" in:fly={{ y: 4, duration: dur(), easing: cubicOut }}>{t(`home.sty_strength_${s.prompt_strength}_hint`)}</p>
+          {/key}
+        </div>
       </div>
     {/if}
   </li>
@@ -183,6 +195,8 @@
   </Section>
 </div>
 
+<AppStyles />
+
 <Section label={t("styles.sec_translation")}>
   <Row label={t("styles.translation_target")} hint={t("styles.translation_hint")}>
     <Select label={t("styles.translation_target")} bind:value={s.translation_target} options={langOptions} />
@@ -195,7 +209,7 @@
   </Row>
 </Section>
 
-<Section label={t("styles.sec_dictionary")}>
+<Section label={t("sh.sec_vocab")}>
   <Row label={t("styles.sec_dictionary")} hint={t("styles.dictionary_hint")} stack>
     {#snippet below()}
       <TagInput bind:tags={s.dictionary} placeholder={t("styles.dictionary_placeholder")} label={t("styles.sec_dictionary")} />
@@ -281,9 +295,10 @@
   }
   li {
     position: relative;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 4px;
+    column-gap: 4px;
     padding-right: 8px;
     border-radius: var(--r);
     transition: background var(--t) var(--ease);
@@ -312,7 +327,6 @@
     transform: scaleY(1);
   }
   .pick {
-    flex: 1;
     min-width: 0;
     display: flex;
     align-items: flex-start;
@@ -551,22 +565,56 @@
       grid-template-columns: 1fr;
     }
   }
-  .strength {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 14px;
-    padding: 0 16px 14px 46px;
+  /* ------------------------------------------------------------ Prompt intensity */
+  .strength-wrap {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows var(--t-slow) var(--ease-out),
+      opacity var(--t) var(--ease);
   }
-  .strength .label {
-    font: 600 10.5px var(--mono);
-    letter-spacing: 0.08em;
+  .strength-wrap.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .strength {
+    min-height: 0;
+    overflow: hidden;
+    /* aligned with the name/description column: pick padding 14 + radio 16 + gap 14 */
+    padding: 0 8px 0 44px;
+    transform: translateY(-4px);
+    transition: transform var(--t-slow) var(--ease-out);
+  }
+  .open .strength {
+    transform: none;
+  }
+  .strength-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .slabel {
+    font: 500 10.5px var(--mono);
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-3);
   }
   .shint {
-    flex-basis: 100%;
-    color: var(--text-3);
+    margin: 8px 0 0;
+    padding-bottom: 14px;
+    color: var(--text-2);
     font-size: 12px;
+    line-height: 1.45;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .strength-wrap,
+    .strength {
+      transition: none;
+    }
   }
 </style>

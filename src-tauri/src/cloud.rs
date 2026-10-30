@@ -52,6 +52,10 @@ pub struct ProviderError {
     pub detail: String,
     /// Worth trying the next key (auth/limit) — otherwise go to the next provider.
     pub key_problem: bool,
+    /// The model id was retired/unknown (heal::heal can pick a replacement).
+    pub model_gone: bool,
+    /// Seconds the provider asked us to wait (429 retry-after), when it said so.
+    pub retry_after: Option<f32>,
 }
 
 impl std::fmt::Display for ProviderError {
@@ -86,7 +90,36 @@ fn friendly(provider: &str, status: u16, body: &str) -> ProviderError {
         500..=599 => ("o serviço está instável agora".to_string(), false),
         _ => (api_msg.clone(), false),
     };
-    ProviderError { provider: provider.into(), message, detail: format!("HTTP {status}: {api_msg}"), key_problem }
+    let gone = model_gone(status, &lower);
+    let (message, key_problem) = if gone {
+        ("modelo descontinuado ou indisponível".to_string(), false)
+    } else {
+        (message, key_problem)
+    };
+    ProviderError {
+        provider: provider.into(),
+        message,
+        detail: format!("HTTP {status}: {api_msg}"),
+        key_problem,
+        model_gone: gone,
+        retry_after: None,
+    }
+}
+
+/// True when the error says the model id itself is gone (retired, renamed, unknown).
+pub fn model_gone(status: u16, lower_msg: &str) -> bool {
+    const GONE: [&str; 12] = [
+        "not found", "does not exist", "decommissioned", "deprecated", "not supported", "invalid model",
+        "no longer", "unknown model", "not available", "retired", "model_not_found", "unsupported model",
+    ];
+    if lower_msg.contains("model_not_found") || lower_msg.contains("no endpoints found") {
+        return true;
+    }
+    match status {
+        404 => true,
+        400 | 403 | 422 => lower_msg.contains("model") && GONE.iter().any(|w| lower_msg.contains(w)),
+        _ => false,
+    }
 }
 
 fn net_error(provider: &str, e: reqwest::Error) -> ProviderError {
@@ -101,21 +134,57 @@ fn net_error(provider: &str, e: reqwest::Error) -> ProviderError {
     } else {
         "falha de rede".to_string()
     };
-    ProviderError { provider: provider.into(), message, detail: e.to_string(), key_problem: false }
+    ProviderError { provider: provider.into(), message, detail: e.to_string(), key_problem: false, model_gone: false, retry_after: None }
 }
 
 async fn read(provider: &str, resp: reqwest::Response) -> Result<Value, ProviderError> {
     let status = resp.status().as_u16();
+    let retry_after = retry_after(resp.headers());
     let body = resp.text().await.map_err(|e| net_error(provider, e))?;
     if !(200..300).contains(&status) {
-        return Err(friendly(provider, status, &body));
+        let mut e = friendly(provider, status, &body);
+        if status == 429 {
+            e.retry_after = retry_after.or_else(|| retry_from_body(&body));
+        }
+        return Err(e);
     }
     serde_json::from_str(&body).map_err(|_| ProviderError {
         provider: provider.into(),
         message: "resposta inesperada do serviço".into(),
         detail: body.chars().take(300).collect(),
         key_problem: false,
+        model_gone: false,
+        retry_after: None,
     })
+}
+
+/// `retry-after: 7` / `retry-after: 1.5` (seconds) on 429s.
+fn retry_after(h: &reqwest::header::HeaderMap) -> Option<f32> {
+    h.get("retry-after").and_then(|v| v.to_str().ok()).and_then(|v| v.trim().parse::<f32>().ok())
+}
+
+/// Gemini puts it in the body: `"retryDelay": "21s"` / "Please retry in 21.4s".
+fn retry_from_body(body: &str) -> Option<f32> {
+    let lower = body.to_lowercase();
+    for marker in ["\"retrydelay\": \"", "retry in ", "try again in "] {
+        if let Some(i) = lower.find(marker) {
+            let rest = &lower[i + marker.len()..];
+            let num: String = rest.chars().take_while(|c| c.is_ascii_digit() || *c == '.').collect();
+            if let Ok(v) = num.parse::<f32>() {
+                let unit = &rest[num.len()..];
+                if unit.starts_with("ms") {
+                    return Some(v / 1000.0);
+                }
+                if let Some(secs) = unit.strip_prefix('m') {
+                    // Groq: "try again in 1m2.5s"
+                    let s: String = secs.chars().take_while(|c| c.is_ascii_digit() || *c == '.').collect();
+                    return Some(v * 60.0 + s.parse::<f32>().unwrap_or(0.0));
+                }
+                return Some(v);
+            }
+        }
+    }
+    None
 }
 
 // ---------------------------------------------------------------- speech to text
@@ -276,6 +345,8 @@ pub async fn chat_with_effort(
             message: "nenhum modelo configurado".into(),
             detail: String::new(),
             key_problem: false,
+            model_gone: false,
+            retry_after: None,
         });
     }
     let url = format!("{}/chat/completions", base_url(provider, cfg));
@@ -315,7 +386,7 @@ pub async fn chat_with_effort(
     let v = match read(provider, resp).await {
         Ok(v) => v,
         // Some models reject the optional knobs — retry once with a bare request.
-        Err(e) if e.detail.starts_with("HTTP 400") && !e.key_problem => {
+        Err(e) if e.detail.starts_with("HTTP 400") && !e.key_problem && !e.model_gone => {
             let o = body.as_object_mut().unwrap();
             for k in ["reasoning_effort", "include_reasoning", "temperature"] {
                 o.remove(k);
@@ -332,6 +403,8 @@ pub async fn chat_with_effort(
             message: "a IA devolveu uma resposta vazia".into(),
             detail: v["choices"][0]["finish_reason"].to_string(),
             key_problem: false,
+            model_gone: false,
+            retry_after: None,
         });
     }
     Ok(text)
@@ -395,4 +468,33 @@ pub async fn tavily(client: &reqwest::Client, key: &str, query: &str) -> Result<
         })
         .unwrap_or_default();
     Ok(SearchResult { answer: v["answer"].as_str().map(str::to_string).filter(|a| !a.is_empty()), results })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detects_retired_models() {
+        let g = |s: u16, m: &str| friendly("groq", s, &format!(r#"{{"error":{{"message":"{m}"}}}}"#)).model_gone;
+        assert!(g(400, "The model `llama3-8b-8192` has been decommissioned and is no longer supported."));
+        assert!(g(404, "The model `whisper-large-v2` does not exist or you do not have access to it."));
+        assert!(g(400, "models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent."));
+        assert!(g(404, "No endpoints found for meta-llama/llama-3-8b-instruct:free."));
+        assert!(!g(400, "response_format is not supported"));
+        assert!(!g(401, "Invalid API Key"));
+        assert!(!g(429, "Rate limit reached for model whisper-large-v3"));
+        let e = friendly("groq", 400, r#"{"error":{"message":"The model x has been decommissioned"}}"#);
+        assert!(!e.key_problem);
+        let e = friendly("gemini", 403, r#"{"error":{"message":"Permission denied on API key"}}"#);
+        assert!(e.key_problem && !e.model_gone);
+    }
+
+    #[test]
+    fn retry_delay_from_body() {
+        assert_eq!(retry_from_body(r#"[{"error":{"details":[{"retryDelay": "21s"}]}}]"#), Some(21.0));
+        assert_eq!(retry_from_body("Please try again in 7.5s"), Some(7.5));
+        assert_eq!(retry_from_body("Please retry in 2.5s."), Some(2.5));
+        assert_eq!(retry_from_body("try again in 1m2.5s"), Some(62.5));
+    }
 }

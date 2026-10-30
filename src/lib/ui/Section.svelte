@@ -45,6 +45,11 @@
       opacity: 0;
     }
   }
+  /* the label's hairline already separates: the first row under it drops its own top rule */
+  header + :global(.row) {
+    border-top-color: transparent;
+    padding-top: 6px;
+  }
   .aside {
     display: flex;
     gap: 6px;

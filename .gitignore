@@ -28,3 +28,4 @@ flowvoice.log
 *.tmp
 website/FlowVoiceSetup.exe
 .claude
+tools/dev/

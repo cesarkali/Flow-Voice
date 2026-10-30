@@ -13,6 +13,7 @@ pub const TRAY_ID: &str = "flowvoice";
 fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     let s = app.state::<AppState>().settings();
     let dictate = MenuItem::with_id(app, "dictate", "Ditar agora", true, None::<&str>)?;
+    let paste_last = MenuItem::with_id(app, "paste_last", "Colar último ditado", true, None::<&str>)?;
     let styles: Vec<CheckMenuItem<Wry>> = s
         .styles
         .iter()
@@ -28,6 +29,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         app,
         &[
             &dictate,
+            &paste_last,
             &style_menu,
             &PredefinedMenuItem::separator(app)?,
             &history,
@@ -51,6 +53,8 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
             let id = event.id().as_ref();
             match id {
                 "dictate" => pipeline::toggle(app, RecordMode::Dictate),
+                // The menu took the focus: paste into the app the user was in before.
+                "paste_last" => pipeline::paste_last(app, crate::platform::last_app_window()),
                 "settings" => windows::open_settings(app, Some("general".into())),
                 "history" => windows::open_settings(app, Some("home".into())),
                 "quit" => app.exit(0),

@@ -120,7 +120,7 @@
         <button type="button" onclick={() => api.openUrl(REPO)}>
           <Icon name="github" size={16} />
           <span class="ln">{t("about.repo")}</span>
-          <span class="mono url">{host(REPO)}</span>
+          <span class="mono url">{REPO.replace("https://github.com/", "")}</span>
           <span class="go"><Icon name="external" size={13} /></span>
         </button>
       </li>
@@ -320,6 +320,9 @@
 
   .cols {
     margin-top: 16px;
+    /* side-by-side cards share one height */
+    align-items: stretch;
+    gap: 14px;
   }
   .blk {
     display: flex;

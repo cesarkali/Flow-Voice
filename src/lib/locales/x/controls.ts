@@ -21,7 +21,7 @@ export default defineExt({
     "ctl.local_f3": "A velocidade depende do seu PC",
     "ctl.selected": "Selecionado",
 
-    "ctl.live_hint": "Ver o texto enquanto você fala — usa o modelo Rápido (57 MB), baixado automaticamente.",
+    "ctl.live_hint": "Ver o texto enquanto você fala — usa o modelo Rápido (57 MB), baixado automaticamente.",
     "ctl.live_pending": "O modelo Rápido será baixado assim que for preciso.",
     "ctl.live_downloading": "Baixando o modelo Rápido… {pct}%",
     "ctl.live_ready": "Modelo Rápido pronto neste computador.",
@@ -91,7 +91,7 @@ export default defineExt({
     "ctl.local_f3": "Speed depends on your PC",
     "ctl.selected": "Selected",
 
-    "ctl.live_hint": "See the text while you speak — uses the Fast model (57 MB), downloaded automatically.",
+    "ctl.live_hint": "See the text while you speak — uses the Fast model (57 MB), downloaded automatically.",
     "ctl.live_pending": "The Fast model will be downloaded when needed.",
     "ctl.live_downloading": "Downloading the Fast model… {pct}%",
     "ctl.live_ready": "Fast model ready on this computer.",
@@ -161,7 +161,7 @@ export default defineExt({
     "ctl.local_f3": "La velocidad depende de tu PC",
     "ctl.selected": "Seleccionado",
 
-    "ctl.live_hint": "Ver el texto mientras hablas — usa el modelo Rápido (57 MB), descargado automáticamente.",
+    "ctl.live_hint": "Ver el texto mientras hablas — usa el modelo Rápido (57 MB), descargado automáticamente.",
     "ctl.live_pending": "El modelo Rápido se descargará cuando haga falta.",
     "ctl.live_downloading": "Descargando el modelo Rápido… {pct}%",
     "ctl.live_ready": "Modelo Rápido listo en este equipo.",

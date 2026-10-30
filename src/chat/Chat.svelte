@@ -5,6 +5,7 @@
   import Icon from "../lib/icons/Icon.svelte";
   import Logo from "../lib/icons/Logo.svelte";
   import { applyAccent, applyTheme } from "../lib/theme";
+  import { rememberAppearance } from "../lib/ui/appearance-cache";
   import { EVENTS, type ChatMessage, type Settings } from "../lib/types";
   import Button from "../lib/ui/Button.svelte";
   import { keycapsOf } from "../lib/ui/hotkeys";
@@ -44,6 +45,7 @@
     settings = s;
     applyTheme(s.theme);
     applyAccent(s.accent_color);
+    rememberAppearance(s.theme, s.accent_color);
     setLanguage(s.ui_language);
   }
 
@@ -253,7 +255,8 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 8px 18px 16px;
+    /* readable measure when the window is maximized: the thread stays a ~760px column */
+    padding: 8px max(18px, calc((100% - 760px) / 2)) 16px;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -285,7 +288,8 @@
   .empty p {
     margin-top: 6px;
     font-size: 13px;
-    max-width: 36ch;
+    max-width: 42ch;
+    text-wrap: balance;
   }
   .msg {
     max-width: 100%;
@@ -487,7 +491,7 @@
     font-family: var(--mono);
   }
   .composer {
-    margin: 0 12px 12px;
+    margin: 0 max(12px, calc((100% - 784px) / 2)) 12px;
     display: flex;
     align-items: flex-end;
     gap: 6px;
@@ -518,6 +522,10 @@
     line-height: 20px;
     padding: 7px 4px;
     max-height: 120px;
+  }
+  textarea:focus-visible {
+    /* the composer frame carries the focus ring */
+    outline: none;
   }
   textarea::placeholder {
     color: var(--text-3);

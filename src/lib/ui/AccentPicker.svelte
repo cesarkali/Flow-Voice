@@ -374,8 +374,13 @@
       transform var(--t-fast) var(--spring),
       box-shadow var(--t) var(--ease);
   }
+  /* large (onboarding card): all nine swatches always fit one row, shrinking a little in narrow cards */
+  .large {
+    gap: 7px;
+    container-type: inline-size;
+  }
   .large .swatch {
-    --s: 28px;
+    --s: clamp(18px, calc((100cqw - 56px) / 9), 26px);
   }
   .swatch:hover {
     transform: scale(1.14);
@@ -444,6 +449,11 @@
     font-size: 11.5px;
     color: var(--text-3);
     min-width: 7ch;
+  }
+  /* large (onboarding card): swatches fill the row, the hex sits under them */
+  .large .hexout {
+    flex-basis: 100%;
+    margin: 2px 0 0;
   }
 
   /* ---- color window (in <body>) */

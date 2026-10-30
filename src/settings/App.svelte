@@ -11,7 +11,9 @@
   import { EVENTS, type SettingsPage } from "../lib/types";
   import SaveIndicator from "../lib/ui/SaveIndicator.svelte";
   import TitleBar from "../lib/ui/TitleBar.svelte";
+  import { rememberAppearance } from "../lib/ui/appearance-cache";
   import AuthorAvatar from "./AuthorAvatar.svelte";
+  import ModelNotice from "./ModelNotice.svelte";
   import { AUTHOR } from "./author.svelte";
   import Onboarding from "./onboarding/Onboarding.svelte";
   import About from "./pages/About.svelte";
@@ -69,6 +71,12 @@
     donOpen = false;
     api.openUrl(url);
   }
+
+  // keep the first-frame appearance cache fresh (chat window + next launch paint with it)
+  $effect(() => {
+    const st = app.settings;
+    if (st) rememberAppearance(st.theme, st.accent_color);
+  });
 
   // close the compact-mode donation popover on outside click / Escape
   $effect(() => {
@@ -200,6 +208,7 @@
 </script>
 
 <div class="shell">
+  <ModelNotice />
   {#if app.settings && !app.settings.onboarded}
     <Onboarding />
   {:else}
@@ -732,7 +741,8 @@
   .page {
     grid-area: 1 / 1;
     width: 100%;
-    max-width: 1240px;
+    /* settings read as a column: past ~1000px rows turn into label … far-away control */
+    max-width: 1000px;
     margin: 0 auto;
     padding: 12px clamp(20px, 3.2cqi, 40px) 72px;
     min-width: 0;

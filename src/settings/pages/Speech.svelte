@@ -10,6 +10,7 @@
   import { EVENTS, type LocalModel, type ModelProgress, type SettingsPage } from "../../lib/types";
   import Badge from "../../lib/ui/Badge.svelte";
   import Button from "../../lib/ui/Button.svelte";
+  import Flag from "../../lib/ui/Flag.svelte";
   import Progress from "../../lib/ui/Progress.svelte";
   import Row from "../../lib/ui/Row.svelte";
   import Section from "../../lib/ui/Section.svelte";
@@ -78,7 +79,8 @@
 
   // ---------------------------------------------------------------- engines
   const cloudReady = $derived(STT_PROVIDERS.some((p) => hasKey(p)));
-  const localReady = $derived(models.some((m) => m.installed && m.id === s.stt.local_model));
+  // Rust falls back to another installed model when the configured one is gone.
+  const localReady = $derived(models.some((m) => m.installed && m.id === s.stt.local_model) || models.some((m) => m.installed && m.langs.includes("*")));
 
   const ENGINES: { id: "cloud" | "local"; icon: IconName; title: TKey; body: TKey; feats: TKey[] }[] = [
     { id: "cloud", icon: "cloud", title: "speech.cloud_title", body: "speech.cloud_body", feats: ["ctl.cloud_f1", "ctl.cloud_f2", "ctl.cloud_f3"] },
@@ -92,22 +94,42 @@
   }
 
   // ---------------------------------------------------------------- models
-  type Meta = { name: TKey; desc: TKey; speed: number; acc: number; heavy?: boolean; tech: string };
-  const META: Record<string, Meta> = {
-    "tiny-q5_1": { name: "ctl.m_tiny", desc: "ctl.m_tiny_d", speed: 5, acc: 1, tech: "whisper tiny · q5_1" },
-    "base-q5_1": { name: "ctl.m_base", desc: "ctl.m_base_d", speed: 4, acc: 2, tech: "whisper base · q5_1" },
-    "small-q5_1": { name: "ctl.m_small", desc: "ctl.m_small_d", speed: 3, acc: 3, tech: "whisper small · q5_1" },
-    "medium-q5_0": { name: "ctl.m_medium", desc: "ctl.m_medium_d", speed: 1, acc: 4, heavy: true, tech: "whisper medium · q5_0" },
-    "turbo-q5_0": { name: "ctl.m_turbo", desc: "ctl.m_turbo_d", speed: 2, acc: 5, heavy: true, tech: "whisper large-v3-turbo · q5_0" },
+  /** Friendly names/descriptions; unknown ids fall back to the Rust label/note. */
+  const META: Record<string, { name: TKey; desc: TKey }> = {
+    "tiny-q5_1": { name: "ctl.m_tiny", desc: "ctl.m_tiny_d" },
+    "base-q5_1": { name: "ctl.m_base", desc: "ctl.m_base_d" },
+    "base-en-q5_1": { name: "lm.m_base_en", desc: "lm.m_base_en_d" },
+    "small-q5_1": { name: "ctl.m_small", desc: "ctl.m_small_d" },
+    "small-en-q5_1": { name: "lm.m_small_en", desc: "lm.m_small_en_d" },
+    "distil-ptbr-q5_0": { name: "lm.m_ptbr", desc: "lm.m_ptbr_d" },
+    "medium-q5_0": { name: "ctl.m_medium", desc: "ctl.m_medium_d" },
+    "turbo-q5_0": { name: "ctl.m_turbo", desc: "ctl.m_turbo_d" },
   };
-  const ORDER = Object.keys(META);
-  const sorted = $derived(
-    [...models].sort((a, b) => {
-      const ia = ORDER.indexOf(a.id);
-      const ib = ORDER.indexOf(b.id);
-      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-    }),
-  );
+  const nameOfModel = (m: LocalModel) => (META[m.id] ? t(META[m.id].name) : m.label);
+  const descOf = (m: LocalModel) => (META[m.id] ? t(META[m.id].desc) : m.note);
+
+  // Which language the list is tuned for: follows "idioma que eu falo" until the user picks another here.
+  let pickedLang = $state<string | null>(null);
+  const modelLang = $derived(pickedLang ?? s.speech_language ?? "auto");
+  const supports = (m: LocalModel, l: string) => m.langs.includes("*") || (l !== "auto" && m.langs.includes(l));
+  const recFor = (m: LocalModel, l: string) =>
+    supports(m, l) && (l === "auto" ? m.recommended_for.includes("*") : m.recommended_for.includes("*") || m.recommended_for.includes(l));
+
+  let showOther = $state(false);
+  const groups = $derived.by(() => {
+    const l = modelLang;
+    const best = (a: LocalModel, b: LocalModel) => b.quality - a.quality || b.speed - a.speed || a.size_mb - b.size_mb;
+    const light = (a: LocalModel, b: LocalModel) => a.size_mb - b.size_mb || b.quality - a.quality;
+    const rec = models.filter((m) => recFor(m, l)).sort(best);
+    const rest = models.filter((m) => supports(m, l) && !recFor(m, l)).sort(light);
+    const other = models.filter((m) => !supports(m, l)).sort(light);
+    return { rec, rest, other };
+  });
+  /** Other-language models: installed ones stay visible (so they can be deleted), the rest on demand. */
+  const otherShown = $derived(showOther ? groups.other : groups.other.filter((m) => m.installed || downloading(m.id)));
+  const otherHidden = $derived(groups.other.length - otherShown.length);
+  const langLabel = (l: string) => nameOf(l);
+  const onlyLangs = (m: LocalModel) => (m.langs.includes("*") ? null : m.langs);
 
   async function download(m: LocalModel) {
     progress = { ...progress, [m.id]: { id: m.id, downloaded: 0, total: m.size_mb * 1048576, done: false, error: null } };
@@ -117,14 +139,23 @@
       progress = { ...progress, [m.id]: { ...progress[m.id], error: String(e) } };
     }
   }
+
+  /** Where the offline engine goes if `m` disappears: best other installed model for the speech language. */
+  function replacementFor(m: LocalModel): LocalModel | null {
+    const l = s.speech_language;
+    const left = models.filter((x) => x.installed && x.id !== m.id && supports(x, l === "auto" ? "*" : l));
+    left.sort((a, b) => Number(recFor(b, l)) - Number(recFor(a, l)) || b.quality - a.quality || b.speed - a.speed);
+    return left[0] ?? null;
+  }
   async function del(m: LocalModel) {
-    if (confirmDel !== m.id) {
-      confirmDel = m.id;
-      setTimeout(() => confirmDel === m.id && (confirmDel = null), 3000);
-      return;
-    }
     confirmDel = null;
+    const wasInUse = s.stt.local_model === m.id;
+    const next = replacementFor(m);
     await api.deleteLocalModel(m.id);
+    if (wasInUse) {
+      if (next) s.stt.local_model = next.id;
+      else if (s.stt.engine === "local" && cloudReady) s.stt.engine = "cloud";
+    }
     loadModels();
   }
   const pct = (p?: ModelProgress) => (p && p.total ? p.downloaded / p.total : 0);
@@ -222,73 +253,148 @@
 </Section>
 
 <Section label={t("speech.models")}>
-  <p class="hint">{t("ctl.models_hint")}</p>
+  <div class="mhead">
+    <p class="hint">{t("ctl.models_hint")}</p>
+    <div class="mlang">
+      <span class="mlab">{t("lm.for_lang")}</span>
+      <Select label={t("lm.for_lang")} width="200px" value={modelLang} onchange={(v: string) => (pickedLang = v)} options={langOptions} />
+    </div>
+  </div>
+  <p class="unload"><Icon name="chip" size={14} /><span>{t("lm.unload_note")}</span></p>
+
+  {#key modelLang}
+    <div class="groups">
+      {#if groups.rec.length}
+        <h3 class="gl rec"><Icon name="sparkle" size={13} />{modelLang === "auto" ? t("lm.rec_auto") : t("lm.rec_for", { lang: langLabel(modelLang) })}</h3>
+        {@render list(groups.rec, 0, true)}
+      {/if}
+      {#if groups.rest.length}
+        <h3 class="gl">{t("lm.others")}</h3>
+        {@render list(groups.rest, groups.rec.length, false)}
+      {/if}
+      {#if groups.other.length}
+        {#if otherShown.length}
+          <h3 class="gl">{t("lm.other_langs")}</h3>
+          {@render list(otherShown, 0, false, true)}
+        {/if}
+        {#if otherHidden > 0 || showOther}
+          <button type="button" class="more" aria-expanded={showOther} onclick={() => (showOther = !showOther)}>
+            <Icon name={showOther ? "chevronUp" : "chevronDown"} size={14} />
+            {showOther ? t("lm.hide_other") : t("lm.show_other", { n: otherHidden })}
+          </button>
+        {/if}
+      {/if}
+    </div>
+  {/key}
+</Section>
+
+{#snippet list(items: LocalModel[], offset: number, rec: boolean, foreign = false)}
   <ul class="models">
-    {#each sorted as m, i (m.id)}
+    {#each items as m, i (m.id)}
       {@const p = progress[m.id]}
-      {@const meta = META[m.id]}
       {@const inUse = s.stt.local_model === m.id && m.installed}
       {@const busy = downloading(m.id)}
-      <li class:inuse={inUse} class:active={inUse && s.stt.engine === "local"} class:installed={m.installed} style="--i:{i}">
-        <div class="mi">
-          <div class="mn">
-            <span class="ml">{meta ? t(meta.name) : m.label}</span>
-            {#if inUse}
-              <Badge tone={s.stt.engine === "local" ? "solid" : "neutral"}>{t("speech.in_use")}</Badge>
-            {/if}
-            {#if m.recommended}<Badge tone="accent">{t("c.recommended")}</Badge>{/if}
-            {#if m.id === PREVIEW_ID && s.stt.live_preview}<Badge>{t("ctl.preview_badge")}</Badge>{/if}
-          </div>
-          <p class="md">{meta ? t(meta.desc) : m.note}</p>
-          {#if meta}
+      {@const only = onlyLangs(m)}
+      {@const asking = confirmDel === m.id}
+      <li
+        class:inuse={inUse}
+        class:active={inUse && s.stt.engine === "local"}
+        class:installed={m.installed}
+        class:foreign
+        class:asking
+        style="--i:{offset + i}"
+      >
+        <div class="mrow">
+          <div class="mi">
+            <div class="mn">
+              <span class="ml">{nameOfModel(m)}</span>
+              {#if inUse}
+                <Badge tone={s.stt.engine === "local" ? "solid" : "neutral"}>{t("speech.in_use")}</Badge>
+              {/if}
+              {#if rec}<Badge tone="accent">{t("c.recommended")}</Badge>{/if}
+              {#if only}
+                <span class="only">
+                  {#each only as l (l)}<Flag code={l} size={14} />{/each}
+                  {t("lm.only", { lang: only.map((l) => (i18n.lang === "en" ? langLabel(l) : langLabel(l).toLocaleLowerCase(locale()))).join(", ") })}
+                </span>
+              {/if}
+              {#if m.id === PREVIEW_ID && s.stt.live_preview}<Badge>{t("ctl.preview_badge")}</Badge>{/if}
+            </div>
+            <p class="md">{descOf(m)}</p>
             <div class="meters">
-              {@render meter(t("ctl.speed"), meta.speed)}
-              {@render meter(t("ctl.accuracy"), meta.acc)}
-              {#if meta.heavy}
+              {@render meter(t("ctl.speed"), m.speed)}
+              {@render meter(t("ctl.accuracy"), m.quality)}
+              {#if m.ram_mb >= 800}
                 <span class="heavy"><Icon name="chip" size={13} />{t("ctl.strong_pc")}</span>
               {/if}
             </div>
-          {/if}
-          <div class="tech mono">
-            <span>{meta?.tech ?? m.file}</span>
-            {#if m.installed}
+            <div class="tech mono">
+              <span class="tnum">{t("lm.disk", { size: fmtSize(m.size_mb) })}</span>
               <span aria-hidden="true">·</span>
-              <span class="tnum">{fmtSize(m.size_mb)}</span>
+              <span class="tnum">{t("lm.ram", { size: fmtSize(m.ram_mb) })}</span>
+              <span aria-hidden="true">·</span>
+              <span class="tt">{m.tech || m.file}</span>
+            </div>
+            {#if busy && p}
+              <div class="pg" transition:slide={{ duration: 200, easing: cubicOut }}>
+                <Progress value={pct(p)} label={nameOfModel(m)} />
+                <span class="mono tnum">{mbOf(p)}</span>
+              </div>
+            {/if}
+            {#if p?.error}<p class="perr mono">{p.error}</p>{/if}
+          </div>
+          <div class="ma">
+            {#if busy}
+              <span class="mono pct tnum">{t("speech.downloading", { pct: Math.round(pct(p) * 100) })}</span>
+            {:else if m.installed}
+              {#if !inUse && !foreign}
+                <Button size="sm" onclick={() => (s.stt.local_model = m.id)}>{t("speech.use")}</Button>
+              {/if}
+              <Button
+                size="sm"
+                variant={asking ? "danger" : "ghost"}
+                icon="trash"
+                aria-label={t("speech.delete_model")}
+                aria-expanded={asking}
+                title={t("speech.delete_model")}
+                onclick={() => (confirmDel = asking ? null : m.id)}
+              />
+            {:else}
+              <Button size="sm" icon="download" onclick={() => download(m)}>
+                {t("speech.download")}<span class="dsize tnum">{fmtSize(m.size_mb)}</span>
+              </Button>
             {/if}
           </div>
-          {#if busy && p}
-            <div class="pg" transition:slide={{ duration: 200, easing: cubicOut }}>
-              <Progress value={pct(p)} label={meta ? t(meta.name) : m.label} />
-              <span class="mono tnum">{mbOf(p)}</span>
+        </div>
+        {#if asking}
+          {@const next = inUse ? replacementFor(m) : null}
+          <div class="confirm" role="alertdialog" aria-label={t("speech.delete_model")} transition:slide={{ duration: 220, easing: cubicOut }}>
+            <div class="cq">
+              <Icon name="trash" size={15} />
+              <div>
+                <p class="cqt">{t("lm.del_q", { name: nameOfModel(m), size: fmtSize(m.size_mb) })}</p>
+                {#if inUse}
+                  <p class="cqs">
+                    {next
+                      ? t("lm.del_inuse", { name: nameOfModel(next) })
+                      : s.stt.engine === "local" && cloudReady
+                        ? t("lm.del_inuse_cloud")
+                        : t("lm.del_inuse_none")}
+                  </p>
+                {/if}
+                {#if m.id === PREVIEW_ID && s.stt.live_preview}<p class="cqs">{t("lm.del_preview")}</p>{/if}
+              </div>
             </div>
-          {/if}
-          {#if p?.error}<p class="perr mono">{p.error}</p>{/if}
-        </div>
-        <div class="ma">
-          {#if busy}
-            <span class="mono pct tnum">{t("speech.downloading", { pct: Math.round(pct(p) * 100) })}</span>
-          {:else if m.installed}
-            {#if !inUse}
-              <Button size="sm" onclick={() => (s.stt.local_model = m.id)}>{t("speech.use")}</Button>
-            {/if}
-            <Button
-              size="sm"
-              variant={confirmDel === m.id ? "danger" : "ghost"}
-              icon="trash"
-              aria-label={t("speech.delete_model")}
-              title={confirmDel === m.id ? t("c.confirm_again") : t("speech.delete_model")}
-              onclick={() => del(m)}
-            />
-          {:else}
-            <Button size="sm" icon="download" onclick={() => download(m)}>
-              {t("speech.download")}<span class="dsize tnum">{fmtSize(m.size_mb)}</span>
-            </Button>
-          {/if}
-        </div>
+            <div class="cb">
+              <Button size="sm" variant="ghost" onclick={() => (confirmDel = null)}>{t("c.cancel")}</Button>
+              <Button size="sm" variant="danger" icon="trash" onclick={() => del(m)}>{t("lm.del_yes")}</Button>
+            </div>
+          </div>
+        {/if}
       </li>
     {/each}
   </ul>
-</Section>
+{/snippet}
 
 {#snippet meter(label: string, n: number)}
   <span class="meter" aria-label="{label}: {n}/5">
@@ -485,7 +591,7 @@
     color: var(--text-3);
   }
   .lok {
-    color: var(--accent-fg);
+    color: var(--ok);
   }
 
   /* ---------------------------------------------------------------- models */
@@ -493,6 +599,80 @@
     font-size: 12.5px;
     color: var(--text-2);
     margin-bottom: 12px;
+  }
+  .mhead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px 20px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .mhead .hint {
+    flex: 1 1 280px;
+    margin: 4px 0 0;
+    max-width: 60ch;
+  }
+  .mlang {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+  }
+  .unload {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 8px 11px;
+    border-radius: 8px;
+    border: 1px dashed var(--line-strong);
+    font-size: 12px;
+    color: var(--text-3);
+  }
+  .unload :global(svg) {
+    flex: none;
+  }
+  .groups {
+    display: flex;
+    flex-direction: column;
+    animation: card-in 300ms var(--ease) both;
+  }
+  .gl {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 18px 0 9px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .gl:first-child {
+    margin-top: 2px;
+  }
+  .gl.rec {
+    color: var(--accent-fg);
+  }
+  .more {
+    align-self: flex-start;
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px 6px 8px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    color: var(--text-2);
+    transition:
+      background-color var(--t) var(--ease),
+      color var(--t) var(--ease);
+  }
+  .more:hover {
+    background: var(--surface-2);
+    color: var(--text);
   }
   .models {
     list-style: none;
@@ -505,8 +685,7 @@
   .models li {
     position: relative;
     display: flex;
-    align-items: center;
-    gap: 16px;
+    flex-direction: column;
     padding: 14px 14px 14px 16px;
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -522,6 +701,70 @@
   }
   .models li.active {
     border-color: var(--accent-line);
+  }
+  .models li.asking {
+    border-color: var(--danger-line);
+  }
+  .models li.foreign:not(.installed) {
+    background: transparent;
+  }
+  .models li.foreign .ml {
+    color: var(--text-2);
+  }
+  .mrow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .only {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    color: var(--text-3);
+  }
+  .only :global(svg) {
+    border-radius: 2px;
+  }
+  .confirm {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+  }
+  .confirm::before {
+    content: "";
+    flex-basis: 100%;
+    height: 0;
+    margin-top: 12px;
+    border-top: 1px dashed var(--line-strong);
+    margin-bottom: 2px;
+  }
+  .cq {
+    display: flex;
+    gap: 9px;
+    flex: 1 1 260px;
+    color: var(--danger-fg);
+  }
+  .cq :global(svg) {
+    flex: none;
+    margin-top: 1px;
+  }
+  .cqt {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .cqs {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .cb {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
   }
   /* accent spine on the model in use */
   .models li::before {
@@ -619,7 +862,8 @@
   .tech {
     margin-top: 8px;
     display: flex;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 2px 6px;
     font-size: 10.5px;
     color: var(--text-3);
     opacity: 0.85;

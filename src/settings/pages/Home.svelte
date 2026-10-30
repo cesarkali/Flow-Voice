@@ -180,6 +180,12 @@
         <span class="muted">{t("home.hk_ask")}</span>
         <Keys accel={s.hotkeys.ask} size="sm" />
       </span>
+      {#if s.hotkeys.command}
+        <span class="alt">
+          <span class="muted">{t("home.hk_command")}</span>
+          <Keys accel={s.hotkeys.command} size="sm" />
+        </span>
+      {/if}
     </div>
   </div>
 </section>
@@ -276,9 +282,12 @@
                   <span class="tag"><Icon name="translate" size={12} />{langName(h.target)}</span>
                 {:else if h.mode === "ask"}
                   <span class="tag"><Icon name="question" size={12} />{t("mode.ask")}</span>
+                {:else if h.mode === "command"}
+                  <span class="tag"><Icon name="sparkle" size={12} />{t("mode.command")}</span>
                 {:else}
                   <span class="tag">{styleName(h.style_id)}</span>
                 {/if}
+                {#if h.app_name}<span class="app">{h.app_name}</span>{/if}
                 {#if !h.pasted && h.mode !== "ask"}<span class="faint">{t("home.not_pasted")}</span>{/if}
               </span>
               <span class="text" class:clamp={!isOpen}>
@@ -311,9 +320,15 @@
           {#if isOpen}
             <div class="detail" transition:slide={{ duration: prefersReducedMotion.current ? 0 : 220, easing: cubicOut }}>
               <div class="detail-in">
+                {#if h.mode === "command" && h.source}
+                  <div class="raw">
+                    <span class="label">{t("home.f_source")}</span>
+                    <p>{h.source}</p>
+                  </div>
+                {/if}
                 {#if h.raw && h.raw !== h.text}
                   <div class="raw">
-                    <span class="label">{t("home.raw")}</span>
+                    <span class="label">{h.mode === "command" ? t("home.f_instruction") : t("home.raw")}</span>
                     <p>{#each parts(h.raw) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}</p>
                   </div>
                 {/if}
@@ -322,6 +337,9 @@
                     <div><dt>{t("home.f_target")}</dt><dd>{langName(h.target)}</dd></div>
                   {:else if h.mode === "dictate"}
                     <div><dt>{t("home.f_style")}</dt><dd>{styleName(h.style_id)}</dd></div>
+                  {/if}
+                  {#if h.app_name}
+                    <div><dt>{t("home.f_app")}</dt><dd>{h.app_name}</dd></div>
                   {/if}
                   <div><dt>{t("home.f_voice")}</dt><dd class="mono">{h.stt_provider}</dd></div>
                   <div><dt>{t("home.f_ai")}</dt><dd class="mono">{h.provider ?? t("home.no_ai")}</dd></div>
@@ -774,6 +792,21 @@
   }
   .open .tag {
     color: var(--accent-fg);
+  }
+  /* the app the text went to: quiet, after a hairline dot */
+  .app {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-3);
+  }
+  .app::before {
+    content: "";
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--text-3);
+    opacity: 0.7;
   }
   .text {
     display: block;

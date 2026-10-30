@@ -499,6 +499,13 @@
     font-size: 13px;
     color: var(--text);
   }
+  .search input:focus-visible {
+    /* the popover itself is the focus context; a ring here gets clipped by its edges */
+    outline: none;
+  }
+  .search:focus-within {
+    color: var(--text-2);
+  }
   .search input::placeholder {
     color: var(--text-3);
   }

@@ -5,7 +5,7 @@ use regex::Regex;
 
 /// Pure hesitation sounds, safe to drop anywhere (every language).
 static HESITATIONS: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)(^|[\s,.;!?…-])(h+[aã]+h*|[aã]+h+|ahn+|hu+m+|hm+|u+h+m*|e+r+m+|é{2,}|e{3,}|ã{2,})([\s,.;!?…-]|$)").unwrap()
+    Regex::new(r"(?i)(^|[\s,.;!?…-])(h+ã+h*|h+a{2,}h*|h+a+h+|[aã]+h+|ahn+|hu+m+|hm+|u+h+m*|e+r+m+|é{2,}|e{3,}|ã{2,})([\s,.;!?…-]|$)").unwrap()
 });
 
 /// Portuguese tag words: "né", "tipo", "sabe", "tipo assim" when used as fillers (between commas / at clause end).
@@ -17,7 +17,8 @@ static PT_TAG_START: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)(^|[.!?]\s+)(ti
 static MULTI_SPACE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[ \t]{2,}").unwrap());
 static SPACE_BEFORE_PUNCT: Lazy<Regex> = Lazy::new(|| Regex::new(r"\s+([,.;:!?])").unwrap());
 static DOUBLE_COMMA: Lazy<Regex> = Lazy::new(|| Regex::new(r",\s*([,.;:!?])").unwrap());
-static LEADING_PUNCT: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[\s,;:.…-]+").unwrap());
+/// Leading junk punctuation; a dot glued to a word is kept (".NET", ".env").
+static LEADING_PUNCT: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(?:[\s,;:…-]|\.+(?:\s|$))+").unwrap());
 /// Non-speech annotations from whisper: [Música], (risos), [BLANK_AUDIO], *suspiro*.
 static ANNOTATIONS: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[[^\]]*\]|\([^)]*(risos|música|music|aplausos|applause|silêncio|silence|inaudível|inaudible)[^)]*\)|\*[^*]{1,30}\*").unwrap());
 
@@ -37,7 +38,9 @@ pub fn remove_fillers(text: &str, lang: &str) -> String {
         t = PT_TAGS
             .replace_all(&t, |c: &regex::Captures| match &c[1] {
                 // "…à tarde, né?" is a tag, not a real question: end the sentence instead.
-                "?" => ".".to_string(),
+                "?" if c[0].to_lowercase().contains("né") => ".".to_string(),
+                // "…a regra, entendeu?" is a real question: keep it.
+                "?" => c[0].to_string(),
                 "," => ",".to_string(),
                 _ => String::new(),
             })
@@ -48,6 +51,9 @@ pub fn remove_fillers(text: &str, lang: &str) -> String {
     capitalize_first(&t)
 }
 
+/// Short words people repeat on purpose ("não não", "lá lá", "já já").
+const INTENTIONAL_REPEATS: [&str; 12] = ["não", "nao", "sim", "lá", "já", "só", "tá", "oi", "ok", "no", "yes", "si"];
+
 /// "eu eu", "que que", "o o" — short words repeated back to back.
 fn collapse_stutter(t: &str) -> String {
     let strip = |w: &str| w.trim_end_matches(|c: char| c.is_ascii_punctuation()).to_lowercase();
@@ -56,7 +62,8 @@ fn collapse_stutter(t: &str) -> String {
         if let Some(prev) = out.last_mut() {
             let core = strip(word);
             let prev_open = !prev.ends_with(|c: char| c.is_ascii_punctuation());
-            if !core.is_empty() && core.chars().count() <= 3 && prev_open && strip(prev) == core {
+            let intentional = INTENTIONAL_REPEATS.contains(&core.as_str());
+            if !core.is_empty() && !intentional && core.chars().count() <= 3 && prev_open && strip(prev) == core {
                 // Drop the repeat but keep its trailing punctuation ("eu eu," → "eu,").
                 prev.push_str(&word[word.trim_end_matches(|c: char| c.is_ascii_punctuation()).len()..]);
                 continue;
@@ -114,29 +121,48 @@ const HALLUCINATION_PHRASES: [&str; 16] = [
     "pedro negri",
     "inscreva-se no canal",
 ];
-const HALLUCINATION_WORDS: [&str; 16] = [
-    "robert", "sonia", "sônia", "ruberti", "ruberty", "legendas", "legenda", "you", "bye", "obrigado", "obrigada",
-    "assistir", "tchau", "e aí", "amara.org", "silêncio",
-];
+/// Single outputs whisper invents on silence/noise. The first group are also real short replies
+/// ("Obrigado!", "Tchau"), so they only count when there was barely any voiced audio.
+const HALLUCINATION_WORDS: [&str; 9] = ["robert", "sonia", "sônia", "ruberti", "ruberty", "legendas", "legenda", "amara.org", "silêncio"];
+const SHORT_REPLY_WORDS: [&str; 8] = ["you", "bye", "obrigado", "obrigada", "assistir", "tchau", "e aí", "thank you"];
 
-/// True when whisper returned one of its classic "no speech" hallucinations.
-pub fn is_hallucination(text: &str) -> bool {
-    let norm: String = text
-        .to_lowercase()
+fn normalize(text: &str) -> String {
+    text.to_lowercase()
         .chars()
         .map(|c| if ".,!?\"':-…".contains(c) { ' ' } else { c })
         .collect::<String>()
         .split_whitespace()
         .collect::<Vec<_>>()
-        .join(" ");
+        .join(" ")
+}
+
+/// True when whisper returned one of its classic "no speech" hallucinations. Used by the live
+/// preview, where a short real reply is worth less than a wrong first guess.
+pub fn is_hallucination(text: &str) -> bool {
+    is_hallucination_voiced(text, 0.0)
+}
+
+/// Final-pass variant: `voiced_secs` is how much real voiced audio the recording had. With
+/// enough of it, short replies such as "Obrigado!" are trusted.
+pub fn is_hallucination_voiced(text: &str, voiced_secs: f32) -> bool {
+    let norm = normalize(text);
     if norm.is_empty() {
         return true;
     }
-    if HALLUCINATION_WORDS.contains(&norm.as_str()) {
+    let same = |w: &&str| normalize(w) == norm;
+    if HALLUCINATION_WORDS.iter().any(same) {
         return true;
     }
-    // Phrases only count when they are (almost) the whole output.
-    HALLUCINATION_PHRASES.iter().any(|p| norm.contains(p) && norm.len() < p.len() + 40)
+    if voiced_secs < 1.2 && SHORT_REPLY_WORDS.iter().any(same) {
+        return true;
+    }
+    // Phrases only count when they ARE the output ("Legendas por Fulano de Tal"), not when they
+    // appear inside a real sentence ("preciso da transcrição por e-mail").
+    let words = norm.split(' ').count();
+    HALLUCINATION_PHRASES.iter().any(|p| {
+        let p = normalize(p);
+        norm.starts_with(&p) && words <= p.split(' ').count() + 3
+    })
 }
 
 /// Strips wrappers some models add despite instructions.
@@ -165,9 +191,57 @@ pub fn clean_llm_output(text: &str) -> String {
     t.to_string()
 }
 
+/// Output of "Comando". It replaces the selection exactly, so: fences/quotes are only stripped
+/// when the selection didn't have them, and the selection's own leading/trailing whitespace
+/// (a trailing space, the first line's indentation, a final newline) is kept.
+pub fn clean_command_output(out: &str, selection: &str) -> String {
+    let mut t = out.to_string();
+    if let (Some(a), Some(b)) = (t.find("<think>"), t.find("</think>")) {
+        if b > a {
+            t.replace_range(a..b + "</think>".len(), "");
+        }
+    }
+    for tag in ["<texto>", "</texto>", "<instrucao>", "</instrucao>"] {
+        t = t.replace(tag, "");
+    }
+    let mut core = t.trim().to_string();
+    let sel = selection.trim();
+    if !sel.starts_with("```") && core.starts_with("```") && core.ends_with("```") && core.len() > 6 {
+        let inner = &core[3..core.len() - 3];
+        // drop the language tag line ("```markdown")
+        let inner = match inner.find('\n') {
+            Some(i) if !inner[..i].contains(' ') => &inner[i + 1..],
+            _ => inner,
+        };
+        core = inner.trim().to_string();
+    }
+    let quoted = |s: &str| (s.starts_with('"') && s.ends_with('"')) || (s.starts_with('“') && s.ends_with('”'));
+    if quoted(&core) && !quoted(sel) && core.chars().count() > 2 {
+        let inner: String = core.chars().skip(1).take(core.chars().count() - 2).collect();
+        if !inner.contains(['"', '“', '”']) {
+            core = inner.trim().to_string();
+        }
+    }
+    let lead = &selection[..selection.len() - selection.trim_start().len()];
+    let trail = &selection[selection.trim_end().len()..];
+    format!("{lead}{core}{trail}")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn command_output_keeps_selection_shape() {
+        assert_eq!(clean_command_output("Olá, tudo bem?", "oi tudo bem "), "Olá, tudo bem? ");
+        assert_eq!(clean_command_output("<think>hmm</think>\n<texto>\nBom dia.\n</texto>", "bom dia"), "Bom dia.");
+        assert_eq!(clean_command_output("```markdown\n- a\n- b\n```", "a, b"), "- a\n- b");
+        assert_eq!(clean_command_output("```js\nlet x = 1;\n```", "```js\nvar x = 1;\n```"), "```js\nlet x = 1;\n```");
+        assert_eq!(clean_command_output("\"Bom dia\"", "bom dia"), "Bom dia");
+        assert_eq!(clean_command_output("\"Bom dia\"", "\"bom dia\""), "\"Bom dia\"");
+        // Indented code: the first line's indentation comes from the selection.
+        assert_eq!(clean_command_output("foo();\n    bar();\n", "    foo()\n    bar()\n"), "    foo();\n    bar();\n");
+    }
 
     #[test]
     fn fillers_pt() {
@@ -196,6 +270,21 @@ mod tests {
         assert!(is_hallucination("Legendas por Adriana Zanotto"));
         assert!(is_hallucination("Obrigado."));
         assert!(!is_hallucination("Obrigado pela ajuda com o relatório de ontem"));
+        assert!(is_hallucination("Inscreva-se no canal!"));
+        assert!(is_hallucination("Amara.org"));
+        assert!(!is_hallucination("Preciso da transcrição por e-mail"));
+        assert!(!is_hallucination("Coloca a legenda por cima do vídeo"));
+        assert!(!is_hallucination_voiced("Obrigado!", 1.5));
+        assert!(is_hallucination_voiced("Obrigado!", 0.3));
+    }
+
+    #[test]
+    fn fillers_keep_meaning() {
+        assert_eq!(remove_fillers("Expliquei a regra, entendeu?", "pt"), "Expliquei a regra, entendeu?");
+        assert_eq!(remove_fillers("ella ha comido", "es"), "Ella ha comido");
+        assert_eq!(remove_fillers("não não, eu não vou", "pt"), "Não não, eu não vou");
+        assert_eq!(strip_annotations(".NET é rápido"), ".NET é rápido");
+        assert_eq!(strip_annotations(", olá"), "Olá".to_lowercase());
     }
 
     #[test]

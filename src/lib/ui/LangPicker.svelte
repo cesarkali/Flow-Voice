@@ -58,7 +58,7 @@
       onclick={() => (value = l.code)}
     >
       <span class="fl"><Flag code={l.code} size={20} /></span>
-      <span>{l.name}</span>
+      <span class="nm">{l.name}</span>
     </button>
   {/each}
 </div>
@@ -72,6 +72,8 @@
     border-radius: var(--r-lg);
     background: var(--surface-2);
     outline: none;
+    /* fits narrow cards (onboarding at the minimum window): spacing tightens instead of overflowing */
+    container-type: inline-size;
   }
   .thumb {
     position: absolute;
@@ -95,9 +97,10 @@
     align-items: center;
     justify-content: center;
     flex: 1 1 auto;
-    gap: 7px;
+    min-width: 0;
+    gap: clamp(5px, 2cqi, 7px);
     height: 36px;
-    padding: 0 10px;
+    padding: 0 clamp(5px, 2.6cqi, 10px);
     white-space: nowrap;
     border: 0;
     background: none;
@@ -110,11 +113,17 @@
   button:hover {
     color: var(--text);
   }
+  .nm {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   button.on {
     color: var(--text);
     font-weight: 600;
   }
   .fl {
+    flex: none;
     display: inline-flex;
     transition: transform 240ms var(--spring), filter var(--t) var(--ease);
     filter: saturate(0.55) brightness(0.9);

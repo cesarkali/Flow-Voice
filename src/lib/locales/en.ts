@@ -269,7 +269,7 @@ export const en: Dict = {
   "ob.path_groq": "Free in the cloud with Groq",
   "ob.path_groq_body": "The most accurate and fastest. Creating the key takes a minute.",
   "ob.path_offline": "100% offline",
-  "ob.path_offline_body": "Nothing leaves your computer. Downloads a ~470 MB model. No AI rewriting.",
+  "ob.path_offline_body": "Nothing leaves your computer. Downloads a voice model once. No AI rewriting.",
   "ob.path_other": "I already have another key",
   "ob.path_other_body": "Gemini, OpenRouter, Mistral or OpenAI.",
   "ob.pick_provider": "Which provider?",

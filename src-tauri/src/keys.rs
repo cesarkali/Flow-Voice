@@ -44,8 +44,10 @@ impl KeyStore {
         let file = store.read_file();
         let mut cache = store.cache.lock();
         for p in KEY_PROVIDERS {
-            let from_vault = keyring::Entry::new(SERVICE, p).ok().and_then(|e| e.get_password().ok());
-            if let Some(v) = from_vault.or_else(|| file.get(p).cloned()) {
+            // keys.json only holds a provider when the vault refused it (e.g. too long for the
+            // Windows 2560-byte limit), so it is the newer copy and wins over the vault.
+            let from_vault = || keyring::Entry::new(SERVICE, p).ok().and_then(|e| e.get_password().ok());
+            if let Some(v) = file.get(p).cloned().or_else(from_vault) {
                 if !v.trim().is_empty() {
                     cache.insert(p.to_string(), v);
                 }
@@ -102,6 +104,10 @@ impl KeyStore {
             self.write_file_entry(provider, None);
         } else {
             log::warn!("credential vault unavailable, storing {provider} key in keys.json");
+            // Drop the stale vault copy so an old key can never come back after a restart.
+            if let Ok(e) = keyring::Entry::new(SERVICE, provider) {
+                let _ = e.delete_credential();
+            }
             self.write_file_entry(provider, Some(&joined));
         }
         self.cache.lock().insert(provider.to_string(), joined);

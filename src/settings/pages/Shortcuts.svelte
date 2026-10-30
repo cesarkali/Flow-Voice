@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { langName, t } from "../../lib/i18n.svelte";
+  import { i18n, langName, t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
   import { app } from "../../lib/stores.svelte";
   import type { SettingsPage } from "../../lib/types";
@@ -24,7 +24,7 @@
   <Row id="set-sc-dictate" label={t("sc.dictate")} hint={t("sc.dictate_hint")}>
     <HotkeyInput label={t("sc.dictate")} bind:value={s.hotkeys.dictate} />
   </Row>
-  <Row id="set-sc-translate" label={t("sc.translate")} hint={t("sc.translate_hint", { lang: langName(s.translation_target) })}>
+  <Row id="set-sc-translate" label={t("sc.translate")} hint={t("sc.translate_hint", { lang: i18n.lang === "en" ? langName(s.translation_target) : langName(s.translation_target).toLocaleLowerCase() })}>
     <HotkeyInput label={t("sc.translate")} bind:value={s.hotkeys.translate} />
   </Row>
   <Row id="set-sc-ask" label={t("sc.ask")} hint={t("sc.ask_hint")}>
@@ -32,7 +32,16 @@
   </Row>
 </Section>
 
-<Section label={t("sc.mode")}>
+<Section label={t("sc.sec_more")}>
+  <Row id="set-sc-command" label={t("sc.command")} hint={t("sc.command_hint")}>
+    <HotkeyInput label={t("sc.command")} bind:value={s.hotkeys.command} clearable />
+  </Row>
+  <Row id="set-sc-paste-last" label={t("sc.paste_last")} hint={t("sc.paste_last_hint")}>
+    <HotkeyInput label={t("sc.paste_last")} bind:value={s.hotkeys.paste_last} clearable />
+  </Row>
+</Section>
+
+<Section label={t("sh.sec_recording")}>
   <Row id="set-sc-mode" label={t("sc.mode")} hint={s.hotkey_mode === "toggle" ? t("sc.mode_toggle_hint") : t("sc.mode_hold_hint")}>
     <Segmented
       label={t("sc.mode")}
@@ -74,7 +83,8 @@
   }
   /* ---------------------------------------------------------------- mode demo (plays once) */
   .demo {
-    padding: 4px 0 16px;
+    padding: 14px 0 16px;
+    border-top: 1px solid var(--line);
   }
   .dhead {
     display: flex;

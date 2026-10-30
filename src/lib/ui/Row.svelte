@@ -76,6 +76,7 @@
     color: var(--text-2);
     line-height: 1.45;
     max-width: 52ch;
+    text-wrap: pretty;
   }
   .ctl {
     display: flex;

@@ -1,17 +1,22 @@
 <script lang="ts">
-  // Browser-only harness: a fake desktop + the real overlay inside a fake native window that
-  // follows the overlay_resize requests (dashed outline = window bounds).
+  // Browser-only harness: a fake desktop + the real overlay inside a fake native window with the
+  // same FIXED 760×560 size and anchoring as Rust (bottom/top-center of the work area, 28px in).
+  // Dashed outline = window bounds; accent outline = the hitbox the overlay reports (the only
+  // part of the real window that catches the mouse). overlay-pointer is emulated from it.
   // Query flags: ?scenario=<id> &theme=light &width=compact|normal|wide &pos=top &accent=4FD1FF
   // &hold (don't auto-stop). livefix = local guess (dimmed) confirmed later by the cloud
   // (`stable` in overlay-partial). Scenarios: live, livefix, longlive, dictate, translate, translong,
-  // ask, transcribing, refining, done, reprocess, error.
+  // ask, transcribing, refining, done, reprocess, error, command (selection edit by voice).
+  // Static phases for screenshots (stay put): cmddone, cmdnosel,
+  // listen (no live text), long (long result), errnow (error card), answer.
+  // Combine with the mock's ?qa= steps, e.g. &qa=wait:600~click:.chip[data-k=translate].
   import { onMount } from "svelte";
   import { on } from "../lib/api";
   import { mock, mockEmit, simulateOverlay, stopSimulation, type SimScenario } from "../lib/mock";
   import { EVENTS, type OverlayEvent, type Settings } from "../lib/types";
   import Overlay from "./Overlay.svelte";
 
-  type Scn = SimScenario | "reprocess" | "longlive" | "livefix" | "translong";
+  type Scn = SimScenario | "reprocess" | "longlive" | "livefix" | "translong" | "listen" | "long" | "errnow" | "answer";
   const SCENARIOS: { id: Scn; label: string }[] = [
     { id: "live", label: "Ditado + ao vivo" },
     { id: "longlive", label: "Ao vivo longo" },
@@ -25,17 +30,39 @@
     { id: "done", label: "Resultado" },
     { id: "reprocess", label: "Reprocessar" },
     { id: "error", label: "Erro" },
+    { id: "listen", label: "Só ouvindo" },
+    { id: "long", label: "Resultado longo" },
+    { id: "errnow", label: "Erro (direto)" },
+    { id: "answer", label: "Resposta" },
+    { id: "command", label: "Comando" },
+    { id: "cmddone", label: "Comando (resultado)" },
+    { id: "cmdnosel", label: "Comando sem seleção" },
   ];
   const q = new URLSearchParams(location.search);
   let theme = $state<"dark" | "light">(q.get("theme") === "light" ? "light" : "dark");
   let width = $state<Settings["overlay_width"]>((q.get("width") as Settings["overlay_width"]) || "normal");
   let position = $state<Settings["overlay_position"]>(q.get("pos") === "top" ? "top" : "bottom");
   let bg = $state<"desk" | "checker" | "light">("desk");
-  const ACCENTS = ["#D7FF3F", "#4FD1FF", "#FF7A45", "#B48CFF"];
+  const ACCENTS = ["#D7FF3F", "#4FD1FF", "#FF2E00", "#B48CFF"];
   let accent = $state(q.get("accent") ? `#${q.get("accent")}` : ACCENTS[0]);
   let frame = $state(true);
   let auto = $state(!q.has("hold"));
-  let win = $state({ w: 560, h: 300 });
+  /** windows::OVERLAY_W/H and MARGIN in Rust. */
+  const WIN = { w: 760, h: 560, margin: 28 };
+  type HB = { x: number; y: number; width: number; height: number } | null;
+  let hitbox = $state<HB>(null);
+  let winEl = $state<HTMLDivElement>();
+  let inside = false;
+  /** Rust polls the cursor against the hitbox and emits overlay-pointer on change. */
+  function pointerAt(cx: number, cy: number) {
+    const hb = hitbox;
+    const r = winEl?.getBoundingClientRect();
+    const now = !!hb && !!r && cx >= r.left + hb.x && cy >= r.top + hb.y && cx <= r.left + hb.x + hb.width && cy <= r.top + hb.y + hb.height;
+    if (now === inside) return;
+    inside = now;
+    mockEmit(EVENTS.overlayPointer, { inside: now });
+  }
+  let lastPt = { x: -1, y: -1 };
 
   // Push the look through the same settings-changed event Rust would send.
   $effect(() => {
@@ -81,6 +108,53 @@
   function run(id: Scn) {
     clearLocal();
     const emit = (e: OverlayEvent) => mockEmit(EVENTS.overlayState, e);
+    if (id === "listen") {
+      stopSimulation();
+      emit({ phase: "listening", mode: "dictate", style_id: "natural", target: null, live: false });
+      let t = 0;
+      lvl = window.setInterval(() => {
+        t += 33;
+        mockEmit(EVENTS.overlayLevel, 0.3 + Math.abs(Math.sin(t / 120)) * 0.4 + Math.random() * 0.1);
+      }, 33);
+      return;
+    }
+    if (id === "answer") {
+      stopSimulation();
+      emit({ phase: "answer", query: "Qual a previsão do tempo pra amanhã?" });
+      return;
+    }
+    if (id === "errnow") {
+      stopSimulation();
+      emit({
+        phase: "error",
+        message: "Não foi possível refinar o texto: todos os provedores falharam.",
+        detail:
+          'groq: HTTP 429 Too Many Requests — {"error":{"message":"Rate limit reached for model `openai/gpt-oss-20b` in organization on tokens per minute (TPM): Limit 8000, Used 7920, Requested 412. Please try again in 2.4s.","type":"tokens","code":"rate_limit_exceeded"}}\ngemini: sem chave configurada',
+        raw: LONG.slice(0, 20).join(" "),
+      });
+      return;
+    }
+    if (id === "long") {
+      stopSimulation();
+      emit({
+        phase: "done",
+        result: {
+          id: `long-${Date.now()}`,
+          ts: new Date().toISOString(),
+          mode: "dictate",
+          raw: LONG.join(" "),
+          text: `${LONG_TR}\n\n${LONG_TR}`,
+          style_id: "natural",
+          target: null,
+          provider: "groq · openai/gpt-oss-20b",
+          stt_provider: "groq · whisper-large-v3-turbo",
+          pasted: false,
+          duration_ms: 31200,
+          warnings: [],
+        },
+      });
+      return;
+    }
     if (id === "livefix") {
       stopSimulation();
       emit({ phase: "listening", mode: "dictate", style_id: "natural", target: null, live: true });
@@ -208,15 +282,28 @@
   }
 
   onMount(() => {
-    const sub = on<{ width: number; height: number }>("mock:overlay-resize", (s) => {
-      win = { w: Math.min(760, Math.max(120, s.width)), h: Math.min(560, Math.max(40, s.height)) };
+    // Same mock instance the overlay talks to (Vite may re-version the module after a reload),
+    // for scripted checks driven from devtools/CDP.
+    (window as unknown as { __ovPreview: unknown }).__ovPreview = { mock, mockEmit, stopSimulation, EVENTS };
+    // Every hitbox report, timestamped (read by the frame-sampling validation).
+    const log: { t: number; rect: HB }[] = ((window as unknown as { __hb: unknown[] }).__hb = []) as never;
+    const sub = on<HB>("mock:overlay-hitbox", (r) => {
+      hitbox = r;
+      log.push({ t: performance.now(), rect: r });
+      pointerAt(lastPt.x, lastPt.y);
     });
+    const mv = (e: PointerEvent) => {
+      lastPt = { x: e.clientX, y: e.clientY };
+      pointerAt(e.clientX, e.clientY);
+    };
+    window.addEventListener("pointermove", mv);
     // Cancel / dismiss (mock emits "hidden") also ends the local scenarios.
     const sub2 = on<OverlayEvent>(EVENTS.overlayState, (e) => e.phase === "hidden" && clearLocal());
     setTimeout(() => run((q.get("scenario") as Scn | null) ?? "live"), 400);
     return () => {
       sub.then((f) => f());
       sub2.then((f) => f());
+      window.removeEventListener("pointermove", mv);
       clearLocal();
     };
   });
@@ -266,8 +353,19 @@
     </div>
   </div>
 
-  <div class="win" class:frame class:top={position === "top"} style="width:{win.w}px;height:{win.h}px;margin-left:{shift * 180}px">
-    <Overlay />
+  <div class="work">
+    <div
+      class="win"
+      class:frame
+      class:top={position === "top"}
+      bind:this={winEl}
+      style="width:{WIN.w}px;height:{WIN.h}px;--wm:{WIN.margin}px;margin-left:{shift * 180}px"
+    >
+      <Overlay />
+      {#if frame && hitbox}
+        <div class="hb" aria-hidden="true" style="left:{hitbox.x}px;top:{hitbox.y}px;width:{hitbox.width}px;height:{hitbox.height}px"></div>
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -411,15 +509,28 @@
   .sep {
     width: 10px;
   }
+  /* the monitor's work area (below the preview's control panel) */
+  .work {
+    position: absolute;
+    inset: 104px 0 0;
+    pointer-events: none;
+  }
   .win {
     position: absolute;
     left: 50%;
-    bottom: 40px;
+    bottom: var(--wm);
     transform: translateX(-50%);
   }
   .win.top {
     bottom: auto;
-    top: 150px;
+    top: var(--wm);
+  }
+  .hb {
+    position: absolute;
+    outline: 1px solid rgba(215, 255, 63, 0.75);
+    outline-offset: -1px;
+    pointer-events: none;
+    z-index: 10;
   }
   .win.frame {
     outline: 1px dashed rgba(255, 255, 255, 0.45);

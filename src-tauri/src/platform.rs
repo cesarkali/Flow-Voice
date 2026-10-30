@@ -9,12 +9,38 @@ use std::time::Duration;
 static CLIPBOARD: Lazy<Mutex<Option<arboard::Clipboard>>> = Lazy::new(|| Mutex::new(arboard::Clipboard::new().ok()));
 
 pub fn set_clipboard(text: &str) -> Result<()> {
+    with_clipboard(|cb| cb.set_text(text.to_string()))
+}
+
+fn with_clipboard<T>(f: impl FnOnce(&mut arboard::Clipboard) -> Result<T, arboard::Error>) -> Result<T> {
     let mut guard = CLIPBOARD.lock();
     if guard.is_none() {
         *guard = arboard::Clipboard::new().ok();
     }
     let cb = guard.as_mut().ok_or_else(|| anyhow!("área de transferência indisponível"))?;
-    cb.set_text(text.to_string()).map_err(|e| anyhow!("não foi possível copiar: {e}"))
+    f(cb).map_err(|e| anyhow!("não foi possível copiar: {e}"))
+}
+
+fn clipboard_text() -> Option<String> {
+    with_clipboard(|cb| cb.get_text()).ok()
+}
+
+/// Puts text on the clipboard only to paste it: kept out of Win+V history and cloud sync.
+fn set_clipboard_transient(text: &str) -> Result<()> {
+    #[cfg(windows)]
+    {
+        use arboard::SetExtWindows;
+        with_clipboard(|cb| cb.set().exclude_from_history().exclude_from_cloud().text(text.to_string()))
+    }
+    #[cfg(target_os = "linux")]
+    {
+        use arboard::SetExtLinux;
+        with_clipboard(|cb| cb.set().exclude_from_history().text(text.to_string()))
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
+    {
+        set_clipboard(text)
+    }
 }
 
 /// Handle of the window that had focus when recording started (0 = unknown).
@@ -88,21 +114,375 @@ fn which(bin: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Copies `text`, gives focus back to `target` and sends Ctrl+V (after Ctrl+Z when `replace`).
+/// Gives focus back to `target` and pastes `text` with Ctrl+V (after Ctrl+Z when `replace`).
+/// Returns Ok(false) when it could not paste safely; the text is then left on the clipboard for
+/// the user to paste. After a successful paste the user's previous clipboard text comes back.
 pub fn paste(text: &str, target: isize, replace: bool) -> Result<bool> {
-    set_clipboard(text)?;
+    let manual = |why: &str| -> Result<bool> {
+        log::info!("paste skipped: {why}");
+        set_clipboard(text)?;
+        Ok(false)
+    };
     if !can_paste() {
-        return Ok(false);
+        return manual("no input injection here");
     }
+    if replace && is_console(target) {
+        // Ctrl+Z suspends the running job in terminals instead of undoing.
+        return manual("replace in a terminal");
+    }
+    if is_elevated(target) {
+        // Windows blocks input from a normal app into an admin window (UIPI).
+        return manual("target runs as administrator");
+    }
+    let previous = clipboard_text();
+    set_clipboard_transient(text)?;
     wait_modifiers_released();
     focus(target);
     std::thread::sleep(Duration::from_millis(60));
+    if !has_focus(target) {
+        return manual("could not focus the target window");
+    }
     if replace {
         send_ctrl('Z');
         std::thread::sleep(Duration::from_millis(80));
     }
     send_ctrl('V');
+    // Give the target time to read the clipboard (slow apps, remote desktops), then restore
+    // what the user had copied, unless something else changed the clipboard meanwhile.
+    if let Some(prev) = previous.filter(|p| p != text) {
+        let ours = text.to_string();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(1500));
+            if clipboard_text().as_deref() == Some(ours.as_str()) {
+                let _ = set_clipboard(&prev);
+            }
+        });
+    }
     Ok(true)
+}
+
+// ---------------------------------------------------------------- selection (Comando)
+
+/// Longest selection "Comando" accepts (the LLM has to send all of it back).
+pub const SELECTION_MAX_CHARS: usize = 12_000;
+
+/// Copies what is selected in `target` with a synthetic Ctrl+C and gives the user's clipboard
+/// text back right after. Ok(None) = nothing selected (the app left the clipboard untouched).
+pub fn copy_selection(target: isize) -> Result<Option<String>> {
+    if !can_paste() {
+        return Err(anyhow!("Este sistema não permite ler o texto selecionado (instale o xdotool ou o wtype)."));
+    }
+    if is_elevated(target) {
+        return Err(anyhow!("Esse app roda como administrador — o Windows não deixa o FlowVoice ler a seleção dele."));
+    }
+    if is_console(target) {
+        // Ctrl+C would interrupt the running program.
+        return Err(anyhow!("O Comando não funciona em terminais (lá o Ctrl+C interrompe o programa). Use num editor ou campo de texto."));
+    }
+    let previous = clipboard_text();
+    // Windows: the clipboard sequence number tells whether the app copied anything, so the
+    // clipboard is left alone (images included) when nothing is selected. Elsewhere: clear it.
+    #[cfg(windows)]
+    let seq0 = clipboard_seq();
+    #[cfg(not(windows))]
+    let _ = with_clipboard(|cb| cb.clear());
+    wait_modifiers_released();
+    focus(target);
+    if !has_focus(target) {
+        return Err(anyhow!("A janela com o texto selecionado perdeu o foco."));
+    }
+    send_ctrl('C');
+    let t0 = std::time::Instant::now();
+    let mut copied = None;
+    // Electron/Office apps can take a moment to answer Ctrl+C.
+    while t0.elapsed() < Duration::from_millis(400) {
+        std::thread::sleep(Duration::from_millis(20));
+        #[cfg(windows)]
+        let changed = clipboard_seq() != seq0;
+        #[cfg(not(windows))]
+        let changed = true;
+        if changed {
+            if let Some(t) = clipboard_text().filter(|t| !t.is_empty()) {
+                copied = Some(t);
+                break;
+            }
+        }
+    }
+    #[cfg(windows)]
+    let touched = clipboard_seq() != seq0;
+    #[cfg(not(windows))]
+    let touched = true;
+    if touched {
+        match &previous {
+            Some(p) => {
+                let _ = set_clipboard(p);
+            }
+            None => {
+                let _ = with_clipboard(|cb| cb.clear());
+            }
+        }
+    }
+    log::info!("selection: {} chars", copied.as_ref().map(|t| t.chars().count()).unwrap_or(0));
+    Ok(copied.filter(|t| !t.trim().is_empty()))
+}
+
+#[cfg(windows)]
+fn clipboard_seq() -> u32 {
+    unsafe { windows::Win32::System::DataExchange::GetClipboardSequenceNumber() }
+}
+
+// ---------------------------------------------------------------- target app
+
+/// The app that owns `target` (Windows) or the active X11 window (Linux, needs xdotool).
+pub fn window_app(target: isize) -> Option<crate::apps::AppContext> {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::GetWindowTextW;
+        if target == 0 {
+            return None;
+        }
+        let hwnd = HWND(target as *mut _);
+        let pid = window_pid(hwnd)?;
+        let mut exe = process_exe(pid)?;
+        // Store/UWP apps live inside ApplicationFrameHost: the real process owns a child window.
+        if crate::apps::normalize(&exe) == "applicationframehost" {
+            if let Some(child) = uwp_child_pid(hwnd, pid).and_then(process_exe) {
+                exe = child;
+            }
+        }
+        let mut buf = [0u16; 512];
+        let n = unsafe { GetWindowTextW(hwnd, &mut buf) };
+        let title = String::from_utf16_lossy(&buf[..n.max(0) as usize]);
+        crate::apps::detect(&exe, &title)
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let _ = target;
+        if is_wayland() || !which("xdotool") {
+            return None;
+        }
+        let run = |args: &[&str]| {
+            std::process::Command::new("xdotool")
+                .args(args)
+                .output()
+                .ok()
+                .filter(|o| o.status.success())
+                .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        };
+        let pid = run(&["getactivewindow", "getwindowpid"])?.parse::<u32>().ok()?;
+        let exe = std::fs::read_link(format!("/proc/{pid}/exe"))
+            .map(|p| p.to_string_lossy().to_string())
+            .ok()
+            .or_else(|| std::fs::read_to_string(format!("/proc/{pid}/comm")).ok())?;
+        let title = run(&["getactivewindow", "getwindowname"]).unwrap_or_default();
+        crate::apps::detect(&exe, &title)
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
+    {
+        let _ = target;
+        None
+    }
+}
+
+#[cfg(windows)]
+fn window_pid(hwnd: windows::Win32::Foundation::HWND) -> Option<u32> {
+    use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
+    let mut pid = 0u32;
+    unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
+    (pid != 0).then_some(pid)
+}
+
+#[cfg(windows)]
+fn process_exe(pid: u32) -> Option<String> {
+    use windows::core::PWSTR;
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION};
+    unsafe {
+        let h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+        let mut buf = [0u16; 1024];
+        let mut len = buf.len() as u32;
+        let ok = QueryFullProcessImageNameW(h, PROCESS_NAME_WIN32, PWSTR(buf.as_mut_ptr()), &mut len);
+        let _ = CloseHandle(h);
+        ok.ok()?;
+        Some(String::from_utf16_lossy(&buf[..len as usize]))
+    }
+}
+
+#[cfg(windows)]
+fn uwp_child_pid(hwnd: windows::Win32::Foundation::HWND, host_pid: u32) -> Option<u32> {
+    use windows::Win32::Foundation::{BOOL, HWND, LPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::EnumChildWindows;
+    struct Search {
+        host: u32,
+        found: u32,
+    }
+    unsafe extern "system" fn visit(child: HWND, lp: LPARAM) -> BOOL {
+        let s = &mut *(lp.0 as *mut Search);
+        match window_pid(child) {
+            Some(pid) if pid != s.host => {
+                s.found = pid;
+                BOOL(0)
+            }
+            _ => BOOL(1),
+        }
+    }
+    let mut s = Search { host: host_pid, found: 0 };
+    unsafe {
+        let _ = EnumChildWindows(hwnd, Some(visit), LPARAM(&mut s as *mut Search as isize));
+    }
+    (s.found != 0).then_some(s.found)
+}
+
+// ---------------------------------------------------------------- last app window (tray)
+
+static LAST_APP_WINDOW: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
+
+/// Remembers the last focused window of another app, so tray actions (the tray menu takes the
+/// focus) can still paste where the user was working.
+pub fn start_focus_tracker() {
+    #[cfg(windows)]
+    std::thread::spawn(|| loop {
+        let fg = foreground_window();
+        if is_app_window(fg) {
+            LAST_APP_WINDOW.store(fg, std::sync::atomic::Ordering::Relaxed);
+        }
+        std::thread::sleep(Duration::from_millis(300));
+    });
+}
+
+/// Last focused window of another app (0 = unknown: paste goes to whatever has focus).
+pub fn last_app_window() -> isize {
+    let fg = foreground_window();
+    if is_app_window(fg) {
+        return fg;
+    }
+    LAST_APP_WINDOW.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// A real app window: not FlowVoice's own, not the taskbar/tray/menus.
+#[cfg(windows)]
+fn is_app_window(hwnd: isize) -> bool {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::System::Threading::GetCurrentProcessId;
+    use windows::Win32::UI::WindowsAndMessaging::GetClassNameW;
+    if hwnd == 0 {
+        return false;
+    }
+    let h = HWND(hwnd as *mut _);
+    if window_pid(h) == Some(unsafe { GetCurrentProcessId() }) {
+        return false;
+    }
+    let mut buf = [0u16; 128];
+    let n = unsafe { GetClassNameW(h, &mut buf) };
+    let class = String::from_utf16_lossy(&buf[..n.max(0) as usize]);
+    ![
+        "Shell_TrayWnd",
+        "Shell_SecondaryTrayWnd",
+        "NotifyIconOverflowWindow",
+        "TopLevelWindowForOverflowXamlIsland",
+        "#32768",
+        "Progman",
+        "WorkerW",
+        "XamlExplorerHostIslandWindow",
+        "Windows.UI.Core.CoreWindow",
+    ]
+    .iter()
+    .any(|c| class.eq_ignore_ascii_case(c))
+}
+
+#[cfg(not(windows))]
+fn is_app_window(_hwnd: isize) -> bool {
+    false
+}
+
+/// Did the target window really get the focus? (Unknown target = trust the current focus.)
+#[cfg(windows)]
+fn has_focus(target: isize) -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::{GetAncestor, GetForegroundWindow, GA_ROOT};
+    if target == 0 {
+        return true;
+    }
+    unsafe {
+        let fg = GetForegroundWindow();
+        fg.0 as isize == target || GetAncestor(fg, GA_ROOT).0 as isize == target
+    }
+}
+
+#[cfg(not(windows))]
+fn has_focus(_target: isize) -> bool {
+    true
+}
+
+/// Console hosts where Ctrl+Z is not "undo".
+#[cfg(windows)]
+fn is_console(target: isize) -> bool {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::GetClassNameW;
+    if target == 0 {
+        return false;
+    }
+    let mut buf = [0u16; 128];
+    let n = unsafe { GetClassNameW(HWND(target as *mut _), &mut buf) };
+    let class = String::from_utf16_lossy(&buf[..n.max(0) as usize]);
+    ["ConsoleWindowClass", "CASCADIA_HOSTING_WINDOW_CLASS", "mintty", "VirtualConsoleClass", "PuTTY", "Alacritty", "org.wezfurlong.wezterm"]
+        .iter()
+        .any(|c| class.eq_ignore_ascii_case(c))
+}
+
+#[cfg(not(windows))]
+fn is_console(_target: isize) -> bool {
+    false
+}
+
+/// True when the target window belongs to an elevated process and FlowVoice is not elevated.
+#[cfg(windows)]
+fn is_elevated(target: isize) -> bool {
+    use windows::Win32::Foundation::{CloseHandle, HANDLE, HWND};
+    use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
+    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcess, OpenProcessToken, PROCESS_QUERY_LIMITED_INFORMATION};
+    use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
+    fn elevated(process: HANDLE) -> Option<bool> {
+        unsafe {
+            let mut token = HANDLE::default();
+            OpenProcessToken(process, TOKEN_QUERY, &mut token).ok()?;
+            let mut info = TOKEN_ELEVATION::default();
+            let mut len = 0u32;
+            let ok = GetTokenInformation(
+                token,
+                TokenElevation,
+                Some(&mut info as *mut _ as *mut _),
+                std::mem::size_of::<TOKEN_ELEVATION>() as u32,
+                &mut len,
+            );
+            let _ = CloseHandle(token);
+            ok.ok()?;
+            Some(info.TokenIsElevated != 0)
+        }
+    }
+    if target == 0 {
+        return false;
+    }
+    unsafe {
+        let mut pid = 0u32;
+        GetWindowThreadProcessId(HWND(target as *mut _), Some(&mut pid));
+        if pid == 0 || elevated(GetCurrentProcess()) == Some(true) {
+            return false;
+        }
+        match OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
+            Ok(h) => {
+                let r = elevated(h).unwrap_or(false);
+                let _ = CloseHandle(h);
+                r
+            }
+            Err(_) => false,
+        }
+    }
+}
+
+#[cfg(not(windows))]
+fn is_elevated(_target: isize) -> bool {
+    false
 }
 
 #[cfg(windows)]
@@ -137,15 +517,30 @@ fn focus(_target: isize) {}
 
 #[cfg(windows)]
 fn wait_modifiers_released() {
-    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT};
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        GetAsyncKeyState, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_CONTROL,
+        VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
+    };
+    let mods = [VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN];
+    let is_held = |vk: &VIRTUAL_KEY| unsafe { GetAsyncKeyState(vk.0 as i32) } as u16 & 0x8000 != 0;
     for _ in 0..60 {
-        let held = [VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN]
-            .iter()
-            .any(|vk| unsafe { GetAsyncKeyState(vk.0 as i32) } as u16 & 0x8000 != 0);
-        if !held {
+        if !mods.iter().any(is_held) {
             return;
         }
         std::thread::sleep(Duration::from_millis(25));
+    }
+    // Still "held" after 1.5 s (stuck key state): release them so the paste is a plain Ctrl+V,
+    // not Ctrl+Shift+V (which runs other commands in some apps).
+    let ups: Vec<INPUT> = mods
+        .iter()
+        .filter(|vk| is_held(vk))
+        .map(|vk| INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: *vk, wScan: 0, dwFlags: KEYEVENTF_KEYUP, time: 0, dwExtraInfo: 0 } },
+        })
+        .collect();
+    unsafe {
+        SendInput(&ups, std::mem::size_of::<INPUT>() as i32);
     }
 }
 

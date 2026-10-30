@@ -165,6 +165,7 @@
     transition-duration: 60ms;
   }
   .none {
+    margin-left: -6px; /* cancels the stack's overlap padding, so it lines up with the label */
     font-size: 11px;
     color: var(--text-3);
   }

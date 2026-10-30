@@ -18,6 +18,11 @@
   --accent-fg: #d7ff3f;
   --accent-soft: rgba(215, 255, 63, 0.1);
   --accent-line: rgba(215, 255, 63, 0.35);
+  /* "it worked" states (key ok, model ready, test passed). Follow the accent, except when the
+     accent itself is red/coral (html[data-warm-accent]) — then success would read as an error. */
+  --ok: var(--accent-fg);
+  --ok-soft: var(--accent-soft);
+  --ok-line: var(--accent-line);
   --danger: #ff5a4e;
   --danger-fg: #ff7a70;
   --danger-soft: rgba(255, 90, 78, 0.1);
@@ -132,6 +137,24 @@
   }
 }
 
+:root[data-warm-accent] {
+  --ok: #62d98f;
+  --ok-soft: rgba(98, 217, 143, 0.1);
+  --ok-line: rgba(98, 217, 143, 0.35);
+}
+:root[data-warm-accent][data-theme="light"] {
+  --ok: #1c7a43;
+  --ok-soft: rgba(28, 122, 67, 0.1);
+  --ok-line: rgba(28, 122, 67, 0.4);
+}
+@media (prefers-color-scheme: light) {
+  :root[data-warm-accent]:not([data-theme="dark"]):not([data-theme="light"]) {
+    --ok: #1c7a43;
+    --ok-soft: rgba(28, 122, 67, 0.1);
+    --ok-line: rgba(28, 122, 67, 0.4);
+  }
+}
+
 *,
 *::before,
 *::after {
@@ -179,6 +202,18 @@ h3 {
   font-weight: 600;
 }
 
+/* typographic hygiene: no one-word orphans in copy, balanced headings */
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
 button,
 input,
 select,
@@ -218,6 +253,12 @@ textarea,
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--r-sm);
+}
+/* text fields show focus through their own frame (border + soft ring, or the wrapper's
+   :focus-within); a second outline around/inside that frame looks doubled and gets clipped */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus-visible,
+textarea:focus-visible {
+  outline: none;
 }
 
 /* scrollbars: thin hairline thumbs */

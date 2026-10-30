@@ -10,7 +10,15 @@
     label,
     onchange,
     size = "md",
-  }: { value: string; label: string; onchange?: (v: string) => void; size?: "md" | "lg" } = $props();
+    clearable = false,
+  }: {
+    value: string;
+    label: string;
+    onchange?: (v: string) => void;
+    size?: "md" | "lg";
+    /** Shows a remove button; an empty value means "no shortcut". */
+    clearable?: boolean;
+  } = $props();
 
   let capturing = $state(false);
   // Leaving the page mid-capture must resume the global shortcuts.
@@ -33,6 +41,13 @@
     if (capturing) api.suspendHotkeys(false).catch(() => {});
     capturing = false;
     live = [];
+  }
+
+  function clear() {
+    error = "";
+    value = "";
+    onchange?.("");
+    btn?.focus();
   }
 
   async function onKey(e: KeyboardEvent) {
@@ -82,11 +97,13 @@
 <svelte:window onkeydown={onKey} onkeyup={onKey} />
 
 <div class="hk">
+  <div class="line">
   <button
     bind:this={btn}
     type="button"
     class="cap {size}"
     class:capturing
+    class:withclear={clearable && !!value && !capturing}
     class:saved
     class:err={!!error}
     aria-label="{label}: {value}. {t('sc.click_to_change')}"
@@ -106,12 +123,22 @@
       {/if}
       <span class="esc mono" aria-hidden="true">{t("ctl.esc_cancel")}</span>
     {:else}
-      {#key value}
-        <Keys accel={value} size={size === "lg" ? "lg" : "md"} animate={saved} />
-      {/key}
+      {#if value}
+        {#key value}
+          <Keys accel={value} size={size === "lg" ? "lg" : "md"} animate={saved} />
+        {/key}
+      {:else}
+        <span class="none">{t("sc.off")}</span>
+      {/if}
       <span class="edit"><Icon name="edit" size={15} /></span>
     {/if}
   </button>
+  {#if clearable && value && !capturing}
+    <button type="button" class="clear" aria-label={t("sc.clear")} title={t("sc.clear")} onclick={clear}>
+      <Icon name="x" size={14} />
+    </button>
+  {/if}
+  </div>
   {#if error}
     <p class="msg" role="alert">{error}</p>
   {/if}
@@ -123,6 +150,38 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+  }
+  /* the remove button sits inside the cap's right edge, so clearable rows line up with the rest */
+  .line {
+    position: relative;
+    display: inline-flex;
+  }
+  .withclear {
+    padding-right: 38px;
+  }
+  .clear {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    translate: 0 -50%;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-sm);
+    color: var(--text-3);
+    transition:
+      color var(--t-fast),
+      background var(--t-fast);
+  }
+  .clear:hover {
+    color: var(--text);
+    background: var(--hover);
+  }
+  .none {
+    font-size: 13px;
+    color: var(--text-3);
+    padding-left: 4px;
   }
   .cap {
     display: inline-flex;

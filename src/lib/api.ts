@@ -9,6 +9,7 @@ import type {
   KeyStatusMap,
   LlmProviderId,
   LocalModel,
+  ModelNotice,
   RecordMode,
   Settings,
   SettingsPage,
@@ -97,4 +98,6 @@ export const api = {
   quit: () => call<void>("quit_app"),
   /** Author photo as a data URL (GitHub avatar, cached for offline), or null. */
   authorAvatar: () => call<string | null>("author_avatar"),
+  /** Automatic model replacements not yet shown (also pushed live as EVENTS.modelHealed). */
+  takeModelNotices: () => call<ModelNotice[]>("take_model_notices"),
 };

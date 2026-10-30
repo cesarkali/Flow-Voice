@@ -128,6 +128,13 @@
     color: var(--on-accent);
     font-weight: 600;
   }
+  /* a faded accent fill reads muddy (esp. with red/dark accents): disabled primary goes neutral */
+  .primary:disabled:not(.loading) {
+    opacity: 1;
+    background: var(--surface-3);
+    border-color: var(--line);
+    color: var(--text-3);
+  }
   .primary:hover:not(:disabled) {
     background: color-mix(in srgb, var(--accent) 82%, white);
     border-color: color-mix(in srgb, var(--accent) 82%, white);

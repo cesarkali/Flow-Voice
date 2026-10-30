@@ -53,6 +53,14 @@ export const DEFAULT_STYLES: Style[] = [
     builtin: true,
   },
   {
+    id: "prompt",
+    name: "Prompt",
+    description: "Enxuga a fala para mandar a uma IA: menos tokens, mesmo contexto.",
+    kind: "llm",
+    prompt: "",
+    builtin: true,
+  },
+  {
     id: "casual",
     name: "Mensagem",
     description: "Curto e leve, do jeito que se escreve no chat.",
@@ -115,8 +123,20 @@ const DEFAULT_SETTINGS: Settings = {
       builtin: false,
     },
   ],
+  app_styles: [
+    { app: "outlook", style_id: "formal" },
+    { app: "slack", style_id: "casual" },
+    { app: "code", style_id: "prompt" },
+  ],
+  app_styles_enabled: true,
   translation_target: "en",
-  hotkeys: { dictate: "CommandOrControl+Shift+Space", translate: "CommandOrControl+Shift+T", ask: "Alt+Space" },
+  hotkeys: {
+    dictate: "CommandOrControl+Shift+Space",
+    translate: "CommandOrControl+Shift+T",
+    ask: "Alt+Space",
+    command: "CommandOrControl+Alt+K",
+    paste_last: "CommandOrControl+Alt+V",
+  },
   hotkey_mode: "toggle",
   auto_paste: true,
   remove_fillers: true,
@@ -136,6 +156,11 @@ const params = typeof location !== "undefined" ? new URLSearchParams(location.se
 let settings: Settings = clone(DEFAULT_SETTINGS);
 if (params.has("onboarding")) settings.onboarded = false;
 if (params.get("theme") === "light" || params.get("theme") === "dark") settings.theme = params.get("theme") as Settings["theme"];
+// ?accent=FF2E00: preview with a custom accent color · ?style=<id>: active style
+if (params.get("accent")) settings.accent_color = "#" + params.get("accent")!.replace(/^#/, "");
+if (params.get("style")) settings.active_style = params.get("style")!;
+// ?norules: no per-app styles yet (empty state + suggestions)
+if (params.has("norules")) settings.app_styles = [];
 
 const keys: Record<KeyProviderId, string[]> = {
   groq: ["gsk_8Kd2mQpL0aZr7TnV1xYc4bW9fA2"],
@@ -156,12 +181,18 @@ function keyStatus(): KeyStatusMap {
   return out;
 }
 
+const ALL = ["*"];
+const SMALL_OK = ["en", "es", "pt", "it", "de", "fr", "ca", "nl", "ja", "ru", "pl", "ko", "id", "sv", "tr", "gl", "uk", "zh", "ms", "no", "vi", "fi", "cs", "ro"];
+const lm = (m: Omit<LocalModel, "installed" | "note" | "recommended"> & Partial<LocalModel>): LocalModel => ({ installed: false, note: "", recommended: false, ...m });
 const localModels: LocalModel[] = [
-  { id: "tiny-q5_1", label: "Tiny", file: "ggml-tiny-q5_1.bin", size_mb: 31, installed: false, note: "Mais leve — PCs bem fracos", recommended: false },
-  { id: "base-q5_1", label: "Base", file: "ggml-base-q5_1.bin", size_mb: 57, installed: true, note: "Rápido, ideal para a prévia ao vivo", recommended: true },
-  { id: "small-q5_1", label: "Small", file: "ggml-small-q5_1.bin", size_mb: 181, installed: false, note: "Equilíbrio entre precisão e velocidade", recommended: false },
-  { id: "turbo-q5_0", label: "Large v3 Turbo", file: "ggml-large-v3-turbo-q5_0.bin", size_mb: 547, installed: false, note: "Máxima precisão (PC mais forte)", recommended: false },
-  { id: "medium-q5_0", label: "Medium", file: "ggml-medium-q5_0.bin", size_mb: 514, installed: false, note: "Preciso, mais lento que o Turbo", recommended: false },
+  lm({ id: "tiny-q5_1", label: "Tiny", file: "ggml-tiny-q5_1.bin", size_mb: 31, ram_mb: 150, langs: ALL, recommended_for: [], speed: 5, quality: 1, tech: "whisper tiny · q5_1" }),
+  lm({ id: "base-q5_1", label: "Base", file: "ggml-base-q5_1.bin", size_mb: 57, ram_mb: 300, langs: ALL, recommended_for: [], speed: 5, quality: 2, tech: "whisper base · q5_1", installed: true, recommended: true }),
+  lm({ id: "base-en-q5_1", label: "Base (English)", file: "ggml-base.en-q5_1.bin", size_mb: 57, ram_mb: 300, langs: ["en"], recommended_for: ["en"], speed: 5, quality: 3, tech: "whisper base.en · q5_1" }),
+  lm({ id: "small-q5_1", label: "Small", file: "ggml-small-q5_1.bin", size_mb: 181, ram_mb: 590, langs: ALL, recommended_for: SMALL_OK, speed: 4, quality: 3, tech: "whisper small · q5_1" }),
+  lm({ id: "small-en-q5_1", label: "Small (English)", file: "ggml-small.en-q5_1.bin", size_mb: 181, ram_mb: 590, langs: ["en"], recommended_for: ["en"], speed: 4, quality: 4, tech: "whisper small.en · q5_1" }),
+  lm({ id: "distil-ptbr-q5_0", label: "Distil Large v3 PT-BR", file: "ggml-distil-large-v3-ptbr-q5_0.bin", size_mb: 513, ram_mb: 950, langs: ["pt"], recommended_for: ["pt"], speed: 2, quality: 5, tech: "distil-whisper large-v3 pt-BR (freds0) · q5_0", installed: true }),
+  lm({ id: "turbo-q5_0", label: "Large v3 Turbo", file: "ggml-large-v3-turbo-q5_0.bin", size_mb: 547, ram_mb: 1020, langs: ALL, recommended_for: ALL, speed: 2, quality: 5, tech: "whisper large-v3-turbo · q5_0" }),
+  lm({ id: "medium-q5_0", label: "Medium", file: "ggml-medium-q5_0.bin", size_mb: 514, ram_mb: 1200, langs: ALL, recommended_for: [], speed: 1, quality: 4, tech: "whisper medium · q5_0" }),
 ];
 // ?nomodels: nothing downloaded yet (onboarding live-preview / offline download flows).
 if (params.has("nomodels")) localModels.forEach((m) => (m.installed = false));
@@ -212,6 +243,28 @@ function makeResult(mode: RecordMode, styleId: string, target: string | null, pa
     pasted,
     duration_ms: 5400,
     warnings: [],
+    app: "outlook",
+    app_name: "Outlook",
+  };
+}
+
+const CMD_SOURCE =
+  "oi pessoal, segue o relatório do trimestre. os números ficaram abaixo do esperado mas a gente tem um plano pra recuperar no próximo";
+const CMD_RAW = "deixa mais formal e organiza em tópicos";
+const CMD_TEXT =
+  "Prezados,\n\nSegue o relatório do trimestre:\n- Os resultados ficaram abaixo do esperado.\n- Já temos um plano de recuperação para o próximo período.";
+const CMD_TEXT_EN =
+  "Dear all,\n\nPlease find the quarterly report below:\n- Results came in below expectations.\n- We already have a recovery plan for the next period.";
+function makeCommand(target: string | null = null): DictationResult {
+  return {
+    ...makeResult("command", settings.active_style, null),
+    raw: CMD_RAW,
+    text: target ? CMD_TEXT_EN : CMD_TEXT,
+    target,
+    source: CMD_SOURCE,
+    app: "gmail",
+    app_name: "Gmail",
+    duration_ms: 2600,
   };
 }
 
@@ -286,12 +339,16 @@ history.splice(
   0,
   H("h5", 52, {
     style_id: "casual",
+    app: "slack",
+    app_name: "Slack",
     raw: "fala galera então amanhã o deploy vai ser às dez e meia beleza qualquer coisa me chama",
     text: "Galera, amanhã o deploy é às 10h30. Qualquer coisa me chama.",
     duration_ms: 4600,
   }),
   H("h6", 95, {
     style_id: "custom-topicos",
+    app: "notion",
+    app_name: "Notion",
     raw: "pra reunião de hoje a gente precisa falar do orçamento do Q4 do novo onboarding e de quem vai cobrir as férias da Ana",
     text: "- Orçamento do Q4\n- Novo onboarding\n- Cobertura das férias da Ana",
     duration_ms: 6900,
@@ -316,6 +373,8 @@ history.push(
   }),
   H("h9", 60 * 50, {
     style_id: "formal",
+    app: "gmail",
+    app_name: "Gmail",
     raw: "oi Marcos tudo bem então sobre aquele contrato eu dei uma olhada e acho que a cláusula de rescisão tá muito vaga a gente precisa definir prazo e multa direitinho antes de assinar e também incluir o reajuste anual pelo IPCA",
     text: "Olá, Marcos. Revisei o contrato e considero a cláusula de rescisão vaga demais: precisamos definir com clareza o prazo e a multa antes da assinatura. Sugiro também incluir o reajuste anual pelo IPCA.",
     duration_ms: 12800,
@@ -327,6 +386,30 @@ history.push(
     provider: null,
     stt_provider: "local · base-q5_1",
     duration_ms: 2400,
+  }),
+  H("h12", 60 * 6, {
+    mode: "command",
+    app: "whatsapp",
+    app_name: "WhatsApp",
+    raw: "traduz pro inglês",
+    source: "Chego aí em 20 minutos, pode ir pedindo.",
+    text: "I'll be there in 20 minutes, go ahead and order.",
+    duration_ms: 1500,
+  }),
+  H("h13", 60 * 7, {
+    style_id: "prompt",
+    app: "code",
+    app_name: "VS Code",
+    raw: "cria um teste que verifica se o atalho novo não conflita com os outros",
+    text: "Crie um teste que verifique se o novo atalho não conflita com os outros.",
+    duration_ms: 3300,
+  }),
+  H("h14", 60 * 8, {
+    app: "teams",
+    app_name: "Microsoft Teams",
+    raw: "beleza fechado então às três",
+    text: "Beleza, fechado então às 3.",
+    duration_ms: 1400,
   }),
   H("h11", 60 * 24 * 9, {
     raw: "é o seguinte o bug acontece quando o usuário clica duas vezes rápido no botão de salvar aí ele duplica o registro",
@@ -349,6 +432,7 @@ let chat: ChatMessage[] = [
     ],
   },
 ];
+if (params.has("empty")) chat = [];
 
 // ---------------------------------------------------------------- overlay simulation
 
@@ -370,7 +454,18 @@ const LIVE_WORDS =
     " ",
   );
 
-export type SimScenario = "dictate" | "live" | "translate" | "ask" | "error" | "done" | "transcribing" | "refining";
+export type SimScenario =
+  | "dictate"
+  | "live"
+  | "translate"
+  | "ask"
+  | "error"
+  | "done"
+  | "transcribing"
+  | "refining"
+  | "command"
+  | "cmddone"
+  | "cmdnosel";
 
 /** Plays the overlay flow by emitting the same events Rust would. */
 export function simulateOverlay(scenario: SimScenario = "live", autoStop = true) {
@@ -408,6 +503,43 @@ export function simulateOverlay(scenario: SimScenario = "live", autoStop = true)
     });
   };
 
+  if (scenario === "cmddone") {
+    lastResult = makeCommand();
+    return emit({ phase: "done", result: lastResult });
+  }
+  if (scenario === "cmdnosel") {
+    return emit({ phase: "error", message: "Selecione um texto antes de usar o Comando.", detail: null, raw: null, hint: true });
+  }
+  if (scenario === "command") {
+    // Like Rust: listening first, the copied selection a moment later, then the edited text.
+    emit({ phase: "listening", mode: "command", style_id: settings.active_style, target: null, live: true, app: "Gmail", selection: "pending" });
+    later(450, () => mockEmit(EVENTS.overlaySelection, { text: "oi pessoal, segue o relatório do trimestre. os números…" }));
+    let t = 0;
+    let words = 0;
+    const said = CMD_RAW.charAt(0).toUpperCase() + CMD_RAW.slice(1);
+    levelTimer = window.setInterval(() => {
+      t += 33;
+      mockEmit(EVENTS.overlayLevel, 0.3 + Math.abs(Math.sin(t / 120)) * 0.4 + Math.random() * 0.1);
+      if (t > 700 && t % 330 < 33 && words < said.split(" ").length) {
+        words++;
+        mockEmit(EVENTS.overlayPartial, { text: said.split(" ").slice(0, words).join(" ") });
+      }
+    }, 33);
+    stopRequested = () => {
+      clearInterval(levelTimer);
+      stopRequested = null;
+      emit({ phase: "transcribing" });
+      later(700, () => emit({ phase: "refining", provider: "Groq", mode: "command" }));
+      later(1900, () => {
+        lastResult = makeCommand();
+        history.unshift(lastResult);
+        mockEmit(EVENTS.historyChanged);
+        emit({ phase: "done", result: lastResult });
+      });
+    };
+    if (autoStop) later(4200, () => stopRequested?.());
+    return;
+  }
   if (scenario === "transcribing") return emit({ phase: "transcribing" });
   if (scenario === "refining") return emit({ phase: "refining", provider: "Groq" });
   if (scenario === "done") {
@@ -417,7 +549,7 @@ export function simulateOverlay(scenario: SimScenario = "live", autoStop = true)
   }
 
   const live = scenario !== "dictate";
-  emit({ phase: "listening", mode, style_id: settings.active_style, target, live });
+  emit({ phase: "listening", mode, style_id: settings.active_style, target, live, app: mode === "ask" ? null : "Outlook" });
   let t = 0;
   let words = 0;
   levelTimer = window.setInterval(() => {
@@ -444,8 +576,8 @@ export function stopSimulation() {
 let chatRecording = false;
 
 async function invoke<T>(cmd: string, args: Record<string, unknown> = {}): Promise<T> {
-  // overlay_resize is a cheap native call in Rust; keep the preview window in step with the morph.
-  await sleep(cmd === "overlay_resize" ? 8 : cmd.startsWith("get_") ? 30 : 60);
+  // overlay_hitbox is a cheap native call in Rust (it only stores a rect).
+  await sleep(cmd === "overlay_hitbox" || cmd === "overlay_resize" ? 1 : cmd.startsWith("get_") ? 30 : 60);
   const r = await route(cmd, args);
   return r as T;
 }
@@ -557,7 +689,9 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
 
     case "start_recording": {
       const mode = a.mode as RecordMode;
-      simulateOverlay(mode === "translate" ? "translate" : mode === "ask" ? "ask" : settings.stt.live_preview ? "live" : "dictate");
+      simulateOverlay(
+        mode === "translate" ? "translate" : mode === "ask" ? "ask" : mode === "command" ? "command" : settings.stt.live_preview ? "live" : "dictate",
+      );
       return;
     }
     case "stop_recording":
@@ -570,13 +704,18 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       await sleep(900);
       const target = (a.target as string | null) ?? null;
       const prev = lastResult ?? makeResult("dictate", "natural", null);
-      lastResult = { ...makeResult(prev.mode, String(a.styleId), target, false), id: prev.id };
+      lastResult =
+        prev.mode === "command"
+          ? { ...makeCommand(target), id: prev.id, pasted: prev.pasted }
+          : { ...makeResult(prev.mode, String(a.styleId), target, false), id: prev.id };
       // Like the Rust core: a reprocess also announces the new version as a `done` with the same id.
       mockEmit(EVENTS.overlayState, { phase: "done", result: clone(lastResult) } satisfies OverlayEvent);
       return clone(lastResult);
     }
     case "paste_text":
       return;
+    case "take_model_notices":
+      return [];
     case "copy_text":
       try {
         await navigator.clipboard.writeText(String(a.text));
@@ -587,8 +726,10 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
     case "overlay_hold":
       return;
     case "overlay_resize":
-      // The browser preview sizes its fake window from this (see src/overlay/Preview.svelte).
-      mockEmit("mock:overlay-resize", { width: a.width, height: a.height });
+      return; // no-op: the overlay window has a fixed size (see overlay_hitbox)
+    case "overlay_hitbox":
+      // The browser preview draws it and emulates Rust's overlay-pointer (src/overlay/Preview.svelte).
+      mockEmit("mock:overlay-hitbox", a.rect ?? null);
       return;
     case "dismiss_overlay":
       stopSimulation();
@@ -690,3 +831,49 @@ export const mock = {
     return () => handlers.get(event)?.delete(handler);
   },
 };
+
+// ?qa=<steps>: scripted UI state for visual QA screenshots (headless browser, no interaction).
+// Steps separated by "~": click:<css> · clickt:<text> · wait:<ms> · type:<css>=<text> · key:<Key>
+// · press:<css>=<Key> · hover:<css> · scroll:<css>=<px>
+if (typeof window !== "undefined" && params.get("qa")) {
+  const steps = params.get("qa")!.split("~");
+  const q = (sel: string) => document.querySelector<HTMLElement>(sel);
+  (async () => {
+    await sleep(Number(params.get("qadelay")) || 700);
+    for (const st of steps) {
+      const i = st.indexOf(":");
+      const op = st.slice(0, i);
+      const arg = st.slice(i + 1);
+      try {
+        if (op === "wait") await sleep(Number(arg));
+        else if (op === "click") q(arg)?.click();
+        else if (op === "clickt") {
+          // first visible button/link/role element whose text contains arg
+          const all = [...document.querySelectorAll<HTMLElement>("button, a, [role=button], [role=tab], [role=option], label")];
+          all.find((el) => el.offsetParent !== null && el.textContent?.trim().includes(arg))?.click();
+        }
+        else if (op === "hover") q(arg)?.dispatchEvent(new PointerEvent("pointerenter", { bubbles: true }));
+        else if (op === "key") (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: arg, bubbles: true }));
+        else if (op === "press") {
+          const [sel, k] = [arg.slice(0, arg.indexOf("=")), arg.slice(arg.indexOf("=") + 1)];
+          const el = q(sel);
+          el?.focus({ preventScroll: true });
+          el?.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }));
+        }
+        else if (op === "type" || op === "scroll") {
+          const [sel, val] = [arg.slice(0, arg.indexOf("=")), arg.slice(arg.indexOf("=") + 1)];
+          const el = q(sel);
+          if (op === "scroll" && el) el.scrollTop = Number(val);
+          if (op === "type" && el instanceof HTMLInputElement) {
+            el.focus();
+            el.value = val;
+            el.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }
+      } catch (e) {
+        console.warn("[qa]", st, e);
+      }
+      await sleep(120);
+    }
+  })();
+}

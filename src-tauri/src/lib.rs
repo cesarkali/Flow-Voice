@@ -1,6 +1,8 @@
+mod apps;
 mod audio;
 mod cloud;
 mod commands;
+mod heal;
 mod hotkeys;
 mod keys;
 #[cfg(test)]
@@ -8,6 +10,7 @@ mod live_tests;
 mod local_stt;
 mod pipeline;
 mod platform;
+mod preview;
 mod settings;
 mod state;
 mod text;
@@ -58,8 +61,26 @@ pub fn run() {
     let test_dir = std::env::var_os("FLOWVOICE_DATA_DIR").map(std::path::PathBuf::from);
     let mut builder = tauri::Builder::default();
     if test_dir.is_none() {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            windows::open_settings(app, None);
+        // A second launch talks to the running app: `flowvoice --toggle` (also --translate,
+        // --ask, --cancel) lets desktops without global hotkeys (Wayland) or tools like Stream
+        // Deck/AutoHotkey drive dictation; `--hidden` (autostart racing a running app) is a no-op.
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let has = |flag: &str| args.iter().any(|a| a == flag);
+            if has("--toggle") || has("--dictate") {
+                pipeline::toggle(app, state::RecordMode::Dictate);
+            } else if has("--translate") {
+                pipeline::toggle(app, state::RecordMode::Translate);
+            } else if has("--ask") {
+                pipeline::toggle(app, state::RecordMode::Ask);
+            } else if has("--command") {
+                pipeline::toggle(app, state::RecordMode::Command);
+            } else if has("--paste-last") {
+                pipeline::paste_last(app, platform::last_app_window());
+            } else if has("--cancel") {
+                pipeline::cancel(app);
+            } else if !has("--hidden") {
+                windows::open_settings(app, None);
+            }
         }));
     }
     let app = builder
@@ -102,6 +123,7 @@ pub fn run() {
             windows::setup_overlay(&handle);
             windows::start_follow_watcher(&handle);
             windows::start_pointer_watcher(&handle);
+            platform::start_focus_tracker();
             tray::setup(&handle)?;
             let failed = hotkeys::register_all(&handle);
             if !failed.is_empty() {
@@ -110,12 +132,9 @@ pub fn run() {
             commands::set_autostart(&handle, s.start_with_os);
 
             pipeline::ensure_preview_model(&handle);
-            // Load the local model ahead of time so the first dictation is instant.
-            if s.stt.engine == "local" || s.stt.live_preview {
-                let local = handle.state::<AppState>().local.clone();
-                let id = if s.stt.engine == "local" { s.stt.local_model.clone() } else { s.stt.preview_model.clone() };
-                std::thread::spawn(move || local.warm_up(&id));
-            }
+            heal::start_background(&handle);
+            // Local models load on demand (when a dictation starts) and unload when idle.
+            handle.state::<AppState>().local.start_idle_unloader();
 
             let hidden = std::env::args().any(|a| a == "--hidden");
             if !s.onboarded || !hidden {
@@ -125,12 +144,20 @@ pub fn run() {
                 let _ = handle.emit("hotkey-error", failed);
             }
 
-            // Quiet background update check.
+            // Quiet background update check, shortly after launch and then every 6 h (the app
+            // lives in the tray for weeks).
             let h = handle.clone();
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(20)).await;
-                if let Ok(info) = commands::check_update(h.clone()).await {
-                    let _ = h.emit("update-available", &info);
+                loop {
+                    match commands::check_update(h.clone()).await {
+                        Ok(info) if info.available => {
+                            let _ = h.emit("update-available", &info);
+                        }
+                        Ok(_) => {}
+                        Err(e) => log::warn!("update check: {e}"),
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs(6 * 3600)).await;
                 }
             });
             Ok(())
@@ -183,6 +210,7 @@ pub fn run() {
             commands::open_url,
             commands::quit_app,
             commands::author_avatar,
+            commands::take_model_notices,
         ])
         .build(tauri::generate_context!())
         .expect("error while building FlowVoice");

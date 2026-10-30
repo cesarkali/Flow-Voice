@@ -17,6 +17,8 @@ pub enum RecordMode {
     Dictate,
     Translate,
     Ask,
+    /// Apply a spoken instruction to the text selected in the target app.
+    Command,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -33,6 +35,15 @@ pub struct DictationResult {
     pub pasted: bool,
     pub duration_ms: u64,
     pub warnings: Vec<String>,
+    /// Normalized id of the app the text went to ("outlook"); missing in older history files.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub app: Option<String>,
+    /// Friendly name of that app ("Outlook").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub app_name: Option<String>,
+    /// Command mode: the selected text the instruction (`raw`) was applied to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -48,12 +59,29 @@ pub struct ChatMessage {
     pub sources: Vec<ChatSource>,
 }
 
+/// Text selected in the target app for a Command recording.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Selection {
+    /// Still being copied (toggle mode copies right away, in the background).
+    Pending,
+    /// Hold mode: copied when the keys are released.
+    AtStop,
+    Got(String),
+    Empty,
+    Failed(String),
+}
+
 pub struct ActiveSession {
     pub rec: Recording,
     pub mode: RecordMode,
     pub target_window: isize,
     pub started: std::time::Instant,
     pub stop_flag: Arc<AtomicBool>,
+    /// App that had focus at start (per-app style, LLM context, history).
+    pub app: Option<crate::apps::AppContext>,
+    /// Style for this dictation: a per-app rule or the active style.
+    pub style_id: String,
+    pub selection: Arc<Mutex<Selection>>,
 }
 
 pub struct AppState {

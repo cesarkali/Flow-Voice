@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde_json::json;
 use std::collections::BTreeMap;
 use std::time::Instant;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_updater::UpdaterExt;
 
@@ -80,21 +80,8 @@ pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings, from
         set_autostart(app, after.start_with_os);
     }
     crate::pipeline::ensure_preview_model(app);
-    let local_wanted = after.stt.engine == "local" || after.stt.live_preview;
-    if local_wanted
-        && (before.stt.engine != after.stt.engine
-            || before.stt.local_model != after.stt.local_model
-            || before.stt.preview_model != after.stt.preview_model)
-    {
-        let st = app.state::<AppState>();
-        let local = st.local.clone();
-        let id = if after.stt.engine == "local" { after.stt.local_model.clone() } else { after.stt.preview_model.clone() };
-        std::thread::spawn(move || local.warm_up(&id));
-    }
     broadcast_settings(app, after, from_window);
-    let hk_changed = before.hotkeys.dictate != after.hotkeys.dictate
-        || before.hotkeys.translate != after.hotkeys.translate
-        || before.hotkeys.ask != after.hotkeys.ask;
+    let hk_changed = before.hotkeys != after.hotkeys;
     if hk_changed {
         let failed = hotkeys::register_all(app);
         if !failed.is_empty() {
@@ -104,15 +91,29 @@ pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings, from
     Ok(())
 }
 
+/// Only the installed app may touch the OS startup entry: dev builds, binaries run from a cargo
+/// `target` folder and isolated test instances (FLOWVOICE_DATA_DIR) must never add, repoint or
+/// delete it (a test instance with autostart off once wiped the user's real entry).
+fn owns_autostart() -> bool {
+    if cfg!(debug_assertions) || std::env::var_os("FLOWVOICE_DATA_DIR").is_some() {
+        return false;
+    }
+    let exe = std::env::current_exe().map(|p| p.to_string_lossy().to_lowercase()).unwrap_or_default();
+    !exe.is_empty() && !exe.contains("\\target\\") && !exe.contains("/target/")
+}
+
+/// Called on every launch too, so the entry heals itself (re-created and pointed at the current
+/// exe) if something removed it or the app moved.
 pub fn set_autostart(app: &AppHandle, on: bool) {
-    if cfg!(debug_assertions) {
-        return; // never register the dev binary
+    if !owns_autostart() {
+        return;
     }
     use tauri_plugin_autostart::ManagerExt;
     let al = app.autolaunch();
     let res = if on { al.enable() } else { al.disable() };
-    if let Err(e) = res {
-        log::warn!("autostart: {e}");
+    match res {
+        Ok(()) => log::info!("autostart {}", if on { "on" } else { "off" }),
+        Err(e) => log::warn!("autostart: {e}"),
     }
 }
 
@@ -294,6 +295,8 @@ pub fn overlay_hitbox(rect: Option<HitRect>) {
 pub fn dismiss_overlay(app: AppHandle) {
     if pipeline::is_recording(&app) {
         pipeline::cancel(&app);
+    } else if pipeline::is_busy(&app) {
+        pipeline::cancel_processing(&app);
     } else {
         windows::hide_overlay(&app);
     }
@@ -377,14 +380,19 @@ pub fn app_info(app: AppHandle, state: State<AppState>) -> AppInfo {
 
 #[derive(Serialize)]
 pub struct UpdateInfo {
-    available: bool,
-    version: Option<String>,
-    notes: Option<String>,
+    pub available: bool,
+    pub version: Option<String>,
+    pub notes: Option<String>,
 }
 
 #[tauri::command]
 pub async fn check_update(app: AppHandle) -> CmdResult<UpdateInfo> {
-    let update = app.updater().map_err(err)?.check().await.map_err(|e| format!("não foi possível verificar: {e}"))?;
+    let update = match app.updater().map_err(err)?.check().await {
+        Ok(u) => u,
+        // No manifest published for the latest release (e.g. it is still a draft): nothing new.
+        Err(e) if ["successful status code", "valid release JSON"].iter().any(|m| e.to_string().contains(m)) => None,
+        Err(e) => return Err(format!("não foi possível verificar: {e}")),
+    };
     Ok(match update {
         Some(u) => UpdateInfo { available: true, version: Some(u.version.clone()), notes: u.body.clone() },
         None => UpdateInfo { available: false, version: None, notes: None },
@@ -454,4 +462,10 @@ pub async fn author_avatar(state: State<'_, AppState>) -> CmdResult<Option<Strin
 #[tauri::command]
 pub fn quit_app(app: AppHandle) {
     app.exit(0);
+}
+
+/// Automatic model replacements not yet shown in the settings window (see heal.rs).
+#[tauri::command]
+pub fn take_model_notices() -> Vec<crate::heal::Notice> {
+    crate::heal::take_notices()
 }

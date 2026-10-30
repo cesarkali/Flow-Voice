@@ -73,6 +73,7 @@
       animate:flip={{ duration: dragging === id || reduce ? 0 : 220, easing: (x) => 1 - Math.pow(1 - x, 3) }}
       class:dragging={dragging === id}
       class:off={!ready(id)}
+      title={ready(id) ? undefined : `${nameOf(id)} · ${t("prov.no_key_short")}`}
       style:transform={dragging === id ? `translate3d(0, ${dy}px, 0) scale(1.015)` : null}
       onpointerdown={(e) => down(e, id)}
       onpointermove={drag}
@@ -111,6 +112,14 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    container-type: inline-size;
+  }
+  /* narrow columns (two lists side by side): the name keeps the room; the dimmed, grayscale row
+     already says "sem chave" (and its tooltip spells it out) */
+  @container (max-width: 380px) {
+    .tiny {
+      display: none;
+    }
   }
   li {
     display: flex;

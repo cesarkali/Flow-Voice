@@ -272,7 +272,7 @@
   }
   .msg {
     font-size: 12px;
-    color: var(--accent-fg);
+    color: var(--ok);
   }
   .msg.warn {
     color: var(--danger-fg);

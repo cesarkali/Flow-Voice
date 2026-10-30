@@ -292,13 +292,13 @@
     opacity: 1;
   }
 
+  /* first block under the section label: the label's hairline is the separator (like Section rows) */
   .upd {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 20px;
-    padding: 14px 0;
-    border-top: 1px solid var(--line);
+    padding: 6px 0 14px;
   }
   .uinfo {
     display: flex;
@@ -316,7 +316,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--accent-fg);
+    color: var(--ok);
   }
   .new {
     color: var(--accent-fg);

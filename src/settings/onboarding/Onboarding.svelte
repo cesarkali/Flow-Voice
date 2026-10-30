@@ -32,7 +32,8 @@
   /** Light whisper model used for the live preview while speaking. */
   const PREVIEW_ID = "base-q5_1";
 
-  let step = $state(1);
+  // ?obstep=N (browser preview only): open the wizard directly on a step for visual QA.
+  let step = $state(isTauri ? 1 : Math.min(6, Math.max(1, Number(new URLSearchParams(location.search).get("obstep")) || 1)));
   let dir = $state(1);
   type Path = "groq" | "offline" | "other";
   // Prefill from the current settings, so "Refazer configuração inicial" starts where the user is.
@@ -327,7 +328,7 @@
               <span class="lo-title">{t("obx.live_title")}</span>
               <span class="lo-body">{t("obx.live_body")}</span>
               {#if live}
-                <span class="lo-st mono">
+                <span class="lo-st mono" class:ready={previewReady}>
                   {#if previewReady}
                     <Icon name="check" size={13} stroke={2} />{t("obx.live_ready")}
                   {:else if previewBusy}
@@ -496,10 +497,13 @@
     overflow-x: hidden;
     overflow-y: auto;
     display: grid;
+    /* long steps (Comportamento at the minimum window) scroll under a soft edge, not a hard cut */
+    mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%);
   }
   .step {
     grid-area: 1 / 1;
-    align-self: center;
+    /* "safe": when a step is taller than the stage it starts at the top instead of overflowing upward */
+    align-self: safe center;
     justify-self: center;
     width: min(820px, calc(100% - 56px));
     padding: 28px 0 24px;
@@ -869,8 +873,12 @@
     align-items: center;
     gap: 6px;
     font-size: 11px;
-    color: var(--accent-fg);
+    /* pending/progress is information, not success: neutral; only "ready" turns --ok */
+    color: var(--text-3);
     animation: fv-fade var(--t-slow) var(--ease) both;
+  }
+  .lo-st.ready {
+    color: var(--ok);
   }
 
   /* ---------- test */
@@ -988,7 +996,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--accent-fg);
+    color: var(--ok);
     animation: fv-pop var(--t-slow) var(--spring) both;
   }
 
