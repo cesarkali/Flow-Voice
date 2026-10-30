@@ -4,7 +4,7 @@
   import { setLanguage, t } from "../lib/i18n.svelte";
   import Icon from "../lib/icons/Icon.svelte";
   import Logo from "../lib/icons/Logo.svelte";
-  import { applyTheme } from "../lib/theme";
+  import { applyAccent, applyTheme } from "../lib/theme";
   import { EVENTS, type ChatMessage, type Settings } from "../lib/types";
   import Button from "../lib/ui/Button.svelte";
   import { keycapsOf } from "../lib/ui/hotkeys";
@@ -20,12 +20,30 @@
   let copied = $state<number | null>(null);
   let list: HTMLElement | undefined = $state();
   let ta: HTMLTextAreaElement | undefined = $state();
+  let root: HTMLElement | undefined = $state();
+
+  /** Re-plays the open animation when the (hidden, not closed) window is shown again. */
+  function replayOpen() {
+    if (!root || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const ease = "cubic-bezier(0.16, 1, 0.3, 1)";
+    root.querySelector(".composer")?.animate(
+      [{ opacity: 0, transform: "translate3d(0, 14px, 0) scale(0.98)" }, { opacity: 1, transform: "none" }],
+      { duration: 460, easing: ease, fill: "backwards" },
+    );
+    root.querySelector(".list")?.animate([{ opacity: 0, transform: "translate3d(0, 8px, 0)" }, { opacity: 1, transform: "none" }], {
+      duration: 380,
+      delay: 40,
+      easing: ease,
+      fill: "backwards",
+    });
+  }
 
   const thinking = $derived(awaiting || messages.at(-1)?.role === "user");
 
   function adopt(s: Settings) {
     settings = s;
     applyTheme(s.theme);
+    applyAccent(s.accent_color);
     setLanguage(s.ui_language);
   }
 
@@ -54,7 +72,19 @@
       on<Settings>(EVENTS.settingsChanged, adopt),
     ];
     ta?.focus();
-    return () => subs.forEach((p) => p.then((f) => f()));
+    let hiddenAt = 0;
+    const vis = () => {
+      if (document.visibilityState === "hidden") hiddenAt = Date.now();
+      else if (hiddenAt && Date.now() - hiddenAt > 400) {
+        replayOpen();
+        ta?.focus();
+      }
+    };
+    document.addEventListener("visibilitychange", vis);
+    return () => {
+      subs.forEach((p) => p.then((f) => f()));
+      document.removeEventListener("visibilitychange", vis);
+    };
   });
 
   async function send() {
@@ -115,7 +145,7 @@
   });
 </script>
 
-<div class="chat">
+<div class="chat" bind:this={root}>
   <TitleBar maximizable={false}>
     {#snippet left()}
       <span class="brand" data-tauri-drag-region><Logo size={18} glow={false} /><span data-tauri-drag-region>{t("chat.title")}</span></span>
@@ -128,7 +158,7 @@
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
   <div class="list" bind:this={list} onclick={linkClick} aria-live="polite">
     {#if !messages.length && !thinking}
-      <div class="empty">
+      <div class="empty stagger" style="--stagger: 60ms">
         <span class="micbig"><Icon name="mic" size={26} /></span>
         <h2>{t("chat.empty_title")}</h2>
         <p class="muted">{t("chat.empty_body", { hotkey: keycapsOf(settings?.hotkeys.ask ?? "Alt+Space").join("+") })}</p>
@@ -146,7 +176,7 @@
               <span class="label">{t("chat.sources")}</span>
               <div class="schips">
                 {#each m.sources as src, j}
-                  <a class="src" href={src.url} data-url={src.url} title={src.title}>
+                  <a class="src" href={src.url} data-url={src.url} title={src.title} style="--i: {Math.min(j, 8)}">
                     <span class="n mono">{j + 1}</span>
                     <span class="st">{src.title || hostOf(src.url)}</span>
                     <span class="host mono">{hostOf(src.url)}</span>
@@ -166,7 +196,7 @@
 
     {#if thinking}
       <div class="msg bot typing" aria-label={t("chat.thinking")}>
-        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="scan" aria-hidden="true"><i></i></span>
         <span class="faint">{t("chat.thinking")}</span>
       </div>
     {/if}
@@ -209,6 +239,9 @@
     flex-direction: column;
     background: var(--bg);
   }
+  .chat > :global(.tb) {
+    animation: fv-fade var(--t-slow) var(--ease) backwards;
+  }
   .brand {
     display: inline-flex;
     align-items: center;
@@ -225,6 +258,7 @@
     flex-direction: column;
     gap: 14px;
     user-select: text;
+    animation: fv-fade var(--t-page) var(--ease) 60ms backwards;
   }
   .empty {
     margin: auto;
@@ -243,6 +277,7 @@
     border: 1px solid var(--line-strong);
     color: var(--accent-fg);
     margin-bottom: 16px;
+    background: radial-gradient(circle at 50% 35%, var(--accent-soft), transparent 70%);
   }
   .empty h2 {
     font-size: 18px;
@@ -256,12 +291,18 @@
     max-width: 100%;
     font-size: 14px;
     line-height: 1.55;
-    animation: in 200ms var(--ease) both;
   }
-  @keyframes in {
+  .msg.bot {
+    animation: fv-rise var(--t-page) var(--ease-out) backwards;
+  }
+  .msg.user {
+    transform-origin: 100% 100%;
+    animation: msg-user var(--t-slow) var(--spring) backwards;
+  }
+  @keyframes msg-user {
     from {
       opacity: 0;
-      transform: translateY(5px);
+      transform: translate3d(12px, 6px, 0) scale(0.94);
     }
   }
   .user {
@@ -350,6 +391,15 @@
     font-size: 12px;
     color: var(--text);
     cursor: pointer;
+    animation: fv-pop var(--t-slow) var(--spring) backwards;
+    animation-delay: calc(160ms + var(--i, 0) * 50ms);
+    transition:
+      border-color var(--t-fast) var(--ease),
+      background-color var(--t-fast) var(--ease),
+      transform var(--t) var(--spring);
+  }
+  .src:active {
+    transform: scale(0.96);
   }
   .src:hover {
     border-color: var(--accent-line);
@@ -407,27 +457,28 @@
     gap: 10px;
     font-size: 12.5px;
   }
-  .dots {
-    display: flex;
-    gap: 4px;
+  /* a short lime segment sweeping a hairline: reads as "working" without bouncing dots */
+  .scan {
+    position: relative;
+    width: 40px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    overflow: hidden;
   }
-  .dots i {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+  .scan i {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 14px;
+    border-radius: 2px;
     background: var(--accent-fg);
-    animation: dot 900ms ease-in-out infinite;
+    animation: scan 900ms var(--ease-in-out) infinite alternate;
   }
-  .dots i:nth-child(2) {
-    animation-delay: 150ms;
-  }
-  .dots i:nth-child(3) {
-    animation-delay: 300ms;
-  }
-  @keyframes dot {
-    50% {
-      transform: translateY(-3px);
-      opacity: 0.35;
+  @keyframes scan {
+    to {
+      transform: translateX(26px);
     }
   }
   .err {
@@ -446,7 +497,9 @@
     background: var(--surface);
     transition:
       border-color var(--t-fast),
-      box-shadow var(--t-fast);
+      box-shadow var(--t);
+    animation: fv-rise var(--t-page) var(--ease-out) 90ms backwards;
+    --rise: 14px;
   }
   .composer:focus-within {
     border-color: var(--accent-line);
@@ -480,7 +533,19 @@
     color: var(--text-2);
     transition:
       background-color var(--t-fast),
-      color var(--t-fast);
+      color var(--t-fast),
+      transform var(--t) var(--spring);
+  }
+  .mic:active,
+  .send:active:not(:disabled) {
+    transform: scale(0.9);
+    transition-duration: 60ms;
+  }
+  .send :global(.icon) {
+    transition: transform var(--t) var(--spring);
+  }
+  .send:hover:not(:disabled) :global(.icon) {
+    transform: translateY(-2px);
   }
   .mic:hover {
     background: var(--hover);

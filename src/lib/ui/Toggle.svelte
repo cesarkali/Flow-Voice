@@ -25,8 +25,9 @@
 
 <style>
   .toggle {
+    --tg-spring: var(--spring);
     position: relative;
-    width: 34px;
+    width: 36px;
     height: 20px;
     border-radius: 20px;
     background: var(--surface-3);
@@ -34,7 +35,13 @@
     flex: none;
     transition:
       background-color var(--t) var(--ease),
-      border-color var(--t) var(--ease);
+      border-color var(--t) var(--ease),
+      box-shadow var(--t) var(--ease);
+  }
+  @supports (transition-timing-function: linear(0, 1)) {
+    .toggle {
+      --tg-spring: linear(0, 0.063, 0.206, 0.379, 0.549, 0.698, 0.818, 0.907, 0.968, 1.007, 1.028, 1.037, 1.038, 1.034, 1.028, 1.021, 1.015, 1.01, 1.006, 1.003, 1);
+    }
   }
   .toggle:hover:not(:disabled) {
     border-color: var(--text-3);
@@ -45,19 +52,32 @@
     left: 2px;
     width: 14px;
     height: 14px;
-    border-radius: 50%;
+    border-radius: 14px;
     background: var(--text-2);
+    transform-origin: left center;
     transition:
-      transform var(--t) var(--ease),
+      transform 360ms var(--tg-spring),
       background-color var(--t) var(--ease);
+  }
+  /* press: the knob stretches toward where it will go */
+  .toggle:active:not(:disabled) .knob {
+    transform: scaleX(1.28);
   }
   .on {
     background: var(--accent);
     border-color: var(--accent);
   }
+  .on:hover:not(:disabled) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
   .on .knob {
-    transform: translateX(14px);
+    transform: translateX(16px);
     background: var(--on-accent);
+    transform-origin: right center;
+  }
+  .on:active:not(:disabled) .knob {
+    transform: translateX(16px) scaleX(1.28);
   }
   .toggle:disabled {
     opacity: 0.4;

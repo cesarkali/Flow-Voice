@@ -30,7 +30,7 @@
 <p class="notice"><Icon name="info" size={15} />{t("prov.github_notice")}</p>
 
 <Section label={t("prov.sec_ai")}>
-  <div class="cards">
+  <div class="cards stagger">
     {#each ai as info (info.id)}
       <ProviderCard {info} bind:open={() => open[info.id] ?? false, (v) => (open[info.id] = v)} />
     {/each}
@@ -38,7 +38,7 @@
 </Section>
 
 <Section label={t("prov.sec_search")}>
-  <div class="cards">
+  <div class="cards stagger">
     {#each search as info (info.id)}
       <ProviderCard {info} bind:open={() => open[info.id] ?? false, (v) => (open[info.id] = v)} />
     {/each}
@@ -46,7 +46,7 @@
 </Section>
 
 <Section label={t("prov.order_title")}>
-  <p class="hint">{t("prov.order_hint")}</p>
+  <p class="hint">{t("prov.order_hint")} <span class="faint">· {t("obx.drag_hint")}</span></p>
   <div class="orders">
     <div>
       <h3 class="sub">{t("prov.order_llm")}</h3>

@@ -44,10 +44,27 @@
   --r-sm: 6px;
   --r: 8px;
   --r-lg: 12px;
+  /* sidebar surface (a touch deeper than --bg) and its active pill */
+  --rail: #08080a;
+  --rail-active: #19191c;
+
+  /* ---- motion tokens ----
+     Durations: --t-fast (micro: hover, press) · --t (state change) · --t-slow (panels,
+     popovers) · --t-page (page / window enter). Easings: --ease (default out) ·
+     --ease-out (long expo-out, for entrances) · --ease-in (exits) · --ease-in-out (morphs)
+     · --spring (small overshoot: indicators, pops) · --spring-soft (larger surfaces). */
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --spring: cubic-bezier(0.2, 0.9, 0.25, 1.15);
+  --spring-soft: cubic-bezier(0.25, 1.1, 0.4, 1.04);
   --t-fast: 120ms;
   --t: 180ms;
+  --t-slow: 260ms;
+  --t-page: 420ms;
+  --stagger: 36ms;
+  --rise: 10px;
 }
 
 :root[data-theme="light"] {
@@ -78,6 +95,8 @@
   --cap-accent-line: #5b7d00;
   --cap-accent-soft: rgba(91, 125, 0, 0.18);
   --cap-wave: #161616;
+  --rail: #ecebe6;
+  --rail-active: #fbfaf7;
 }
 
 @media (prefers-color-scheme: light) {
@@ -108,6 +127,8 @@
     --cap-accent-line: #5b7d00;
     --cap-accent-soft: rgba(91, 125, 0, 0.18);
     --cap-wave: #161616;
+  --rail: #ecebe6;
+  --rail-active: #fbfaf7;
   }
 }
 
@@ -291,12 +312,216 @@ textarea.field {
   font-size: 12.5px;
 }
 
+/* ================================================================== layout
+   The settings window renders every page inside `.page` (App.svelte):
+   max-width 1240px, centred, padding that grows with the window. `.content`
+   (the scroller around it) is a size container named `content`, so pages can
+   use `@container content (min-width: 720px) { ... }` for wide-only layouts.
+
+   .page-head   page header: <header class="page-head"><h1/>[<p class="page-sub"/>]</header>
+                optional right-side actions: put them in a <div class="page-actions">
+   .grid-2      two equal columns when there is room (>= ~620px), one column otherwise
+   .grid-auto   as many ~240px columns as fit (cards, tiles)
+   .span-all    child of .grid-2 / .grid-auto that takes the full row
+   .card        hairline surface block (padding 16/18, radius --r-lg)                 */
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 0 4px;
+}
+.page-head h1 {
+  font-size: 26px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+.page-sub {
+  margin-top: 6px;
+  color: var(--text-2);
+  font-size: 13.5px;
+  max-width: 60ch;
+}
+.page-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: none;
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 14px 28px;
+  align-items: start;
+}
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+}
+.span-all {
+  grid-column: 1 / -1;
+}
+.card {
+  padding: 16px 18px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+/* ================================================================== motion
+   Keyframes (transform/opacity only — compositor friendly):
+     fv-rise   fade + rise by --rise        fv-fade   fade only
+     fv-pop    fade + scale from .96        fv-drop   popover/dropdown (y -6px, scale .98)
+     fv-slide-l / fv-slide-r   fade + 14px horizontal slide
+   Utilities:
+     .anim-rise / .anim-fade / .anim-pop / .anim-drop   one-shot enter animation
+     .stagger > *   children rise in one after another (delay = n * --stagger, max 10)
+                    tweak with style="--stagger: 50ms" on the parent
+     .lift          hover raises 1px and deepens the border (cards, tiles)
+     .press         :active scales to .97 with a spring back (buttons, chips)
+     .tip           CSS tooltip from data-tip="…" (placed right; .tip-b below)
+   All of it collapses to instant under prefers-reduced-motion.              */
+
+@keyframes fv-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--rise), 0);
+  }
+}
+@keyframes fv-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fv-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes fv-drop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.98);
+  }
+}
+@keyframes fv-slide-l {
+  from {
+    opacity: 0;
+    transform: translate3d(-14px, 0, 0);
+  }
+}
+@keyframes fv-slide-r {
+  from {
+    opacity: 0;
+    transform: translate3d(14px, 0, 0);
+  }
+}
+
+.anim-rise {
+  animation: fv-rise var(--t-page) var(--ease-out) backwards;
+}
+.anim-fade {
+  animation: fv-fade var(--t-slow) var(--ease) backwards;
+}
+.anim-pop {
+  animation: fv-pop var(--t-slow) var(--spring) backwards;
+}
+.anim-drop {
+  transform-origin: top center;
+  animation: fv-drop var(--t) var(--ease-out) backwards;
+}
+
+/* :where() keeps specificity at zero so a component's own animation always wins */
+:where(.stagger) > * {
+  animation: fv-rise var(--t-page) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+:where(.stagger) > :nth-child(2) { --i: 1; }
+:where(.stagger) > :nth-child(3) { --i: 2; }
+:where(.stagger) > :nth-child(4) { --i: 3; }
+:where(.stagger) > :nth-child(5) { --i: 4; }
+:where(.stagger) > :nth-child(6) { --i: 5; }
+:where(.stagger) > :nth-child(7) { --i: 6; }
+:where(.stagger) > :nth-child(8) { --i: 7; }
+:where(.stagger) > :nth-child(9) { --i: 8; }
+:where(.stagger) > :nth-child(n + 10) { --i: 9; }
+
+.lift {
+  transition:
+    transform var(--t) var(--ease),
+    border-color var(--t) var(--ease),
+    background-color var(--t) var(--ease);
+}
+.lift:hover {
+  transform: translate3d(0, -1px, 0);
+  border-color: var(--line-strong);
+}
+.press {
+  transition: transform var(--t) var(--spring);
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 60ms;
+}
+
+.tip {
+  position: relative;
+}
+.tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 50;
+  padding: 5px 9px;
+  border-radius: var(--r-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(-4px, -50%, 0);
+  transition:
+    opacity var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
+}
+.tip.tip-b::after {
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translate3d(-50%, -4px, 0);
+}
+.tip:hover::after,
+.tip:focus-visible::after {
+  opacity: 1;
+  transform: translate3d(0, -50%, 0);
+  transition-delay: 280ms;
+}
+.tip.tip-b:hover::after,
+.tip.tip-b:focus-visible::after {
+  transform: translate3d(-50%, 0, 0);
+}
+.tip:active::after {
+  opacity: 0;
+  transition-delay: 0ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --rise: 0px;
+  }
   *,
   *::before,
   *::after {
     animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
   }
 }

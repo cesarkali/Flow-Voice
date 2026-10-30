@@ -1,6 +1,17 @@
 <script lang="ts">
   import { t } from "../i18n.svelte";
   import Icon from "../icons/Icon.svelte";
+  import { flip } from "svelte/animate";
+  import { cubicOut } from "svelte/easing";
+
+  const still = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function pop(_n: Element, { out = false } = {}) {
+    return {
+      duration: still() ? 0 : out ? 120 : 220,
+      easing: cubicOut,
+      css: (k: number) => `opacity:${k};transform:scale(${(out ? 0.85 : 0.7) + (out ? 0.15 : 0.3) * k})`,
+    };
+  }
 
   let { tags = $bindable([]), placeholder, label }: { tags: string[]; placeholder: string; label: string } = $props();
   let draft = $state("");
@@ -33,7 +44,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="tags" onclick={() => input?.focus()}>
   {#each tags as tag, i (tag)}
-    <span class="tag">
+    <span class="tag" in:pop out:pop={{ out: true }} animate:flip={{ duration: still() ? 0 : 200, easing: cubicOut }}>
       <span class="mono">{tag}</span>
       <button type="button" aria-label={t("styles.remove_term", { term: tag })} onclick={() => remove(i)}>
         <Icon name="x" size={12} stroke={2} />
@@ -63,6 +74,14 @@
     background: var(--surface);
     cursor: text;
   }
+  .tags {
+    transition:
+      border-color var(--t-fast) var(--ease),
+      box-shadow var(--t-fast) var(--ease);
+  }
+  .tags:hover {
+    border-color: var(--text-3);
+  }
   .tags:focus-within {
     border-color: var(--accent-line);
     box-shadow: 0 0 0 3px var(--accent-soft);
@@ -87,8 +106,16 @@
     color: var(--text-3);
   }
   .tag button:hover {
-    background: var(--hover);
-    color: var(--text);
+    background: var(--danger-soft);
+    color: var(--danger-fg);
+  }
+  .tag {
+    transition:
+      border-color var(--t-fast) var(--ease),
+      background-color var(--t-fast) var(--ease);
+  }
+  .tag:has(button:hover) {
+    border-color: var(--danger-line);
   }
   input {
     flex: 1;

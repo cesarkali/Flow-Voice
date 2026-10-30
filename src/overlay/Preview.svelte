@@ -1,36 +1,122 @@
 <script lang="ts">
-  // Browser-only harness: a fake desktop + the real overlay inside a 560x300 "window".
+  // Browser-only harness: a fake desktop + the real overlay inside a fake native window that
+  // follows the overlay_resize requests (dashed outline = window bounds).
+  // Query flags: ?scenario=<id> &theme=light &width=compact|normal|wide &hold (don't auto-stop)
   import { onMount } from "svelte";
+  import { on } from "../lib/api";
   import { mock, mockEmit, simulateOverlay, stopSimulation, type SimScenario } from "../lib/mock";
-  import { EVENTS, type Settings } from "../lib/types";
+  import { EVENTS, type OverlayEvent, type Settings } from "../lib/types";
   import Overlay from "./Overlay.svelte";
 
-  const SCENARIOS: { id: SimScenario; label: string }[] = [
+  type Scn = SimScenario | "reprocess" | "longlive";
+  const SCENARIOS: { id: Scn; label: string }[] = [
     { id: "live", label: "Ditado + ao vivo" },
+    { id: "longlive", label: "Ao vivo longo" },
     { id: "dictate", label: "Ditado" },
     { id: "translate", label: "Tradução" },
     { id: "ask", label: "Pergunta" },
     { id: "transcribing", label: "Transcrevendo" },
     { id: "refining", label: "Refinando" },
     { id: "done", label: "Resultado" },
+    { id: "reprocess", label: "Reprocessar" },
     { id: "error", label: "Erro" },
   ];
-  let theme = $state<"dark" | "light">(new URLSearchParams(location.search).get("theme") === "light" ? "light" : "dark");
+  const q = new URLSearchParams(location.search);
+  let theme = $state<"dark" | "light">(q.get("theme") === "light" ? "light" : "dark");
+  let width = $state<Settings["overlay_width"]>((q.get("width") as Settings["overlay_width"]) || "normal");
+  let position = $state<Settings["overlay_position"]>(q.get("pos") === "top" ? "top" : "bottom");
   let bg = $state<"desk" | "checker" | "light">("desk");
+  const ACCENTS = ["#D7FF3F", "#4FD1FF", "#FF7A45", "#B48CFF"];
+  let accent = $state(q.get("accent") ? `#${q.get("accent")}` : ACCENTS[0]);
   let frame = $state(true);
-  let auto = $state(!new URLSearchParams(location.search).has("hold"));
+  let auto = $state(!q.has("hold"));
+  let win = $state({ w: 560, h: 300 });
 
-  // Push the theme through the same settings-changed event Rust would send.
+  // Push the look through the same settings-changed event Rust would send.
   $effect(() => {
     const th = theme;
+    const w = width;
+    const p = position;
+    const ac = accent;
     mock.invoke<Settings>("get_settings").then((st) => {
       st.theme = th;
+      st.overlay_width = w;
+      st.overlay_position = p;
+      st.accent_color = ac;
       mock.invoke("save_settings", { settings: st }).then(() => mockEmit(EVENTS.settingsChanged, st));
     });
   });
+
+  let timers: number[] = [];
+  let lvl = 0;
+  const later = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
+  function clearLocal() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    clearInterval(lvl);
+  }
+
+  const LONG =
+    "Então, sobre o projeto novo, eu acho que a gente precisa primeiro alinhar com o time de design quais telas entram na primeira versão, depois fechar o cronograma com o pessoal de engenharia e só então apresentar pro cliente na semana que vem, porque se a gente mostrar antes disso vai parecer que está tudo meio solto e sem dono".split(
+      " ",
+    );
+
+  function run(id: Scn) {
+    clearLocal();
+    const emit = (e: OverlayEvent) => mockEmit(EVENTS.overlayState, e);
+    if (id === "reprocess") {
+      simulateOverlay("done", auto);
+      // Click another style like the user would; Rust (old builds) also leaked a stray phase.
+      later(1600, () => {
+        const chip = document.querySelector<HTMLButtonElement>(".win .chipset .chip:not(.on):not(.back)");
+        chip?.click();
+        later(250, () => emit({ phase: "refining", provider: "groq" }));
+      });
+      return;
+    }
+    if (id === "longlive") {
+      stopSimulation();
+      emit({ phase: "listening", mode: "dictate", style_id: "natural", target: null, live: true });
+      let t = 0;
+      let n = 0;
+      lvl = window.setInterval(() => {
+        t += 33;
+        const speaking = Math.sin(t / 1100) > -0.6;
+        // a quiet mic: speech ~0.4–0.6, silence ~0.1
+        mockEmit(EVENTS.overlayLevel, speaking ? 0.38 + Math.abs(Math.sin(t / 110)) * 0.18 + Math.random() * 0.06 : 0.08 + Math.random() * 0.04);
+        if (t % 260 < 33 && n < LONG.length) {
+          n++;
+          mockEmit(EVENTS.overlayPartial, { text: LONG.slice(0, n).join(" ") });
+        }
+      }, 33);
+      if (auto)
+        later(16000, () => {
+          clearInterval(lvl);
+          emit({ phase: "transcribing" });
+          later(900, () => emit({ phase: "refining", provider: "groq" }));
+          later(2200, () => simulateOverlay("done", false));
+        });
+      return;
+    }
+    simulateOverlay(id, auto);
+  }
+  function hide() {
+    clearLocal();
+    stopSimulation();
+  }
+
   onMount(() => {
-    const sc = new URLSearchParams(location.search).get("scenario") as SimScenario | null;
-    setTimeout(() => simulateOverlay(sc ?? "live", auto), 400);
+    const sub = on<{ width: number; height: number }>("mock:overlay-resize", (s) => {
+      win = { w: Math.min(760, Math.max(120, s.width)), h: Math.min(560, Math.max(40, s.height)) };
+    });
+    // Cancel / dismiss (mock emits "hidden") also ends the local scenarios.
+    const sub2 = on<OverlayEvent>(EVENTS.overlayState, (e) => e.phase === "hidden" && clearLocal());
+    setTimeout(() => run((q.get("scenario") as Scn | null) ?? "live"), 400);
+    return () => {
+      sub.then((f) => f());
+      sub2.then((f) => f());
+      clearLocal();
+    };
   });
 </script>
 
@@ -49,13 +135,24 @@
     <strong>Overlay preview</strong>
     <div class="btns">
       {#each SCENARIOS as s}
-        <button type="button" onclick={() => simulateOverlay(s.id, auto)}>{s.label}</button>
+        <button type="button" onclick={() => run(s.id)}>{s.label}</button>
       {/each}
-      <button type="button" onclick={stopSimulation}>Esconder</button>
+      <button type="button" onclick={hide}>Esconder</button>
     </div>
     <div class="btns">
       <button type="button" class:on={theme === "dark"} onclick={() => (theme = "dark")}>Escuro</button>
       <button type="button" class:on={theme === "light"} onclick={() => (theme = "light")}>Claro</button>
+      <span class="sep"></span>
+      <button type="button" class:on={width === "compact"} onclick={() => (width = "compact")}>Compacto</button>
+      <button type="button" class:on={width === "normal"} onclick={() => (width = "normal")}>Normal</button>
+      <button type="button" class:on={width === "wide"} onclick={() => (width = "wide")}>Largo</button>
+      <span class="sep"></span>
+      <button type="button" class:on={position === "bottom"} onclick={() => (position = "bottom")}>Embaixo</button>
+      <button type="button" class:on={position === "top"} onclick={() => (position = "top")}>Em cima</button>
+      <span class="sep"></span>
+      {#each ACCENTS as a}
+        <button type="button" class="sw" class:on={accent === a} style="--sw:{a}" title={a} aria-label={a} onclick={() => (accent = a)}></button>
+      {/each}
       <span class="sep"></span>
       <button type="button" class:on={bg === "desk"} onclick={() => (bg = "desk")}>Desktop</button>
       <button type="button" class:on={bg === "checker"} onclick={() => (bg = "checker")}>Xadrez</button>
@@ -66,7 +163,7 @@
     </div>
   </div>
 
-  <div class="win" class:frame>
+  <div class="win" class:frame class:top={position === "top"} style="width:{win.w}px;height:{win.h}px">
     <Overlay />
   </div>
 </div>
@@ -199,6 +296,15 @@
     border-color: #d7ff3f;
     color: #d7ff3f;
   }
+  .btns button.sw {
+    width: 26px;
+    padding: 0;
+    background: var(--sw);
+  }
+  .btns button.sw.on {
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+  }
   .sep {
     width: 10px;
   }
@@ -206,9 +312,11 @@
     position: absolute;
     left: 50%;
     bottom: 40px;
-    width: 560px;
-    height: 300px;
     transform: translateX(-50%);
+  }
+  .win.top {
+    bottom: auto;
+    top: 150px;
   }
   .win.frame {
     outline: 1px dashed rgba(255, 255, 255, 0.45);
@@ -221,9 +329,5 @@
   /* Overlay uses position:fixed for the real window; scope it to the fake window here. */
   .win :global(.stage) {
     position: absolute;
-  }
-  .win :global(.shell) {
-    max-width: calc(560px - var(--m) * 2);
-    max-height: calc(300px - var(--m) * 2);
   }
 </style>

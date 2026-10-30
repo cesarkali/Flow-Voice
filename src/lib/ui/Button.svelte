@@ -64,21 +64,38 @@
     transition:
       background-color var(--t-fast) var(--ease),
       border-color var(--t-fast) var(--ease),
-      transform 80ms var(--ease);
+      color var(--t-fast) var(--ease),
+      box-shadow var(--t-fast) var(--ease),
+      transform 140ms var(--spring);
     flex: none;
+    position: relative;
   }
   .btn:hover:not(:disabled) {
     background: var(--surface-2);
     border-color: var(--text-3);
   }
   .btn:active:not(:disabled) {
-    transform: translateY(0.5px);
+    transform: scale(0.96);
+    transition-duration: 60ms;
+  }
+  .btn :global(svg) {
+    transition: transform var(--t) var(--spring);
+  }
+  .btn:hover:not(:disabled) > :global(svg:last-child:not(:first-child)) {
+    transform: translateX(2px);
   }
   .btn:disabled {
     opacity: 0.45;
   }
   .btn.loading {
-    opacity: 0.8;
+    opacity: 1;
+    cursor: progress;
+  }
+  .btn.loading .lbl {
+    opacity: 0.7;
+  }
+  .lbl {
+    transition: opacity var(--t) var(--ease);
   }
   .sm {
     height: 27px;
@@ -114,6 +131,7 @@
   .primary:hover:not(:disabled) {
     background: #e3ff74;
     border-color: #e3ff74;
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
   .ghost,
   .quiet {
@@ -144,8 +162,16 @@
     border-radius: 50%;
     border: 1.5px solid currentColor;
     border-right-color: transparent;
-    animation: spin 0.7s linear infinite;
+    animation:
+      spin-in 200ms var(--spring) both,
+      spin 0.7s linear infinite;
     flex: none;
+  }
+  @keyframes spin-in {
+    from {
+      opacity: 0;
+      scale: 0.4;
+    }
   }
   @keyframes spin {
     to {

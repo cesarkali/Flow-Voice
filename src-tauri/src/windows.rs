@@ -1,7 +1,7 @@
 //! Window management: overlay placement, settings and chat windows.
 
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindowBuilder};
 
 use crate::state::AppState;
 
@@ -48,7 +48,12 @@ fn place_overlay(app: &AppHandle, size: Option<(f64, f64)>) {
     } else {
         area.position.y + area.size.height as i32 - height - margin
     };
-    let _ = w.set_position(PhysicalPosition::new(x, y));
+    if size.is_some() {
+        // Move + resize in one native call so the anchored edge doesn't flicker for a frame.
+        crate::platform::set_bounds_no_activate(&w, x, y, width, height);
+    } else {
+        let _ = w.set_position(PhysicalPosition::new(x, y));
+    }
 }
 
 pub fn show_overlay(app: &AppHandle) {
@@ -81,12 +86,9 @@ pub fn hide_overlay(app: &AppHandle) {
 
 /// The UI reports its content size so the transparent window never blocks clicks around it.
 pub fn resize_overlay(app: &AppHandle, width: f64, height: f64) {
-    let Some(w) = app.get_webview_window("overlay") else { return };
     let width = width.clamp(120.0, 760.0).ceil();
     let height = height.clamp(40.0, 560.0).ceil();
-    // Position first for the new size, then resize, so the anchored edge never jumps.
     place_overlay(app, Some((width, height)));
-    let _ = w.set_size(LogicalSize::new(width, height));
 }
 
 pub fn open_settings(app: &AppHandle, page: Option<String>) {

@@ -2,10 +2,11 @@
   import { api } from "../../lib/api";
   import { t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
-  import { app, setKeys } from "../../lib/stores.svelte";
+  import { app } from "../../lib/stores.svelte";
   import type { KeyProviderId, TestResult } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
-  import { pname, providerInfo } from "../providers";
+  import ProvMark from "../pages/ProvMark.svelte";
+  import { addKeys, pname, providerInfo } from "../providers";
 
   let { provider, ok = $bindable(false) }: { provider: KeyProviderId; ok?: boolean } = $props();
   const info = $derived(providerInfo(provider));
@@ -27,7 +28,8 @@
     busy = true;
     result = null;
     try {
-      if (draft.trim()) await setKeys(provider, draft.trim());
+      // Appends (never replaces) — a pasted comma list becomes several keys.
+      if (draft.trim()) await addKeys(provider, draft);
       result = await api.testProvider(provider, info.llm ? "llm" : "stt");
       ok = result.ok;
       if (ok) draft = "";
@@ -60,7 +62,7 @@
       autocomplete="off"
       spellcheck="false"
       aria-label="{t('prov.key')} {pname(provider)}"
-      placeholder={has ? (app.keys?.[provider]?.masked[0] ?? "") : `${t("prov.key_placeholder")}${info.keyPrefix ? ` (${info.keyPrefix})` : ""}`}
+      placeholder={has ? t("obx.key_add_placeholder") : `${t("prov.key_placeholder")}${info.keyPrefix ? ` (${info.keyPrefix})` : ""}`}
       bind:value={draft}
       onkeydown={(e) => e.key === "Enter" && saveTest()}
     />
@@ -69,9 +71,17 @@
     </Button>
   </div>
 
+  {#if has}
+    <div class="saved">
+      {#each app.keys?.[provider]?.masked ?? [] as m, i (m + i)}
+        <span class="chip mono" style="--i:{i}"><Icon name="key" size={12} />{m}</span>
+      {/each}
+    </div>
+  {/if}
+
   {#if result}
     <div class="res" class:ok={result.ok} role="status">
-      <Icon name={result.ok ? "check" : "alert"} size={16} stroke={result.ok ? 2 : 1.5} />
+      <ProvMark ok={result.ok} size={18} />
       <div>
         <p>{result.ok ? t("ob.test_ok", { ms: result.latency_ms }) : t("ob.test_fail")}</p>
         {#if !result.ok && result.message}<code class="mono">{result.message}</code>{/if}
@@ -132,6 +142,26 @@
   .keyrow :global(.btn) {
     height: 38px;
   }
+  .saved {
+    margin-top: -8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 5px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-size: 11.5px;
+    color: var(--text-2);
+    animation: fv-pop var(--t-slow) var(--spring) backwards;
+    animation-delay: calc(var(--i) * 40ms);
+  }
   .res {
     display: flex;
     gap: 10px;
@@ -141,7 +171,8 @@
     background: var(--danger-soft);
     color: var(--danger-fg);
     font-size: 13px;
-    animation: enter 180ms var(--ease) both;
+    transform-origin: top center;
+    animation: enter 260ms var(--ease-out) both;
   }
   .res.ok {
     border-color: var(--accent-line);
@@ -164,7 +195,7 @@
   @keyframes enter {
     from {
       opacity: 0;
-      transform: translateY(-3px);
+      transform: translate3d(0, -6px, 0) scale(0.98);
     }
   }
 </style>

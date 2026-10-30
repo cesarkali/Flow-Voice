@@ -1,12 +1,15 @@
 <script lang="ts">
+  import { slide } from "svelte/transition";
   import { api } from "../../lib/api";
   import { t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
-  import { app, setKeys } from "../../lib/stores.svelte";
+  import { app } from "../../lib/stores.svelte";
   import type { KeyProviderId, LlmProviderId, TestResult } from "../../lib/types";
   import Badge from "../../lib/ui/Badge.svelte";
   import Button from "../../lib/ui/Button.svelte";
   import { pname, type ProviderInfo } from "../providers";
+  import ProviderKeys from "./ProviderKeys.svelte";
+  import ProvMark from "./ProvMark.svelte";
 
   let { info, open = $bindable(false) }: { info: ProviderInfo; open?: boolean } = $props();
 
@@ -16,9 +19,6 @@
   const count = $derived(status?.count ?? 0);
   const prov = $derived(info.id !== "tavily" ? app.settings!.providers[info.id as LlmProviderId] : undefined);
 
-  let draft = $state("");
-  let revealed = $state(false);
-  let saving = $state(false);
   let howto = $state(false);
   let testing = $state<string | null>(null);
   let results = $state<Record<string, TestResult & { kind: string }>>({});
@@ -32,35 +32,15 @@
   );
   const configured = $derived(!info.keyed || count > 0);
 
-  async function save() {
-    if (!draft.trim() && !revealed) return;
-    saving = true;
-    try {
-      await setKeys(keyId, draft.trim());
-      draft = "";
-      revealed = false;
-      // Immediately test so the user knows it works.
-      if (info.llm) runTest("llm");
-      else if (id === "tavily") runTest("search");
-      else if (info.stt) runTest("stt");
-    } finally {
-      saving = false;
-    }
-  }
-  async function removeAll() {
-    await setKeys(keyId, "");
-    draft = "";
-    revealed = false;
-    results = {};
-  }
-  async function toggleReveal() {
-    if (revealed) {
-      revealed = false;
-      draft = "";
-      return;
-    }
-    if (count > 0) draft = await api.revealKeys(keyId);
-    revealed = true;
+  const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const dur = (ms: number) => (reduce ? 0 : ms);
+  const easeOut = (x: number) => 1 - Math.pow(1 - x, 4);
+
+  // Immediately test a newly added key so the user knows it works.
+  function testAfterAdd() {
+    if (info.llm) runTest("llm");
+    else if (id === "tavily") runTest("search");
+    else if (info.stt) runTest("stt");
   }
   async function runTest(kind: "llm" | "stt" | "search") {
     testing = kind;
@@ -105,12 +85,15 @@
         <Badge tone={b.tone}>{t(b.key)}</Badge>
       {/each}
     </span>
-    <span class="st mono" class:ok={configured && info.keyed}>{statusText}</span>
+    <span class="st mono" class:ok={configured && info.keyed}>
+      {#key statusText}<span class="stx">{statusText}</span>{/key}
+    </span>
     <span class="chev"><Icon name="chevronDown" size={16} /></span>
   </button>
 
   {#if open}
-    <div class="body">
+    <div class="clip" transition:slide={{ duration: dur(280), easing: easeOut }}>
+    <div class="body stagger">
       <p class="desc">{t(info.desc)}</p>
 
       {#if info.baseUrl && prov}
@@ -127,38 +110,8 @@
 
       {#if info.keyed}
         <div class="fld">
-          <label class="label" for="key-{id}">{t("prov.key")}</label>
-          <div class="keyrow">
-            <input
-              id="key-{id}"
-              class="field mono"
-              type={revealed ? "text" : "password"}
-              autocomplete="off"
-              spellcheck="false"
-              bind:value={draft}
-              placeholder={count ? t("prov.key_replace_placeholder") : `${t("prov.key_placeholder")}${info.keyPrefix ? ` (${info.keyPrefix})` : ""}`}
-              onkeydown={(e) => e.key === "Enter" && save()}
-            />
-            <Button
-              variant="ghost"
-              icon={revealed ? "eyeOff" : "eye"}
-              aria-label={revealed ? t("prov.hide") : t("prov.reveal")}
-              title={revealed ? t("prov.hide") : t("prov.reveal")}
-              onclick={toggleReveal}
-            />
-            <Button variant={draft.trim() ? "primary" : "default"} loading={saving} disabled={!draft.trim() && !revealed} onclick={save}>
-              {t("prov.save_key")}
-            </Button>
-          </div>
-          {#if count}
-            <div class="masked">
-              {#each status?.masked ?? [] as m}
-                <span class="chip mono"><Icon name="key" size={12} />{m}</span>
-              {/each}
-              <button type="button" class="link danger" onclick={removeAll}>{t("prov.remove_keys")}</button>
-            </div>
-          {/if}
-          <p class="hint">{t("prov.keys_hint")}</p>
+          <span class="label">{t("prov.key")}</span>
+          <ProviderKeys provider={keyId} keyPrefix={info.keyPrefix} onadded={testAfterAdd} onremoved={(left) => left === 0 && (results = {})} />
         </div>
       {/if}
 
@@ -203,7 +156,7 @@
         {@const r = results[k]}
         {#if r}
           <div class="result" class:ok={r.ok} role="status">
-            <Icon name={r.ok ? "check" : "alert"} size={15} stroke={r.ok ? 2 : 1.5} />
+            {#key r}<ProvMark ok={r.ok} size={16} />{/key}
             <div>
               <span class="what">{testLabel(k)}</span>
               {#if r.ok}
@@ -222,10 +175,11 @@
 
       <div class="howto" class:show={howto}>
         <button type="button" class="howbtn" aria-expanded={howto} onclick={() => (howto = !howto)}>
-          <Icon name={howto ? "chevronDown" : "chevronRight"} size={15} />
+          <span class="hchev" class:on={howto}><Icon name="chevronRight" size={15} /></span>
           {id === "ollama" ? t("prov.how_to_install") : id === "custom" ? t("prov.custom.name") : t("prov.how_to")}
         </button>
         {#if howto}
+          <div transition:slide={{ duration: dur(220), easing: easeOut }}>
           <ol>
             {#each info.steps as step, i}
               <li>
@@ -248,8 +202,10 @@
               <span class="mono faint url">{info.url.replace(/^https?:\/\//, "")}</span>
             </div>
           {/if}
+          </div>
         {/if}
       </div>
+    </div>
     </div>
   {/if}
 </article>
@@ -259,13 +215,22 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     background: var(--surface);
-    transition: border-color var(--t-fast);
+    transition:
+      border-color var(--t) var(--ease),
+      box-shadow var(--t-slow) var(--ease);
+  }
+  .card:not(.open):hover {
+    border-color: var(--line-strong);
   }
   .card + :global(.card) {
     margin-top: 8px;
   }
   .card.open {
     border-color: var(--line-strong);
+    box-shadow: 0 10px 28px -18px rgba(0, 0, 0, 0.5);
+  }
+  .clip {
+    overflow: hidden;
   }
   .top {
     width: 100%;
@@ -287,11 +252,17 @@
     background: var(--surface-3);
     border: 1px solid var(--line-strong);
     flex: none;
+    transition:
+      background-color var(--t-slow) var(--ease),
+      border-color var(--t-slow) var(--ease),
+      box-shadow var(--t-slow) var(--ease),
+      transform var(--t-slow) var(--spring);
   }
   .led.on {
     background: var(--accent-fg);
     border-color: var(--accent-fg);
     box-shadow: 0 0 6px var(--accent-line);
+    transform: scale(1.15);
   }
   .title {
     flex: 1;
@@ -307,16 +278,36 @@
     letter-spacing: -0.01em;
   }
   .st {
-    font-size: 11.5px;
+    display: inline-grid;
+    height: 22px;
+    padding: 0 9px;
+    align-items: center;
+    border-radius: 11px;
+    border: 1px solid var(--line);
+    font-size: 11px;
     color: var(--text-3);
     white-space: nowrap;
+    overflow: hidden;
+    transition:
+      color var(--t-slow) var(--ease),
+      border-color var(--t-slow) var(--ease),
+      background-color var(--t-slow) var(--ease);
   }
   .st.ok {
     color: var(--accent-fg);
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+  }
+  .stx {
+    grid-area: 1 / 1;
+    animation: fv-rise var(--t-slow) var(--ease-out) both;
   }
   .chev {
+    display: grid;
     color: var(--text-3);
-    transition: transform var(--t) var(--ease);
+    transition:
+      transform var(--t-slow) var(--spring),
+      color var(--t-fast) var(--ease);
   }
   .open .chev {
     transform: rotate(180deg);
@@ -326,7 +317,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    animation: enter 180ms var(--ease) both;
+    --stagger: 28ms;
   }
   .desc {
     font-size: 13px;
@@ -339,49 +330,14 @@
     gap: 6px;
     min-width: 0;
   }
-  .keyrow,
   .with-btn {
     display: flex;
     gap: 6px;
     align-items: center;
   }
-  .keyrow .field,
   .with-btn .field {
     flex: 1;
     min-width: 0;
-  }
-  .masked {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 24px;
-    padding: 0 8px;
-    border-radius: 5px;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    font-size: 11.5px;
-    color: var(--text-2);
-  }
-  .link {
-    font-size: 12px;
-    color: var(--text-3);
-    padding: 0 6px;
-    height: 24px;
-    border-radius: 5px;
-  }
-  .link:hover {
-    color: var(--text);
-    background: var(--hover);
-  }
-  .link.danger:hover {
-    color: var(--danger-fg);
-    background: var(--danger-soft);
   }
   .hint {
     font-size: 12px;
@@ -410,7 +366,8 @@
     background: var(--danger-soft);
     color: var(--danger-fg);
     font-size: 12.5px;
-    animation: enter 160ms var(--ease) both;
+    transform-origin: top center;
+    animation: enter 280ms var(--ease-out) both;
   }
   .result :global(.icon) {
     margin-top: 1px;
@@ -462,6 +419,13 @@
     height: 26px;
     padding-right: 8px;
     border-radius: var(--r-sm);
+  }
+  .hchev {
+    display: grid;
+    transition: transform var(--t) var(--ease);
+  }
+  .hchev.on {
+    transform: rotate(90deg);
   }
   .howbtn:hover {
     color: var(--accent-fg);
@@ -523,7 +487,7 @@
   @keyframes enter {
     from {
       opacity: 0;
-      transform: translateY(-3px);
+      transform: translate3d(0, -6px, 0) scale(0.985);
     }
   }
 </style>

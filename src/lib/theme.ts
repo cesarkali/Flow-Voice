@@ -13,3 +13,77 @@ export function resolvedTheme(): "dark" | "light" {
   if (t === "dark" || t === "light") return t;
   return matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }
+
+export const DEFAULT_ACCENT = "#D7FF3F";
+
+/** Curated accent presets (first = default phosphor lime). */
+export const ACCENT_PRESETS = [
+  "#D7FF3F", // lima
+  "#5BE3FF", // ciano
+  "#4DFFB0", // menta
+  "#FFB13D", // âmbar
+  "#FF6B4A", // coral
+  "#FF5FA2", // rosa
+  "#B69CFF", // lavanda
+  "#F2F2EE", // gelo
+];
+
+type Rgb = [number, number, number];
+
+function parseHex(hex: string): Rgb | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+const lum = ([r, g, b]: Rgb) => {
+  const f = (v: number) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+};
+const contrast = (a: Rgb, b: Rgb) => {
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
+const rgba = ([r, g, b]: Rgb, a: number) => `rgba(${r}, ${g}, ${b}, ${a})`;
+const hex = ([r, g, b]: Rgb) => "#" + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+
+/** Darkens until it reads on the light paper background (WCAG ~4.5:1). */
+function readableOnLight(c: Rgb): Rgb {
+  const paper: Rgb = [244, 243, 239];
+  let out = c;
+  for (let k = 1; k <= 20 && contrast(out, paper) < 4.5; k++) {
+    out = c.map((v) => v * (1 - k * 0.045)) as Rgb;
+  }
+  return out;
+}
+
+export function isValidAccent(color: string): boolean {
+  return parseHex(color) !== null;
+}
+
+/**
+ * Applies the user's accent color on top of base.css. The default lime keeps the hand-tuned
+ * values from base.css; any other color gets derived soft/line/foreground variants per theme.
+ */
+export function applyAccent(color: string | null | undefined) {
+  const id = "fv-accent";
+  document.getElementById(id)?.remove();
+  const c = parseHex(color ?? "");
+  if (!c || hex(c).toUpperCase() === DEFAULT_ACCENT) return;
+  const on = lum(c) > 0.45 ? "#0b0b0c" : "#ffffff";
+  const fgLight = readableOnLight(c);
+  const dark = `--accent:${hex(c)};--on-accent:${on};--accent-fg:${hex(c)};--accent-soft:${rgba(c, 0.1)};--accent-line:${rgba(c, 0.35)};--cap-accent:${hex(c)};--cap-accent-line:${hex(c)};--cap-accent-soft:${rgba(c, 0.22)};--cap-wave:${hex(c)};`;
+  const light = `--accent-fg:${hex(fgLight)};--accent-soft:${rgba(c, 0.16)};--accent-line:${rgba(fgLight, 0.45)};--cap-accent:${hex(c)};--cap-accent-line:${hex(fgLight)};--cap-accent-soft:${rgba(fgLight, 0.18)};--cap-wave:#161616;`;
+  const style = document.createElement("style");
+  style.id = id;
+  style.textContent =
+    `:root{${dark}}` +
+    `:root[data-theme="light"]{${light}}` +
+    `@media (prefers-color-scheme: light){:root:not([data-theme]){${light}}}`;
+  document.head.appendChild(style);
+}

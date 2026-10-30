@@ -81,6 +81,8 @@ impl Default for Hotkeys {
 pub struct Settings {
     pub ui_language: String,
     pub theme: String,
+    pub accent_color: String,
+    pub user_name: String,
     pub speech_language: String,
     pub input_device: Option<String>,
     pub stt: SttSettings,
@@ -109,6 +111,8 @@ impl Default for Settings {
         Self {
             ui_language: "pt".into(),
             theme: "system".into(),
+            accent_color: "#D7FF3F".into(),
+            user_name: String::new(),
             speech_language: "pt".into(),
             input_device: None,
             stt: SttSettings::default(),
@@ -371,6 +375,11 @@ impl Settings {
         for st in self.styles.iter_mut().filter(|s| !s.builtin) {
             st.kind = StyleKind::Llm;
         }
+        let hex = self.accent_color.trim().trim_start_matches('#');
+        if !(hex.len() == 6 || hex.len() == 3) || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            self.accent_color = "#D7FF3F".into();
+        }
+        self.user_name = self.user_name.trim().chars().take(40).collect();
         if !["compact", "normal", "wide"].contains(&self.overlay_width.as_str()) {
             self.overlay_width = "normal".into();
         }
@@ -389,7 +398,8 @@ pub fn load(dir: &PathBuf) -> Settings {
     let path = settings_path(dir);
     let mut s = std::fs::read_to_string(&path)
         .ok()
-        .and_then(|txt| serde_json::from_str::<Settings>(&txt).ok())
+        // Tolerate a UTF-8 BOM (Notepad/PowerShell 5 add one when the file is edited by hand).
+        .and_then(|txt| serde_json::from_str::<Settings>(txt.trim_start_matches('\u{feff}')).ok())
         .unwrap_or_default();
     s.normalize();
     s

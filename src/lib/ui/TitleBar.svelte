@@ -74,22 +74,45 @@
   .wc {
     display: flex;
     height: 100%;
+    padding: 0 4px 0 2px;
+    gap: 2px;
+    align-items: center;
   }
   .wc button {
-    width: 44px;
-    height: 100%;
+    position: relative;
+    width: 38px;
+    height: 30px;
     display: grid;
     place-items: center;
-    color: var(--text-2);
-    border-radius: 0;
+    color: var(--text-3);
+    border-radius: var(--r-sm);
+    transition:
+      color var(--t-fast) var(--ease),
+      background-color var(--t-fast) var(--ease);
+  }
+  .wc button :global(.icon) {
+    transition: transform var(--t) var(--spring);
   }
   .wc button:hover {
     background: var(--hover);
     color: var(--text);
   }
+  .wc button:active {
+    background: var(--press);
+  }
+  .wc button:active :global(.icon) {
+    transform: scale(0.84);
+    transition-duration: 60ms;
+  }
   .wc .close:hover {
     background: #e5483d;
     color: #fff;
+  }
+  .wc .close:hover :global(.icon) {
+    transform: rotate(90deg);
+  }
+  .wc .close:active {
+    background: #c93b31;
   }
   .wc button:focus-visible {
     outline-offset: -2px;

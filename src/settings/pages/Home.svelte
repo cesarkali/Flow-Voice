@@ -1,23 +1,35 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { cubicOut } from "svelte/easing";
+  import { prefersReducedMotion, Tween } from "svelte/motion";
+  import { fly, slide } from "svelte/transition";
   import { api, on } from "../../lib/api";
-  import { clockTime, langName, relTime, t } from "../../lib/i18n.svelte";
+  import { clockTime, langName, locale, relTime, t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
   import { app, hasKey, usableLlm } from "../../lib/stores.svelte";
   import { EVENTS, type DictationResult, type SettingsPage } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
+  import { keycapsOf } from "../../lib/ui/hotkeys";
   import Keys from "../../lib/ui/Keys.svelte";
+  import Modal from "../../lib/ui/Modal.svelte";
   import { pname, STT_PROVIDERS } from "../providers";
 
   let { onnavigate }: { onnavigate?: (p: SettingsPage) => void } = $props();
   const s = $derived(app.settings!);
+  const greeting = $derived.by(() => {
+    const h = new Date().getHours();
+    const part = t(h < 5 ? "home.greet_evening" : h < 12 ? "home.greet_morning" : h < 18 ? "home.greet_afternoon" : "home.greet_evening");
+    const name = s.user_name?.trim();
+    return name ? `${part}, ${name}` : t("home.kicker");
+  });
 
   let history = $state<DictationResult[]>([]);
   let loaded = $state(false);
   let q = $state("");
   let open = $state<string | null>(null);
-  let confirmClear = $state(false);
+  let clearOpen = $state(false);
   let copied = $state<string | null>(null);
+  let copyTimer = 0;
 
   async function load() {
     history = await api.getHistory();
@@ -30,10 +42,9 @@
     return () => un.then((f) => f());
   });
 
-  const greeting = $derived.by(() => {
-    const h = new Date().getHours();
-    return h < 12 ? t("home.morning") : h < 18 ? t("home.afternoon") : t("home.evening");
-  });
+  // ---------------------------------------------------------------- setup line
+  const caps = $derived(keycapsOf(s.hotkeys.dictate));
+  const hold = $derived(s.hotkey_mode === "hold");
 
   const stt = $derived.by(() => {
     if (s.stt.engine === "local") return { name: t("speech.local_title"), model: s.stt.local_model };
@@ -44,100 +55,198 @@
     const p = usableLlm()[0];
     return p ? { name: pname(p), model: s.providers[p].model } : null;
   });
-  const activeStyle = $derived(s.styles.find((x) => x.id === s.active_style));
   const styleName = (id: string) => s.styles.find((x) => x.id === id)?.name ?? id;
   const needsSetup = $derived((s.stt.engine === "cloud" && !STT_PROVIDERS.some((p) => hasKey(p))) || !llm);
 
-  const filtered = $derived.by(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return history;
-    return history.filter((h) => h.text.toLowerCase().includes(term) || h.raw.toLowerCase().includes(term));
+  // ---------------------------------------------------------------- stats
+  const words = (txt: string) => txt.trim().split(/\s+/).filter(Boolean).length;
+  const stats = $derived.by(() => {
+    const today = new Date().toDateString();
+    let n = 0;
+    let w = 0;
+    let saved = 0;
+    for (const h of history) {
+      if (h.mode === "ask") continue;
+      const c = words(h.text);
+      w += c;
+      saved += Math.max(0, (c / 40) * 60 - h.duration_ms / 1000);
+      if (new Date(h.ts).toDateString() === today) n++;
+    }
+    return { today: n, words: w, saved };
   });
+
+  const tw = { duration: 900, easing: cubicOut };
+  const tToday = new Tween(0, tw);
+  const tWords = new Tween(0, tw);
+  const tSaved = new Tween(0, tw);
+  $effect(() => {
+    const o = prefersReducedMotion.current ? { duration: 0 } : undefined;
+    tToday.set(stats.today, o);
+    tWords.set(stats.words, o);
+    tSaved.set(stats.saved, o);
+  });
+
+  const num = (v: number) => Math.round(v).toLocaleString(locale());
+  function dur(sec: number) {
+    sec = Math.round(sec);
+    if (sec < 60) return t("home.sec", { n: sec });
+    const m = Math.round(sec / 60);
+    if (m < 60) return t("home.min", { n: m });
+    return t("home.hours", { h: Math.floor(m / 60), m: m % 60 });
+  }
+
+  // ---------------------------------------------------------------- history
+  const term = $derived(q.trim().toLowerCase());
+  const filtered = $derived(
+    term ? history.filter((h) => h.text.toLowerCase().includes(term) || h.raw.toLowerCase().includes(term)) : history,
+  );
+
+  /** Splits `text` into plain/match segments for <mark> highlighting. */
+  function parts(text: string): { s: string; m: boolean }[] {
+    if (!term) return [{ s: text, m: false }];
+    const out: { s: string; m: boolean }[] = [];
+    const low = text.toLowerCase();
+    let i = 0;
+    for (;;) {
+      const j = low.indexOf(term, i);
+      if (j < 0) break;
+      if (j > i) out.push({ s: text.slice(i, j), m: false });
+      out.push({ s: text.slice(j, j + term.length), m: true });
+      i = j + term.length;
+    }
+    if (i < text.length) out.push({ s: text.slice(i), m: false });
+    return out;
+  }
 
   async function copy(h: DictationResult) {
     await api.copyText(h.text);
     copied = h.id;
-    setTimeout(() => copied === h.id && (copied = null), 1400);
+    clearTimeout(copyTimer);
+    copyTimer = window.setTimeout(() => (copied = null), 1500);
   }
   async function remove(h: DictationResult) {
+    if (open === h.id) open = null;
     history = history.filter((x) => x.id !== h.id);
     await api.deleteHistoryItem(h.id);
   }
-  async function clear() {
-    if (!confirmClear) {
-      confirmClear = true;
-      setTimeout(() => (confirmClear = false), 3000);
-      return;
-    }
-    confirmClear = false;
+  async function clearAll() {
+    clearOpen = false;
+    open = null;
     history = [];
     await api.clearHistory();
   }
+
+  /** Leave transition: fade + collapse height, so the list closes up smoothly. */
+  function collapse(node: HTMLElement, { duration = 220 } = {}) {
+    const h = node.offsetHeight;
+    return {
+      duration: prefersReducedMotion.current ? 0 : duration,
+      easing: cubicOut,
+      css: (k: number) => `opacity:${k};height:${k * h}px;overflow:hidden;transform:translateX(${(1 - k) * 12}px)`,
+    };
+  }
+  const enterDelay = (i: number) => (prefersReducedMotion.current ? 0 : Math.min(i, 8) * 28);
 </script>
 
-<header class="hero">
-  <div>
-    <h1>{greeting}</h1>
-    <p class="muted">{t("home.ready")}</p>
+<!-- HERO: teaches the one thing that matters -->
+<section class="hero" aria-labelledby="home-hero">
+  <div class="hero-top">
+    <span class="label">{greeting}</span>
+    <button type="button" class="link" onclick={() => onnavigate?.("shortcuts")}>
+      {t("home.change_hotkey")}<Icon name="chevronRight" size={14} />
+    </button>
   </div>
-</header>
 
-<dl class="status">
-  <div>
-    <dt class="label">{t("home.voice")}</dt>
-    <dd class:none={!stt}>
-      <span class="led" class:on={!!stt}></span>
-      <span class="v">{stt ? stt.name : t("home.none")}</span>
-    </dd>
-    {#if stt}<dd class="model mono">{stt.model}</dd>{/if}
+  <div class="caps" aria-label={caps.join(" + ")}>
+    {#each caps as k, i (i)}
+      {#if i > 0}<span class="plus" style:--i={i} aria-hidden="true">+</span>{/if}
+      <kbd class="cap" class:wide={k.length > 3} style:--i={i}><span class="face">{k}</span></kbd>
+    {/each}
   </div>
-  <div>
-    <dt class="label">{t("home.ai")}</dt>
-    <dd class:none={!llm}>
-      <span class="led" class:on={!!llm}></span>
-      <span class="v">{llm ? llm.name : t("home.none")}</span>
-    </dd>
-    {#if llm}<dd class="model mono">{llm.model}</dd>{/if}
+
+  <h1 id="home-hero">{hold ? t("home.hero_hold") : t("home.hero_toggle")}</h1>
+  <p class="sub">{hold ? t("home.hero_sub_hold") : t("home.hero_sub_toggle")}</p>
+
+  <div class="cta">
+    <Button variant="primary" size="lg" icon="mic" onclick={() => api.startRecording("dictate")}>{t("home.test_now")}</Button>
+    <div class="alts">
+      <span class="alt">
+        <span class="muted">{t("home.hk_translate")}</span>
+        <Keys accel={s.hotkeys.translate} size="sm" />
+        <span class="faint mono">→ {s.translation_target.toUpperCase()}</span>
+      </span>
+      <span class="alt">
+        <span class="muted">{t("home.hk_ask")}</span>
+        <Keys accel={s.hotkeys.ask} size="sm" />
+      </span>
+    </div>
   </div>
-  <div>
-    <dt class="label">{t("home.style")}</dt>
-    <dd><span class="v">{styleName(s.active_style)}</span></dd>
-    {#if activeStyle}<dd class="model mono">{activeStyle.kind === "llm" ? t("styles.kind_llm") : t("styles.kind_off")}</dd>{/if}
-  </div>
-</dl>
+</section>
+
+<!-- one-line setup, each part jumps to its page -->
+<nav class="setup-line" aria-label={t("home.setup_line")}>
+  <button type="button" onclick={() => onnavigate?.("speech")} title={stt?.model}>
+    <span class="k">{t("home.voice")}</span>
+    <span class="v" class:none={!stt}>{stt ? stt.name : t("home.none")}</span>
+    <Icon name="chevronRight" size={13} />
+  </button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" onclick={() => onnavigate?.("providers")} title={llm?.model}>
+    <span class="k">{t("home.ai")}</span>
+    <span class="v" class:none={!llm}>{llm ? llm.name : t("home.none")}</span>
+    <Icon name="chevronRight" size={13} />
+  </button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" onclick={() => onnavigate?.("styles")}>
+    <span class="k">{t("home.style")}</span>
+    <span class="v">{styleName(s.active_style)}</span>
+    <Icon name="chevronRight" size={13} />
+  </button>
+</nav>
 
 {#if needsSetup}
-  <div class="setup" role="status">
+  <div class="setup" role="status" in:fly={{ y: 6, duration: 220 }}>
     <Icon name="key" size={18} />
     <p>{t("home.setup_needed")}</p>
     <Button size="sm" variant="primary" iconRight="arrowRight" onclick={() => onnavigate?.("providers")}>{t("home.setup")}</Button>
   </div>
 {/if}
 
-<div class="try">
-  <Button variant="primary" size="lg" icon="mic" onclick={() => api.startRecording("dictate")}>{t("home.test_now")}</Button>
-  <div class="hks">
-    <div class="hk"><span class="muted">{t("home.hk_dictate")}</span><Keys accel={s.hotkeys.dictate} size="sm" /></div>
-    <div class="hk">
-      <span class="muted">{t("home.hk_translate")} <span class="faint">→ {langName(s.translation_target)}</span></span>
-      <Keys accel={s.hotkeys.translate} size="sm" />
+{#if s.history_enabled}
+  <dl class="stats">
+    <div>
+      <dt class="label">{t("home.stat_today")}</dt>
+      <dd class="tnum">{num(tToday.current)}</dd>
     </div>
-    <div class="hk"><span class="muted">{t("home.hk_ask")}</span><Keys accel={s.hotkeys.ask} size="sm" /></div>
-  </div>
-</div>
+    <div>
+      <dt class="label">{t("home.stat_words")}</dt>
+      <dd class="tnum">{num(tWords.current)}</dd>
+    </div>
+    <div title={t("home.stat_saved_hint")}>
+      <dt class="label">{t("home.stat_saved")}</dt>
+      <dd class="tnum">{dur(tSaved.current)}</dd>
+    </div>
+  </dl>
+{/if}
 
 <section class="hist">
   <header>
-    <h2 class="label">{t("home.history")}</h2>
+    <h2 class="label">
+      {t("home.history")}
+      {#if history.length}
+        <span class="count tnum">{term ? t("home.count", { n: filtered.length, total: history.length }) : history.length}</span>
+      {/if}
+    </h2>
     {#if history.length}
       <div class="tools">
         <label class="search">
           <Icon name="search" size={15} />
           <input bind:value={q} placeholder={t("home.search")} aria-label={t("home.search")} spellcheck="false" />
+          {#if q}
+            <button type="button" class="clear-q" aria-label={t("c.close")} onclick={() => (q = "")}><Icon name="x" size={13} /></button>
+          {/if}
         </label>
-        <Button size="sm" variant={confirmClear ? "danger" : "ghost"} icon="trash" onclick={clear}>
-          {confirmClear ? t("c.confirm_again") : t("home.clear")}
-        </Button>
+        <Button size="sm" variant="ghost" icon="trash" onclick={() => (clearOpen = true)}>{t("home.clear")}</Button>
       </div>
     {/if}
   </header>
@@ -145,63 +254,87 @@
   {#if !s.history_enabled}
     <p class="empty-line muted">{t("home.history_off")}</p>
   {:else if loaded && !history.length}
-    <div class="empty">
-      <div class="empty-keys"><Keys accel={s.hotkeys.dictate} size="lg" /></div>
+    <div class="empty" in:fly={{ y: 8, duration: 260 }}>
+      <div class="ghost-lines" aria-hidden="true">
+        <span style:width="72%"></span>
+        <span style:width="54%"></span>
+        <span style:width="63%"></span>
+      </div>
       <h3>{t("home.empty_title")}</h3>
-      <p class="muted">{t("home.empty_body")}</p>
+      <p class="muted">{t("home.empty_hint")}</p>
+      <div class="empty-keys"><Keys accel={s.hotkeys.dictate} /></div>
     </div>
   {:else if loaded && !filtered.length}
     <p class="empty-line muted">{t("home.no_results", { q })}</p>
   {:else}
     <ul class="items">
-      {#each filtered as h (h.id)}
-        <li class:open={open === h.id}>
-          <div class="item">
-            <button
-              type="button"
-              class="main"
-              aria-expanded={open === h.id}
-              onclick={() => (open = open === h.id ? null : h.id)}
-            >
-              <div class="meta">
-                <span class="time tnum" title={new Date(h.ts).toLocaleString()}>{relTime(h.ts)}</span>
-                <span class="dot">·</span>
+      {#each filtered as h, i (h.id)}
+        {@const isOpen = open === h.id}
+        <li class:open={isOpen} in:fly={{ y: 8, duration: 240, delay: enterDelay(i), easing: cubicOut }} out:collapse>
+          <div class="row">
+            <button type="button" class="main" aria-expanded={isOpen} onclick={() => (open = isOpen ? null : h.id)}>
+              <span class="meta">
+                <span class="time" title={new Date(h.ts).toLocaleString(locale())}>{relTime(h.ts)}</span>
                 {#if h.mode === "translate"}
-                  <span class="tag"><Icon name="translate" size={13} />{langName(h.target)}</span>
+                  <span class="tag"><Icon name="translate" size={12} />{langName(h.target)}</span>
                 {:else if h.mode === "ask"}
-                  <span class="tag">{t("mode.ask")}</span>
+                  <span class="tag"><Icon name="question" size={12} />{t("mode.ask")}</span>
                 {:else}
                   <span class="tag">{styleName(h.style_id)}</span>
                 {/if}
-                {#if !h.pasted}<span class="faint">· {t("home.not_pasted")}</span>{/if}
-              </div>
-              <p class="text">{h.text}</p>
+                {#if !h.pasted && h.mode !== "ask"}<span class="faint">{t("home.not_pasted")}</span>{/if}
+              </span>
+              <span class="text" class:clamp={!isOpen}>
+                {#each parts(h.text) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}
+              </span>
+              {#if term && !isOpen && !h.text.toLowerCase().includes(term)}
+                <span class="raw-hit">
+                  <span class="label">{t("home.raw")}</span>
+                  {#each parts(h.raw) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}
+                </span>
+              {/if}
             </button>
             <div class="acts">
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={copied === h.id ? "check" : "copy"}
-                aria-label={t("c.copy")}
-                title={t("c.copy")}
-                onclick={() => copy(h)}
-              />
+              <span class="copy-wrap" class:done={copied === h.id}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={copied === h.id ? "check" : "copy"}
+                  aria-label={copied === h.id ? t("c.copied") : t("c.copy")}
+                  title={t("c.copy")}
+                  onclick={() => copy(h)}
+                />
+                {#if copied === h.id}
+                  <span class="toast mono" role="status" in:fly={{ y: 4, duration: 160 }} out:fly={{ y: -4, duration: 160 }}>{t("c.copied")}</span>
+                {/if}
+              </span>
               <Button size="sm" variant="ghost" icon="trash" aria-label={t("c.delete")} title={t("c.delete")} onclick={() => remove(h)} />
             </div>
           </div>
-          {#if open === h.id}
-            <div class="detail">
-              <div class="label">{t("home.raw")}</div>
-              <p class="raw">{h.raw}</p>
-              <div class="tech mono">
-                <span>{clockTime(h.ts)}</span>
-                <span>{(h.duration_ms / 1000).toFixed(1)}s</span>
-                <span>{h.stt_provider}</span>
-                {#if h.provider}<span>{t("home.via", { provider: h.provider })}</span>{/if}
+          {#if isOpen}
+            <div class="detail" transition:slide={{ duration: prefersReducedMotion.current ? 0 : 220, easing: cubicOut }}>
+              <div class="detail-in">
+                {#if h.raw && h.raw !== h.text}
+                  <div class="raw">
+                    <span class="label">{t("home.raw")}</span>
+                    <p>{#each parts(h.raw) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}</p>
+                  </div>
+                {/if}
+                <dl class="facts">
+                  {#if h.mode === "translate"}
+                    <div><dt>{t("home.f_target")}</dt><dd>{langName(h.target)}</dd></div>
+                  {:else if h.mode === "dictate"}
+                    <div><dt>{t("home.f_style")}</dt><dd>{styleName(h.style_id)}</dd></div>
+                  {/if}
+                  <div><dt>{t("home.f_voice")}</dt><dd class="mono">{h.stt_provider}</dd></div>
+                  <div><dt>{t("home.f_ai")}</dt><dd class="mono">{h.provider ?? t("home.no_ai")}</dd></div>
+                  <div><dt>{t("home.f_duration")}</dt><dd class="mono">{(h.duration_ms / 1000).toFixed(1)} s</dd></div>
+                  <div><dt>{t("home.f_time")}</dt><dd class="mono">{clockTime(h.ts)}</dd></div>
+                </dl>
+                {#each h.warnings as w (w)}
+                  <p class="warn"><Icon name="alert" size={13} />{w}</p>
+                {/each}
               </div>
-              {#each h.warnings as w}
-                <p class="warn"><Icon name="alert" size={13} />{w}</p>
-              {/each}
             </div>
           {/if}
         </li>
@@ -210,70 +343,238 @@
   {/if}
 </section>
 
+<Modal bind:open={clearOpen} title={t("home.clear_title")} width="400px">
+  <p class="modal-p">{t("home.clear_body", { n: history.length })}</p>
+  {#snippet footer()}
+    <Button variant="ghost" onclick={() => (clearOpen = false)}>{t("c.cancel")}</Button>
+    <Button variant="danger" icon="trash" onclick={clearAll}>{t("home.clear_all")}</Button>
+  {/snippet}
+</Modal>
+
 <style>
-  .hero h1 {
-    font-size: 30px;
-    line-height: 1.15;
-    letter-spacing: -0.03em;
+  /* ------------------------------------------------------------ hero */
+  .hero {
+    position: relative;
+    padding: 18px 22px 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
   }
-  .hero p {
-    margin-top: 4px;
+  .hero::before {
+    /* hairline accent tick, like a hardware power stripe */
+    content: "";
+    position: absolute;
+    left: 22px;
+    top: -1px;
+    width: 36px;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: var(--accent-fg);
+    transform-origin: left;
+    animation: tick 600ms var(--ease) 120ms both;
   }
-  .status {
-    margin: 26px 0 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
+  @keyframes tick {
+    from {
+      transform: scaleX(0);
+    }
   }
-  .status > div {
-    padding: 12px 14px 13px 0;
-    min-width: 0;
-  }
-  .status > div + div {
-    padding-left: 16px;
-    border-left: 1px solid var(--line);
-  }
-  dd {
-    margin: 6px 0 0;
+  .hero-top {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    min-width: 0;
+    justify-content: space-between;
+    gap: 12px;
   }
-  dd .v {
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 12px;
+    color: var(--text-2);
+    padding: 3px 4px 3px 8px;
+    border-radius: var(--r-sm);
+    transition:
+      color var(--t-fast),
+      background var(--t-fast);
+  }
+  .link:hover {
+    color: var(--text);
+    background: var(--hover);
+  }
+  .link :global(.icon) {
+    transition: transform var(--t) var(--ease);
+  }
+  .link:hover :global(.icon) {
+    transform: translateX(2px);
+  }
+
+  .caps {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .cap {
+    --depth: 5px;
+    position: relative;
+    display: inline-block;
+    min-width: 58px;
+    height: calc(54px + var(--depth));
+    padding-bottom: var(--depth);
+    border-radius: 10px;
+    background: var(--surface-3);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    animation: cap-in 420ms var(--spring) calc(var(--i) * 70ms) both;
+  }
+  .face {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 54px;
+    padding: 0 16px;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg);
+    box-shadow:
+      inset 0 0 0 1px var(--line-strong),
+      inset 0 1px 0 var(--line-strong);
+    transform: translateY(0);
+    animation: cap-press 520ms var(--ease) calc(500ms + var(--i) * 90ms) both;
+    transition: transform 90ms var(--ease);
+  }
+  .cap.wide .face {
+    padding: 0 18px;
+    font-size: 15px;
+  }
+  .cap:hover .face {
+    transform: translateY(2px);
+  }
+  .cap:active .face {
+    transform: translateY(var(--depth));
+  }
+  .plus {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text-3);
+    animation: fade-in 300ms var(--ease) calc(var(--i) * 70ms) both;
+  }
+  @keyframes cap-in {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+  @keyframes cap-press {
+    40% {
+      transform: translateY(var(--depth));
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .hero h1 {
+    margin-top: 20px;
+    font-size: 30px;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+  }
+  .sub {
+    margin-top: 6px;
+    max-width: 52ch;
+    font-size: 13.5px;
+    color: var(--text-2);
+  }
+  .cta {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px 22px;
+  }
+  .alts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font-size: 12.5px;
+  }
+  .alt {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     white-space: nowrap;
+  }
+  .alt .mono {
+    font-size: 11px;
+  }
+
+  /* ------------------------------------------------------------ setup line */
+  .setup-line {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+    font-size: 12.5px;
+  }
+  .setup-line button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 6px 0 8px;
+    border-radius: var(--r-sm);
+    color: var(--text-2);
+    transition: background var(--t-fast);
+  }
+  .setup-line button:first-child {
+    margin-left: -8px;
+  }
+  .setup-line .k {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .setup-line .v {
+    color: var(--text);
     font-weight: 500;
   }
-  dd.model {
-    margin-top: 2px;
-    padding-left: 14px;
-    font-size: 11px;
-    color: var(--text-3);
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .setup-line .v.none {
+    color: var(--danger-fg);
   }
-  dd.none {
+  .setup-line button :global(.icon) {
     color: var(--text-3);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition:
+      opacity var(--t-fast),
+      transform var(--t) var(--ease);
   }
-  .led {
-    width: 6px;
-    height: 6px;
+  .setup-line button:hover {
+    background: var(--hover);
+  }
+  .setup-line button:hover :global(.icon),
+  .setup-line button:focus-visible :global(.icon) {
+    opacity: 1;
+    transform: none;
+  }
+  .sep {
+    width: 3px;
+    height: 3px;
     border-radius: 50%;
     background: var(--text-3);
-    flex: none;
+    margin: 0 4px;
   }
-  .led.on {
-    background: var(--accent-fg);
-    box-shadow: 0 0 6px var(--accent-line);
-  }
+
   .setup {
-    margin-top: 16px;
+    margin-top: 12px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -288,36 +589,59 @@
     font-size: 13px;
     color: var(--text);
   }
-  .try {
-    margin-top: 26px;
-    display: flex;
-    align-items: center;
-    gap: 26px;
-    flex-wrap: wrap;
+
+  /* ------------------------------------------------------------ stats */
+  .stats {
+    margin: 28px 0 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
   }
-  .hks {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 12.5px;
+  .stats > div {
+    padding: 14px 12px 14px 0;
+    min-width: 0;
   }
-  .hk {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
+  .stats > div + div {
+    padding-left: 18px;
+    border-left: 1px solid var(--line);
+  }
+  .stats dd {
+    margin: 6px 0 0;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stats > div:first-child dd {
+    color: var(--accent-fg);
   }
 
+  /* ------------------------------------------------------------ history */
   .hist {
-    margin-top: 40px;
+    margin-top: 34px;
   }
   .hist header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 10px 12px;
     min-height: 30px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .hist h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .count {
+    color: var(--text-2);
+    letter-spacing: 0.04em;
   }
   .tools {
     display: flex;
@@ -328,15 +652,21 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    height: 28px;
-    padding: 0 9px;
-    border-radius: var(--r-sm);
-    border: 1px solid var(--line);
+    height: 30px;
+    padding: 0 6px 0 9px;
+    border-radius: var(--r);
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
     color: var(--text-3);
-    width: 210px;
+    width: 220px;
+    transition:
+      border-color var(--t-fast),
+      box-shadow var(--t-fast),
+      width var(--t) var(--ease);
   }
   .search:focus-within {
     border-color: var(--accent-line);
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
   .search input {
     flex: 1;
@@ -349,114 +679,256 @@
   .search input::placeholder {
     color: var(--text-3);
   }
+  .clear-q {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    color: var(--text-3);
+  }
+  .clear-q:hover {
+    color: var(--text);
+    background: var(--hover);
+  }
+
   .items {
     list-style: none;
-    margin: 0;
+    margin: 0 -10px;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
   li {
-    border-top: 1px solid var(--line);
+    position: relative;
+    border-radius: var(--r);
+    transition: background var(--t) var(--ease);
   }
-  li:last-child {
-    border-bottom: 1px solid var(--line);
+  li::before {
+    /* hairline separators that disappear around the hovered/open item */
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: -1px;
+    height: 1px;
+    background: var(--line);
+    transition: opacity var(--t-fast);
   }
-  .item {
+  li:first-child::before,
+  li:hover::before,
+  li.open::before,
+  li:hover + li::before,
+  li.open + li::before {
+    opacity: 0;
+  }
+  li:hover {
+    background: var(--hover);
+  }
+  li.open {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .row {
     display: flex;
     align-items: flex-start;
-    gap: 6px;
+    gap: 4px;
+    padding-right: 6px;
   }
   .main {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
     text-align: left;
-    padding: 12px 0 12px 2px;
+    padding: 11px 4px 12px 10px;
+    border-radius: var(--r);
+  }
+  .main:focus-visible {
+    /* inset so the ring is never clipped by neighbours or the scroll box */
+    outline-offset: -2px;
   }
   .meta {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11.5px;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 11px;
     color: var(--text-2);
     font-family: var(--mono);
   }
-  .dot {
+  .time {
     color: var(--text-3);
   }
   .tag {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    color: var(--text-2);
+  }
+  .open .tag {
+    color: var(--accent-fg);
   }
   .text {
-    margin-top: 4px;
+    display: block;
     font-size: 13.5px;
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--text);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+  .text.clamp {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    user-select: text;
+    /* room for descenders/highlights so nothing looks cropped */
+    padding-bottom: 1px;
   }
-  .open .text {
-    -webkit-line-clamp: unset;
-    line-clamp: unset;
+  .raw-hit {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--text-2);
   }
-  .main:hover .text {
-    color: var(--text);
+  .raw-hit .label {
+    margin-right: 6px;
+    font-size: 9.5px;
+  }
+  mark {
+    background: var(--accent-soft);
+    color: inherit;
+    box-shadow: inset 0 -1.5px 0 var(--accent-line);
+    border-radius: 2px;
+    padding: 0 1px;
   }
   .acts {
     display: flex;
     gap: 2px;
-    padding-top: 10px;
+    padding-top: 8px;
     opacity: 0;
-    transition: opacity var(--t-fast);
+    transform: translateX(4px);
+    transition:
+      opacity var(--t-fast),
+      transform var(--t) var(--ease);
   }
-  .item:hover .acts,
-  .item:focus-within .acts,
+  li:hover .acts,
+  li:focus-within .acts,
   .open .acts {
     opacity: 1;
+    transform: none;
   }
-  .detail {
-    padding: 2px 0 14px 2px;
-    animation: enter 160ms var(--ease) both;
+  .copy-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+  .copy-wrap.done :global(.btn) {
+    color: var(--accent-fg);
+  }
+  .toast {
+    position: absolute;
+    right: calc(100% + 4px);
+    top: 50%;
+    translate: 0 -50%;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    white-space: nowrap;
+    color: var(--on-accent);
+    background: var(--accent);
+    pointer-events: none;
+  }
+
+  .detail-in {
+    padding: 0 14px 14px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
   .raw {
-    margin-top: 4px;
-    padding: 9px 11px;
-    font-size: 13px;
-    color: var(--text-2);
+    padding: 9px 12px 10px;
     border-left: 2px solid var(--line-strong);
-    background: var(--surface);
+    background: var(--bg);
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  }
+  .raw p {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-2);
     user-select: text;
   }
-  .tech {
-    margin-top: 10px;
+  .facts {
+    margin: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 14px;
-    font-size: 11px;
+    gap: 8px 22px;
+  }
+  .facts div {
+    min-width: 0;
+  }
+  .facts dt {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--text-3);
   }
+  .facts dd {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .facts dd.mono {
+    font-size: 11.5px;
+    color: var(--text-2);
+  }
   .warn {
-    margin-top: 6px;
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 12px;
     color: var(--text-2);
   }
+
   .empty {
-    padding: 36px 0 30px;
+    padding: 34px 0 30px;
     border-top: 1px solid var(--line);
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
   }
-  .empty-keys {
-    margin-bottom: 18px;
+  .ghost-lines {
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 20px;
+  }
+  .ghost-lines span {
+    height: 7px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    transform-origin: left;
+    animation: grow 600ms var(--ease) both;
+  }
+  .ghost-lines span:nth-child(2) {
+    animation-delay: 80ms;
+  }
+  .ghost-lines span:nth-child(3) {
+    animation-delay: 160ms;
+  }
+  @keyframes grow {
+    from {
+      transform: scaleX(0);
+    }
   }
   .empty h3 {
     font-size: 16px;
@@ -466,15 +938,25 @@
     max-width: 44ch;
     font-size: 13px;
   }
+  .empty-keys {
+    margin-top: 16px;
+  }
   .empty-line {
     padding: 16px 0;
     border-top: 1px solid var(--line);
     font-size: 13px;
   }
-  @keyframes enter {
-    from {
-      opacity: 0;
-      transform: translateY(-3px);
+  .modal-p {
+    font-size: 13.5px;
+    color: var(--text-2);
+  }
+
+  @media (max-width: 640px) {
+    .stats dd {
+      font-size: 21px;
+    }
+    .search {
+      width: 170px;
     }
   }
 </style>

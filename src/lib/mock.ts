@@ -41,8 +41,7 @@ export const DEFAULT_STYLES: Style[] = [
     name: "Natural",
     description: "Corrige pontuação e gramática mantendo o seu jeito de falar.",
     kind: "llm",
-    prompt:
-      "Reescreva a transcrição corrigindo pontuação, gramática e repetições, sem mudar o sentido nem o tom. Mantenha o idioma original. Responda só com o texto final.",
+    prompt: "",
     builtin: true,
   },
   {
@@ -50,8 +49,7 @@ export const DEFAULT_STYLES: Style[] = [
     name: "Profissional",
     description: "Linguagem formal e clara para e-mails e documentos.",
     kind: "llm",
-    prompt:
-      "Reescreva a transcrição em linguagem profissional, clara e educada, adequada para e-mail de trabalho. Não invente informações. Responda só com o texto final.",
+    prompt: "",
     builtin: true,
   },
   {
@@ -59,8 +57,7 @@ export const DEFAULT_STYLES: Style[] = [
     name: "Mensagem",
     description: "Curto e leve, do jeito que se escreve no chat.",
     kind: "llm",
-    prompt:
-      "Reescreva a transcrição como uma mensagem curta e descontraída de chat, sem formalidades. Não use emojis. Responda só com o texto final.",
+    prompt: "",
     builtin: true,
   },
   {
@@ -84,14 +81,16 @@ export const DEFAULT_STYLES: Style[] = [
 const DEFAULT_SETTINGS: Settings = {
   ui_language: "pt",
   theme: "system",
+  accent_color: "#D7FF3F",
+  user_name: "",
   speech_language: "pt",
   input_device: null,
   stt: {
     engine: "cloud",
     cloud_order: ["groq", "gemini", "mistral", "openai"],
-    local_model: "base",
+    local_model: "base-q5_1",
     live_preview: true,
-    preview_model: "tiny",
+    preview_model: "base-q5_1",
   },
   llm_order: ["groq", "gemini", "openrouter", "mistral", "openai", "ollama", "custom"],
   providers: {
@@ -104,7 +103,17 @@ const DEFAULT_SETTINGS: Settings = {
     custom: { model: "", stt_model: "", base_url: "" },
   },
   active_style: "natural",
-  styles: clone(DEFAULT_STYLES),
+  styles: [
+    ...clone(DEFAULT_STYLES),
+    {
+      id: "custom-topicos",
+      name: "Tópicos",
+      description: "Transforma a fala em uma lista curta de tópicos.",
+      kind: "llm",
+      prompt: "Transforme o que eu disser em tópicos curtos, um por linha, começando com hífen.",
+      builtin: false,
+    },
+  ],
   translation_target: "en",
   hotkeys: { dictate: "CommandOrControl+Shift+Space", translate: "CommandOrControl+Shift+T", ask: "Alt+Space" },
   hotkey_mode: "toggle",
@@ -147,11 +156,14 @@ function keyStatus(): KeyStatusMap {
 }
 
 const localModels: LocalModel[] = [
-  { id: "tiny", label: "Whisper Tiny", file: "ggml-tiny.bin", size_mb: 75, installed: true, note: "Prévia ao vivo", recommended: false },
-  { id: "base", label: "Whisper Base", file: "ggml-base.bin", size_mb: 142, installed: false, note: "Rápido em qualquer PC", recommended: false },
-  { id: "small", label: "Whisper Small", file: "ggml-small.bin", size_mb: 466, installed: false, note: "Equilíbrio", recommended: true },
-  { id: "large-v3-turbo-q5", label: "Whisper Large v3 Turbo (q5)", file: "ggml-large-v3-turbo-q5_0.bin", size_mb: 574, installed: false, note: "Máxima precisão", recommended: false },
+  { id: "tiny-q5_1", label: "Tiny", file: "ggml-tiny-q5_1.bin", size_mb: 31, installed: false, note: "Mais leve — PCs bem fracos", recommended: false },
+  { id: "base-q5_1", label: "Base", file: "ggml-base-q5_1.bin", size_mb: 57, installed: true, note: "Rápido, ideal para a prévia ao vivo", recommended: true },
+  { id: "small-q5_1", label: "Small", file: "ggml-small-q5_1.bin", size_mb: 181, installed: false, note: "Equilíbrio entre precisão e velocidade", recommended: false },
+  { id: "turbo-q5_0", label: "Large v3 Turbo", file: "ggml-large-v3-turbo-q5_0.bin", size_mb: 547, installed: false, note: "Máxima precisão (PC mais forte)", recommended: false },
+  { id: "medium-q5_0", label: "Medium", file: "ggml-medium-q5_0.bin", size_mb: 514, installed: false, note: "Preciso, mais lento que o Turbo", recommended: false },
 ];
+// ?nomodels: nothing downloaded yet (onboarding live-preview / offline download flows).
+if (params.has("nomodels")) localModels.forEach((m) => (m.installed = false));
 
 // ---------------------------------------------------------------- sample texts
 
@@ -252,6 +264,76 @@ let history: DictationResult[] = [
     warnings: [],
   },
 ];
+// More varied samples for designing the history list and the home stats.
+const H = (id: string, m: number, o: Partial<DictationResult>): DictationResult => ({
+  id,
+  ts: minutesAgo(m),
+  mode: "dictate",
+  raw: "",
+  text: "",
+  style_id: "natural",
+  target: null,
+  provider: "groq · openai/gpt-oss-20b",
+  stt_provider: "groq · whisper-large-v3-turbo",
+  pasted: true,
+  duration_ms: 4000,
+  warnings: [],
+  ...o,
+});
+history.splice(
+  2,
+  0,
+  H("h5", 52, {
+    style_id: "casual",
+    raw: "fala galera então amanhã o deploy vai ser às dez e meia beleza qualquer coisa me chama",
+    text: "Galera, amanhã o deploy é às 10h30. Qualquer coisa me chama.",
+    duration_ms: 4600,
+  }),
+  H("h6", 95, {
+    style_id: "custom-topicos",
+    raw: "pra reunião de hoje a gente precisa falar do orçamento do Q4 do novo onboarding e de quem vai cobrir as férias da Ana",
+    text: "- Orçamento do Q4\n- Novo onboarding\n- Cobertura das férias da Ana",
+    duration_ms: 6900,
+  }),
+  H("h7", 130, {
+    mode: "ask",
+    raw: "qual a diferença entre tauri e electron em consumo de memória",
+    text: "qual a diferença entre tauri e electron em consumo de memória",
+    style_id: "natural",
+    provider: "groq · openai/gpt-oss-20b",
+    pasted: false,
+    duration_ms: 3200,
+  }),
+);
+history.push(
+  H("h8", 60 * 30, {
+    mode: "translate",
+    target: "es",
+    raw: "obrigado pelo retorno vou analisar a proposta com o time e te respondo até segunda",
+    text: "Gracias por la respuesta. Voy a analizar la propuesta con el equipo y te respondo antes del lunes.",
+    duration_ms: 5200,
+  }),
+  H("h9", 60 * 50, {
+    style_id: "formal",
+    raw: "oi Marcos tudo bem então sobre aquele contrato eu dei uma olhada e acho que a cláusula de rescisão tá muito vaga a gente precisa definir prazo e multa direitinho antes de assinar e também incluir o reajuste anual pelo IPCA",
+    text: "Olá, Marcos. Revisei o contrato e considero a cláusula de rescisão vaga demais: precisamos definir com clareza o prazo e a multa antes da assinatura. Sugiro também incluir o reajuste anual pelo IPCA.",
+    duration_ms: 12800,
+  }),
+  H("h10", 60 * 24 * 4, {
+    style_id: "verbatim",
+    raw: "nota mental testar o atalho com o Slack aberto",
+    text: "nota mental testar o atalho com o Slack aberto",
+    provider: null,
+    stt_provider: "local · base-q5_1",
+    duration_ms: 2400,
+  }),
+  H("h11", 60 * 24 * 9, {
+    raw: "é o seguinte o bug acontece quando o usuário clica duas vezes rápido no botão de salvar aí ele duplica o registro",
+    text: "O bug acontece quando o usuário clica duas vezes rápido no botão de salvar: o registro é duplicado.",
+    pasted: false,
+    duration_ms: 6100,
+  }),
+);
 if (params.has("empty")) history = [];
 
 let chat: ChatMessage[] = [
@@ -361,7 +443,8 @@ export function stopSimulation() {
 let chatRecording = false;
 
 async function invoke<T>(cmd: string, args: Record<string, unknown> = {}): Promise<T> {
-  await sleep(cmd.startsWith("get_") ? 30 : 60);
+  // overlay_resize is a cheap native call in Rust; keep the preview window in step with the morph.
+  await sleep(cmd === "overlay_resize" ? 8 : cmd.startsWith("get_") ? 30 : 60);
   const r = await route(cmd, args);
   return r as T;
 }
@@ -372,12 +455,20 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       return clone(settings);
     case "save_settings":
       settings = clone(a.settings as Settings);
+      settings.styles.forEach((st) => st.builtin && (st.prompt = ""));
+      // ?echo[=ms]: emit settings-changed like Rust does, but late, so stale echoes can arrive after newer saves.
+      if (params.has("echo")) {
+        const echo = clone(settings);
+        setTimeout(() => mockEmit(EVENTS.settingsChanged, echo), Number(params.get("echo")) || 1200);
+      }
       return clone(settings);
     case "reset_styles":
       settings.styles = clone(DEFAULT_STYLES);
       if (!settings.styles.some((s) => s.id === settings.active_style)) settings.active_style = "natural";
       mockEmit(EVENTS.settingsChanged, clone(settings));
       return clone(settings);
+    case "suspend_hotkeys":
+      return;
     case "validate_hotkey": {
       const acc = String(a.accelerator);
       const others = Object.values(settings.hotkeys);
@@ -479,6 +570,8 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       const target = (a.target as string | null) ?? null;
       const prev = lastResult ?? makeResult("dictate", "natural", null);
       lastResult = { ...makeResult(prev.mode, String(a.styleId), target, false), id: prev.id };
+      // Like the Rust core: a reprocess also announces the new version as a `done` with the same id.
+      mockEmit(EVENTS.overlayState, { phase: "done", result: clone(lastResult) } satisfies OverlayEvent);
       return clone(lastResult);
     }
     case "paste_text":
@@ -491,7 +584,10 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       }
       return;
     case "overlay_hold":
+      return;
     case "overlay_resize":
+      // The browser preview sizes its fake window from this (see src/overlay/Preview.svelte).
+      mockEmit("mock:overlay-resize", { width: a.width, height: a.height });
       return;
     case "dismiss_overlay":
       stopSimulation();
@@ -554,9 +650,12 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
         data_dir: "C:\\Users\\julio\\AppData\\Roaming\\br.com.caliberda.flowvoice",
         os: "windows",
       } satisfies AppInfo;
-    case "check_update":
+    case "check_update": {
       await sleep(900);
-      return { available: true, version: "2.0.1", notes: "Correções no colar automático e nova voz de teste." } satisfies UpdateInfo;
+      const info = { available: true, version: "2.0.1", notes: "Correções no colar automático e nova voz de teste." } satisfies UpdateInfo;
+      mockEmit("update-available", info); // same event the Rust background check emits
+      return info;
+    }
     case "install_update": {
       const total = 9_400_000;
       let d = 0;

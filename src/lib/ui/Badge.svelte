@@ -23,6 +23,13 @@
     border: 1px solid var(--line-strong);
     color: var(--text-2);
     flex: none;
+    animation: badge-in 260ms var(--spring) both;
+  }
+  @keyframes badge-in {
+    from {
+      opacity: 0;
+      transform: scale(0.85);
+    }
   }
   .accent {
     color: var(--accent-fg);

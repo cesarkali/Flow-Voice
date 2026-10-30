@@ -55,6 +55,7 @@ export const ICONS = {
   question: '<circle cx="10" cy="10" r="7"/><path d="M8 8a2 2 0 1 1 2.75 1.85c-.45.2-.75.6-.75 1.1v.55"/><path d="M10 13.75v.01"/>',
   speaker: '<path d="M4 8v4h2.75L11 15.25V4.75L6.75 8Z"/><path d="M13.75 7.5a3.5 3.5 0 0 1 0 5"/>',
   sparkle: '<path d="M10 3.5c.4 3.4 1.9 5.6 6 6.5-4.1.9-5.6 3.1-6 6.5-.4-3.4-1.9-5.6-6-6.5 4.1-.9 5.6-3.1 6-6.5Z"/>',
+  heart: '<path d="M10 16s-6-3.5-6-8a3.25 3.25 0 0 1 6-1.75A3.25 3.25 0 0 1 16 8c0 4.5-6 8-6 8Z"/>',
 } as const;
 
 export type IconName = keyof typeof ICONS;

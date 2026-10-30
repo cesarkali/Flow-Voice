@@ -53,10 +53,16 @@ fn init_logger(dir: &PathBuf) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let app = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+    // Test hook: FLOWVOICE_DATA_DIR runs an isolated instance (own settings/history, no
+    // single-instance lock) next to the user's real one.
+    let test_dir = std::env::var_os("FLOWVOICE_DATA_DIR").map(std::path::PathBuf::from);
+    let mut builder = tauri::Builder::default();
+    if test_dir.is_none() {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             windows::open_settings(app, None);
-        }))
+        }));
+    }
+    let app = builder
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| hotkeys::handler(app, shortcut, event))
@@ -69,8 +75,11 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
-        .setup(|app| {
-            let config_dir = app.path().app_config_dir()?;
+        .setup(move |app| {
+            let config_dir = match &test_dir {
+                Some(d) => d.clone(),
+                None => app.path().app_config_dir()?,
+            };
             let models_dir = app.path().app_local_data_dir()?.join("models");
             std::fs::create_dir_all(&config_dir)?;
             init_logger(&config_dir);

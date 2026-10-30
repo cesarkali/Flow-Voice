@@ -40,6 +40,10 @@ export interface Hotkeys {
 export interface Settings {
   ui_language: UiLanguage;
   theme: Theme;
+  /** Hex accent color, e.g. "#D7FF3F" (default phosphor lime). */
+  accent_color: string;
+  /** Optional name the app uses to greet the user ("" = none). Never added to dictations. */
+  user_name: string;
   /** ISO-639-1 code of what the user speaks, or "auto". */
   speech_language: string;
   /** null = system default microphone */

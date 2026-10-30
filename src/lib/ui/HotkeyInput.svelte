@@ -13,9 +13,15 @@
   }: { value: string; label: string; onchange?: (v: string) => void; size?: "md" | "lg" } = $props();
 
   let capturing = $state(false);
+  // Leaving the page mid-capture must resume the global shortcuts.
+  $effect(() => () => {
+    if (capturing) api.suspendHotkeys(false).catch(() => {});
+  });
   let live = $state<string[]>([]);
   let error = $state("");
   let btn: HTMLButtonElement;
+  let saved = $state(false);
+  let savedTimer: ReturnType<typeof setTimeout> | undefined;
 
   function start() {
     error = "";
@@ -67,6 +73,9 @@
     value = accel;
     onchange?.(accel);
     btn?.focus();
+    saved = true;
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(() => (saved = false), 900);
   }
 </script>
 
@@ -78,6 +87,7 @@
     type="button"
     class="cap {size}"
     class:capturing
+    class:saved
     class:err={!!error}
     aria-label="{label}: {value}. {t('sc.click_to_change')}"
     onclick={() => (capturing ? stop() : start())}
@@ -85,13 +95,20 @@
   >
     {#if capturing}
       {#if live.length}
-        <Keys caps={live} size={size === "lg" ? "lg" : "md"} />
+        <Keys caps={live} size={size === "lg" ? "lg" : "md"} animate pressed />
+        <span class="plus" aria-hidden="true">+</span>
+        <span class="ghost {size}" aria-hidden="true"></span>
       {:else}
-        <span class="rec" aria-hidden="true"></span>
+        <span class="ghosts" aria-hidden="true">
+          <span class="ghost {size}"></span><span class="ghost {size}"></span>
+        </span>
         <span class="prompt">{t("sc.press")}</span>
       {/if}
+      <span class="esc mono" aria-hidden="true">{t("ctl.esc_cancel")}</span>
     {:else}
-      <Keys accel={value} size={size === "lg" ? "lg" : "md"} />
+      {#key value}
+        <Keys accel={value} size={size === "lg" ? "lg" : "md"} animate={saved} />
+      {/key}
       <span class="edit"><Icon name="edit" size={15} /></span>
     {/if}
   </button>
@@ -119,7 +136,11 @@
     background: var(--surface);
     transition:
       border-color var(--t-fast) var(--ease),
-      box-shadow var(--t-fast) var(--ease);
+      box-shadow var(--t) var(--ease),
+      transform 140ms var(--spring);
+  }
+  .cap:active {
+    transform: scale(0.98);
   }
   .cap.lg {
     height: 52px;
@@ -140,31 +161,82 @@
     margin-left: auto;
     color: var(--text-3);
     opacity: 0;
-    transition: opacity var(--t-fast);
+    transform: translateX(-4px);
+    transition:
+      opacity var(--t-fast),
+      transform var(--t) var(--spring);
   }
   .cap:hover .edit,
   .cap:focus-visible .edit {
     opacity: 1;
+    transform: none;
   }
   .prompt {
     color: var(--text-2);
     font-size: 13px;
   }
-  .rec {
-    width: 8px;
-    height: 8px;
-    margin-left: 4px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: blink 1s steps(2, start) infinite;
+  .ghosts {
+    display: inline-flex;
+    gap: 3px;
   }
-  @keyframes blink {
-    to {
-      opacity: 0.2;
+  .ghost {
+    display: inline-block;
+    width: 26px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1px dashed var(--accent-line);
+    animation: ghost-in 240ms var(--spring) both;
+  }
+  .ghost.lg {
+    width: 34px;
+    height: 30px;
+    border-radius: 7px;
+  }
+  .ghosts .ghost:nth-child(2) {
+    width: 40px;
+    animation-delay: 40ms;
+  }
+  .ghosts .ghost.lg:nth-child(2) {
+    width: 54px;
+  }
+  @keyframes ghost-in {
+    from {
+      opacity: 0;
+      transform: scale(0.7);
+    }
+  }
+  .plus {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-3);
+    margin: 0 -4px;
+  }
+  .esc {
+    margin-left: auto;
+    font-size: 10.5px;
+    color: var(--text-3);
+    animation: ghost-in 300ms var(--ease) 120ms both;
+    white-space: nowrap;
+  }
+  .saved {
+    animation: saved 900ms var(--ease);
+  }
+  @keyframes saved {
+    0% {
+      border-color: var(--accent-line);
+      box-shadow: 0 0 0 0 var(--accent-soft);
+    }
+    30% {
+      border-color: var(--accent-line);
+      box-shadow: 0 0 0 5px var(--accent-soft);
+    }
+    100% {
+      box-shadow: 0 0 0 0 transparent;
     }
   }
   .msg {
     font-size: 12.5px;
     color: var(--danger-fg);
+    animation: ghost-in 200ms var(--ease) both;
   }
 </style>

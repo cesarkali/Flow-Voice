@@ -205,6 +205,23 @@ fn win_mute(mute: bool) -> windows::core::Result<bool> {
 
 // ---------------------------------------------------------------- overlay window
 
+/// Sets position and size together (physical px) without activating the window.
+pub fn set_bounds_no_activate(window: &tauri::WebviewWindow, x: i32, y: i32, w: i32, h: i32) {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE};
+        if let Ok(hwnd) = window.hwnd() {
+            unsafe {
+                let _ = SetWindowPos(HWND(hwnd.0 as *mut _), HWND_TOPMOST, x, y, w, h, SWP_NOACTIVATE);
+            }
+            return;
+        }
+    }
+    let _ = window.set_size(tauri::PhysicalSize::new(w.max(1) as u32, h.max(1) as u32));
+    let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+}
+
 /// Shows a window on top without activating it (focus stays in the app being dictated into).
 pub fn show_without_focus(window: &tauri::WebviewWindow) {
     #[cfg(windows)]

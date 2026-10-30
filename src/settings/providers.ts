@@ -1,5 +1,7 @@
 // Static provider catalog: links, tutorials (as i18n keys), defaults and model suggestions.
+import { api } from "../lib/api";
 import { t, type TKey } from "../lib/i18n.svelte";
+import { app, setKeys } from "../lib/stores.svelte";
 import type { KeyProviderId, LlmProviderId, SttProviderId } from "../lib/types";
 
 export type ProviderId = LlmProviderId | "tavily";
@@ -173,3 +175,39 @@ export function pname(id: string): string {
 export const STT_PROVIDERS: SttProviderId[] = ["groq", "gemini", "mistral", "openai"];
 
 export const isKeyProvider = (id: string): id is KeyProviderId => id !== "ollama";
+
+// ---------------------------------------------------------------- multiple keys
+// Rust stores a provider's keys as one comma-joined list and accepts comma, semicolon or
+// newline separators. The UI edits them as rows; these helpers keep both views in sync.
+
+/** Splits a pasted/stored list of keys (comma, semicolon or newline separated). */
+export function splitKeys(raw: string): string[] {
+  return raw
+    .split(/[,;\n\r]+/)
+    .map((k) => k.trim())
+    .filter(Boolean);
+}
+
+/** True when the text holds more than one key. */
+export const isKeyList = (raw: string) => splitKeys(raw).length > 1;
+
+/** Full keys currently saved for a provider (in failover order). */
+export async function savedKeys(provider: KeyProviderId): Promise<string[]> {
+  if ((app.keys?.[provider]?.count ?? 0) === 0) return [];
+  return splitKeys(await api.revealKeys(provider));
+}
+
+/** Appends keys (deduplicated) after the saved ones. Returns how many were new. */
+export async function addKeys(provider: KeyProviderId, raw: string): Promise<number> {
+  const current = await savedKeys(provider);
+  const fresh = splitKeys(raw).filter((k, i, all) => !current.includes(k) && all.indexOf(k) === i);
+  if (fresh.length) await setKeys(provider, [...current, ...fresh].join(","));
+  return fresh.length;
+}
+
+/** Removes the key at `index` (same order as KeyStatus.masked). */
+export async function removeKeyAt(provider: KeyProviderId, index: number): Promise<void> {
+  const current = await savedKeys(provider);
+  current.splice(index, 1);
+  await setKeys(provider, current.join(","));
+}

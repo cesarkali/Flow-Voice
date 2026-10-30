@@ -23,6 +23,7 @@
 
 <style>
   .row {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
@@ -30,6 +31,37 @@
     row-gap: 10px;
     padding: 14px 0;
     border-top: 1px solid var(--line);
+  }
+  /* small tick on the left edge: hairline on hover, accent while a control inside is focused */
+  .row::before {
+    content: "";
+    position: absolute;
+    left: -12px;
+    top: 50%;
+    width: 2px;
+    height: 16px;
+    margin-top: -8px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    opacity: 0;
+    transform: scaleY(0.4);
+    transition:
+      opacity var(--t) var(--ease),
+      transform var(--t) var(--spring),
+      background-color var(--t) var(--ease);
+  }
+  .row:hover::before {
+    opacity: 1;
+    transform: none;
+  }
+  .row:has(:focus-visible)::before {
+    opacity: 1;
+    transform: none;
+    background: var(--accent-fg);
+  }
+  .lbl,
+  .hint {
+    transition: color var(--t) var(--ease);
   }
   .row.stack {
     grid-template-columns: minmax(0, 1fr);
