@@ -1,19 +1,23 @@
 <script lang="ts">
   // Browser-only harness: a fake desktop + the real overlay inside a fake native window that
   // follows the overlay_resize requests (dashed outline = window bounds).
-  // Query flags: ?scenario=<id> &theme=light &width=compact|normal|wide &hold (don't auto-stop)
+  // Query flags: ?scenario=<id> &theme=light &width=compact|normal|wide &pos=top &accent=4FD1FF
+  // &hold (don't auto-stop). Scenarios: live, livefix, longlive, dictate, translate, translong,
+  // ask, transcribing, refining, done, reprocess, error.
   import { onMount } from "svelte";
   import { on } from "../lib/api";
   import { mock, mockEmit, simulateOverlay, stopSimulation, type SimScenario } from "../lib/mock";
   import { EVENTS, type OverlayEvent, type Settings } from "../lib/types";
   import Overlay from "./Overlay.svelte";
 
-  type Scn = SimScenario | "reprocess" | "longlive";
+  type Scn = SimScenario | "reprocess" | "longlive" | "livefix" | "translong";
   const SCENARIOS: { id: Scn; label: string }[] = [
     { id: "live", label: "Ditado + ao vivo" },
     { id: "longlive", label: "Ao vivo longo" },
+    { id: "livefix", label: "Ao vivo + correção" },
     { id: "dictate", label: "Ditado" },
     { id: "translate", label: "Tradução" },
+    { id: "translong", label: "Tradução longa + idiomas" },
     { id: "ask", label: "Pergunta" },
     { id: "transcribing", label: "Transcrevendo" },
     { id: "refining", label: "Refinando" },
@@ -61,9 +65,82 @@
       " ",
     );
 
+  // Live text the way Rust builds it: finished segments + current tail, where each finished
+  // segment is later REPLACED in place by the (better) cloud transcript.
+  const SEGS: [string, string][] = [
+    ["eu queria saber se a gente consegue marcar", "Eu queria saber se a gente consegue marcar"],
+    ["aquela reunião pra quinta de tarde", "aquela reunião para quinta-feira à tarde,"],
+    ["porque na quarta eu não consigo", "porque na quarta eu não consigo."],
+    ["e também preciso revisar a apresentação", "Também preciso revisar a apresentação"],
+    ["antes de mandar pro cliente", "antes de mandar para o cliente."],
+  ];
+  const LONG_TR =
+    "About the new project: I think we first need to align with the design team on which screens make it into the first version. Then we should close the schedule with the engineering folks, and only after that present it to the client next week. If we show it earlier, it will look loose and ownerless, and that is the last impression we want to give. I'd also like us to agree on who owns each part of the delivery, so nobody is surprised later. Finally, let's keep a short list of open risks — budget, hiring and the API migration — and review it every Monday until launch, so that the whole team stays on the same page and nothing slips through the cracks.";
+
   function run(id: Scn) {
     clearLocal();
     const emit = (e: OverlayEvent) => mockEmit(EVENTS.overlayState, e);
+    if (id === "livefix") {
+      stopSimulation();
+      emit({ phase: "listening", mode: "dictate", style_id: "natural", target: null, live: true });
+      const fin: string[] = []; // finished segments (rough → refined)
+      let seg = 0;
+      let w = 0;
+      let t = 0;
+      const push = () => {
+        const tail = seg < SEGS.length ? SEGS[seg][0].split(" ").slice(0, w).join(" ") : "";
+        mockEmit(EVENTS.overlayPartial, { text: [...fin, tail].join("  ").replace(/^ +| +$/g, "") });
+      };
+      lvl = window.setInterval(() => {
+        t += 33;
+        mockEmit(EVENTS.overlayLevel, 0.3 + Math.abs(Math.sin(t / 120)) * 0.4 + Math.random() * 0.1);
+        if (t % 297 >= 33 || seg >= SEGS.length) return;
+        const words = SEGS[seg][0].split(" ");
+        if (w < words.length) {
+          w++;
+        } else {
+          const k = seg;
+          fin.push(SEGS[k][0]);
+          seg++;
+          w = 0;
+          // the cloud transcript of segment k lands a bit later and replaces it mid-string
+          later(1300, () => {
+            fin[k] = SEGS[k][1];
+            push();
+          });
+        }
+        push();
+      }, 33);
+      if (auto)
+        later(14000, () => {
+          clearInterval(lvl);
+          emit({ phase: "transcribing" });
+          later(900, () => simulateOverlay("done", false));
+        });
+      return;
+    }
+    if (id === "translong") {
+      stopSimulation();
+      emit({
+        phase: "done",
+        result: {
+          id: `translong-${Date.now()}`,
+          ts: new Date().toISOString(),
+          mode: "translate",
+          raw: LONG.join(" "),
+          text: LONG_TR,
+          style_id: "natural",
+          target: "en",
+          provider: "groq · openai/gpt-oss-20b",
+          stt_provider: "groq · whisper-large-v3-turbo",
+          pasted: true,
+          duration_ms: 14200,
+          warnings: [],
+        },
+      });
+      later(1500, () => document.querySelector<HTMLButtonElement>('.win .chip[data-k="translate"]')?.click());
+      return;
+    }
     if (id === "reprocess") {
       simulateOverlay("done", auto);
       // Click another style like the user would; Rust (old builds) also leaked a stray phase.
@@ -100,6 +177,15 @@
     }
     simulateOverlay(id, auto);
   }
+  /** Follow-mouse monitor switch, as Rust does it: out → move (~140ms) → in. */
+  function move() {
+    mockEmit("overlay-move", { phase: "out" });
+    later(140, () => {
+      shift = shift === 0 ? 1 : 0;
+      later(16, () => mockEmit("overlay-move", { phase: "in" }));
+    });
+  }
+  let shift = $state(0);
   function hide() {
     clearLocal();
     stopSimulation();
@@ -137,6 +223,7 @@
       {#each SCENARIOS as s}
         <button type="button" onclick={() => run(s.id)}>{s.label}</button>
       {/each}
+      <button type="button" onclick={move}>Trocar de monitor</button>
       <button type="button" onclick={hide}>Esconder</button>
     </div>
     <div class="btns">
@@ -163,7 +250,7 @@
     </div>
   </div>
 
-  <div class="win" class:frame class:top={position === "top"} style="width:{win.w}px;height:{win.h}px">
+  <div class="win" class:frame class:top={position === "top"} style="width:{win.w}px;height:{win.h}px;margin-left:{shift * 180}px">
     <Overlay />
   </div>
 </div>

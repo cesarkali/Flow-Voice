@@ -179,6 +179,7 @@ pub fn run() {
             commands::install_update,
             commands::open_url,
             commands::quit_app,
+            commands::author_avatar,
         ])
         .build(tauri::generate_context!())
         .expect("error while building FlowVoice");

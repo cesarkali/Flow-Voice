@@ -225,15 +225,24 @@ fn message_text(v: &Value) -> String {
 }
 
 /// Reasoning knob per provider: we want fast, non-thinking rewrites.
-fn reasoning_param(provider: &str, model: &str) -> Option<(&'static str, Value)> {
+fn reasoning_param(provider: &str, model: &str, effort: &'static str) -> Option<(&'static str, Value)> {
     let m = model.to_lowercase();
     match provider {
-        "groq" if m.contains("gpt-oss") => Some(("reasoning_effort", json!("low"))),
+        "groq" if m.contains("gpt-oss") => Some(("reasoning_effort", json!(effort))),
         "openai" if m.starts_with("gpt-5") || m.starts_with("gpt-6") || m.starts_with('o') => {
-            Some(("reasoning_effort", json!("low")))
+            Some(("reasoning_effort", json!(effort)))
         }
-        "gemini" => Some(("reasoning_effort", json!("low"))),
+        "gemini" => Some(("reasoning_effort", json!(effort))),
         _ => None,
+    }
+}
+
+/// Stronger model per provider for the voice assistant (answers need more than rewrites).
+pub fn strong_model(provider: &str, configured: &str) -> String {
+    match provider {
+        "groq" if configured.contains("gpt-oss-20b") => "openai/gpt-oss-120b".into(),
+        "gemini" if configured.contains("flash-lite") => "gemini-3.8-flash".into(),
+        _ => configured.to_string(),
     }
 }
 
@@ -245,6 +254,20 @@ pub async fn chat(
     messages: &[ChatMsg],
     temperature: f32,
     max_tokens: u32,
+) -> Result<String, ProviderError> {
+    chat_with_effort(client, provider, cfg, key, messages, temperature, max_tokens, "low").await
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn chat_with_effort(
+    client: &reqwest::Client,
+    provider: &str,
+    cfg: &ProviderSettings,
+    key: &str,
+    messages: &[ChatMsg],
+    temperature: f32,
+    max_tokens: u32,
+    effort: &'static str,
 ) -> Result<String, ProviderError> {
     let model = cfg.model.trim();
     if model.is_empty() {
@@ -273,7 +296,7 @@ pub async fn chat(
     if provider == "groq" {
         body["include_reasoning"] = json!(false);
     }
-    if let Some((k, v)) = reasoning_param(provider, model) {
+    if let Some((k, v)) = reasoning_param(provider, model, effort) {
         body[k] = v;
     }
     let send = |body: Value| {
@@ -345,9 +368,9 @@ pub struct SearchResult {
 pub async fn tavily(client: &reqwest::Client, key: &str, query: &str) -> Result<SearchResult, ProviderError> {
     let body = json!({
         "query": query,
-        "search_depth": "basic",
-        "max_results": 5,
-        "include_answer": true,
+        "search_depth": "advanced",
+        "max_results": 6,
+        "include_answer": "advanced",
     });
     let resp = client
         .post("https://api.tavily.com/search")

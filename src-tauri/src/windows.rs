@@ -14,24 +14,38 @@ pub fn setup_overlay(app: &AppHandle) {
     }
 }
 
-/// Places the overlay bottom/top-center on the primary monitor (or the one under the mouse when
-/// the user enabled it). `size` is the logical size just requested, since outer_size() may still
-/// report the previous one right after set_size().
-fn place_overlay(app: &AppHandle, size: Option<(f64, f64)>) {
-    let Some(w) = app.get_webview_window("overlay") else { return };
-    let (top, follow) = {
-        let s = app.state::<AppState>().settings();
-        (s.overlay_position == "top", s.overlay_follow_mouse)
-    };
+/// Monitor the overlay should use right now: the one under the mouse (follow mode) or the primary.
+fn target_monitor(app: &AppHandle, w: &tauri::WebviewWindow) -> Option<tauri::Monitor> {
+    let follow = app.state::<AppState>().settings().overlay_follow_mouse;
     let under_mouse = || {
         app.cursor_position()
             .ok()
             .and_then(|p| app.monitor_from_point(p.x, p.y).ok().flatten())
     };
-    let monitor = if follow { under_mouse() } else { None }
+    if follow { under_mouse() } else { None }
         .or_else(|| w.primary_monitor().ok().flatten())
-        .or_else(under_mouse);
-    let Some(m) = monitor else { return };
+        .or_else(under_mouse)
+}
+
+fn monitor_key(m: &tauri::Monitor) -> (i32, i32) {
+    let p = m.work_area().position;
+    (p.x, p.y)
+}
+
+/// The monitor the overlay is pinned to (chosen when it was shown), so resizes never make it
+/// jump to another screen mid-dictation.
+fn pinned_monitor(app: &AppHandle, w: &tauri::WebviewWindow) -> Option<tauri::Monitor> {
+    let key = *app.state::<AppState>().overlay_monitor.lock();
+    key.and_then(|k| w.available_monitors().ok()?.into_iter().find(|m| monitor_key(m) == k))
+        .or_else(|| target_monitor(app, w))
+}
+
+/// Places the overlay bottom/top-center on its pinned monitor. `size` is the logical size just
+/// requested, since outer_size() may still report the previous one right after set_size().
+fn place_overlay(app: &AppHandle, size: Option<(f64, f64)>) {
+    let Some(w) = app.get_webview_window("overlay") else { return };
+    let top = app.state::<AppState>().settings().overlay_position == "top";
+    let Some(m) = pinned_monitor(app, &w) else { return };
     let scale = m.scale_factor();
     let area = m.work_area();
     let (width, height) = match size {
@@ -58,8 +72,23 @@ fn place_overlay(app: &AppHandle, size: Option<(f64, f64)>) {
 
 pub fn show_overlay(app: &AppHandle) {
     let Some(w) = app.get_webview_window("overlay") else { return };
+    let Some(target) = target_monitor(app, &w) else { return };
+    let key = monitor_key(&target);
+    let visible = w.is_visible().unwrap_or(false);
+    let previous = app.state::<AppState>().overlay_monitor.lock().replace(key);
+    if visible && previous.is_some() && previous != Some(key) {
+        // Changing screens while visible: fade out, move, fade back in (no hard jump).
+        let _ = app.emit_to("overlay", "overlay-move", serde_json::json!({ "phase": "out" }));
+        let app = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(140));
+            place_overlay(&app, None);
+            let _ = app.emit_to("overlay", "overlay-move", serde_json::json!({ "phase": "in" }));
+        });
+        return;
+    }
     place_overlay(app, None);
-    if !w.is_visible().unwrap_or(false) {
+    if !visible {
         crate::platform::show_without_focus(&w);
     }
 }

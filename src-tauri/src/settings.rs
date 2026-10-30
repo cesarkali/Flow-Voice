@@ -104,6 +104,9 @@ pub struct Settings {
     pub overlay_follow_mouse: bool,
     pub dictionary: Vec<String>,
     pub onboarded: bool,
+    /// One-shot migrations already applied to this file (missing in old files = 0).
+    #[serde(default)]
+    pub schema: u32,
 }
 
 impl Default for Settings {
@@ -134,9 +137,10 @@ impl Default for Settings {
             history_enabled: true,
             overlay_position: "bottom".into(),
             overlay_width: "normal".into(),
-            overlay_follow_mouse: false,
+            overlay_follow_mouse: true,
             dictionary: vec![],
             onboarded: false,
+            schema: 1,
         }
     }
 }
@@ -151,7 +155,7 @@ fn provider(model: &str, stt_model: &str, base_url: &str) -> ProviderSettings {
 /// Model ids verified against provider docs on 2026-10-29. Users can edit them in the UI.
 pub fn default_providers() -> BTreeMap<String, ProviderSettings> {
     let mut m = BTreeMap::new();
-    m.insert("groq".into(), provider("openai/gpt-oss-20b", "whisper-large-v3-turbo", ""));
+    m.insert("groq".into(), provider("openai/gpt-oss-20b", "whisper-large-v3", ""));
     m.insert("gemini".into(), provider("gemini-3.1-flash-lite", "gemini-3.1-flash-lite", ""));
     m.insert("openai".into(), provider("gpt-6-luna", "gpt-transcribe", ""));
     m.insert("openrouter".into(), provider("google/gemma-4-31b-it:free", "", ""));
@@ -340,6 +344,15 @@ impl Settings {
 
     /// Fills gaps left by older/partial files so the rest of the app can rely on every key existing.
     pub fn normalize(&mut self) {
+        if self.schema < 1 {
+            // 2.0.x: Groq's full large-v3 recognizes names/places much better than turbo, same free tier.
+            if let Some(g) = self.providers.get_mut("groq") {
+                if g.stt_model == "whisper-large-v3-turbo" {
+                    g.stt_model = "whisper-large-v3".into();
+                }
+            }
+            self.schema = 1;
+        }
         let defaults = default_providers();
         for (id, def) in defaults {
             let entry = self.providers.entry(id).or_insert_with(|| def.clone());

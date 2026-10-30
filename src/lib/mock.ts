@@ -125,7 +125,7 @@ const DEFAULT_SETTINGS: Settings = {
   history_enabled: true,
   overlay_position: "bottom",
   overlay_width: "normal",
-  overlay_follow_mouse: false,
+  overlay_follow_mouse: true,
   dictionary: ["FlowVoice", "Caliberda", "Tauri", "Svelte"],
   onboarded: true,
 };
@@ -672,6 +672,10 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       return;
     case "quit_app":
       return;
+    case "author_avatar":
+      // ?noavatar shows the initials fallback; otherwise the live GitHub photo (needs network)
+      await sleep(300);
+      return (new URLSearchParams(location.search).has("noavatar") ? null : "https://avatars.githubusercontent.com/cesarkali?s=96");
   }
   console.warn("[mock] unknown command", cmd, a);
   return null;

@@ -88,4 +88,6 @@ export const api = {
   installUpdate: () => call<void>("install_update"),
   openUrl: (url: string) => call<void>("open_url", { url }),
   quit: () => call<void>("quit_app"),
+  /** Author photo as a data URL (GitHub avatar, cached for offline), or null. */
+  authorAvatar: () => call<string | null>("author_avatar"),
 };

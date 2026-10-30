@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { t } from "../../lib/i18n.svelte";
+  import { t, type TKey } from "../../lib/i18n.svelte";
+  import { tick } from "svelte";
   import Icon from "../../lib/icons/Icon.svelte";
-  import { app, hasKey } from "../../lib/stores.svelte";
+  import ProviderLogo from "../../lib/icons/ProviderLogo.svelte";
+  import { app, hasKey, usableLlm } from "../../lib/stores.svelte";
   import type { SettingsPage } from "../../lib/types";
   import Section from "../../lib/ui/Section.svelte";
   import { pname, PROVIDERS } from "../providers";
@@ -18,13 +20,61 @@
   const ai = PROVIDERS.filter((p) => p.id !== "tavily");
   const search = PROVIDERS.filter((p) => p.id === "tavily");
 
+  // Header: logos of the providers that are working right now.
+  const activeAi = $derived.by(() => {
+    const ids: string[] = [...usableLlm()];
+    for (const p of s.stt.cloud_order) if (hasKey(p) && !ids.includes(p)) ids.push(p);
+    if (s.stt.engine === "local") ids.push("local");
+    return ids;
+  });
+  const activeSearch = $derived(hasKey("tavily" as never) ? ["tavily"] : []);
+
+  const groups = $derived<{ key: TKey; ids: string[] }[]>([
+    { key: "prov.sec_ai", ids: activeAi },
+    { key: "prov.sec_search", ids: activeSearch },
+  ]);
+  const nameOf = (id: string) => (id === "local" ? t("speech.local_title") : pname(id));
+
+  async function reveal(id: string) {
+    if (id === "local") return;
+    open[id] = true;
+    await tick();
+    document.getElementById(`prov-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   const llmReady = (id: string) =>
     id === "ollama" ? true : id === "custom" ? !!s.providers.custom.base_url && !!s.providers.custom.model : hasKey(id as never);
 </script>
 
 <header class="ph">
-  <h1>{t("prov.title")}</h1>
-  <p class="muted">{t("prov.subtitle")}</p>
+  <div class="pht">
+    <h1>{t("prov.title")}</h1>
+    <p class="muted">{t("prov.subtitle")}</p>
+  </div>
+  <div class="active" aria-label={t("obx.prov_active")}>
+    {#each groups as g (g.key)}
+      <div class="grp">
+        <span class="label">{t(g.key)}</span>
+        <span class="stack">
+          {#each g.ids as id, i (id)}
+            <button
+              type="button"
+              class="lgb"
+              style:--i={i}
+              style:z-index={20 - i}
+              title={nameOf(id)}
+              aria-label={nameOf(id)}
+              onclick={() => reveal(id)}
+            >
+              <ProviderLogo {id} size={26} />
+            </button>
+          {:else}
+            <span class="none mono">{t("home.none")}</span>
+          {/each}
+        </span>
+      </div>
+    {/each}
+  </div>
 </header>
 
 <p class="notice"><Icon name="info" size={15} />{t("prov.github_notice")}</p>
@@ -60,8 +110,74 @@
 </Section>
 
 <style>
+  .ph {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .pht {
+    flex: 1 1 320px;
+    min-width: 0;
+  }
   .ph h1 {
     font-size: 26px;
+  }
+  .active {
+    display: flex;
+    gap: 18px;
+    flex: none;
+  }
+  .grp {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .grp .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .stack {
+    display: flex;
+    align-items: center;
+    min-height: 30px;
+    padding-left: 6px;
+  }
+  .lgb {
+    position: relative;
+    margin-left: -6px;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 0 0 2px var(--bg);
+    transition: transform var(--t) var(--spring);
+    animation: lg-in 420ms var(--spring) both;
+    animation-delay: calc(var(--i) * 50ms);
+  }
+  .lgb:hover,
+  .lgb:focus-visible {
+    transform: translate3d(0, -3px, 0) rotate(-6deg);
+    z-index: 30 !important;
+  }
+  .lgb:active {
+    transform: scale(0.94);
+    transition-duration: 60ms;
+  }
+  .none {
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  @keyframes lg-in {
+    from {
+      opacity: 0;
+      transform: translate3d(-8px, 0, 0) scale(0.8);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lgb {
+      animation: none;
+    }
   }
   .ph p {
     margin-top: 6px;

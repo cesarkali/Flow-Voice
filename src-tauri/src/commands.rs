@@ -403,6 +403,40 @@ pub fn open_url(app: AppHandle, url: String) -> CmdResult<()> {
     app.opener().open_url(url, None::<&str>).map_err(err)
 }
 
+/// Author photo (GitHub avatar) as a data URL. Refreshed at most every 12 h; offline it falls
+/// back to the last downloaded copy, and to None (initials) if there never was one.
+#[tauri::command]
+pub async fn author_avatar(state: State<'_, AppState>) -> CmdResult<Option<String>> {
+    use base64::Engine;
+    let path = state.config_dir.join("author-avatar.img");
+    let fresh = std::fs::metadata(&path)
+        .and_then(|m| m.modified())
+        .map(|t| t.elapsed().map(|e| e.as_secs() < 12 * 3600).unwrap_or(false))
+        .unwrap_or(false);
+    if !fresh {
+        let fetched = async {
+            let resp = state
+                .http
+                .get("https://github.com/cesarkali.png?size=160")
+                .timeout(std::time::Duration::from_secs(8))
+                .send()
+                .await
+                .ok()?
+                .error_for_status()
+                .ok()?;
+            let bytes = resp.bytes().await.ok()?;
+            (bytes.len() > 200).then_some(bytes)
+        }
+        .await;
+        if let Some(bytes) = fetched {
+            let _ = std::fs::write(&path, &bytes);
+        }
+    }
+    let Ok(bytes) = std::fs::read(&path) else { return Ok(None) };
+    let mime = if bytes.starts_with(&[0x89, b'P', b'N', b'G']) { "image/png" } else { "image/jpeg" };
+    Ok(Some(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes))))
+}
+
 #[tauri::command]
 pub fn quit_app(app: AppHandle) {
     app.exit(0);

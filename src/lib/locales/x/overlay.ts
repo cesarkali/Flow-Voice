@@ -17,6 +17,9 @@ export default defineExt({
     "ovx.settings_tip": "Abre as configurações de provedores e chaves",
     "ovx.pasted_prev": "Versão anterior colada",
     "ovx.rewriting": "Reescrevendo…",
+    "ovx.more": "Ver tudo",
+    "ovx.less": "Recolher",
+    "ovx.back": "Estilos",
   },
   en: {
     "ovx.paste_tip": "Paste this text where the cursor was when you started speaking",
@@ -33,6 +36,9 @@ export default defineExt({
     "ovx.settings_tip": "Open provider and key settings",
     "ovx.pasted_prev": "Previous version pasted",
     "ovx.rewriting": "Rewriting…",
+    "ovx.more": "Show all",
+    "ovx.less": "Collapse",
+    "ovx.back": "Styles",
   },
   es: {
     "ovx.paste_tip": "Pega este texto donde estaba el cursor cuando empezaste a hablar",
@@ -49,5 +55,8 @@ export default defineExt({
     "ovx.settings_tip": "Abre la configuración de proveedores y claves",
     "ovx.pasted_prev": "Versión anterior pegada",
     "ovx.rewriting": "Reescribiendo…",
+    "ovx.more": "Ver todo",
+    "ovx.less": "Contraer",
+    "ovx.back": "Estilos",
   },
 });

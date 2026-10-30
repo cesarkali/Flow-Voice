@@ -83,6 +83,8 @@ export interface Settings {
   /** Custom vocabulary: names/terms to bias transcription and the LLM. */
   dictionary: string[];
   onboarded: boolean;
+  /** Internal migration counter (round-trip it unchanged). */
+  schema?: number;
 }
 
 export interface KeyStatus {

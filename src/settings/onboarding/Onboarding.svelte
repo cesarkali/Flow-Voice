@@ -7,8 +7,9 @@
   import { t, type TKey } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
   import Logo from "../../lib/icons/Logo.svelte";
+  import ProviderLogo from "../../lib/icons/ProviderLogo.svelte";
   import type { IconName } from "../../lib/icons/paths";
-  import { app, completeOnboarding } from "../../lib/stores.svelte";
+  import { app, completeOnboarding, hasKey } from "../../lib/stores.svelte";
   import { EVENTS, type KeyProviderId, type LlmProviderId, type LocalModel, type ModelProgress, type SttProviderId } from "../../lib/types";
   import Badge from "../../lib/ui/Badge.svelte";
   import Button from "../../lib/ui/Button.svelte";
@@ -16,23 +17,30 @@
   import Keys from "../../lib/ui/Keys.svelte";
   import { keycapsOf } from "../../lib/ui/hotkeys";
   import Progress from "../../lib/ui/Progress.svelte";
-  import Segmented from "../../lib/ui/Segmented.svelte";
   import Toggle from "../../lib/ui/Toggle.svelte";
   import TitleBar from "../../lib/ui/TitleBar.svelte";
   import { pname, STT_PROVIDERS } from "../providers";
+  import BehaviorStep from "./BehaviorStep.svelte";
   import KeyStep from "./KeyStep.svelte";
 
   const s = $derived(app.settings!);
-  const TOTAL = 5;
-  const STEP_NAMES: TKey[] = ["obx.s1", "obx.s2", "obx.s3", "obx.s4", "obx.s5"];
+  const TOTAL = 6;
+  const STEP_NAMES: TKey[] = ["obx.s1", "obx.s2", "obx.s3", "obx.s4", "obx.s5", "obx.s6"];
+  /** Step numbers (the progress track, Back/Next and the per-step logic all key off these). */
+  const S = { welcome: 1, path: 2, connect: 3, hotkey: 4, behavior: 5, test: 6 } as const;
+  const OTHER: KeyProviderId[] = ["gemini", "openrouter", "mistral", "openai"];
   /** Light whisper model used for the live preview while speaking. */
   const PREVIEW_ID = "base-q5_1";
 
   let step = $state(1);
   let dir = $state(1);
   type Path = "groq" | "offline" | "other";
-  let path = $state<Path>("groq");
-  let other = $state<KeyProviderId>("gemini");
+  // Prefill from the current settings, so "Refazer configuração inicial" starts where the user is.
+  const firstKeyed = app.settings!.llm_order.find((p) => p !== "ollama" && p !== "custom" && hasKey(p)) as KeyProviderId | undefined;
+  let path = $state<Path>(
+    app.settings!.stt.engine === "local" ? "offline" : firstKeyed && firstKeyed !== "groq" && OTHER.includes(firstKeyed) ? "other" : "groq",
+  );
+  let other = $state<KeyProviderId>(firstKeyed && OTHER.includes(firstKeyed) ? firstKeyed : "gemini");
   let keyOk = $state(false);
 
   // local models (offline path + live preview)
@@ -42,7 +50,7 @@
   const modelReady = $derived(!!rec?.installed);
   const prog = $derived(rec ? progs[rec.id] : undefined);
 
-  let live = $state(true);
+  let live = $state(app.settings!.stt.live_preview);
   const previewModel = $derived(models.find((m) => m.id === PREVIEW_ID));
   const previewProg = $derived(progs[PREVIEW_ID]);
   const previewReady = $derived(!!previewModel?.installed);
@@ -116,7 +124,7 @@
 
   function leaving(from: number) {
     // Never leave global shortcuts paused if the hotkey field was still capturing.
-    if (from === 4) api.suspendHotkeys(false).catch(() => {});
+    if (from === S.hotkey) api.suspendHotkeys(false).catch(() => {});
   }
 
   function go(to: number) {
@@ -128,8 +136,8 @@
     step = to;
   }
   function next() {
-    if (step === 3) applyPath();
-    if (step === 4) applyLive();
+    if (step === S.connect) applyPath();
+    if (step === S.hotkey) applyLive();
     go(step + 1);
   }
   const back = () => go(step - 1);
@@ -137,7 +145,7 @@
   async function finish() {
     if (finishing) return;
     leaving(step);
-    if (step === 4) applyLive();
+    if (step === S.hotkey) applyLive();
     finishing = true;
     finishError = "";
     try {
@@ -158,7 +166,7 @@
   }
   const download = () => rec && startDownload(rec.id, rec.size_mb);
 
-  const canNext = $derived(step !== 3 || (path === "offline" ? modelReady : keyOk));
+  const canNext = $derived(step !== S.connect || (path === "offline" ? modelReady : keyOk || hasKey(keyProvider)));
   const frac = (p?: ModelProgress) => (p && p.total ? p.downloaded / p.total : 0);
 
   // Direction-aware step transitions (transform/opacity only).
@@ -208,7 +216,7 @@
   <div class="stage">
     {#key step}
       <section class="step stagger" in:stepIn={{ d: dir }} out:stepOut={{ d: dir }}>
-        {#if step === 1}
+        {#if step === S.welcome}
           <div class="welcome">
           <div class="wl">
           <div class="mark"><Logo size={88} animate="loop" /></div>
@@ -230,7 +238,7 @@
           </div>
           </div>
           </div>
-        {:else if step === 2}
+        {:else if step === S.path}
           <h1>{name ? t("obx.path_named", { name }) : t("ob.path_title")}</h1>
           <p class="lead">{t("ob.path_body")}</p>
           <div class="paths stagger" role="radiogroup" aria-label={t("ob.path_title")}>
@@ -238,7 +246,9 @@
               <button type="button" role="radio" aria-checked={path === p.id} class="path" class:sel={path === p.id} onclick={() => (path = p.id)}>
                 <span class="bar" aria-hidden="true"></span>
                 <span class="pnum mono" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-                <span class="pi"><Icon name={p.icon} size={20} /></span>
+                <span class="pi" class:logo={p.id === "groq"}>
+                  {#if p.id === "groq"}<ProviderLogo id="groq" size={38} />{:else}<Icon name={p.icon} size={20} />{/if}
+                </span>
                 <span class="pt">
                   <span class="ptt">{t(p.title)} {#if p.tag}<Badge tone="solid">{t("c.recommended")}</Badge>{/if}</span>
                   <span class="ptb">{t(p.body)}</span>
@@ -248,7 +258,7 @@
               </button>
             {/each}
           </div>
-        {:else if step === 3}
+        {:else if step === S.connect}
           {#if path === "offline"}
             <h1>{t("ob.model_title")}</h1>
             {#if rec}
@@ -268,21 +278,24 @@
               </div>
             {/if}
           {:else}
-            <h1>{t("ob.key_title", { provider: pname(keyProvider) })}</h1>
+            <h1 class="kh">
+              {#key keyProvider}<span class="khl"><ProviderLogo id={keyProvider} size={30} /></span>{/key}
+              <span>{t("ob.key_title", { provider: pname(keyProvider) })}</span>
+            </h1>
             <p class="lead">{t("ob.key_body")}</p>
             {#if path === "other"}
-              <div class="pick">
-                <Segmented
-                  size="sm"
-                  label={t("ob.pick_provider")}
-                  bind:value={other}
-                  options={(["gemini", "openrouter", "mistral", "openai"] as const).map((id) => ({ value: id, label: pname(id) }))}
-                />
+              <div class="pick" role="radiogroup" aria-label={t("ob.pick_provider")}>
+                {#each OTHER as id (id)}
+                  <button type="button" role="radio" aria-checked={other === id} class:sel={other === id} onclick={() => (other = id)}>
+                    <ProviderLogo {id} size={20} />
+                    <span>{pname(id)}</span>
+                  </button>
+                {/each}
               </div>
             {/if}
             <KeyStep provider={keyProvider} bind:ok={keyOk} />
           {/if}
-        {:else if step === 4}
+        {:else if step === S.hotkey}
           <h1>{t("ob.hotkey_title")}</h1>
           <p class="lead">{t("ob.hotkey_body")}</p>
           <div class="hk">
@@ -327,6 +340,10 @@
             </span>
             <Toggle label={t("obx.live_title")} bind:checked={live} />
           </div>
+        {:else if step === S.behavior}
+          <h1>{t("obx.beh_title")}</h1>
+          <p class="lead">{t("obx.beh_body")}</p>
+          <BehaviorStep />
         {:else}
           <h1>{t("ob.test_title")}</h1>
           <p class="lead">
@@ -380,10 +397,10 @@
       {#if step > 1}
         <Button variant="ghost" icon="chevronLeft" disabled={finishing} onclick={back}>{t("c.back")}</Button>
       {/if}
-      {#if step === 3 && !canNext}
+      {#if step === S.connect && !canNext}
         <Button variant="quiet" onclick={next}>{t("ob.skip_now")}</Button>
       {/if}
-      {#if step === 1}
+      {#if step === S.welcome}
         <Button variant="primary" iconRight="arrowRight" onclick={next}>{t("ob.start")}</Button>
       {:else if step < TOTAL}
         <Button variant="primary" iconRight="arrowRight" disabled={!canNext} onclick={next}>{t("c.next")}</Button>
@@ -424,7 +441,7 @@
     margin: 0 0 8px;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
   }
   .labels li {
     display: flex;
@@ -603,7 +620,18 @@
       color var(--t) var(--ease),
       transform var(--t-slow) var(--spring);
   }
-  .sel .pi {
+  .pi.logo {
+    border: 0;
+    background: none;
+    overflow: hidden;
+  }
+  .pi.logo :global(.pl) {
+    border-radius: 10px;
+  }
+  .sel .pi.logo {
+    transform: rotate(-4deg);
+  }
+  .sel .pi:not(.logo) {
     background: var(--accent);
     border-color: var(--accent);
     color: var(--on-accent);
@@ -662,6 +690,57 @@
   /* ---------- key / model */
   .pick {
     margin: 18px 0 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .pick button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 14px 0 8px;
+    border-radius: 18px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    font-size: 13px;
+    color: var(--text-2);
+    transition:
+      transform var(--t) var(--spring),
+      border-color var(--t) var(--ease),
+      background-color var(--t) var(--ease),
+      color var(--t) var(--ease);
+  }
+  .pick button :global(.pl) {
+    border-radius: 50%;
+    transition: transform var(--t-slow) var(--spring);
+  }
+  .pick button:hover {
+    color: var(--text);
+    border-color: var(--text-3);
+  }
+  .pick button:active {
+    transform: scale(0.96);
+    transition-duration: 60ms;
+  }
+  .pick button.sel {
+    color: var(--text);
+    font-weight: 600;
+    border-color: var(--accent-line);
+    background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface);
+  }
+  .pick button.sel :global(.pl) {
+    transform: rotate(-8deg) scale(1.06);
+  }
+  .kh {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .khl {
+    display: grid;
+    flex: none;
+    animation: fv-pop var(--t-slow) var(--spring) both;
   }
   .step :global(.ks) {
     margin-top: 20px;

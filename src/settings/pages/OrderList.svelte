@@ -2,6 +2,7 @@
   import { flip } from "svelte/animate";
   import { t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
+  import ProviderLogo from "../../lib/icons/ProviderLogo.svelte";
 
   let {
     items = $bindable(),
@@ -81,6 +82,7 @@
     >
       <span class="grip" title={t("c.drag")}><Icon name="grip" size={16} /></span>
       <span class="pos mono">{i + 1}</span>
+      <span class="lg"><ProviderLogo {id} size={18} /></span>
       <span class="nm">{nameOf(id)}</span>
       {#if !ready(id)}<span class="faint mono tiny">{t("prov.no_key_short")}</span>{/if}
       <span class="arrows">
@@ -144,6 +146,16 @@
   }
   li.off .nm {
     color: var(--text-3);
+  }
+  .lg {
+    display: grid;
+    transition:
+      opacity var(--t) var(--ease),
+      filter var(--t) var(--ease);
+  }
+  li.off .lg {
+    opacity: 0.45;
+    filter: grayscale(1);
   }
   .grip {
     color: var(--text-3);

@@ -3,6 +3,7 @@ import { defineExt } from "./define";
 
 export default defineExt({
   pt: {
+    "home.setup_voice": "A IA já está pronta, mas falta quem transcreva sua voz. Adicione uma chave Groq grátis ou baixe o modelo offline.",
     "home.sty_create": "Criar estilo",
     "home.sty_new_title": "Novo estilo",
     "home.sty_edit_title": "Editar estilo",
@@ -63,6 +64,7 @@ export default defineExt({
     "home.greet_evening": "Boa noite",
   },
   en: {
+    "home.setup_voice": "The AI is ready, but nothing is set up to transcribe your voice yet. Add a free Groq key or download the offline model.",
     "home.sty_create": "Create style",
     "home.sty_new_title": "New style",
     "home.sty_edit_title": "Edit style",
@@ -123,6 +125,7 @@ export default defineExt({
     "home.greet_evening": "Good evening",
   },
   es: {
+    "home.setup_voice": "La IA ya está lista, pero falta quien transcriba tu voz. Agrega una clave gratis de Groq o descarga el modelo offline.",
     "home.sty_create": "Crear estilo",
     "home.sty_new_title": "Nuevo estilo",
     "home.sty_edit_title": "Editar estilo",

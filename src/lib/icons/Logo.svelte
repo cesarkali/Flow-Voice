@@ -49,9 +49,10 @@
       <stop offset="0" stop-color="#FFFFFF" />
       <stop offset="1" stop-color="#C9C9C4" />
     </linearGradient>
+    <!-- the caret follows the user's accent color -->
     <linearGradient id="lime-{uid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#EBFF8F" />
-      <stop offset="1" stop-color="#B9E01F" />
+      <stop offset="0" style:stop-color="color-mix(in srgb, var(--accent, #D7FF3F) 70%, white)" />
+      <stop offset="1" style:stop-color="color-mix(in srgb, var(--accent, #D7FF3F) 85%, black)" />
     </linearGradient>
     {#if !small}
       <pattern id="dots-{uid}" width="32" height="32" patternUnits="userSpaceOnUse">
@@ -77,7 +78,7 @@
 
   {#key replay}
     {#if !small}
-      <path class="base" d="M180 774H874" stroke="#D7FF3F" stroke-opacity=".45" stroke-width="12" stroke-linecap="round" pathLength="1" />
+      <path class="base" d="M180 774H874" style:stroke="var(--accent, #D7FF3F)" stroke-opacity=".45" stroke-width="12" stroke-linecap="round" pathLength="1" />
     {/if}
     <g class="bars">
       {#each small ? SMALL_BARS : BARS as b, i (i)}
@@ -95,11 +96,11 @@
     </g>
     <g class="caret">
       {#if !small && glow}
-        <g class="bloom" filter="url(#bloom-{uid})" fill="#D7FF3F">
+        <g class="bloom" filter="url(#bloom-{uid})" style:fill="var(--accent, #D7FF3F)">
           <rect x="710" y="250" width="84" height="524" rx="42" />
         </g>
       {/if}
-      <g fill={small ? "#D7FF3F" : `url(#lime-${uid})`}>
+      <g style:fill={small ? "var(--accent, #D7FF3F)" : `url(#lime-${uid})`}>
         {#if small}
           <rect x="666" y="196" width="136" height="632" rx="40" />
           <rect x="584" y="164" width="300" height="128" rx="56" />

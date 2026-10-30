@@ -2,7 +2,7 @@
 
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager, Wry};
+use tauri::{AppHandle, Emitter, Manager, Wry};
 
 use crate::pipeline;
 use crate::state::{AppState, RecordMode};
@@ -22,6 +22,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     let style_menu = Submenu::with_items(app, "Estilo", true, &style_refs)?;
     let settings = MenuItem::with_id(app, "settings", "Configurações", true, None::<&str>)?;
     let history = MenuItem::with_id(app, "history", "Histórico", true, None::<&str>)?;
+    let wizard = MenuItem::with_id(app, "wizard", "Refazer configuração inicial", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Sair do FlowVoice", true, None::<&str>)?;
     Menu::with_items(
         app,
@@ -31,6 +32,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
             &PredefinedMenuItem::separator(app)?,
             &history,
             &settings,
+            &wizard,
             &PredefinedMenuItem::separator(app)?,
             &quit,
         ],
@@ -52,6 +54,7 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
                 "settings" => windows::open_settings(app, Some("general".into())),
                 "history" => windows::open_settings(app, Some("home".into())),
                 "quit" => app.exit(0),
+                "wizard" => restart_onboarding(app),
                 _ if id.starts_with("style:") => {
                     let st = app.state::<AppState>();
                     let mut s = st.settings();
@@ -78,4 +81,17 @@ pub fn refresh(app: &AppHandle) {
     if let (Some(tray), Ok(menu)) = (app.tray_by_id(TRAY_ID), build_menu(app)) {
         let _ = tray.set_menu(Some(menu));
     }
+}
+
+/// Opens the first-run wizard again (settings and keys are kept).
+pub fn restart_onboarding(app: &AppHandle) {
+    let st = app.state::<AppState>();
+    let mut s = st.settings();
+    s.onboarded = false;
+    if let Ok(saved) = st.save_settings(s) {
+        crate::commands::broadcast_settings(app, &saved, None);
+    }
+    // The settings window ignores late "onboarded: false" echoes, so say it explicitly.
+    let _ = app.emit_to("main", "restart-onboarding", ());
+    windows::open_settings(app, None);
 }

@@ -21,19 +21,19 @@
 </header>
 
 <Section label={t("sc.title")}>
-  <Row label={t("sc.dictate")} hint={t("sc.dictate_hint")}>
+  <Row id="set-sc-dictate" label={t("sc.dictate")} hint={t("sc.dictate_hint")}>
     <HotkeyInput label={t("sc.dictate")} bind:value={s.hotkeys.dictate} />
   </Row>
-  <Row label={t("sc.translate")} hint={t("sc.translate_hint", { lang: langName(s.translation_target) })}>
+  <Row id="set-sc-translate" label={t("sc.translate")} hint={t("sc.translate_hint", { lang: langName(s.translation_target) })}>
     <HotkeyInput label={t("sc.translate")} bind:value={s.hotkeys.translate} />
   </Row>
-  <Row label={t("sc.ask")} hint={t("sc.ask_hint")}>
+  <Row id="set-sc-ask" label={t("sc.ask")} hint={t("sc.ask_hint")}>
     <HotkeyInput label={t("sc.ask")} bind:value={s.hotkeys.ask} />
   </Row>
 </Section>
 
 <Section label={t("sc.mode")}>
-  <Row label={t("sc.mode")} hint={s.hotkey_mode === "toggle" ? t("sc.mode_toggle_hint") : t("sc.mode_hold_hint")}>
+  <Row id="set-sc-mode" label={t("sc.mode")} hint={s.hotkey_mode === "toggle" ? t("sc.mode_toggle_hint") : t("sc.mode_hold_hint")}>
     <Segmented
       label={t("sc.mode")}
       bind:value={s.hotkey_mode}

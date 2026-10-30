@@ -6,6 +6,7 @@
   import { api, on } from "../../lib/api";
   import { clockTime, langName, locale, relTime, t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
+  import ProviderLogo from "../../lib/icons/ProviderLogo.svelte";
   import { app, hasKey, usableLlm } from "../../lib/stores.svelte";
   import { EVENTS, type DictationResult, type SettingsPage } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
@@ -47,13 +48,13 @@
   const hold = $derived(s.hotkey_mode === "hold");
 
   const stt = $derived.by(() => {
-    if (s.stt.engine === "local") return { name: t("speech.local_title"), model: s.stt.local_model };
+    if (s.stt.engine === "local") return { id: "local", name: t("speech.local_title"), model: s.stt.local_model };
     const p = s.stt.cloud_order.find((id) => hasKey(id));
-    return p ? { name: pname(p), model: s.providers[p].stt_model } : null;
+    return p ? { id: p as string, name: pname(p), model: s.providers[p].stt_model } : null;
   });
   const llm = $derived.by(() => {
     const p = usableLlm()[0];
-    return p ? { name: pname(p), model: s.providers[p].model } : null;
+    return p ? { id: p as string, name: pname(p), model: s.providers[p].model } : null;
   });
   const styleName = (id: string) => s.styles.find((x) => x.id === id)?.name ?? id;
   const needsSetup = $derived((s.stt.engine === "cloud" && !STT_PROVIDERS.some((p) => hasKey(p))) || !llm);
@@ -187,19 +188,15 @@
 <nav class="setup-line" aria-label={t("home.setup_line")}>
   <button type="button" onclick={() => onnavigate?.("speech")} title={stt?.model}>
     <span class="k">{t("home.voice")}</span>
+    {#if stt}<ProviderLogo id={stt.id} size={16} />{/if}
     <span class="v" class:none={!stt}>{stt ? stt.name : t("home.none")}</span>
     <Icon name="chevronRight" size={13} />
   </button>
   <span class="sep" aria-hidden="true"></span>
   <button type="button" onclick={() => onnavigate?.("providers")} title={llm?.model}>
     <span class="k">{t("home.ai")}</span>
+    {#if llm}<ProviderLogo id={llm.id} size={16} />{/if}
     <span class="v" class:none={!llm}>{llm ? llm.name : t("home.none")}</span>
-    <Icon name="chevronRight" size={13} />
-  </button>
-  <span class="sep" aria-hidden="true"></span>
-  <button type="button" onclick={() => onnavigate?.("styles")}>
-    <span class="k">{t("home.style")}</span>
-    <span class="v">{styleName(s.active_style)}</span>
     <Icon name="chevronRight" size={13} />
   </button>
 </nav>
@@ -207,8 +204,8 @@
 {#if needsSetup}
   <div class="setup" role="status" in:fly={{ y: 6, duration: 220 }}>
     <Icon name="key" size={18} />
-    <p>{t("home.setup_needed")}</p>
-    <Button size="sm" variant="primary" iconRight="arrowRight" onclick={() => onnavigate?.("providers")}>{t("home.setup")}</Button>
+    <p>{llm && !stt ? t("home.setup_voice") : t("home.setup_needed")}</p>
+    <Button size="sm" variant="primary" iconRight="arrowRight" onclick={() => onnavigate?.(llm && !stt ? "speech" : "providers")}>{t("home.setup")}</Button>
   </div>
 {/if}
 
@@ -534,6 +531,13 @@
   }
   .setup-line button:first-child {
     margin-left: -8px;
+  }
+  .setup-line button :global(.pl) {
+    margin-left: 2px;
+    transition: transform var(--t) var(--spring);
+  }
+  .setup-line button:hover :global(.pl) {
+    transform: rotate(-6deg) scale(1.08);
   }
   .setup-line .k {
     font-family: var(--mono);

@@ -193,13 +193,13 @@
 {/if}
 
 <Section label={t("nav.speech")}>
-  <Row label={t("speech.language")} hint={t("speech.language_hint")}>
+  <Row id="set-speech-language" label={t("speech.language")} hint={t("speech.language_hint")}>
     <Select label={t("speech.language")} width="240px" bind:value={s.speech_language} options={langOptions} />
   </Row>
-  <Row label={t("speech.mic")}>
+  <Row id="set-speech-mic" label={t("speech.mic")}>
     <Select label={t("speech.mic")} width="260px" bind:value={s.input_device} options={micOptions} />
   </Row>
-  <Row label={t("speech.live")} hint={t("ctl.live_hint")}>
+  <Row id="set-speech-live" label={t("speech.live")} hint={t("ctl.live_hint")}>
     <Toggle label={t("speech.live")} bind:checked={s.stt.live_preview} onchange={setLive} />
     {#snippet below()}
       {#if s.stt.live_preview && previewModel}

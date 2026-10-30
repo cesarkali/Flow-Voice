@@ -3,7 +3,7 @@
   import { api, on } from "../../lib/api";
   import { t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
-  import { app } from "../../lib/stores.svelte";
+  import { app, restartOnboarding } from "../../lib/stores.svelte";
   import { EVENTS, type AppInfo, type SettingsPage, type UpdateInfo } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
   import Progress from "../../lib/ui/Progress.svelte";
@@ -50,6 +50,12 @@
       updErr = String(e);
       installing = false;
     }
+  }
+  let redoing = $state(false);
+  async function redo() {
+    redoing = true;
+    await restartOnboarding();
+    redoing = false;
   }
   const dlPct = $derived(dl && dl.total ? dl.downloaded / dl.total : 0);
 </script>
@@ -129,7 +135,7 @@
       ]}
     />
   </Row>
-  <Row label={t("ctl.ov_follow")} hint={t("ctl.ov_follow_hint")}>
+  <Row label={t("ctl.ov_follow")} hint={t("obx.beh_follow_body")}>
     <Toggle label={t("ctl.ov_follow")} bind:checked={s.overlay_follow_mouse} />
   </Row>
 </Section>
@@ -149,6 +155,9 @@
   </Row>
   <Row label={t("gen.history")} hint={t("gen.history_hint")}>
     <Toggle label={t("gen.history")} bind:checked={s.history_enabled} />
+  </Row>
+  <Row label={t("obx.redo")} hint={t("obx.redo_hint")}>
+    <Button size="sm" icon="refresh" loading={redoing} onclick={redo}>{t("obx.redo_btn")}</Button>
   </Row>
 </Section>
 

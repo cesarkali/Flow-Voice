@@ -14,6 +14,9 @@ import { setLanguage } from "./i18n.svelte";
 import type { KeyProviderId, KeyStatusMap, LlmProviderId, Settings } from "./types";
 import { EVENTS } from "./types";
 
+/** Emitted by the tray item "Refazer configuração inicial" (no payload). */
+export const RESTART_ONBOARDING = "restart-onboarding";
+
 export const app = $state({
   settings: null as Settings | null,
   keys: null as KeyStatusMap | null,
@@ -135,6 +138,9 @@ export async function initApp() {
     if (recent.has(json)) return;
     adopt(s);
   });
+  // Tray "Refazer configuração inicial": Rust already saved onboarded:false; reopen the wizard here.
+  // Saving false again is harmless and wins over any `true` that was queued/in flight before the event.
+  on(RESTART_ONBOARDING, () => void restartOnboarding());
   // Flush pending edits when the window is hidden/closed.
   addEventListener("pagehide", () => void flush());
 }
@@ -174,6 +180,17 @@ export async function completeOnboarding(): Promise<void> {
     }
   });
   if (ok) throw new Error(ok);
+}
+
+/**
+ * Reopens the setup wizard (keys and settings are kept; the wizard starts from the current values).
+ * Clears the "completed here" guard and saves `onboarded: false`.
+ */
+export async function restartOnboarding(): Promise<boolean> {
+  if (!app.settings) return false;
+  onboardedLocally = false;
+  app.settings.onboarded = false;
+  return flush();
 }
 
 export async function refreshKeys() {

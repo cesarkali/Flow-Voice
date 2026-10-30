@@ -127,8 +127,8 @@
     --cap-accent-line: #5b7d00;
     --cap-accent-soft: rgba(91, 125, 0, 0.18);
     --cap-wave: #161616;
-  --rail: #ecebe6;
-  --rail-active: #fbfaf7;
+    --rail: #ecebe6;
+    --rail-active: #fbfaf7;
   }
 }
 
@@ -509,6 +509,29 @@ textarea.field {
 .tip:active::after {
   opacity: 0;
   transition-delay: 0ms;
+}
+
+/* search result pulse (settings/search-hit.ts places it over the matched row) */
+.fv-hit {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: var(--r-lg);
+  background: var(--accent-soft);
+  box-shadow:
+    inset 0 0 0 1.5px var(--accent-line),
+    0 0 0 4px var(--accent-soft);
+}
+.fv-hit::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 18px;
+  margin-top: -9px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent-fg);
 }
 
 @media (prefers-reduced-motion: reduce) {

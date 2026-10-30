@@ -129,8 +129,8 @@
     font-weight: 600;
   }
   .primary:hover:not(:disabled) {
-    background: #e3ff74;
-    border-color: #e3ff74;
+    background: color-mix(in srgb, var(--accent) 82%, white);
+    border-color: color-mix(in srgb, var(--accent) 82%, white);
     box-shadow: 0 0 0 3px var(--accent-soft);
   }
   .ghost,

@@ -3,6 +3,7 @@
   import { api } from "../../lib/api";
   import { t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
+  import ProviderLogo from "../../lib/icons/ProviderLogo.svelte";
   import { app } from "../../lib/stores.svelte";
   import type { KeyProviderId, LlmProviderId, TestResult } from "../../lib/types";
   import Badge from "../../lib/ui/Badge.svelte";
@@ -78,7 +79,10 @@
 
 <article class="card" class:open class:configured id="prov-{id}">
   <button type="button" class="top" aria-expanded={open} onclick={() => (open = !open)}>
-    <span class="led" class:on={configured && info.keyed} aria-hidden="true"></span>
+    <span class="logo" aria-hidden="true">
+      <ProviderLogo {id} size={28} />
+      <span class="led" class:on={configured && info.keyed}></span>
+    </span>
     <span class="title">
       <span class="name">{pname(id)}</span>
       {#each info.badges as b}
@@ -212,6 +216,7 @@
 
 <style>
   .card {
+    padding: 0;
     border: 1px solid var(--line);
     border-radius: 10px;
     background: var(--surface);
@@ -245,13 +250,27 @@
   .top:hover .chev {
     color: var(--text);
   }
+  .logo {
+    position: relative;
+    flex: none;
+    display: grid;
+    transition: transform var(--t-slow) var(--spring);
+  }
+  .top:hover .logo {
+    transform: rotate(-5deg) scale(1.06);
+  }
   .led {
-    width: 7px;
-    height: 7px;
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: var(--surface-3);
-    border: 1px solid var(--line-strong);
+    border: 2px solid var(--surface);
+    box-sizing: border-box;
     flex: none;
+    transform: scale(0);
     transition:
       background-color var(--t-slow) var(--ease),
       border-color var(--t-slow) var(--ease),
@@ -260,9 +279,7 @@
   }
   .led.on {
     background: var(--accent-fg);
-    border-color: var(--accent-fg);
-    box-shadow: 0 0 6px var(--accent-line);
-    transform: scale(1.15);
+    transform: scale(1);
   }
   .title {
     flex: 1;
@@ -313,7 +330,7 @@
     transform: rotate(180deg);
   }
   .body {
-    padding: 2px 16px 16px 33px;
+    padding: 2px 16px 16px 54px;
     display: flex;
     flex-direction: column;
     gap: 14px;

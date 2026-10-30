@@ -9,14 +9,24 @@
   import type { AppInfo, SettingsPage } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
   import Progress from "../../lib/ui/Progress.svelte";
+  import { restartOnboarding } from "../../lib/stores.svelte";
+  import { author, AUTHOR as ME, loadAuthorAvatar } from "../author.svelte";
   import { checkUpdate, donateOptions, installUpdate, upd, updateFraction } from "../shell-update.svelte";
 
   let { onnavigate: _ }: { onnavigate?: (p: SettingsPage) => void } = $props();
   let info = $state<AppInfo | null>(null);
   let copied = $state(false);
+  let imgReady = $state(false);
+  let redoing = $state(false);
   onMount(() => {
     api.appInfo().then((i) => (info = i));
+    loadAuthorAvatar();
   });
+  async function redo() {
+    redoing = true;
+    await restartOnboarding();
+    redoing = false;
+  }
 
   const REPO = "https://github.com/cesarkali/Flow-Voice";
   type Link = { icon: IconName; key: TKey; url: string };
@@ -78,10 +88,15 @@
   <section class="card blk">
     <h2 class="label">{t("sh.about_author")}</h2>
     <div class="person">
-      <span class="av mono" aria-hidden="true">JC</span>
+      <span class="av mono" class:has={imgReady}>
+        <span class="ini" aria-hidden="true">{ME.initials}</span>
+        {#if author.avatar}
+          <img src={author.avatar} alt={t("obx.author_photo")} draggable="false" onload={() => (imgReady = true)} />
+        {/if}
+      </span>
       <div>
-        <p class="pn">Júlio Caliberda</p>
-        <p class="ph mono">@cesarkali</p>
+        <p class="pn">{ME.name}</p>
+        <p class="ph mono">@{ME.handle}</p>
       </div>
     </div>
     <ul class="links">
@@ -110,6 +125,13 @@
         </button>
       </li>
     </ul>
+    <div class="redo">
+      <div>
+        <p class="rt">{t("obx.redo")}</p>
+        <p class="rh">{t("obx.redo_hint")}</p>
+      </div>
+      <Button size="sm" icon="refresh" loading={redoing} onclick={redo}>{t("obx.redo_btn")}</Button>
+    </div>
     <dl class="facts">
       <div>
         <dt class="label">{t("about.version")}</dt>
@@ -311,8 +333,11 @@
     gap: 12px;
   }
   .av {
-    width: 42px;
-    height: 42px;
+    position: relative;
+    overflow: hidden;
+    flex: none;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     display: grid;
     place-items: center;
@@ -323,6 +348,51 @@
       inset 0 0 0 1px var(--line-strong),
       0 0 0 2px var(--surface),
       0 0 0 3px var(--accent-line);
+  }
+  .av img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(1.08);
+    transition:
+      opacity 420ms var(--ease),
+      transform 620ms var(--ease-out);
+  }
+  .av.has img {
+    opacity: 1;
+    transform: none;
+  }
+  .ini {
+    transition: opacity var(--t) var(--ease);
+  }
+  .av.has .ini {
+    opacity: 0;
+  }
+  .person:hover .av.has img {
+    transform: scale(1.06);
+  }
+  .redo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .rt {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .rh {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--text-2);
+    max-width: 44ch;
   }
   .pn {
     font-weight: 600;

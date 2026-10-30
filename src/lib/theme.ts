@@ -66,24 +66,67 @@ export function isValidAccent(color: string): boolean {
   return parseHex(color) !== null;
 }
 
+const ACCENT_VARS = [
+  "--accent",
+  "--on-accent",
+  "--accent-fg",
+  "--accent-soft",
+  "--accent-line",
+  "--cap-accent",
+  "--cap-accent-line",
+  "--cap-accent-soft",
+  "--cap-wave",
+];
+let currentAccent: string | null = null;
+let watching = false;
+
 /**
  * Applies the user's accent color on top of base.css. The default lime keeps the hand-tuned
- * values from base.css; any other color gets derived soft/line/foreground variants per theme.
+ * values from base.css; any other color gets derived soft/line/foreground variants for the
+ * resolved theme. Uses CSSOM custom properties on <html> (an injected <style> element would be
+ * blocked by the app's CSP inside Tauri).
  */
 export function applyAccent(color: string | null | undefined) {
-  const id = "fv-accent";
-  document.getElementById(id)?.remove();
+  currentAccent = color ?? null;
+  const root = document.documentElement.style;
+  for (const v of ACCENT_VARS) root.removeProperty(v);
+  if (!watching) {
+    watching = true;
+    matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => applyAccent(currentAccent));
+    new MutationObserver(() => applyAccent(currentAccent)).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+  }
   const c = parseHex(color ?? "");
   if (!c || hex(c).toUpperCase() === DEFAULT_ACCENT) return;
   const on = lum(c) > 0.45 ? "#0b0b0c" : "#ffffff";
-  const fgLight = readableOnLight(c);
-  const dark = `--accent:${hex(c)};--on-accent:${on};--accent-fg:${hex(c)};--accent-soft:${rgba(c, 0.1)};--accent-line:${rgba(c, 0.35)};--cap-accent:${hex(c)};--cap-accent-line:${hex(c)};--cap-accent-soft:${rgba(c, 0.22)};--cap-wave:${hex(c)};`;
-  const light = `--accent-fg:${hex(fgLight)};--accent-soft:${rgba(c, 0.16)};--accent-line:${rgba(fgLight, 0.45)};--cap-accent:${hex(c)};--cap-accent-line:${hex(fgLight)};--cap-accent-soft:${rgba(fgLight, 0.18)};--cap-wave:#161616;`;
-  const style = document.createElement("style");
-  style.id = id;
-  style.textContent =
-    `:root{${dark}}` +
-    `:root[data-theme="light"]{${light}}` +
-    `@media (prefers-color-scheme: light){:root:not([data-theme]){${light}}}`;
-  document.head.appendChild(style);
+  const vars: Record<string, string> =
+    resolvedTheme() === "light"
+      ? (() => {
+          const fg = readableOnLight(c);
+          return {
+            "--accent": hex(c),
+            "--on-accent": on,
+            "--accent-fg": hex(fg),
+            "--accent-soft": rgba(c, 0.16),
+            "--accent-line": rgba(fg, 0.45),
+            "--cap-accent": hex(c),
+            "--cap-accent-line": hex(fg),
+            "--cap-accent-soft": rgba(fg, 0.18),
+            "--cap-wave": "#161616",
+          };
+        })()
+      : {
+          "--accent": hex(c),
+          "--on-accent": on,
+          "--accent-fg": hex(c),
+          "--accent-soft": rgba(c, 0.1),
+          "--accent-line": rgba(c, 0.35),
+          "--cap-accent": hex(c),
+          "--cap-accent-line": hex(c),
+          "--cap-accent-soft": rgba(c, 0.22),
+          "--cap-wave": hex(c),
+        };
+  for (const [k, v] of Object.entries(vars)) root.setProperty(k, v);
 }

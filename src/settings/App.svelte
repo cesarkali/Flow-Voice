@@ -5,11 +5,14 @@
   import { t, type TKey } from "../lib/i18n.svelte";
   import Icon from "../lib/icons/Icon.svelte";
   import Logo from "../lib/icons/Logo.svelte";
+  import ProviderLogo from "../lib/icons/ProviderLogo.svelte";
   import type { IconName } from "../lib/icons/paths";
-  import { app, initApp } from "../lib/stores.svelte";
+  import { app, hasKey, initApp, usableLlm } from "../lib/stores.svelte";
   import { EVENTS, type SettingsPage } from "../lib/types";
   import SaveIndicator from "../lib/ui/SaveIndicator.svelte";
   import TitleBar from "../lib/ui/TitleBar.svelte";
+  import AuthorAvatar from "./AuthorAvatar.svelte";
+  import { AUTHOR } from "./author.svelte";
   import Onboarding from "./onboarding/Onboarding.svelte";
   import About from "./pages/About.svelte";
   import General from "./pages/General.svelte";
@@ -18,6 +21,10 @@
   import Shortcuts from "./pages/Shortcuts.svelte";
   import Speech from "./pages/Speech.svelte";
   import Styles from "./pages/Styles.svelte";
+  import { pname } from "./providers";
+  import SearchBar from "./search-bar.svelte";
+  import { findTarget, reveal } from "./search-hit";
+  import type { SearchHit } from "./search-index";
   import { donateOptions, listenUpdates, upd } from "./shell-update.svelte";
 
   type NavItem = { id: SettingsPage; icon: IconName; key: TKey };
@@ -44,7 +51,6 @@
   const ORDER = Object.fromEntries(NAV.map((n, i) => [n.id, i])) as Record<SettingsPage, number>;
   const PAGES = { home: Home, styles: Styles, providers: Providers, speech: Speech, shortcuts: Shortcuts, general: General, about: About };
 
-  const GH = "https://github.com/cesarkali";
 
   const initial = new URLSearchParams(location.search).get("page") as SettingsPage | null;
   let page = $state<SettingsPage>(initial && initial in PAGES ? initial : "home");
@@ -78,6 +84,34 @@
   });
 
   const updAvail = $derived(!!upd.info?.available && !!upd.info.version);
+
+  /** Active providers shown on the "Provedores" nav item: current voice (cloud) and text provider. */
+  const provMarks = $derived.by(() => {
+    const s = app.settings;
+    if (!s) return { ids: [] as string[], tip: "" };
+    const stt = s.stt.engine === "local" ? "local" : s.stt.cloud_order.find((p) => hasKey(p));
+    const llm = usableLlm()[0];
+    const ids = [...new Set([stt, llm].filter(Boolean) as string[])];
+    const nm = (id?: string) => (!id ? t("home.none") : id === "local" ? t("speech.local_title") : pname(id));
+    return { ids, tip: t("sh.prov_active", { stt: nm(stt), llm: nm(llm) }) };
+  });
+
+  /** Search result picked: open its page, then scroll to + pulse the matching row. */
+  async function onPick(h: SearchHit) {
+    const changed = h.page !== page;
+    go(h.page);
+    if (h.pageOnly) return;
+    await tick();
+    const t0 = performance.now();
+    const find = () => {
+      const pages = content?.querySelectorAll<HTMLElement>(":scope > .stage > .page");
+      const pg = pages?.[pages.length - 1];
+      const el = pg && findTarget(pg, h.label, h.id);
+      if (el && content) return reveal(content, el);
+      if (performance.now() - t0 < (changed ? 900 : 300)) requestAnimationFrame(find);
+    };
+    requestAnimationFrame(find);
+  }
 
   function go(p: SettingsPage) {
     if (p === page || !(p in PAGES)) return;
@@ -178,16 +212,16 @@
 
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <nav class="nav" aria-label="FlowVoice" bind:this={navEl} onkeydown={navKey}>
-        <span class="ind" class:ready={ind.ready} style="transform: translate3d(0, {ind.y}px, 0); height: {ind.h}px" aria-hidden="true"></span>
+        <span class="ind" class:ready={ind.ready} style:transform="translate3d(0, {ind.y}px, 0)" style:height="{ind.h}px" aria-hidden="true"></span>
         {#each GROUPS as g, gi}
           {#if g.key}
-            <div class="grp" style="--i: {gi * 3}"><span class="label">{t(g.key)}</span></div>
+            <div class="grp" style:--i={gi * 3}><span class="label">{t(g.key)}</span></div>
           {:else}
             <div class="sep" aria-hidden="true"></div>
           {/if}
           <ul>
             {#each g.items as n (n.id)}
-              <li style="--i: {ORDER[n.id] + gi + 1}">
+              <li style:--i={ORDER[n.id] + gi + 1}>
                 <button
                   type="button"
                   data-id={n.id}
@@ -198,6 +232,13 @@
                 >
                   <span class="ico"><Icon name={n.icon} size={18} /></span>
                   <span class="lbl">{t(n.key)}</span>
+                  {#if n.id === "providers" && provMarks.ids.length}
+                    <span class="pmarks" title={provMarks.tip}>
+                      {#each provMarks.ids as pid, k (pid)}
+                        <span class="pm" style:--k={k}><ProviderLogo id={pid} size={14} /></span>
+                      {/each}
+                    </span>
+                  {/if}
                   {#if n.id === "about" && updAvail}
                     <span class="nbadge" title={t("sh.update_tip", { v: upd.info?.version ?? "" })}></span>
                   {/if}
@@ -209,11 +250,11 @@
       </nav>
 
       <div class="me">
-        <button type="button" class="who" data-tip={t("sh.profile_tip")} onclick={() => api.openUrl(GH)}>
-          <span class="av mono" aria-hidden="true">JC</span>
+        <button type="button" class="who" data-tip={t("sh.profile_tip")} onclick={() => api.openUrl(AUTHOR.github)}>
+          <span class="av"><AuthorAvatar size={32} /></span>
           <span class="who-t">
-            <span class="nm">Júlio Caliberda</span>
-            <span class="hd mono">@cesarkali</span>
+            <span class="nm">{AUTHOR.name}</span>
+            <span class="hd mono">@{AUTHOR.handle}</span>
           </span>
           <span class="ext"><Icon name="external" size={13} /></span>
         </button>
@@ -256,6 +297,9 @@
 
     <div class="main" class:scrolled>
       <TitleBar>
+        {#snippet left()}
+          <SearchBar onpick={onPick} />
+        {/snippet}
         {#snippet right()}
           <SaveIndicator />
         {/snippet}
@@ -267,7 +311,7 @@
         {:else if app.settings}
           <div class="stage">
             {#key page}
-              <div class="page stagger" style="--rise: {dir * 14}px" out:fade={{ duration: 110 }}>
+              <div class="page stagger" style:--rise="{dir * 14}px" out:fade={{ duration: 110 }}>
                 <Page onnavigate={go} />
               </div>
             {/key}
@@ -442,6 +486,32 @@
   .nav button:hover:not(.active) .lbl {
     transform: translateX(2px);
   }
+  .pmarks {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    padding-right: 1px;
+  }
+  .pm {
+    display: grid;
+    border-radius: 5px;
+    box-shadow: 0 0 0 1.5px var(--rail);
+    animation: fv-pop var(--t-slow) var(--spring) backwards;
+    animation-delay: calc(360ms + var(--k) * 60ms);
+    transition: transform var(--t) var(--spring);
+  }
+  .pm + .pm {
+    margin-left: -4px;
+  }
+  .nav button.active .pm {
+    box-shadow: 0 0 0 1.5px var(--rail-active);
+  }
+  .nav button:hover .pm + .pm {
+    transform: translate3d(3px, 0, 0);
+  }
+  .pm :global(svg) {
+    border-radius: 4px;
+  }
   .nbadge {
     margin-left: auto;
     width: 7px;
@@ -476,21 +546,9 @@
     background: var(--hover);
   }
   .av {
-    width: 32px;
-    height: 32px;
+    display: grid;
     flex: none;
     border-radius: 50%;
-    display: grid;
-    place-items: center;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: var(--text);
-    background: linear-gradient(150deg, var(--surface-3), var(--surface));
-    box-shadow:
-      inset 0 0 0 1px var(--line-strong),
-      0 0 0 2px var(--rail),
-      0 0 0 3px var(--accent-line);
     transition: transform var(--t-slow) var(--spring);
   }
   .who:hover .av {
@@ -668,6 +726,7 @@
     container: content / inline-size;
   }
   .stage {
+    position: relative;
     display: grid;
   }
   .page {
@@ -700,6 +759,7 @@
     .grp .label,
     .who-t,
     .ext,
+    .pmarks,
     .verline {
       display: none;
     }

@@ -73,6 +73,8 @@ pub struct AppState {
     pub overlay_hold: AtomicBool,
     /// Bumped on every overlay change; delayed hides only fire if it didn't move.
     pub overlay_gen: AtomicU64,
+    /// Work-area origin of the monitor the overlay is pinned to while visible.
+    pub overlay_monitor: Mutex<Option<(i32, i32)>>,
 }
 
 const HISTORY_MAX: usize = 300;
@@ -98,6 +100,7 @@ impl AppState {
             muted_prev: Mutex::new(None),
             overlay_hold: AtomicBool::new(false),
             overlay_gen: AtomicU64::new(0),
+            overlay_monitor: Mutex::new(None),
             config_dir,
         }
     }

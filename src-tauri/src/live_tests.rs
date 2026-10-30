@@ -99,3 +99,21 @@ fn live_local_whisper() {
         println!("fast={fast} {}ms ({:.1}s audio): {text}", t0.elapsed().as_millis(), samples.len() as f32 / 16000.0);
     }
 }
+
+/// Proper nouns: turbo vs large-v3, with and without the context prompt.
+#[tokio::test]
+#[ignore]
+async fn live_names() {
+    let http = cloud::http();
+    let mut cfg = default_providers()["groq"].clone();
+    let key = legacy_keys("groq").into_iter().next().unwrap();
+    let audio = std::fs::read(std::env::var("FLOWVOICE_TEST_NAMES").unwrap()).unwrap();
+    let ctx = "Transcrição em português do Brasil, com pontuação correta e nomes próprios de pessoas, cidades, empresas e produtos escritos corretamente.";
+    for model in ["whisper-large-v3-turbo", "whisper-large-v3"] {
+        cfg.stt_model = model.into();
+        for prompt in ["", ctx] {
+            let t = cloud::transcribe(&http, "groq", &cfg, &key, &audio, "pt", prompt).await.unwrap();
+            println!("{model} prompt={}: {t}", !prompt.is_empty());
+        }
+    }
+}
