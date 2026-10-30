@@ -15,19 +15,18 @@ import type {
   TestResult,
   UpdateInfo,
 } from "./types";
-import { mock } from "./mock";
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
-  if (!isTauri) return mock.invoke<T>(cmd, args);
+  if (!isTauri) return (await import("./mock")).mock.invoke<T>(cmd, args);
   const { invoke } = await import("@tauri-apps/api/core");
   return invoke<T>(cmd, args);
 }
 
 /** Subscribe to a Rust event. Returns an unsubscribe function. */
 export async function on<T>(event: string, handler: (payload: T) => void): Promise<() => void> {
-  if (!isTauri) return mock.on(event, handler as (p: unknown) => void);
+  if (!isTauri) return (await import("./mock")).mock.on(event, handler as (p: unknown) => void);
   const { listen } = await import("@tauri-apps/api/event");
   return listen<T>(event, (e) => handler(e.payload));
 }
@@ -39,6 +38,8 @@ export const api = {
   resetStyles: () => call<Settings>("reset_styles"),
   validateHotkey: (accelerator: string) => call<string | null>("validate_hotkey", { accelerator }),
   listInputDevices: () => call<string[]>("list_input_devices"),
+  /** Pause global shortcuts while the user records a new one. */
+  suspendHotkeys: (suspend: boolean) => call<void>("suspend_hotkeys", { suspend }),
 
   // keys & providers
   getKeyStatus: () => call<KeyStatusMap>("get_key_status"),
