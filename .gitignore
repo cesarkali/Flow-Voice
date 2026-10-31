@@ -1,25 +1,54 @@
 # Node / frontend
 node_modules/
 dist/
+.vite/
+*.tsbuildinfo
 
-# Rust / Tauri
+# Rust / Tauri (build output and generated files)
 src-tauri/target/
-src-tauri/gen/schemas/
+src-tauri/gen/
 
-# Updater signing key (never commit)
+# Secrets: updater signing key, code-signing certificates, env files (never commit)
 *.key
+*.pem
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
 
-# Local config, logs and audio
+# User data that tools/tests may write locally (keys, settings, history)
 config.json
+keys.json
+history.json
+
+# Logs, audio and temporary files
 *.log
 *.wav
 *.mp3
 *.tmp
+*.part
+
+# Local speech models (downloaded at runtime into %LOCALAPPDATA%, never part of the repo)
+*.bin
+*.gguf
 
 # Local leftovers of the 1.x Python app (not part of the repo anymore)
 /legacy/
 
-# Website build artifact and local dev tools
+# Website: build artifact and local Vercel CLI state
 website/FlowVoiceSetup.exe
+.vercel/
+
+# Local dev tools and assistant state
 tools/dev/
-.claude
+.claude/
+
+# Editors and OS noise
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
