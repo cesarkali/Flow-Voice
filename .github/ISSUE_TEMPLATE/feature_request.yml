@@ -2,6 +2,7 @@ name: Sugerir uma melhoria
 description: Uma ideia, um recurso novo ou algo que poderia ser mais simples.
 title: "[Ideia] "
 labels: ["enhancement"]
+assignees: ["cesarkali"]
 body:
   - type: markdown
     attributes:

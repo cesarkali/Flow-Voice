@@ -2,6 +2,7 @@ name: Reportar um problema
 description: Algo não funcionou como deveria no FlowVoice.
 title: "[Bug] "
 labels: ["bug"]
+assignees: ["cesarkali"]
 body:
   - type: markdown
     attributes:
