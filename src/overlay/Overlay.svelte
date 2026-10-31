@@ -1513,20 +1513,34 @@
      edge (lighter at the top, like light caught by the glass) and, with "luz e sombra", a sheen,
      a beveled edge, light along the bottom and a softer, wider shadow. */
   .shell.glass {
-    --glass-tint: color-mix(in srgb, var(--cap-bg) 58%, transparent);
+    --glass-tint: color-mix(in srgb, var(--cap-bg) 66%, transparent);
     --rim: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1) 38%, rgba(255, 255, 255, 0.05) 62%, rgba(255, 255, 255, 0.2));
     background: var(--glass-tint);
     border-color: transparent;
+    /* Readable on anything behind (a white document, a bright video): the secondary text gets
+       close to the main one, hairlines and fills get stronger (all relative to the text color,
+       so both themes work), and text gets a faint halo of the tint. */
+    --cap-text-2: color-mix(in srgb, var(--cap-text) 82%, transparent);
+    --cap-line: color-mix(in srgb, var(--cap-text) 24%, transparent);
+    --cap-hover: color-mix(in srgb, var(--cap-text) 13%, transparent);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--cap-bg) 75%, transparent);
   }
   .shell.glass.translucent {
-    --glass-tint: color-mix(in srgb, var(--cap-bg) 30%, transparent);
+    --glass-tint: color-mix(in srgb, var(--cap-bg) 46%, transparent);
+  }
+  /* Dark text on the accent fill: no halo. */
+  .shell.glass :is(.btn.primary, .ok, .stop:hover) {
+    text-shadow: none;
+  }
+  /* The result and error cards hold the most text: a denser tint there. */
+  .shell.glass:is(.v-done, .v-error) {
+    --glass-tint: color-mix(in srgb, var(--cap-bg) 76%, transparent);
+  }
+  .shell.glass.translucent:is(.v-done, .v-error) {
+    --glass-tint: color-mix(in srgb, var(--cap-bg) 62%, transparent);
   }
   :global([data-theme="light"]) .shell.glass {
-    --glass-tint: color-mix(in srgb, var(--cap-bg) 66%, transparent);
     --rim: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 40%, rgba(0, 0, 0, 0.06) 70%, rgba(255, 255, 255, 0.6));
-  }
-  :global([data-theme="light"]) .shell.glass.translucent {
-    --glass-tint: color-mix(in srgb, var(--cap-bg) 40%, transparent);
   }
   .shell.glass.v-error {
     background: color-mix(in srgb, var(--glass-tint) 86%, rgba(255, 90, 78, 0.5));

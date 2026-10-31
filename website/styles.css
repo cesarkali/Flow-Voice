@@ -530,12 +530,21 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
 /* Vidro (2.1): a tint over Windows' own blur and a bright edge, lighter at the top; "Translúcido" is a lighter tint.
    On the site the blur is the browser's backdrop-filter over the desktop mock, which is what Windows does natively. */
 .fvo-shell.glass {
-  --tint: color-mix(in srgb, var(--cap-bg) 58%, transparent);
+  --tint: color-mix(in srgb, var(--cap-bg) 66%, transparent);
+  /* readable on anything behind: secondary text close to the main one, stronger lines, a faint halo (same as the app) */
+  --cap-text-2: color-mix(in srgb, var(--cap-text) 82%, transparent);
+  --cap-line: color-mix(in srgb, var(--cap-text) 24%, transparent);
+  --cap-hover: color-mix(in srgb, var(--cap-text) 13%, transparent);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--cap-bg) 75%, transparent);
   --rim: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1) 38%, rgba(255, 255, 255, 0.05) 62%, rgba(255, 255, 255, 0.2));
   background: var(--tint); border-color: transparent;
   -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5);
 }
-.fvo-shell.glass.translucent { --tint: color-mix(in srgb, var(--cap-bg) 30%, transparent); }
+.fvo-shell.glass.translucent { --tint: color-mix(in srgb, var(--cap-bg) 46%, transparent); }
+/* the result card holds the most text: a denser tint there */
+.fvo-shell.glass:has(.fvo-card.on) { --tint: color-mix(in srgb, var(--cap-bg) 76%, transparent); }
+.fvo-shell.glass.translucent:has(.fvo-card.on) { --tint: color-mix(in srgb, var(--cap-bg) 62%, transparent); }
+.fvo-shell.glass .fvo-btn.primary, .fvo-shell.glass .fvo-badge { text-shadow: none; }
 .fvo-shell.glass .fvo-card { background: transparent; }
 .fvo-shell.glass::before, .fvo-shell.glight::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; }
 .fvo-shell.glass::before {
