@@ -119,6 +119,12 @@ pub fn run() {
             }
             let s = state.settings();
             app.manage(state);
+            // The windows are created only now ("create": false in tauri.conf.json): made by Tauri
+            // before setup, their pages could call a command before the state above existed (a
+            // busy PC at login showed "state not managed for field `state`" in the settings).
+            for cfg in app.config().app.windows.iter().filter(|w| !w.create) {
+                tauri::WebviewWindowBuilder::from_config(app.handle(), cfg)?.build()?;
+            }
 
             let handle = app.handle().clone();
             windows::setup_overlay(&handle);
@@ -137,8 +143,25 @@ pub fn run() {
             // Local models load on demand (when a dictation starts) and unload when idle.
             handle.state::<AppState>().local.start_idle_unloader();
 
+            // After an update the installer relaunches the app with the arguments it had: started
+            // with Windows (`--hidden`) it would come back only in the tray, as if it hadn't
+            // reopened. The first launch of a new version always shows the window. (No file yet
+            // with settings already there: updated from 2.0 or older.)
+            let version = app.package_info().version.to_string();
+            let version_file = config_dir.join("last-version");
+            let updated = test_dir.is_none()
+                && match std::fs::read_to_string(&version_file) {
+                    Ok(prev) => prev.trim() != version,
+                    Err(_) => !first_run,
+                };
+            if updated || first_run {
+                let _ = std::fs::write(&version_file, &version);
+            }
+            if updated {
+                log::info!("updated to {version}: showing the window");
+            }
             let hidden = std::env::args().any(|a| a == "--hidden");
-            if !s.onboarded || !hidden {
+            if !s.onboarded || !hidden || updated {
                 windows::open_settings(&handle, None);
             }
             if !failed.is_empty() {
