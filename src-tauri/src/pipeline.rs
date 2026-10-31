@@ -354,21 +354,14 @@ pub fn ensure_preview_model(app: &AppHandle) {
 
 /// Whisper "prompt": a short context sentence plus the user's vocabulary. It biases spelling of
 /// proper nouns (people, cities, brands) without changing what was said.
-pub(crate) fn stt_prompt(s: &Settings) -> String {
-    let base = match s.speech_language.as_str() {
-        "pt" => "Transcrição em português do Brasil, com pontuação correta e nomes próprios de pessoas, cidades, empresas e produtos escritos corretamente.",
-        "en" => "Transcription in English with correct punctuation and correctly spelled names of people, cities, companies and products.",
-        "es" => "Transcripción en español con puntuación correcta y nombres propios de personas, ciudades, empresas y productos bien escritos.",
-        _ => "",
-    };
-    let mut p = base.to_string();
-    if !s.dictionary.is_empty() {
-        p.push_str(" Termos: ");
-        p.push_str(&s.dictionary.join(", "));
-        p.push('.');
-    }
-    // Whisper keeps only the last ~224 tokens of the prompt.
-    p.chars().rev().take(700).collect::<Vec<_>>().into_iter().rev().collect()
+/// Whisper "prompt" for the final pass: intentionally EMPTY. An instruction sentence ("…nomes de
+/// pessoas, cidades, empresas e produtos escritos corretamente") or a vocabulary list is not
+/// obeyed by Whisper — on quiet or ambiguous audio it is transcribed as if it had been spoken
+/// ("Cidade, empresas e produtos…", "O que aconteceu com o Brasil", dictionary terms out of
+/// nowhere) and can even swallow the real speech. Spelling of the user's terms is fixed by the
+/// LLM pass instead, only where they were actually said.
+pub(crate) fn stt_prompt(_s: &Settings) -> String {
+    String::new()
 }
 
 fn preview_model(s: &Settings, st: &AppState) -> String {
@@ -933,6 +926,46 @@ pub async fn reprocess(app: &AppHandle, style_id: String, target: Option<String>
         platform::set_clipboard(&result.text).ok();
         emit_overlay(app, json!({ "phase": "done", "result": result }));
     }
+    Ok(result)
+}
+
+/// History → "Refazer": re-applies a style and/or translation to any saved dictation, always
+/// from its ORIGINAL transcript (or the original selection + instruction for a Command). The
+/// item is updated in place and the new text goes to the clipboard.
+pub async fn reprocess_history(app: &AppHandle, id: String, style_id: String, target: Option<String>) -> Result<DictationResult> {
+    let st = state(app);
+    let mut result = st
+        .history
+        .lock()
+        .iter()
+        .find(|r| r.id == id)
+        .cloned()
+        .ok_or_else(|| anyhow!("esse ditado não está mais no histórico"))?;
+    if result.mode == RecordMode::Ask {
+        return Err(anyhow!("perguntas não podem ser refeitas"));
+    }
+    let s = st.settings();
+    result.target = target.filter(|t| !t.is_empty());
+    result.warnings.clear();
+    if result.mode == RecordMode::Command {
+        command_into(app, &mut result, &s, None).await?;
+    } else {
+        result.style_id = style_id;
+        result.mode = if result.target.is_some() { RecordMode::Translate } else { RecordMode::Dictate };
+        refine_into(app, &mut result, &s, None).await;
+    }
+    platform::set_clipboard(&result.text).ok();
+    st.push_history(&result);
+    {
+        let mut last = st.last.lock();
+        if let Some((r, w)) = last.as_ref() {
+            if r.id == result.id {
+                let w = *w;
+                *last = Some((result.clone(), w));
+            }
+        }
+    }
+    let _ = app.emit("history-changed", ());
     Ok(result)
 }
 

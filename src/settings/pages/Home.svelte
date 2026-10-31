@@ -4,7 +4,7 @@
   import { prefersReducedMotion, Tween } from "svelte/motion";
   import { fly, slide } from "svelte/transition";
   import { api, on } from "../../lib/api";
-  import { clockTime, i18n, langName, locale, relTime, t } from "../../lib/i18n.svelte";
+  import { clockTime, i18n, langName, locale, relTime, t, TARGET_LANGS } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
   import ProviderLogo from "../../lib/icons/ProviderLogo.svelte";
   import { app, hasKey, usableLlm } from "../../lib/stores.svelte";
@@ -13,6 +13,7 @@
   import { keycapsOf } from "../../lib/ui/hotkeys";
   import Keys from "../../lib/ui/Keys.svelte";
   import Modal from "../../lib/ui/Modal.svelte";
+  import Select from "../../lib/ui/Select.svelte";
   import { greeting } from "../greetings";
   import { pname, STT_PROVIDERS } from "../providers";
 
@@ -129,6 +130,32 @@
     clearTimeout(copyTimer);
     copyTimer = window.setTimeout(() => (copied = null), 1500);
   }
+  // ---------------------------------------------------------------- redo from history
+  /** The item being redone and which control started it (spinner on that control). */
+  let redoing = $state<{ id: string; key: string } | null>(null);
+  let redoMsg = $state<{ id: string; ok: boolean; text: string } | null>(null);
+  let redoTimer = 0;
+  const langOptions = $derived([
+    { value: null as string | null, label: t("hx.no_translate") },
+    ...TARGET_LANGS.map((l) => ({ value: l as string | null, label: langName(l) })),
+  ]);
+  async function redo(h: DictationResult, styleId: string, target: string | null, key: string) {
+    if (redoing) return;
+    redoing = { id: h.id, key };
+    redoMsg = null;
+    try {
+      const r = await api.reprocessHistory(h.id, styleId, target);
+      history = history.map((x) => (x.id === r.id ? r : x));
+      redoMsg = { id: h.id, ok: true, text: t("hx.redone") };
+    } catch (e) {
+      redoMsg = { id: h.id, ok: false, text: String(e) };
+    } finally {
+      redoing = null;
+      clearTimeout(redoTimer);
+      redoTimer = window.setTimeout(() => (redoMsg = null), 2600);
+    }
+  }
+
   async function remove(h: DictationResult) {
     if (open === h.id) open = null;
     history = history.filter((x) => x.id !== h.id);
@@ -363,6 +390,51 @@
                 {#each h.warnings as w (w)}
                   <p class="warn"><Icon name="alert" size={13} />{w}</p>
                 {/each}
+                {#if h.mode !== "ask" && h.raw}
+                  <div class="redo">
+                    <span class="label">{t("hx.redo")}</span>
+                    <div class="redo-row">
+                      {#if h.mode === "command"}
+                        <button
+                          type="button"
+                          class="rchip"
+                          class:loading={redoing?.id === h.id}
+                          disabled={!!redoing}
+                          onclick={() => redo(h, h.style_id, h.target ?? null, "cmd")}
+                        >
+                          <Icon name="refresh" size={13} />{t("hx.redo_cmd")}
+                        </button>
+                      {:else}
+                        {#each s.styles as st (st.id)}
+                          <button
+                            type="button"
+                            class="rchip"
+                            class:on={h.style_id === st.id}
+                            class:loading={redoing?.id === h.id && redoing.key === st.id}
+                            disabled={!!redoing}
+                            title={st.description || null}
+                            onclick={() => redo(h, st.id, h.target ?? null, st.id)}
+                          >
+                            {st.name}
+                          </button>
+                        {/each}
+                        <span class="redo-lang" class:loading={redoing?.id === h.id && redoing.key === "lang"}>
+                          <Select
+                            label={t("hx.lang")}
+                            value={h.target ?? null}
+                            options={langOptions}
+                            onchange={(v) => v !== (h.target ?? null) && redo(h, h.style_id, v, "lang")}
+                          />
+                        </span>
+                      {/if}
+                    </div>
+                    {#if redoMsg?.id === h.id}
+                      <p class="redo-msg" class:bad={!redoMsg.ok} role="status" in:fly={{ y: 4, duration: 160 }}>
+                        <Icon name={redoMsg.ok ? "check" : "alert"} size={13} />{redoMsg.text}
+                      </p>
+                    {/if}
+                  </div>
+                {/if}
               </div>
             </div>
           {/if}
@@ -988,6 +1060,83 @@
   .facts dd.mono {
     font-size: 11.5px;
     color: var(--text-2);
+  }
+  .redo {
+    display: grid;
+    gap: 8px;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .redo .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .redo-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .rchip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 11px;
+    border-radius: 999px;
+    border: 1px solid var(--line-2, var(--line));
+    background: transparent;
+    color: var(--text-2);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition:
+      background 0.16s,
+      color 0.16s,
+      border-color 0.16s,
+      transform 0.16s;
+  }
+  .rchip:hover:not(:disabled) {
+    color: var(--text);
+    border-color: var(--text-3);
+    transform: translateY(-1px);
+  }
+  .rchip.on {
+    color: var(--text);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .rchip:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+  .rchip.loading,
+  .redo-lang.loading {
+    opacity: 1;
+    animation: redo-pulse 0.9s ease-in-out infinite alternate;
+  }
+  @keyframes redo-pulse {
+    to {
+      opacity: 0.45;
+    }
+  }
+  .redo-lang {
+    margin-left: auto;
+    min-width: 170px;
+  }
+  .redo-msg {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--ok, var(--text-2));
+  }
+  .redo-msg.bad {
+    color: var(--danger, #ff5a4e);
   }
   .warn {
     display: flex;

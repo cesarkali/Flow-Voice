@@ -384,7 +384,9 @@ pub fn cloud_preview(app: AppHandle, samples: Arc<Mutex<Vec<f32>>>, stop: Arc<At
             if stop2.load(Ordering::Relaxed) || start != sh.committed_at {
                 return;
             }
-            let bad = text::is_hallucination_voiced(&text, voiced) || text.chars().count() as f32 > secs * 30.0 + 40.0;
+            // The context prompt (earlier phrases) echoed back instead of new speech.
+            let echo = text::echoes_prompt(&text, &prompt);
+            let bad = echo || text::is_hallucination_voiced(&text, voiced) || text.chars().count() as f32 > secs * 30.0 + 40.0;
             let log_line = |what: &str| {
                 if debug_text {
                     log::info!("preview {what} [{lane_name}] t+{at:.1}s ({ms:.0} ms, {secs:.1}s audio, {voiced:.1}s voiced): {text}");

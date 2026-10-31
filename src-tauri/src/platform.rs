@@ -29,24 +29,6 @@ fn clipboard_text() -> Option<String> {
     with_clipboard(|cb| cb.get_text()).ok()
 }
 
-/// Puts text on the clipboard only to paste it: kept out of Win+V history and cloud sync.
-fn set_clipboard_transient(text: &str) -> Result<()> {
-    #[cfg(windows)]
-    {
-        use arboard::SetExtWindows;
-        with_clipboard(|cb| cb.set().exclude_from_history().exclude_from_cloud().text(text.to_string()))
-    }
-    #[cfg(target_os = "linux")]
-    {
-        use arboard::SetExtLinux;
-        with_clipboard(|cb| cb.set().exclude_from_history().text(text.to_string()))
-    }
-    #[cfg(not(any(windows, target_os = "linux")))]
-    {
-        set_clipboard(text)
-    }
-}
-
 /// Handle of the window that had focus when recording started (0 = unknown).
 pub fn foreground_window() -> isize {
     #[cfg(windows)]
@@ -88,7 +70,7 @@ fn which(bin: &str) -> bool {
 
 /// Gives focus back to `target` and pastes `text` with Ctrl+V (after Ctrl+Z when `replace`).
 /// Returns Ok(false) when it could not paste safely; the text is then left on the clipboard for
-/// the user to paste. After a successful paste the user's previous clipboard text comes back.
+/// the user to paste. Either way the dictation is on the clipboard afterwards.
 pub fn paste(text: &str, target: isize, replace: bool) -> Result<bool> {
     let _input = INPUT_LOCK.lock();
     let manual = |why: &str| -> Result<bool> {
@@ -107,8 +89,9 @@ pub fn paste(text: &str, target: isize, replace: bool) -> Result<bool> {
         // Windows blocks input from a normal app into an admin window (UIPI).
         return manual("target runs as administrator");
     }
-    let previous = clipboard_text();
-    set_clipboard_transient(text)?;
+    // The dictation stays on the clipboard afterwards: pressing Ctrl+V again must paste THIS
+    // text (restoring the previous clipboard made a later Ctrl+V paste an older dictation).
+    set_clipboard(text)?;
     wait_modifiers_released();
     focus(target);
     std::thread::sleep(Duration::from_millis(60));
@@ -120,17 +103,6 @@ pub fn paste(text: &str, target: isize, replace: bool) -> Result<bool> {
         std::thread::sleep(Duration::from_millis(80));
     }
     send_ctrl('V');
-    // Give the target time to read the clipboard (slow apps, remote desktops), then restore
-    // what the user had copied, unless something else changed the clipboard meanwhile.
-    if let Some(prev) = previous.filter(|p| p != text) {
-        let ours = text.to_string();
-        std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(1500));
-            if clipboard_text().as_deref() == Some(ours.as_str()) {
-                let _ = set_clipboard(&prev);
-            }
-        });
-    }
     Ok(true)
 }
 

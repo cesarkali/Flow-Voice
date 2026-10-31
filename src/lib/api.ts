@@ -64,6 +64,10 @@ export const api = {
   /** Re-run the last transcript with another style and/or translation target. */
   reprocess: (styleId: string, target: string | null) =>
     call<DictationResult>("reprocess", { styleId, target }),
+  /** History: redo any saved dictation from its original transcript with another style/language
+   *  (the item is updated in place and the result is copied). */
+  reprocessHistory: (id: string, styleId: string, target: string | null) =>
+    call<DictationResult>("reprocess_history", { id, styleId, target }),
   /** Paste into the app that was focused when recording started. replace = undo the previous paste first. */
   pasteText: (text: string, replace: boolean) => call<void>("paste_text", { text, replace }),
   copyText: (text: string) => call<void>("copy_text", { text }),

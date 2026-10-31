@@ -250,6 +250,16 @@ pub fn cancel_recording(app: AppHandle) {
 }
 
 #[tauri::command]
+pub async fn reprocess_history(
+    app: AppHandle,
+    id: String,
+    style_id: String,
+    target: Option<String>,
+) -> CmdResult<crate::state::DictationResult> {
+    pipeline::reprocess_history(&app, id, style_id, target).await.map_err(err)
+}
+
+#[tauri::command]
 pub async fn reprocess(app: AppHandle, style_id: String, target: Option<String>) -> CmdResult<DictationResult> {
     pipeline::reprocess(&app, style_id, target).await.map_err(err)
 }

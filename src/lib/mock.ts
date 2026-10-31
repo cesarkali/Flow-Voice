@@ -685,6 +685,24 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       mockEmit(EVENTS.overlayState, { phase: "done", result: clone(lastResult) } satisfies OverlayEvent);
       return clone(lastResult);
     }
+    case "reprocess_history": {
+      await sleep(900);
+      const i = history.findIndex((h) => h.id === a.id);
+      if (i < 0) throw "esse ditado não está mais no histórico";
+      const target = (a.target as string | null) ?? null;
+      const h = history[i];
+      const next: DictationResult = {
+        ...h,
+        style_id: String(a.styleId),
+        target,
+        mode: h.mode === "command" ? "command" : target ? "translate" : "dictate",
+        text: target ? `[${target.toUpperCase()}] ${h.raw}` : `${h.raw.charAt(0).toUpperCase()}${h.raw.slice(1)}`,
+        warnings: [],
+      };
+      history[i] = next;
+      mockEmit(EVENTS.historyChanged);
+      return clone(next);
+    }
     case "paste_text":
       return;
     case "take_model_notices":

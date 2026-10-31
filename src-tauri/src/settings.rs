@@ -339,7 +339,7 @@ pub fn system_prompt(style_prompt: &str, target: Option<&str>, dictionary: &[Str
         p.push_str(style_prompt.trim());
     }
     if !dictionary.is_empty() {
-        p.push_str("\n\nVOCABULÁRIO DO USUÁRIO (grafia correta destes termos, use quando soarem parecidos): ");
+        p.push_str("\n\nVOCABULÁRIO DO USUÁRIO (só a GRAFIA correta de termos que a pessoa pode dizer; use um termo apenas para corrigir uma palavra da transcrição que claramente é ele, com som quase idêntico; NUNCA insira um termo que não foi dito nem troque palavras comuns por ele):");
         p.push_str(&dictionary.join(", "));
     }
     push_app_context(&mut p, app);
@@ -381,7 +381,7 @@ REGRAS ABSOLUTAS:
 pub fn command_prompt(dictionary: &[String], app: Option<&str>) -> String {
     let mut p = String::from(COMMAND_RULES);
     if !dictionary.is_empty() {
-        p.push_str("\n\nVOCABULÁRIO DO USUÁRIO (grafia correta destes termos): ");
+        p.push_str("\n\nVOCABULÁRIO DO USUÁRIO (só a grafia correta de termos que podem aparecer; nunca os insira se não estiverem no texto ou na instrução):");
         p.push_str(&dictionary.join(", "));
     }
     push_app_context(&mut p, app);

@@ -949,7 +949,9 @@
 
   async function reprocess(styleId: string, target: string | null) {
     if (!result || pending) return;
-    const p = { key: target ? `lang:${target}` : styleId, id: result.id, seq: ++pseq };
+    // The spinner goes on what was clicked: a style chip (keeps the language) or a language.
+    const key = styleId !== result.style_id || !target ? styleId : `lang:${target}`;
+    const p = { key, id: result.id, seq: ++pseq };
     pending = p;
     actionError = "";
     try {
@@ -1138,6 +1140,19 @@
                       <button type="button" class="chip back" style="--i:0" aria-label={t("ovx.back_tip")} onclick={() => (picker = false)}>
                         <Icon name="chevronLeft" size={14} />{t("ovx.back")}
                       </button>
+                      {#if result.target}
+                        <!-- back to the language that was spoken, same style -->
+                        <button
+                          type="button"
+                          class="chip"
+                          style="--i:1"
+                          class:loading={pending?.key === result.style_id}
+                          disabled={busy}
+                          onclick={() => reprocess(result!.style_id, null)}
+                        >
+                          {t("ovx.no_translate")}
+                        </button>
+                      {/if}
                       {#each TARGET_LANGS as l, i}
                         <button
                           type="button"
@@ -1173,11 +1188,11 @@
                             type="button"
                             class="chip"
                             style="--i:{i}"
-                            class:on={!showOriginal && !result.target && result.style_id === st.id}
+                            class:on={!showOriginal && result.style_id === st.id}
                             class:loading={pending?.key === st.id}
                             disabled={busy}
                             data-tip={st.description || null}
-                            onclick={() => reprocess(st.id, null)}
+                            onclick={() => reprocess(st.id, result!.target ?? null)}
                           >
                             {st.name}
                           </button>

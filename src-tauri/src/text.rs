@@ -165,6 +165,16 @@ pub fn is_hallucination_voiced(text: &str, voiced_secs: f32) -> bool {
     })
 }
 
+/// True when a transcript is just a piece of the prompt it was given (Whisper repeats its
+/// prompt on silence/noise): the whole transcript appears inside the prompt.
+pub fn echoes_prompt(text: &str, prompt: &str) -> bool {
+    let (t, p) = (normalize(text), normalize(prompt));
+    if t.is_empty() || p.is_empty() {
+        return false;
+    }
+    t.split(' ').count() >= 3 && p.contains(&t)
+}
+
 /// Strips wrappers some models add despite instructions.
 pub fn clean_llm_output(text: &str) -> String {
     let mut t = text.trim().to_string();
@@ -275,6 +285,8 @@ mod tests {
         assert!(!is_hallucination("Preciso da transcrição por e-mail"));
         assert!(!is_hallucination("Coloca a legenda por cima do vídeo"));
         assert!(!is_hallucination_voiced("Obrigado!", 1.5));
+        assert!(echoes_prompt("Cidades, empresas e produtos.", "nomes de pessoas, cidades, empresas e produtos escritos"));
+        assert!(!echoes_prompt("Abre o relatório de vendas", "nomes de pessoas, cidades, empresas e produtos"));
         assert!(is_hallucination_voiced("Obrigado!", 0.3));
     }
 

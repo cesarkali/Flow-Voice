@@ -20,6 +20,7 @@ export default defineExt({
     "ovx.more": "Ver tudo",
     "ovx.less": "Recolher",
     "ovx.back": "Estilos",
+    "ovx.no_translate": "Sem tradução",
   },
   en: {
     "ovx.paste_tip": "Paste this text where the cursor was when you started speaking",
@@ -39,6 +40,7 @@ export default defineExt({
     "ovx.more": "Show all",
     "ovx.less": "Collapse",
     "ovx.back": "Styles",
+    "ovx.no_translate": "No translation",
   },
   es: {
     "ovx.paste_tip": "Pega este texto donde estaba el cursor cuando empezaste a hablar",
@@ -58,5 +60,6 @@ export default defineExt({
     "ovx.more": "Ver todo",
     "ovx.less": "Contraer",
     "ovx.back": "Estilos",
+    "ovx.no_translate": "Sin traducción",
   },
 });
