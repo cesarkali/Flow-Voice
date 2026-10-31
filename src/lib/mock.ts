@@ -695,6 +695,11 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       mockEmit(EVENTS.overlayState, { phase: "done", result: clone(lastResult) } satisfies OverlayEvent);
       return;
     }
+    case "feedback_log":
+      return "2026-10-31 00:44:42 INFO  FlowVoice 2.0.0 starting\n2026-10-31 00:44:42 INFO  hotkey registered: CommandOrControl+Shift+Space\n2026-10-31 00:45:10 INFO  recording start (Dictate, app Some(\"outlook\"), style professional)\n2026-10-31 00:45:18 WARN  stt groq failed: limite de uso atingido (HTTP 429: Rate limit reached)";
+    case "open_feedback":
+      window.open(`https://github.com/cesarkali/Flow-Voice/issues/new?template=${a.kind === "idea" ? "feature_request" : "bug_report"}.yml`, "_blank");
+      return;
     case "reprocess_history": {
       await sleep(900);
       const i = history.findIndex((h) => h.id === a.id);

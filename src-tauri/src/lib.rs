@@ -2,6 +2,7 @@ mod apps;
 mod audio;
 mod cloud;
 mod commands;
+mod feedback;
 mod heal;
 mod hotkeys;
 mod keys;
@@ -212,6 +213,8 @@ pub fn run() {
             commands::chat_reset,
             commands::open_settings,
             commands::app_info,
+            commands::open_feedback,
+            commands::feedback_log,
             commands::check_update,
             commands::install_update,
             commands::open_url,

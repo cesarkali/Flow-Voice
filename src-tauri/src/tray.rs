@@ -24,6 +24,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     let settings = MenuItem::with_id(app, "settings", "Configurações", true, None::<&str>)?;
     let history = MenuItem::with_id(app, "history", "Histórico", true, None::<&str>)?;
     let wizard = MenuItem::with_id(app, "wizard", "Refazer configuração inicial", true, None::<&str>)?;
+    let feedback = MenuItem::with_id(app, "feedback", "Reportar problema ou sugerir melhoria", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Sair do FlowVoice", true, None::<&str>)?;
     Menu::with_items(
         app,
@@ -35,6 +36,7 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
             &history,
             &settings,
             &wizard,
+            &feedback,
             &PredefinedMenuItem::separator(app)?,
             &quit,
         ],
@@ -56,6 +58,7 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
                 // The menu took the focus: paste into the app the user was in before.
                 "paste_last" => pipeline::paste_last(app, crate::platform::last_app_window()),
                 "settings" => windows::open_settings(app, Some("general".into())),
+                "feedback" => windows::open_settings(app, Some("about".into())),
                 "history" => windows::open_settings(app, Some("home".into())),
                 "quit" => app.exit(0),
                 "wizard" => restart_onboarding(app),

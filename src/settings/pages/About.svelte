@@ -46,6 +46,13 @@
 
   const frac = $derived(updateFraction());
   const pct = $derived(Math.round((frac ?? 0) * 100));
+
+  // ---------------------------------------------------------------- feedback (GitHub issues)
+  let withLog = $state(true);
+  let logPreview = $state<string | null>(null);
+  async function toggleLog() {
+    logPreview = logPreview === null ? await api.feedbackLog() : null;
+  }
 </script>
 
 <header class="hero">
@@ -125,6 +132,29 @@
         </button>
       </li>
     </ul>
+    <div class="fb" id="feedback">
+      <p class="rt">{t("fb.title")}</p>
+      <p class="rh">{t("fb.hint")}</p>
+      <label class="fb-log">
+        <input type="checkbox" bind:checked={withLog} />
+        <span>
+          <span class="fl-t">{t("fb.log")}</span>
+          <span class="rh">{t("fb.log_hint")}</span>
+        </span>
+      </label>
+      {#if withLog}
+        <button type="button" class="fl-show" aria-expanded={logPreview !== null} onclick={toggleLog}>
+          {logPreview !== null ? t("fb.log_hide") : t("fb.log_show")}
+        </button>
+        {#if logPreview !== null}
+          <pre class="fl-pre mono">{logPreview || t("fb.log_empty")}</pre>
+        {/if}
+      {/if}
+      <div class="fb-acts">
+        <Button size="sm" icon="alert" onclick={() => api.openFeedback("bug", undefined, withLog)}>{t("fb.bug")}</Button>
+        <Button size="sm" variant="ghost" icon="sparkle" onclick={() => api.openFeedback("idea")}>{t("fb.idea")}</Button>
+      </div>
+    </div>
     <div class="redo">
       <div>
         <p class="rt">{t("obx.redo")}</p>
@@ -521,5 +551,63 @@
     justify-content: space-between;
     gap: 6px 16px;
     font-size: 11.5px;
+  }
+  .fb {
+    display: grid;
+    gap: 6px;
+    margin-top: 14px;
+    padding: 14px 0 2px;
+    border-top: 1px solid var(--line);
+  }
+  .fb-acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .fb-log {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 6px;
+    cursor: pointer;
+  }
+  .fb-log input {
+    margin-top: 3px;
+    accent-color: var(--accent);
+  }
+  .fb-log > span {
+    display: grid;
+    gap: 2px;
+  }
+  .fl-t {
+    font-size: 13px;
+    color: var(--text);
+  }
+  .fl-show {
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-fg, var(--text-2));
+    font: inherit;
+    font-size: 12.5px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .fl-pre {
+    max-height: 180px;
+    overflow: auto;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-2, rgba(127, 127, 127, 0.06));
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-2);
   }
 </style>

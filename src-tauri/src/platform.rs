@@ -764,3 +764,41 @@ pub fn make_non_activating(window: &tauri::WebviewWindow) {
         let _ = window;
     }
 }
+
+// ---------------------------------------------------------------- system info
+
+/// Human-readable OS version for bug reports, e.g. "Windows 11 Pro 24H2 (build 26100)".
+pub fn os_version() -> String {
+    #[cfg(windows)]
+    {
+        use windows::core::HSTRING;
+        use windows::Win32::System::Registry::{RegGetValueW, HKEY_LOCAL_MACHINE, RRF_RT_REG_SZ};
+        let read = |name: &str| -> Option<String> {
+            let mut buf = [0u16; 128];
+            let mut len = (buf.len() * 2) as u32;
+            let key = HSTRING::from(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+            let ok = unsafe {
+                RegGetValueW(
+                    HKEY_LOCAL_MACHINE,
+                    &key,
+                    &HSTRING::from(name),
+                    RRF_RT_REG_SZ,
+                    None,
+                    Some(buf.as_mut_ptr() as *mut _),
+                    Some(&mut len),
+                )
+            };
+            ok.is_ok().then(|| String::from_utf16_lossy(&buf[..(len as usize / 2).saturating_sub(1)]))
+        };
+        let build: u32 = read("CurrentBuild").and_then(|b| b.parse().ok()).unwrap_or(0);
+        // ProductName still says "Windows 10" on Windows 11: the build number tells them apart.
+        let mut name = read("ProductName").unwrap_or_else(|| "Windows".into());
+        if build >= 22000 {
+            name = name.replacen("Windows 10", "Windows 11", 1);
+        }
+        let release = read("DisplayVersion").map(|d| format!(" {d}")).unwrap_or_default();
+        return format!("{name}{release} (build {build})");
+    }
+    #[allow(unreachable_code)]
+    std::env::consts::OS.to_string()
+}

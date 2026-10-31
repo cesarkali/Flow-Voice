@@ -100,6 +100,11 @@ export const api = {
   // app
   openSettings: (page?: SettingsPage) => call<void>("open_settings", { page: page ?? null }),
   appInfo: () => call<AppInfo>("app_info"),
+  /** GitHub issue form ("bug" | "idea") prefilled with app/Windows versions (+ an error message). */
+  openFeedback: (kind: "bug" | "idea", context?: string, includeLog = true) =>
+    call<void>("open_feedback", { kind, context: context ?? null, includeLog }),
+  /** The cleaned flowvoice.log excerpt a bug report would include (to show before sending). */
+  feedbackLog: () => call<string>("feedback_log"),
   checkUpdate: () => call<UpdateInfo>("check_update"),
   installUpdate: () => call<void>("install_update"),
   openUrl: (url: string) => call<void>("open_url", { url }),

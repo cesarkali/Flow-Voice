@@ -404,8 +404,46 @@ pub fn app_info(app: AppHandle, state: State<AppState>) -> AppInfo {
         website: "https://caliberda.com.br".into(),
         instagram: "https://www.instagram.com/cesar.kali/".into(),
         data_dir: state.config_dir.display().to_string(),
-        os: std::env::consts::OS.into(),
+        os: crate::platform::os_version(),
     }
+}
+
+/// Exactly what a bug report would carry from flowvoice.log (shown before sending).
+#[tauri::command]
+pub fn feedback_log(state: State<AppState>) -> String {
+    crate::feedback::log_excerpt(&state.config_dir)
+}
+
+/// Opens a GitHub issue form ("bug" or "idea") prefilled with the app and Windows versions —
+/// and, for an error card, the error message. Never the dictated text or any key.
+#[tauri::command]
+pub fn open_feedback(
+    app: AppHandle,
+    state: State<AppState>,
+    kind: String,
+    context: Option<String>,
+    include_log: Option<bool>,
+) -> CmdResult<()> {
+    let version = app.package_info().version.to_string();
+    let mut params: Vec<(&str, String)> = vec![("version", version)];
+    let template = if kind == "idea" {
+        "feature_request.yml"
+    } else {
+        params.push(("os", crate::platform::os_version()));
+        if let Some(c) = context.map(|c| c.trim().chars().take(600).collect::<String>()).filter(|c| !c.is_empty()) {
+            params.push(("what", format!("Apareceu este erro:\n\n> {c}\n\n")));
+        }
+        if include_log.unwrap_or(true) {
+            let log = crate::feedback::log_excerpt(&state.config_dir);
+            if !log.is_empty() {
+                params.push(("logs", log));
+            }
+        }
+        "bug_report.yml"
+    };
+    params.insert(0, ("template", template.to_string()));
+    let url = reqwest::Url::parse_with_params("https://github.com/cesarkali/Flow-Voice/issues/new", &params).map_err(err)?;
+    app.opener().open_url(url.as_str(), None::<&str>).map_err(err)
 }
 
 #[derive(Serialize)]

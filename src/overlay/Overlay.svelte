@@ -1313,6 +1313,11 @@
                       <Icon name="key" size={15} />{t("ov.open_settings")}
                     </button>
                   {/if}
+                  {#if !lastError.hint}
+                    <button type="button" class="btn" data-tip={t("fb.report_tip")} onclick={() => api.openFeedback("bug", lastError!.message)}>
+                      <Icon name="alert" size={15} />{t("fb.report")}
+                    </button>
+                  {/if}
                   {#if lastError.raw}
                     <button type="button" class="btn primary" data-tip={t("ovx.copy_raw_tip")} onclick={() => copy(lastError!.raw!)}>
                       <Icon name={copied ? "check" : "copy"} size={15} />{copied ? t("c.copied") : t("ov.copy_raw")}

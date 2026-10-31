@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Guia de chaves grátis
+    url: https://flowvoice.caliberda.com.br/guia
+    about: Passo a passo para conseguir e colar as chaves (Groq, Gemini…). Vale conferir antes de abrir um problema de chave.
+  - name: Privacidade
+    url: https://flowvoice.caliberda.com.br/privacidade
+    about: O que o FlowVoice guarda e para onde vai cada coisa.

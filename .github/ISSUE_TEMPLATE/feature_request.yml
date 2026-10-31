@@ -1,0 +1,25 @@
+name: Sugerir uma melhoria
+description: Uma ideia, um recurso novo ou algo que poderia ser mais simples.
+title: "[Ideia] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Toda ideia é bem-vinda — conte o que você gostaria que o FlowVoice fizesse.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Qual é a ideia?
+      placeholder: "Ex.: poder escolher um estilo diferente para cada aplicativo direto pelo card."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Por que isso ajudaria?
+      description: Em que situação do seu dia a dia isso faria diferença?
+  - type: input
+    id: version
+    attributes:
+      label: Versão do FlowVoice
+      placeholder: "2.0.0"

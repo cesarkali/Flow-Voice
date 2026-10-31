@@ -1,0 +1,67 @@
+name: Reportar um problema
+description: Algo não funcionou como deveria no FlowVoice.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por ajudar a melhorar o FlowVoice! Quanto mais detalhes, mais rápido dá para corrigir.
+        **Não cole chaves de API** nem textos pessoais aqui — esta página é pública.
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o problema. Se apareceu uma mensagem de erro, cole aqui.
+      placeholder: "Ex.: o card some quando eu troco de monitor durante a gravação."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      description: Os passos até o problema acontecer.
+      placeholder: |
+        1. Abri o Bloco de Notas
+        2. Apertei Ctrl+Shift+Espaço e falei por uns 10 segundos
+        3. …
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que você esperava?
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Em qual modo?
+      options:
+        - Ditado
+        - Tradução
+        - Pergunta (assistente)
+        - Comando (texto selecionado)
+        - Configurações / janela principal
+        - Outro
+  - type: input
+    id: version
+    attributes:
+      label: Versão do FlowVoice
+      description: Em Configurações → Sobre (o app preenche sozinho quando você abre por lá).
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Windows
+      placeholder: "Windows 11 (build 26100)"
+  - type: input
+    id: provider
+    attributes:
+      label: Provedores em uso (opcional)
+      description: "Ex.: voz Groq, IA Groq · ou modo offline com o modelo local."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log (opcional)
+      description: |
+        Quando você reporta pelo app (Configurações → Sobre, ou o botão Reportar de um erro), as últimas linhas do `flowvoice.log` já vêm aqui: horários, versões, apps em que você ditou e erros dos provedores — nunca o texto ditado; chaves e seu nome de usuário são removidos. Revise e apague o que quiser antes de enviar.
+      render: text
