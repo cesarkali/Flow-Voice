@@ -807,7 +807,25 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       } satisfies AppInfo;
     case "check_update": {
       await sleep(900);
-      const info = { available: true, version: "2.0.1", notes: "Correções no colar automático e nova voz de teste." } satisfies UpdateInfo;
+      // Markdown like a real release body (CHANGELOG section + the GitHub-only footer).
+      const notes = [
+        "### Prévia ao vivo mais estável",
+        "",
+        "- O texto não volta mais atrás: cada modelo tem um pedido por vez.",
+        "- Palavras confirmadas: uma palavra só fica firme quando duas respostas seguidas concordam nela.",
+        "",
+        "### Vidro na cápsula",
+        "",
+        "- Nova opção em **Geral → Janela flutuante**: **Vidro** ou **Translúcido**, com o desfoque do Windows.",
+        "",
+        "### Correções",
+        "",
+        "- A janela às vezes mostrava `state not managed…` ao iniciar.",
+        "",
+        "---",
+        "**Instalar:** baixe `FlowVoiceSetup.exe` abaixo.",
+      ].join("\n");
+      const info = { available: true, version: "2.1.1", notes } satisfies UpdateInfo;
       mockEmit("update-available", info); // same event the Rust background check emits
       return info;
     }

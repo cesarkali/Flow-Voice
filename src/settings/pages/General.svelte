@@ -7,6 +7,7 @@
   import { EVENTS, type AppInfo, type SettingsPage, type UpdateInfo } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
   import Progress from "../../lib/ui/Progress.svelte";
+  import ReleaseNotes from "../../lib/ui/ReleaseNotes.svelte";
   import Row from "../../lib/ui/Row.svelte";
   import Section from "../../lib/ui/Section.svelte";
   import Segmented from "../../lib/ui/Segmented.svelte";
@@ -209,7 +210,7 @@
         <span class="ok"><Icon name="check" size={14} stroke={2} />{t("gen.up_to_date")}</span>
       {:else if upd?.available}
         <span class="new">{t("gen.available", { v: upd.version ?? "" })}</span>
-        {#if upd.notes}<p class="notes">{upd.notes}</p>{/if}
+        {#if upd.notes}<div class="notes"><ReleaseNotes md={upd.notes} max={200} /></div>{/if}
       {/if}
       {#if installing && dl}
         <div class="pg">
@@ -497,8 +498,7 @@
     font-weight: 600;
   }
   .notes {
-    color: var(--text-2);
-    font-size: 12.5px;
+    margin-top: 6px;
   }
   .err {
     color: var(--danger-fg);

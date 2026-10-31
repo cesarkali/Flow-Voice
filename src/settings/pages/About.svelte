@@ -9,6 +9,7 @@
   import type { AppInfo, SettingsPage } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
   import Progress from "../../lib/ui/Progress.svelte";
+  import ReleaseNotes from "../../lib/ui/ReleaseNotes.svelte";
   import { restartOnboarding } from "../../lib/stores.svelte";
   import { author, AUTHOR as ME, loadAuthorAvatar } from "../author.svelte";
   import { checkUpdate, donateOptions, installUpdate, upd, updateFraction } from "../shell-update.svelte";
@@ -53,20 +54,6 @@
   async function toggleLog() {
     logPreview = logPreview === null ? await api.feedbackLog() : null;
   }
-
-  /** Release notes come as Markdown (the CHANGELOG section): show them as clean plain text. */
-  function plainNotes(md: string): string {
-    return md
-      .replace(/\r/g, "")
-      .replace(/^#{1,6}\s*/gm, "")
-      .replace(/^\s*[-*]\s+/gm, "• ")
-      .replace(/^-{3,}\s*$/gm, "")
-      .replace(/\*\*(.+?)\*\*/g, "$1")
-      .replace(/`([^`]+)`/g, "$1")
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-  }
 </script>
 
 <header class="hero">
@@ -74,7 +61,7 @@
     <Logo size={88} animate="loop" />
   </div>
   <div class="ht">
-    <h1>FlowVoice <span class="v">2.0</span></h1>
+    <h1>FlowVoice <span class="v">{(info?.version ?? "2.1").split(".").slice(0, 2).join(".")}</span></h1>
     <p class="tag">{t("about.tagline")}</p>
   </div>
 </header>
@@ -244,7 +231,7 @@
     {#if upd.info?.available && upd.info.notes}
       <div class="notes" transition:slide={{ duration: 220 }}>
         <span class="label">{t("sh.about_notes")}</span>
-        <p>{plainNotes(upd.info.notes)}</p>
+        <ReleaseNotes md={upd.info.notes} />
       </div>
     {/if}
   </section>
@@ -562,12 +549,8 @@
     font-size: 13px;
     color: var(--text-2);
   }
-  .notes p {
-    margin-top: 4px;
-    max-height: 220px;
-    overflow: auto;
-    white-space: pre-line;
-    line-height: 1.55;
+  .notes :global(.rn) {
+    margin-top: 8px;
   }
 
   .foot {

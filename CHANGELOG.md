@@ -2,6 +2,11 @@
 
 Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases antigos](https://github.com/cesarkali/Flow-Voice/releases?q=v1&expanded=true) e no histórico do Git.
 
+## Não lançado
+
+- As novidades de uma atualização aparecem formatadas no app (seções, lista, negrito e código), sem o aviso de download do GitHub.
+- A tela Sobre mostra a versão instalada no título (era fixo "2.0").
+
 ## 2.1.0
 
 ### Prévia ao vivo mais estável
