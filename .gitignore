@@ -52,3 +52,6 @@ tools/dev/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Launch videos (/brag)
+brag-output*/
