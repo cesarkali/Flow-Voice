@@ -1,2147 +1,600 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlowVoice - Ditado por Voz com IA, Tradução e Pesquisa na Web | Gratuito para Windows</title>
-
-    <!-- Meta Tags para SEO -->
-    <meta name="description" content="FlowVoice é um utilitário gratuito e de código aberto para Windows que transcreve sua voz com IA diretamente no cursor, polindo o texto, traduzindo para outros idiomas e pesquisando na internet em tempo real — tudo com um atalho de teclado.">
-    <meta name="keywords" content="ditado por voz windows, transcrição por voz IA, whisper windows, ditado inteligente, flowvoice, voice dictation windows, transcrição automática, polimento de texto IA, pesquisa por voz, tradução por voz, groq whisper, gemini ditado, openai whisper, faster-whisper, ditado gratuito, produtividade windows, assistente voz teclado">
-    <meta name="author" content="Júlio Caliberda">
-    <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#0a0a0c">
-    <link rel="canonical" href="https://flowvoice.caliberda.com.br/">
-
-    <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "FlowVoice",
-      "operatingSystem": "Windows, Ubuntu",
-      "applicationCategory": "UtilitiesApplication",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
-      "description": "Utilitário gratuito de ditado por voz com IA para Windows. Transcreve, polida, traduz e pesquisa na web em tempo real com um atalho de teclado.",
-      "url": "https://flowvoice.caliberda.com.br/",
-      "author": { "@type": "Person", "name": "Júlio Caliberda", "url": "https://caliberda.com.br" },
-      "softwareVersion": "1.9.2",
-      "license": "https://www.gnu.org/licenses/gpl-3.0.html",
-      "downloadUrl": "https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe",
-      "screenshot": "https://flowvoice.caliberda.com.br/icon.png"
-    }
-    </script>
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://flowvoice.caliberda.com.br/">
-    <meta property="og:title" content="FlowVoice - Ditado por Voz com IA, Tradução e Pesquisa na Web | Gratuito">
-    <meta property="og:description" content="Transcreva, polida, traduza e pesquise na internet com a sua voz — direto no cursor, em qualquer app do Windows. 100% gratuito e de código aberto.">
-    <meta property="og:image" content="https://flowvoice.caliberda.com.br/icon.png">
-    <meta property="og:image:alt" content="Logotipo do FlowVoice">
-    <meta property="og:site_name" content="FlowVoice">
-    <meta property="og:locale" content="pt_BR">
-
-    <!-- Twitter / X -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://flowvoice.caliberda.com.br/">
-    <meta name="twitter:title" content="FlowVoice - Ditado por Voz com IA, Tradução e Pesquisa na Web | Gratuito">
-    <meta name="twitter:description" content="Transcreva, polida, traduza e pesquise na internet com a sua voz — direto no cursor, em qualquer app do Windows. 100% gratuito e de código aberto.">
-    <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/icon.png">
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <link rel="icon" type="image/png" href="icon.png">
-
-    <!-- Vercel Analytics -->
-    <script>
-        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/insights/script.js"></script>
-
-    <style>
-        :root {
-            --bg-color: #030303;
-            --bg-grid: rgba(255, 255, 255, 0.012);
-            --card-bg: #09090b;
-            --card-bg-glass: rgba(13, 13, 17, 0.7);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-color-hover: rgba(255, 255, 255, 0.18);
-            --text-primary: #ffffff;
-            --text-secondary: #a1a1aa;
-            --text-muted: #52525b;
-            --accent-purple: #8b5cf6;
-            --accent-purple-glow: rgba(139, 92, 246, 0.15);
-            --accent-blue: #3b82f6;
-            --accent-blue-glow: rgba(59, 130, 246, 0.15);
-            --accent-emerald: #10b981;
-            --accent-emerald-glow: rgba(16, 185, 129, 0.15);
-            --accent-yellow: #f59e0b;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            
-            /* Sleek Grid Background */
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.04) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%),
-                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%),
-                linear-gradient(var(--bg-grid) 1px, transparent 1px),
-                linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
-        }
-
-        /* Ambient light effects with breathing animation */
-        .bg-glow-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            pointer-events: none;
-            z-index: -1;
-        }
-
-        .ambient-light {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.035) 0%, transparent 70%);
-            filter: blur(80px);
-            pointer-events: none;
-            animation: ambient-pulse 15s infinite ease-in-out;
-        }
-        .light-top { 
-            top: -200px; 
-            left: 20%; 
-        }
-        .light-mid { 
-            top: 800px; 
-            right: 10%; 
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.025) 0%, transparent 70%);
-            animation: ambient-pulse 18s infinite ease-in-out alternate;
-        }
-        .light-bottom { 
-            bottom: -200px; 
-            left: 10%; 
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.02) 0%, transparent 70%);
-            animation: ambient-pulse 20s infinite ease-in-out;
-        }
-
-        @keyframes ambient-pulse {
-            0% { transform: scale(1) translate(0, 0); opacity: 0.8; }
-            50% { transform: scale(1.08) translate(3%, 2%); opacity: 1; }
-            100% { transform: scale(1) translate(0, 0); opacity: 0.8; }
-        }
-
-        /* Exclusive Soundwave/Laser Reveal Animation */
-        .reveal-element {
-            opacity: 0;
-            filter: blur(12px);
-            transform: translateY(24px);
-            transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), 
-                        filter 1s cubic-bezier(0.16, 1, 0.3, 1), 
-                        transform 1s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .reveal-element.active {
-            opacity: 1;
-            filter: blur(0);
-            transform: translateY(0);
-        }
-
-        /* Staggered Scan-Sweep Animations for Border/Glow effects upon reveal */
-        @keyframes scan-sweep-purple {
-            0% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(139, 92, 246, 0); }
-            30% { border-color: var(--accent-purple); box-shadow: 0 0 15px rgba(139, 92, 246, 0.18); }
-            100% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(139, 92, 246, 0); }
-        }
-
-        @keyframes scan-sweep-blue {
-            0% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
-            30% { border-color: var(--accent-blue); box-shadow: 0 0 15px rgba(59, 130, 246, 0.18); }
-            100% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
-        }
-
-        @keyframes scan-sweep-emerald {
-            0% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
-            30% { border-color: var(--accent-emerald); box-shadow: 0 0 15px rgba(16, 185, 129, 0.18); }
-            100% { border-color: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
-        }
-
-        /* Laser Sweep Overlay */
-        .spec-tile::after, .step-card::after, .style-card::after, .provider-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -150%;
-            width: 80px;
-            height: 100%;
-            pointer-events: none;
-            transform: skewX(-25deg);
-            z-index: 2;
-        }
-
-        .specs-bar.active .spec-tile::after {
-            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.15), transparent);
-            animation: laser-sweep-anim 1.5s cubic-bezier(0.25, 1, 0.5, 1) both;
-        }
-
-        .steps-grid.active .step-card::after {
-            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.35), rgba(139, 92, 246, 0.15), transparent);
-            animation: laser-sweep-anim 1.5s cubic-bezier(0.25, 1, 0.5, 1) both;
-        }
-
-        .styles-grid.active .style-card::after {
-            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.35), rgba(139, 92, 246, 0.15), transparent);
-            animation: laser-sweep-anim 1.5s cubic-bezier(0.25, 1, 0.5, 1) both;
-        }
-
-        .providers-grid.active .provider-card::after {
-            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.35), rgba(16, 185, 129, 0.15), transparent);
-            animation: laser-sweep-anim 1.5s cubic-bezier(0.25, 1, 0.5, 1) both;
-        }
-
-        @keyframes laser-sweep-anim {
-            0% { left: -150%; }
-            100% { left: 200%; }
-        }
-
-        /* Apply sweeps and borders to grid items only when parent is active */
-        .specs-bar.active .spec-tile { animation: scan-sweep-blue 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        .steps-grid.active .step-card { animation: scan-sweep-purple 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        
-        .styles-grid.active .style-card.professional { animation: scan-sweep-purple 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        .styles-grid.active .style-card.casual { animation: scan-sweep-blue 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        .styles-grid.active .style-card.direct { animation: scan-sweep-purple 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
-        
-        .providers-grid.active .provider-card { animation: scan-sweep-emerald 1.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
-
-        /* Stagger delays for scan/laser animations */
-        .specs-bar .spec-tile:nth-child(1) { transition-delay: 0.05s; }
-        .specs-bar .spec-tile:nth-child(2) { transition-delay: 0.12s; }
-        .specs-bar .spec-tile:nth-child(3) { transition-delay: 0.19s; }
-        .specs-bar .spec-tile:nth-child(4) { transition-delay: 0.26s; }
-        .specs-bar .spec-tile:nth-child(5) { transition-delay: 0.33s; }
-        .specs-bar .spec-tile:nth-child(6) { transition-delay: 0.4s; }
-
-        .specs-bar.active .spec-tile:nth-child(1)::after { animation-delay: 0.05s; }
-        .specs-bar.active .spec-tile:nth-child(2)::after { animation-delay: 0.12s; }
-        .specs-bar.active .spec-tile:nth-child(3)::after { animation-delay: 0.19s; }
-        .specs-bar.active .spec-tile:nth-child(4)::after { animation-delay: 0.26s; }
-        .specs-bar.active .spec-tile:nth-child(5)::after { animation-delay: 0.33s; }
-        .specs-bar.active .spec-tile:nth-child(6)::after { animation-delay: 0.4s; }
-
-        .steps-grid .step-card:nth-child(1) { transition-delay: 0.05s; }
-        .steps-grid .step-card:nth-child(2) { transition-delay: 0.15s; }
-        .steps-grid .step-card:nth-child(3) { transition-delay: 0.25s; }
-        .steps-grid .step-card:nth-child(4) { transition-delay: 0.35s; }
-
-        .steps-grid.active .step-card:nth-child(1)::after { animation-delay: 0.05s; }
-        .steps-grid.active .step-card:nth-child(2)::after { animation-delay: 0.15s; }
-        .steps-grid.active .step-card:nth-child(3)::after { animation-delay: 0.25s; }
-        .steps-grid.active .step-card:nth-child(4)::after { animation-delay: 0.35s; }
-
-        .styles-grid .style-card:nth-child(1) { transition-delay: 0.05s; }
-        .styles-grid .style-card:nth-child(2) { transition-delay: 0.18s; }
-        .styles-grid .style-card:nth-child(3) { transition-delay: 0.31s; }
-
-        .styles-grid.active .style-card:nth-child(1)::after { animation-delay: 0.05s; }
-        .styles-grid.active .style-card:nth-child(2)::after { animation-delay: 0.18s; }
-        .styles-grid.active .style-card:nth-child(3)::after { animation-delay: 0.31s; }
-
-        .providers-grid .provider-card:nth-child(1) { transition-delay: 0.05s; }
-        .providers-grid .provider-card:nth-child(2) { transition-delay: 0.12s; }
-        .providers-grid .provider-card:nth-child(3) { transition-delay: 0.19s; }
-        .providers-grid .provider-card:nth-child(4) { transition-delay: 0.26s; }
-        .providers-grid .provider-card:nth-child(5) { transition-delay: 0.33s; }
-        .providers-grid .provider-card:nth-child(6) { transition-delay: 0.40s; }
-
-        .providers-grid.active .provider-card:nth-child(1)::after { animation-delay: 0.05s; }
-        .providers-grid.active .provider-card:nth-child(2)::after { animation-delay: 0.12s; }
-        .providers-grid.active .provider-card:nth-child(3)::after { animation-delay: 0.19s; }
-        .providers-grid.active .provider-card:nth-child(4)::after { animation-delay: 0.26s; }
-        .providers-grid.active .provider-card:nth-child(5)::after { animation-delay: 0.33s; }
-        .providers-grid.active .provider-card:nth-child(6)::after { animation-delay: 0.40s; }
-
-        /* Sticky Frosted Header */
-        header {
-            width: 100%;
-            border-bottom: 1px solid var(--border-color);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background-color: rgba(3, 3, 3, 0.75);
-            animation: header-slide-down 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        @keyframes header-slide-down {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .header-inner {
-            width: 92%;
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 16px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .logo-group:hover {
-            transform: scale(1.02);
-        }
-
-        .logo-group img {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-        }
-
-        .logo-title {
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            color: #ffffff;
-            background: linear-gradient(135deg, #ffffff 40%, rgba(255,255,255,0.7) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .nav-links a:hover {
-            color: #ffffff;
-        }
-
-        .nav-links .nav-btn {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid var(--border-color);
-            padding: 8px 16px;
-            border-radius: 8px;
-            color: #ffffff;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .nav-links .nav-btn:hover {
-            background: #ffffff;
-            color: #000000;
-            border-color: #ffffff;
-            transform: translateY(-1px);
-        }
-
-        /* Section Containers */
-        section {
-            width: 92%;
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 80px 0;
-        }
-
-        .section-header {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 50px auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .section-tag {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: var(--accent-purple);
-            background: var(--accent-purple-glow);
-            padding: 6px 12px;
-            border-radius: 20px;
-            width: fit-content;
-            margin: 0 auto;
-            border: 1px solid rgba(139, 92, 246, 0.25);
-        }
-
-        .section-header h2 {
-            font-size: 36px;
-            font-weight: 800;
-            letter-spacing: -0.05em;
-            color: #ffffff;
-            line-height: 1.25;
-            clip-path: inset(0 50% 0 50%); /* Start clipped from center */
-            transition: letter-spacing 1.2s cubic-bezier(0.16, 1, 0.3, 1),
-                        clip-path 1.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .section-header.active h2 {
-            letter-spacing: -0.02em;
-            clip-path: inset(0 0% 0 0%); /* Open horizontally like sound wave */
-        }
-
-        .section-header p {
-            font-size: 16px;
-            color: var(--text-secondary);
-        }
-
-        /* Hero Split-Screen Layout */
-        .hero-section {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 40px;
-            padding: 60px 0 80px 0;
-        }
-
-        .hero-left {
-            flex: 1 1 52%;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            animation: hero-fade-in-left 1s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        @keyframes hero-fade-in-left {
-            from { opacity: 0; transform: translateX(-40px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .hero-left h1 {
-            font-size: 54px;
-            font-weight: 800;
-            line-height: 1.15;
-            letter-spacing: -0.03em;
-            color: #ffffff;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #ffffff 60%, rgba(255,255,255,0.6) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero-left p {
-            font-size: 18px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 28px;
-        }
-
-        .hero-ctas {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            flex-wrap: wrap;
-            width: 100%;
-        }
-
-        /* Open Source Mini Badge next to GitHub button */
-        .github-badge {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--accent-purple);
-            background: var(--accent-purple-glow);
-            border: 1px solid rgba(139, 92, 246, 0.25);
-            padding: 4px 10px;
-            border-radius: 12px;
-            white-space: nowrap;
-            animation: glow-pulse 3s infinite ease-in-out;
-        }
-
-        @keyframes glow-pulse {
-            0%, 100% { box-shadow: 0 0 5px rgba(139, 92, 246, 0); border-color: rgba(139, 92, 246, 0.25); }
-            50% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.5); }
-        }
-
-        /* Checked List under CTAs (4 items row) */
-        .hero-checklist {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-        }
-
-        .check-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13.5px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            transition: color 0.2s ease;
-        }
-
-        .check-item:hover {
-            color: #ffffff;
-        }
-
-        .check-icon {
-            width: 16px;
-            height: 16px;
-            color: var(--accent-emerald);
-            flex-shrink: 0;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-primary {
-            background-color: #ffffff;
-            color: #000000;
-            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.08);
-        }
-
-        .btn-primary:hover {
-            background-color: #eaeaea;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(255, 255, 255, 0.15);
-        }
-
-        .btn-secondary {
-            background-color: rgba(255, 255, 255, 0.03);
-            color: #ffffff;
-            border: 1px solid var(--border-color);
-            gap: 8px;
-        }
-
-        .btn-secondary:hover {
-            background-color: rgba(255, 255, 255, 0.08);
-            border-color: var(--border-color-hover);
-            transform: translateY(-2px);
-        }
-
-        /* Modern Detailed Specs Bar */
-        .specs-bar {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            border-top: 1px solid var(--border-color);
-            padding-top: 28px;
-            gap: 24px;
-            width: 100%;
-        }
-
-        .spec-tile {
-            display: flex;
-            flex-direction: column;
-            background: rgba(255, 255, 255, 0.01);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 16px;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .spec-tile:hover {
-            border-color: rgba(255, 255, 255, 0.12);
-            background: rgba(255, 255, 255, 0.02);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .spec-label {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            letter-spacing: 0.08em;
-            margin-bottom: 6px;
-        }
-
-        .spec-val {
-            font-size: 15px;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 2px;
-        }
-
-        .spec-sub {
-            font-size: 11.5px;
-            color: var(--text-secondary);
-            line-height: 1.4;
-        }
-
-        /* Notepad Demo (Right Column - Larger Viewport) */
-        .hero-right {
-            flex: 1 1 48%;
-            display: flex;
-            justify-content: flex-end;
-            width: 100%;
-            animation: hero-fade-in-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        @keyframes hero-fade-in-right {
-            from { opacity: 0; transform: translateX(40px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .demo-window {
-            width: 100%;
-            max-width: 620px;
-            background-color: var(--card-bg-glass);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 385px;
-            position: relative;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 40px rgba(139, 92, 246, 0.05);
-            transition: border-color 0.5s ease, box-shadow 0.5s ease;
-        }
-
-        .demo-window:hover {
-            border-color: rgba(139, 92, 246, 0.25);
-            box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 50px rgba(139, 92, 246, 0.1);
-        }
-
-        .demo-header {
-            height: 44px;
-            background-color: rgba(255, 255, 255, 0.02);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            padding: 0 18px;
-            gap: 8px;
-        }
-
-        .window-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-        }
-
-        .window-title {
-            margin-left: auto;
-            margin-right: auto;
-            font-size: 11px;
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .demo-body {
-            flex-grow: 1;
-            padding: 24px;
-            position: relative;
-            background-color: rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Keypress Indicator */
-        .keypress-indicator {
-            position: absolute;
-            bottom: 82px; /* Center-bottom just above the app status overlay */
-            left: 50%;
-            transform: translate(-50%, 10px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            background: rgba(10, 10, 14, 0.94);
-            border: 1px solid rgba(139, 92, 246, 0.25);
-            padding: 10px 16px;
-            border-radius: 10px;
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 10;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 20px rgba(139, 92, 246, 0.1);
-            pointer-events: none;
-        }
-
-        .keypress-indicator.visible {
-            opacity: 1;
-            transform: translate(-50%, 0);
-        }
-
-        .keys-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .keypress-indicator .key {
-            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-bottom-width: 3px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            color: #ffffff;
-            display: inline-block;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            transition: all 0.15s ease;
-        }
-
-        .keypress-indicator .key.active {
-            border-bottom-width: 1px;
-            transform: translateY(2px);
-            box-shadow: 0 0px 2px rgba(0,0,0,0.6);
-            background: var(--accent-purple);
-            border-color: rgba(139, 92, 246, 0.5);
-            text-shadow: 0 0 5px rgba(255,255,255,0.8);
-        }
-
-        .key-desc {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 2px;
-        }
-
-        /* Simulated Assistant UI inside Demo */
-        .assistant-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -40%) scale(0.95);
-            width: 85%;
-            background: rgba(10, 10, 14, 0.95);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 12px;
-            padding: 18px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 25px rgba(139, 92, 246, 0.15);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            z-index: 8;
-        }
-
-        .assistant-overlay.visible {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        .assistant-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            padding-bottom: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent-purple);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .assistant-bubble {
-            font-size: 13px;
-            line-height: 1.5;
-            border-radius: 8px;
-            padding: 10px 12px;
-        }
-
-        .assistant-bubble.user {
-            background: rgba(255, 255, 255, 0.04);
-            color: #ffffff;
-            align-self: flex-start;
-            max-width: 95%;
-        }
-
-        .assistant-bubble.ai {
-            background: rgba(139, 92, 246, 0.08);
-            border: 1px solid rgba(139, 92, 246, 0.15);
-            color: var(--text-secondary);
-            align-self: flex-start;
-            max-width: 100%;
-        }
-
-        .simulated-editor {
-            font-size: 16.5px;
-            color: var(--text-secondary);
-            line-height: 1.65;
-            outline: none;
-            flex-grow: 1;
-            white-space: pre-wrap;
-        }
-
-        .caret {
-            display: inline-block;
-            width: 2px;
-            height: 18px;
-            background-color: #ffffff;
-            vertical-align: middle;
-            margin-left: 2px;
-            animation: blink 1s step-end infinite;
-        }
-
-        /* Floating Pill overlay matching the app overlay */
-        .app-overlay {
-            position: absolute;
-            bottom: 24px;
-            left: 50%;
-            transform: translate(-50%, 15px);
-            width: 160px;
-            height: 42px;
-            background-color: rgba(10, 10, 14, 0.96);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            padding: 0 16px;
-            gap: 12px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 20px rgba(139, 92, 246, 0.1);
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .app-overlay.visible {
-            opacity: 1;
-            transform: translate(-50%, 0);
-        }
-
-        .app-overlay.processing {
-            width: 135px;
-        }
-
-        .app-overlay.done {
-            width: 250px;
-            border-radius: 10px;
-            height: 46px;
-            border-color: rgba(16, 185, 129, 0.4);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 20px rgba(16, 185, 129, 0.15);
-        }
-
-        /* Soundwave */
-        .soundwave {
-            display: none;
-            align-items: center;
-            gap: 3px;
-        }
-
-        .soundwave-bar {
-            width: 2px;
-            height: 8px;
-            background-color: #ffffff;
-            border-radius: 1px;
-            animation: wave 0.8s infinite ease-in-out;
-        }
-        .soundwave-bar:nth-child(2) { animation-delay: 0.15s; }
-        .soundwave-bar:nth-child(3) { animation-delay: 0.3s; }
-
-        @keyframes wave {
-            0%, 100% { height: 4px; }
-            50% { height: 14px; }
-        }
-
-        .spinner {
-            display: none;
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-top-color: #ffffff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-
-        .done-dot {
-            display: none;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: var(--accent-emerald);
-        }
-
-        .overlay-status-label {
-            font-size: 11.5px;
-            font-weight: 700;
-            color: #ffffff;
-            white-space: nowrap;
-        }
-
-        .overlay-sublabel {
-            font-size: 8px;
-            font-weight: 800;
-            color: var(--accent-emerald);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            display: none;
-        }
-
-        .app-overlay.done .overlay-sublabel {
-            display: block;
-        }
-
-        /* How it Works Section */
-        .steps-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-
-        .step-card {
-            background-color: var(--card-bg-glass);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 24px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .step-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(139, 92, 246, 0.4);
-            background-color: rgba(255, 255, 255, 0.02);
-            box-shadow: 0 12px 24px rgba(139, 92, 246, 0.06);
-        }
-
-        .step-card h3 {
-            font-size: 16px;
-            font-weight: 750;
-            color: #ffffff;
-            margin-top: 4px;
-        }
-
-        .step-card p {
-            font-size: 13.5px;
-            color: var(--text-secondary);
-            line-height: 1.55;
-        }
-
-        .step-card svg {
-            width: 24px;
-            height: 24px;
-            color: var(--accent-purple);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .step-card:hover svg {
-            transform: scale(1.15) rotate(5deg);
-        }
-
-        /* Polishing Styles Section */
-        .styles-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 28px;
-        }
-
-        .style-card {
-            background-color: var(--card-bg-glass);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 32px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .style-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: transparent;
-        }
-
-        .style-card.professional::before { background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue)); }
-        .style-card.casual::before { background: linear-gradient(90deg, var(--accent-blue), var(--accent-emerald)); }
-        .style-card.direct::before { background: linear-gradient(90deg, var(--text-muted), var(--text-secondary)); }
-
-        .style-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--border-color-hover);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.35);
-        }
-
-        .style-card.professional:hover { border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 15px 35px rgba(139, 92, 246, 0.05); }
-        .style-card.casual:hover { border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 15px 35px rgba(59, 130, 246, 0.05); }
-
-        .style-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .style-badge {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            padding: 4px 10px;
-            border-radius: 12px;
-            border: 1px solid currentColor;
-        }
-
-        .style-card.professional .style-badge { color: var(--accent-purple); background: var(--accent-purple-glow); }
-        .style-card.casual .style-badge { color: var(--accent-blue); background: var(--accent-blue-glow); }
-        .style-card.direct .style-badge { color: var(--text-secondary); background: rgba(255,255,255,0.05); }
-
-        .style-card h3 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .style-card p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        .comparison-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background-color: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            padding: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            margin-top: auto;
-            transition: background-color 0.3s ease;
-        }
-
-        .style-card:hover .comparison-container {
-            background-color: rgba(0,0,0,0.35);
-        }
-
-        .comparison-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .comparison-label.before { color: var(--accent-yellow); }
-        .comparison-label.after { color: var(--accent-emerald); }
-
-        .comparison-text {
-            font-size: 12.5px;
-            font-family: 'Segoe UI', sans-serif;
-            color: var(--text-secondary);
-            line-height: 1.4;
-            font-style: italic;
-        }
-
-        .comparison-text.result {
-            color: #ffffff;
-            font-style: normal;
-        }
-
-        /* API keys configuration section */
-        .config-container {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 60px;
-            align-items: flex-start;
-        }
-
-        .config-left {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .config-step {
-            display: flex;
-            gap: 16px;
-        }
-
-        .config-step-num {
-            flex-shrink: 0;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            color: #ffffff;
-            transition: all 0.3s ease;
-        }
-
-        .config-step:hover .config-step-num {
-            border-color: var(--accent-purple);
-            color: var(--accent-purple);
-            background: var(--accent-purple-glow);
-        }
-
-        .config-step-content {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .config-step-content h3 {
-            font-size: 16px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .config-step-content p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        .config-step-content code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(255, 255, 255, 0.06);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #ffffff;
-        }
-
-        /* Info box below steps in API config */
-        .config-info-box {
-            background: rgba(255, 255, 255, 0.01);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 8px;
-            transition: border-color 0.3s ease;
-        }
-
-        .config-info-box:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .config-info-box-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .config-info-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .config-info-list li {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-            position: relative;
-            padding-left: 16px;
-        }
-
-        .config-info-list li::before {
-            content: "•";
-            color: var(--accent-purple);
-            position: absolute;
-            left: 0;
-            font-weight: bold;
-        }
-
-        .providers-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-
-        .provider-card {
-            background-color: var(--card-bg-glass);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .provider-card:hover {
-            background-color: rgba(255, 255, 255, 0.01);
-            transform: translateX(4px);
-        }
-
-        .provider-card:nth-child(1):hover { border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.04); }
-        .provider-card:nth-child(2):hover { border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.04); }
-        .provider-card:nth-child(3):hover { border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.04); }
-        .provider-card:nth-child(4):hover { border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 8px 20px rgba(139, 92, 246, 0.04); }
-        .provider-card:nth-child(5):hover { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 8px 20px rgba(255, 255, 255, 0.04); }
-
-        .provider-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .provider-title-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .provider-title-group img {
-            width: 22px;
-            height: 22px;
-            object-fit: contain;
-        }
-
-        .provider-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .provider-tag {
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            padding: 3px 8px;
-            border-radius: 10px;
-        }
-
-        .provider-tag.recommended {
-            color: var(--accent-emerald);
-            background: var(--accent-emerald-glow);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .provider-tag.free {
-            color: var(--accent-blue);
-            background: var(--accent-blue-glow);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
-        .provider-tag.offline {
-            color: var(--text-secondary);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-        }
-
-        .provider-desc {
-            font-size: 13.5px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        .provider-btn-group {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 4px;
-        }
-
-        .btn-link {
-            font-size: 12.5px;
-            color: var(--accent-purple);
-            text-decoration: none;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            transition: color 0.15s;
-        }
-
-        .btn-link:hover {
-            color: #a855f7;
-            text-decoration: underline;
-        }
-
-        .provider-speed {
-            font-size: 11.5px;
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Divider Line */
-        .section-divider {
-            border: 0;
-            height: 1px;
-            background-color: var(--border-color);
-            width: 92%;
-            max-width: 1440px;
-            margin: 0 auto;
-        }
-
-        /* Footer */
-        footer {
-            width: 100%;
-            border-top: 1px solid var(--border-color);
-            background-color: #030303;
-            z-index: 10;
-        }
-
-        .footer-inner {
-            width: 92%;
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 24px 0;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 12.5px;
-            line-height: 1.5;
-        }
-
-        .footer-inner a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.15s;
-        }
-
-        .footer-inner a:hover {
-            color: #ffffff;
-        }
-
-        /* Custom Thematic Scroll Reveal Styles (Blur Focus & Scan Wave Animation) */
-        .specs-bar .spec-tile { opacity: 0; filter: blur(12px); transform: scale(0.96) translateY(20px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
-        .specs-bar.active .spec-tile { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
-
-        .steps-grid .step-card { opacity: 0; filter: blur(12px); transform: scale(0.96) translateY(20px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
-        .steps-grid.active .step-card { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
-
-        .styles-grid .style-card { opacity: 0; filter: blur(12px); transform: scale(0.96) translateY(25px); transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
-        .styles-grid.active .style-card { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
-
-        .providers-grid .provider-card { opacity: 0; filter: blur(12px); transform: scale(0.96) translateY(20px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
-        .providers-grid.active .provider-card { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
-
-        /* Responsive Layouts */
-        @media(max-width: 1100px) {
-            .config-container {
-                grid-template-columns: 1fr;
-                gap: 48px;
-            }
-            .hero-section {
-                gap: 40px;
-            }
-            .hero-left h1 {
-                font-size: 44px;
-            }
-        }
-
-        @media(max-width: 960px) {
-            .hero-section {
-                flex-direction: column;
-                padding-top: 40px;
-                gap: 50px;
-                text-align: center;
-            }
-            .hero-left, .hero-right {
-                width: 100%;
-                align-items: center;
-            }
-            .hero-left h1 {
-                text-align: center;
-            }
-            .hero-ctas {
-                justify-content: center;
-            }
-            .hero-checklist {
-                justify-content: center;
-            }
-            .specs-bar {
-                margin-top: 40px;
-                text-align: center;
-            }
-            .steps-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .styles-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            .style-card {
-                padding: 24px;
-            }
-        }
-
-        @media(max-width: 640px) {
-            section {
-                padding: 50px 0;
-            }
-            .section-header h2 {
-                font-size: 28px;
-            }
-            .hero-left h1 {
-                font-size: 32px;
-            }
-            .hero-left p {
-                font-size: 15px;
-            }
-            .specs-bar {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-            .steps-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
-            .header-inner {
-                padding: 14px 0;
-            }
-            .demo-window {
-                height: 320px;
-            }
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowVoice: ditado por voz com IA, grátis, para Windows e Linux</title>
+<meta name="description" content="Aperte um atalho, fale, e o texto aparece onde está o cursor, reescrito por IA no estilo que você escolher. Grátis e de código aberto, com chaves de API gratuitas ou 100% offline.">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0b0b0c">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/">
+<meta property="og:title" content="FlowVoice: fale, e o texto aparece onde está o cursor">
+<meta property="og:description" content="Ditado por voz com IA em qualquer app do Windows e do Linux. Grátis, código aberto, com chaves gratuitas ou 100% offline.">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="FlowVoice: o overlay transcrevendo a fala ao vivo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlowVoice: fale, e o texto aparece onde está o cursor">
+<meta name="twitter:description" content="Ditado por voz com IA em qualquer app do Windows e do Linux. Grátis, código aberto, com chaves gratuitas ou 100% offline.">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>document.documentElement.classList.add("js")</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "FlowVoice",
+  "description": "Ditado por voz com IA em qualquer aplicativo. Aperte um atalho, fale, e o texto aparece onde está o cursor, reescrito no estilo que você escolher. Funciona com chaves de API gratuitas ou 100% offline.",
+  "url": "https://flowvoice.caliberda.com.br/",
+  "image": "https://flowvoice.caliberda.com.br/assets/og.png",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Windows 10, Windows 11, Ubuntu, Debian",
+  "softwareVersion": "2.0",
+  "inLanguage": ["pt-BR", "en", "es"],
+  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "isAccessibleForFree": true,
+  "downloadUrl": "https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe",
+  "codeRepository": "https://github.com/cesarkali/Flow-Voice",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+  "author": { "@type": "Person", "name": "Júlio Caliberda", "url": "https://caliberda.com.br", "sameAs": ["https://github.com/cesarkali"] }
+}
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
+<a class="skip" href="#main">Pular para o conteúdo</a>
 
-    <div class="bg-glow-container">
-        <div class="ambient-light light-top"></div>
-        <div class="ambient-light light-mid"></div>
-        <div class="ambient-light light-bottom"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="lg-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#232327"/><stop offset="1" stop-color="#0b0b0c"/></linearGradient>
+    <symbol id="logo" viewBox="0 0 1024 1024">
+      <rect width="1024" height="1024" rx="232" fill="url(#lg-tile)"/>
+      <rect x="6" y="6" width="1012" height="1012" rx="226" fill="none" stroke="#fff" stroke-opacity=".1" stroke-width="12"/>
+      <g fill="#EDEDEA"><rect x="168" y="427" width="92" height="170" rx="46"/><rect x="288" y="317" width="92" height="390" rx="46"/><rect x="408" y="382" width="92" height="260" rx="46"/><rect x="520" y="447" width="92" height="130" rx="46"/></g>
+      <g fill="#FF2E00"><rect x="710" y="250" width="84" height="524" rx="42"/><rect x="644" y="208" width="216" height="84" rx="42"/><rect x="644" y="732" width="216" height="84" rx="42"/></g>
+    </symbol>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5 10.4 4.5v7H3zM11.4 4.4 21 3v8.5h-9.6zM3 12.5h7.4v7L3 18.5zM11.4 12.5H21V21l-9.6-1.4z"/></symbol>
+    <symbol id="i-gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.56 9.56 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></g></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6"/></symbol>
+    <symbol id="i-lang" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M8.5 3v2M6 5c.6 3.2 2.8 5.8 6 7M11 5c-.6 3.5-3 6.4-7 8"/><path d="m12 21 4-9 4 9M13.4 18h5.2"/></g></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></g></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7.5h6"/></g></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g></symbol>
+    <symbol id="i-paste" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V3.8c0-.4.4-.8.8-.8h4.4c.4 0 .8.4.8.8v.7M9 11h6M9 15h4"/></g></symbol>
+    <symbol id="i-hold" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></g></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></g></symbol>
+    <symbol id="i-upd" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/></g></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></g></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20.5s-7.5-4.6-7.5-10.1A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8c0 5.5-7.5 10.1-7.5 10.1z"/></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="FlowVoice, início">
+      <svg aria-hidden="true"><use href="#logo"/></svg>
+      <span>FlowVoice</span>
+      <span class="ver">2.0</span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Seções">
+      <a href="#como">Como funciona</a>
+      <a href="#estilos">Estilos</a>
+      <a href="#recursos">Recursos</a>
+      <a href="#chaves">Grátis e offline</a>
+      <a href="#privacidade">Privacidade</a>
+      <a href="#faq">Dúvidas</a>
+      <a href="guia.html">Guia de chaves</a>
+    </nav>
+    <div class="top-cta">
+      <a class="btn btn-ghost btn-sm gh" href="https://github.com/cesarkali/Flow-Voice" rel="noopener"><svg aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menu"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="hero" aria-labelledby="hero-t">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <div class="eyebrow">
+        <span class="tag"><span class="dot"></span>Grátis e código aberto</span>
+        <span class="tag">Windows · Linux</span>
+      </div>
+      <h1 id="hero-t">Fale. O texto aparece onde está o <span class="caret-word">cursor<span class="ibeam" aria-hidden="true"></span></span></h1>
+      <p class="lede">Aperte <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Espaço</kbd> em qualquer app e fale normalmente. O FlowVoice transcreve, <strong>tira os “né” e “tipo”</strong>, reescreve no estilo certo e cola o texto pronto. Com <strong>chaves gratuitas</strong> ou <strong>100% offline</strong>.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>
+          <svg aria-hidden="true"><use href="#i-win"/></svg>Baixar para Windows
+        </a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/cesarkali/Flow-Voice" rel="noopener">
+          <svg aria-hidden="true"><use href="#i-gh"/></svg>Ver no GitHub
+        </a>
+      </div>
+      <p class="hero-meta"><span>Windows 10 e 11</span><span>instalador de ~3 MB</span><span>também para <a class="link" href="https://github.com/cesarkali/Flow-Voice/releases/latest" rel="noopener">Linux (.deb)</a></span></p>
     </div>
 
-    <header>
-        <div class="header-inner">
-            <a href="#" class="logo-group">
-                <img src="icon.png" alt="FlowVoice logo">
-                <span class="logo-title">FlowVoice</span>
-            </a>
-            <div class="nav-links">
-                <span style="font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;">v1.9.2</span>
-                <a href="https://github.com/cesarkali/Flow-Voice" target="_blank">
-                    <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-                    GitHub
-                </a>
-                <a href="https://caliberda.com.br" target="_blank" class="nav-btn">Contato</a>
-            </div>
+    <div class="demo" role="img" aria-label="Demonstração: num e-mail do Outlook, a pessoa aperta o atalho e fala. O texto aparece ao vivo no overlay do FlowVoice, é reescrito no estilo Profissional e colado no e-mail. Depois, no chat de uma IA, a fala vira um prompt enxuto.">
+      <div class="keys" aria-hidden="true"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Espaço</kbd></div>
+      <div class="win" aria-hidden="true">
+        <div class="win-bar">
+          <span class="win-ico" data-ico style="background:#0f6cbd">O</span>
+          <span class="win-title" data-title>Nova mensagem · Outlook</span>
+          <span class="win-ctl"><i>–</i><i>▢</i><i>✕</i></span>
         </div>
-    </header>
-
-    <main>
-        <!-- Hero Split-Screen -->
-        <section class="hero-section">
-            <div class="hero-left">
-                <h1>Fale ao invés de digitar.<br>Seja 3x mais produtivo.</h1>
-                <p>Poupe horas de digitação manual todos os dias. O FlowVoice roda silenciosamente em segundo plano: pressione um atalho, fale e a IA transcreve, polida e digita em qualquer app — ou pesquisa na internet em tempo real respondendo sua dúvida com dados atualizados.</p>
-                
-                <div class="hero-ctas">
-                    <a href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" class="btn btn-primary">
-                        Baixar para Windows (.exe)
-                    </a>
-                    
-                    <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" class="btn btn-secondary">
-                        <svg height="15" width="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-                        Código no GitHub
-                    </a>
-                </div>
-
-                <!-- Sleek Checkbox List under CTAs (5 items row) -->
-                <div class="hero-checklist">
-                    <div class="check-item">
-                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        <span>100% Gratuito</span>
-                    </div>
-                    <div class="check-item">
-                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        <span>Código Aberto</span>
-                    </div>
-                    <div class="check-item">
-                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        <span>Pesquisa na web em tempo real</span>
-                    </div>
-                    <div class="check-item">
-                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        <span>Tradução instantânea</span>
-                    </div>
-                    <div class="check-item">
-                        <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                        <span>Offline 100% privado</span>
-                    </div>
-                </div>
-
-                <!-- Technical and Productivity specifications (Fades in staggered) -->
-                <div class="specs-bar reveal-element">
-                    <div class="spec-tile">
-                        <span class="spec-label">Consumo de RAM</span>
-                        <span class="spec-val">~30 MB</span>
-                        <span class="spec-sub">Executa leve e imperceptível em background.</span>
-                    </div>
-                    <div class="spec-tile">
-                        <span class="spec-label">Uso de Processador</span>
-                        <span class="spec-val">&lt; 1% CPU</span>
-                        <span class="spec-sub">Ativo apenas no momento da captura.</span>
-                    </div>
-                    <div class="spec-tile">
-                        <span class="spec-label">Economia de Tempo</span>
-                        <span class="spec-val">Até 70% mais rápido</span>
-                        <span class="spec-sub">Falar economiza horas de digitação manual.</span>
-                    </div>
-                    <div class="spec-tile">
-                        <span class="spec-label">Instalação</span>
-                        <span class="spec-val">~120 MB</span>
-                        <span class="spec-sub">Instalador nativo e limpo sem bloatware.</span>
-                    </div>
-                    <div class="spec-tile">
-                        <span class="spec-label">Compatibilidade</span>
-                        <span class="spec-val">Windows &amp; Ubuntu</span>
-                        <span class="spec-sub">Executável 64-bit nativo para Windows 10/11 e pacote .deb para Ubuntu.</span>
-                    </div>
-                    <div class="spec-tile">
-                        <span class="spec-label">Segurança de Dados</span>
-                        <span class="spec-val">100% Seguro e Local</span>
-                        <span class="spec-sub">Chaves salvas localmente na pasta de usuário.</span>
-                    </div>
-                </div>
+        <div class="win-pane">
+          <div class="scene on" data-scene="mail">
+            <div class="field"><b>Para</b><span>equipe@empresa.com.br</span></div>
+            <div class="field"><b>Assunto</b><span>Reunião de amanhã</span></div>
+            <p class="win-body"><span class="typed"></span><i class="caret-i"></i></p>
+          </div>
+          <div class="scene" data-scene="chat">
+            <div class="chat-box">
+              <p class="win-body"><span class="typed"></span><i class="caret-i"></i><span class="ph">Pergunte qualquer coisa</span></p>
+              <div class="chat-row"><span>+ ferramentas</span><span class="chat-send"><svg><use href="#i-send"/></svg></span></div>
             </div>
-
-            <!-- Notepad Demo Visual (Increased width/height and aligned right) -->
-            <div class="hero-right">
-                <div class="demo-window">
-                    <div class="demo-header">
-                        <span class="window-dot" style="background-color:#ff5f56;"></span>
-                        <span class="window-dot" style="background-color:#ffbd2e;"></span>
-                        <span class="window-dot" style="background-color:#27c93f;"></span>
-                        <span class="window-title" id="demo-window-title">FLOWVOICE - E-MAIL</span>
-                    </div>
-                    <div class="demo-body">
-                        <!-- Keypress Indicator Simulation -->
-                        <div class="keypress-indicator" id="demo-keypress">
-                            <div class="keys-row">
-                                <span class="key" id="key-ctrl">Ctrl</span> + <span class="key" id="key-shift">Shift</span> + <span class="key" id="key-shortcut">Space</span>
-                            </div>
-                            <span class="key-desc" id="key-desc">Ativar Ditado Inteligente</span>
-                        </div>
-
-                        <!-- Assistant Chat Bubble Simulation -->
-                        <div class="assistant-overlay" id="demo-assistant">
-                            <div class="assistant-header">
-                                <span>⚡ FlowVoice Assistant</span>
-                            </div>
-                            <div class="assistant-bubble user" id="demo-assistant-user">
-                                "pesquisar como configurar o pool de failover no flowvoice"
-                            </div>
-                            <div class="assistant-bubble ai" id="demo-assistant-ai">
-                                "Abra o config.json e defina múltiplos provedores na lista. O app chaveará automaticamente caso ocorra falha."
-                            </div>
-                        </div>
-
-                        <div class="simulated-editor" id="demo-notepad"><span class="caret"></span></div>
-                        
-                        <!-- Floating Pill Overlay -->
-                        <div class="app-overlay" id="demo-overlay">
-                            <div class="soundwave" id="demo-soundwave">
-                                <span class="soundwave-bar"></span>
-                                <span class="soundwave-bar"></span>
-                                <span class="soundwave-bar"></span>
-                            </div>
-                            <div class="spinner" id="demo-spinner"></div>
-                            <div class="done-dot" id="demo-done-dot"></div>
-                            <div style="display:flex; flex-direction:column; line-height:1.2;">
-                                <span class="overlay-sublabel" id="demo-sublabel">COPIADO</span>
-                                <span class="overlay-status-label" id="demo-label">GRAVANDO</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <hr class="section-divider">
-
-        <!-- How it Works Section -->
-        <section>
-            <div class="section-header reveal-element">
-                <span class="section-tag">Fluxo Simples</span>
-                <h2>Como o FlowVoice Funciona?</h2>
-                <p>Veja como é fácil transcrever e formatar sua fala sem precisar abrir painéis ou copiar e colar manualmente.</p>
-            </div>
-            
-            <div class="steps-grid reveal-element">
-                <div class="step-card">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
-                    <h3>Ative o Atalho</h3>
-                    <p>Posicione seu cursor onde quer digitar e pressione <code>Ctrl + Shift + Space</code> para iniciar a captura.</p>
-                </div>
-                <div class="step-card">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                    <h3>Fale Naturalmente</h3>
-                    <p>Fale sua frase no seu ritmo habitual. O FlowVoice grava seu áudio em segundo plano com total privacidade.</p>
-                </div>
-                <div class="step-card">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                    <h3>Processamento IA</h3>
-                    <p>O áudio é transcrito via <strong>faster-whisper</strong> (local ou na nuvem via Groq/Gemini/OpenAI) e lapidado por modelos de linguagem. Um overlay visual confirma o resultado ao instante.</p>
-                </div>
-                <div class="step-card">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <h3>Digitação Direta</h3>
-                    <p>O FlowVoice digita e cola automaticamente o texto final formatado sob o seu cursor sem erros de ortografia.</p>
-                </div>
-            </div>
-        </section>
-
-        <hr class="section-divider">
-
-        <!-- Polishing Styles Section -->
-        <section>
-            <div class="section-header reveal-element">
-                <span class="section-tag">Adaptabilidade</span>
-                <h2>Estilos de Ajuste por IA</h2>
-                <p>Escolha o tom ideal para cada momento. O FlowVoice se adapta a e-mails corporativos, chats rápidos ou transcrições cruas.</p>
-            </div>
-            
-            <div class="styles-grid reveal-element">
-                <!-- Profissional -->
-                <div class="style-card professional">
-                    <div class="style-header">
-                        <h3>Profissional</h3>
-                        <span class="style-badge">Trabalho</span>
-                    </div>
-                    <p>Reescreve o texto de forma formal e executiva. Corrige toda a gramática, ajusta a pontuação e remove hesitações de fala (como "tipo", "é", "hã"), ideal para e-mails de trabalho ou documentos oficiais.</p>
-                    
-                    <div class="comparison-container">
-                        <span class="comparison-label before">● Fala Falada</span>
-                        <p class="comparison-text">"ó fala júlio blz então eu acho que... a gente tem que fechar aquele projeto tipo o quanto antes sabe pra evitar atraso vlw"</p>
-                        <span class="comparison-label after">● Resultado IA</span>
-                        <p class="comparison-text result">"Olá, Júlio. Tudo bem? Acredito que precisamos finalizar aquele projeto o quanto antes para evitarmos atrasos. Obrigado."</p>
-                    </div>
-                </div>
-                
-                <!-- Casual -->
-                <div class="style-card casual">
-                    <div class="style-header">
-                        <h3>Casual</h3>
-                        <span class="style-badge">Coloquial</span>
-                    </div>
-                    <p>Mantém a linguagem natural, gírias e o tom pessoal da sua fala, corrigindo apenas erros gritantes de pontuação e concordância. Perfeito para mensagens no WhatsApp e chats com amigos.</p>
-                    
-                    <div class="comparison-container">
-                        <span class="comparison-label before">● Fala Falada</span>
-                        <p class="comparison-text">"ó fala júlio blz então eu acho que... a gente tem que fechar aquele projeto tipo o quanto antes sabe pra evitar atraso vlw"</p>
-                        <span class="comparison-label after">● Resultado IA</span>
-                        <p class="comparison-text result">"Fala Júlio, beleza? Então, acho que a gente tem que fechar aquele projeto o quanto antes para evitar atraso. Valeu!"</p>
-                    </div>
-                </div>
-                
-                <!-- Direto -->
-                <div class="style-card direct">
-                    <div class="style-header">
-                        <h3>Direto / Cru</h3>
-                        <span class="style-badge">Literal</span>
-                    </div>
-                    <p>Não passa por nenhuma inteligência de polimento textual. Faz apenas a transcrição estritamente literal do áudio (Whisper puro), escrevendo exatamente o que saiu da sua boca.</p>
-                    
-                    <div class="comparison-container">
-                        <span class="comparison-label before">● Fala Falada</span>
-                        <p class="comparison-text">"ó fala júlio blz então eu acho que... a gente tem que fechar aquele projeto tipo o quanto antes sabe pra evitar atraso vlw"</p>
-                        <span class="comparison-label after">● Resultado IA</span>
-                        <p class="comparison-text result">"ó fala júlio blz então eu acho que a gente tem que fechar aquele projeto tipo o quanto antes sabe pra evitar atraso vlw"</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <hr class="section-divider">
-
-        <!-- API keys configuration section -->
-        <section>
-            <div class="section-header reveal-element">
-                <span class="section-tag">Configuração</span>
-                <h2>Como Configurar suas Chaves</h2>
-                <p>O FlowVoice funciona com chaves de API próprias, garantindo que você tenha controle total dos seus limites e custos zero.</p>
-            </div>
-            
-            <div class="config-container">
-                <div class="config-left">
-                    <div class="config-step">
-                        <span class="config-step-num">1</span>
-                        <div class="config-step-content">
-                            <h3>Obtenha uma Chave de API</h3>
-                            <p>Escolha um dos provedores de IA ao lado e gere uma chave. A maioria possui planos ou cotas inteiramente gratuitas.</p>
-                        </div>
-                    </div>
-                    <div class="config-step">
-                        <span class="config-step-num">2</span>
-                        <div class="config-step-content">
-                            <h3>Abra as Configurações do App</h3>
-                            <p>Após instalar, clique com o botão direito no ícone do FlowVoice na **Bandeja do Sistema** (perto do relógio do Windows) e selecione <code>Configurações</code>.</p>
-                        </div>
-                    </div>
-                    <div class="config-step">
-                        <span class="config-step-num">3</span>
-                        <div class="config-step-content">
-                            <h3>Insira a Chave e Salve</h3>
-                            <p>Cole a chave gerada no campo correspondente, clique em <strong>Salvar</strong> e pronto! Suas configurações ficam gravadas de forma segura.</p>
-                        </div>
-                    </div>
-
-                    <!-- Informational Box 1: Why own keys -->
-                    <div class="config-info-box">
-                        <div class="config-info-box-title">
-                            <span>💡</span>
-                            <span>Por que usar chaves de API próprias?</span>
-                        </div>
-                        <ul class="config-info-list">
-                            <li><strong>Custo Zero e Muito Mais Limite:</strong> Provedores como Groq e Google Gemini oferecem limites gratuitos robustos para desenvolvedores e usuários individuais que duram meses ou são ilimitados.</li>
-                            <li><strong>Privacidade Blindada:</strong> O fluxo de áudio vai direto da sua máquina para o servidor oficial da API (Google, OpenAI ou Groq). Não há servidores intermediários lendo ou armazenando seus textos.</li>
-                            <li><strong>Pool de Failover Inteligente:</strong> O FlowVoice permite configurar chaves de múltiplos serviços simultaneamente. Se um provedor ficar instável ou estourar a cota, o app tenta o próximo da fila de forma imperceptível.</li>
-                        </ul>
-                    </div>
-
-                    <!-- Informational Box 2: Extra Tips -->
-                    <div class="config-info-box" style="border-color: rgba(59, 130, 246, 0.08); background: rgba(59, 130, 246, 0.01);">
-                        <div class="config-info-box-title">
-                            <span style="color: var(--accent-blue);">⚡</span>
-                            <span>Recursos Adicionais & Dicas</span>
-                        </div>
-                        <ul class="config-info-list">
-                            <li><strong>Pesquisa na Web em Tempo Real:</strong> Com <code>Ctrl + Shift + U</code> e uma chave Tavily configurada, o FlowVoice busca dados atualizados na internet — clima, preços, notícias — e sintetiza a resposta com IA antes de colar no cursor.</li>
-                            <li><strong>Tradução Instantânea:</strong> Use <code>Ctrl + Shift + Y</code> para ditar em português e digitar automaticamente traduzido para Inglês, Espanhol, Francês, Alemão ou Italiano.</li>
-                            <li><strong>Inicialização com o Sistema:</strong> Habilite nas configurações para que o FlowVoice inicie de forma silenciosa na bandeja junto com o Windows.</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="providers-grid reveal-element">
-                    <!-- Groq -->
-                    <div class="provider-card">
-                        <div class="provider-header">
-                            <div class="provider-title-group">
-                                <span style="font-size: 20px;">⚡</span>
-                                <span class="provider-name">Groq API</span>
-                            </div>
-                            <span class="provider-tag recommended">⭐ Melhor Opção Gratuita</span>
-                        </div>
-                        <p class="provider-desc">Atualmente a API do Groq oferece velocidade quase instantânea de transcrição e limites de uso gratuitos muito robustos. Excelente para quem busca desempenho ultra rápido sem pagar nada.</p>
-                        <div class="provider-btn-group">
-                            <a href="https://console.groq.com" target="_blank" class="btn-link">
-                                Obter Chave no Console Groq ↗
-                            </a>
-                            <span class="provider-speed">Transcreve em ~0.4s</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Gemini -->
-                    <div class="provider-card">
-                        <div class="provider-header">
-                            <div class="provider-title-group">
-                                <span style="font-size: 20px;">♊</span>
-                                <span class="provider-name">Google Gemini</span>
-                            </div>
-                            <span class="provider-tag free">Excelente Cota Grátis</span>
-                        </div>
-                        <p class="provider-desc">O Gemini do Google possui uma excelente cota gratuita por minuto através do Google AI Studio. Funciona perfeitamente como provedor principal ou como failover caso a principal apresente indisponibilidade.</p>
-                        <div class="provider-btn-group">
-                            <a href="https://aistudio.google.com" target="_blank" class="btn-link">
-                                Obter Chave no AI Studio ↗
-                            </a>
-                            <span class="provider-speed">Processa em ~0.9s</span>
-                        </div>
-                    </div>
-                    
-                    <!-- OpenAI -->
-                    <div class="provider-card">
-                        <div class="provider-header">
-                            <div class="provider-title-group">
-                                <span style="font-size: 20px;">🧠</span>
-                                <span class="provider-name">OpenAI (ChatGPT)</span>
-                            </div>
-                            <span class="provider-tag">Premium / Pago</span>
-                        </div>
-                        <p class="provider-desc">Utilize os modelos Whisper-1 e GPT-4o-mini da OpenAI. Exige saldo de recarga no painel de desenvolvedores da plataforma, mas entrega uma precisão e estabilidade impecáveis.</p>
-                        <div class="provider-btn-group">
-                            <a href="https://platform.openai.com" target="_blank" class="btn-link">
-                                Obter Chave na OpenAI ↗
-                            </a>
-                            <span class="provider-speed">Processa em ~1.2s</span>
-                        </div>
-                    </div>
-                    
-                    <!-- GitHub Models -->
-                    <div class="provider-card">
-                        <div class="provider-header">
-                            <div class="provider-title-group">
-                                <span style="font-size: 20px;">🐙</span>
-                                <span class="provider-name">GitHub Models</span>
-                            </div>
-                            <span class="provider-tag free">Grátis para Devs</span>
-                        </div>
-                        <p class="provider-desc">Se você é desenvolvedor com conta ativa no GitHub, pode acessar gratuitamente o GPT-4o-mini ou o Llama 3 via tokens pessoais para processar os refinamentos textuais do FlowVoice.</p>
-                        <div class="provider-btn-group">
-                            <a href="https://github.com/marketplace/models" target="_blank" class="btn-link">
-                                Explorar GitHub Models ↗
-                            </a>
-                            <span class="provider-speed">Processa em ~0.8s</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Tavily -->
-                    <div class="provider-card">
-                        <div class="provider-header">
-                            <div class="provider-title-group">
-                                <span style="font-size: 20px;">🌐</span>
-                                <span class="provider-name">Tavily Search API</span>
-                            </div>
-                            <span class="provider-tag recommended">Pesquisa Web em Tempo Real</span>
-                        </div>
-                        <p class="provider-desc">Habilita a busca real na internet no modo Pesquisa. O FlowVoice consulta o Tavily, obtém resultados atualizados da web e usa o Llama 3.3 (Groq) para sintetizar uma resposta em português direto no cursor. <strong>1.000 buscas grátis/mês.</strong></p>
-                        <div class="provider-btn-group">
-                            <a href="https://app.tavily.com" target="_blank" class="btn-link">
-                                Obter Chave no Tavily ↗
-                            </a>
-                            <span class="provider-speed">Dados em tempo real</span>
-                        </div>
-                    </div>
-
-                    <!-- Whisper Local -->
-                    <div class="provider-card">
-                        <div class="provider-header">
-                            <div class="provider-title-group">
-                                <span style="font-size: 20px;">🔒</span>
-                                <span class="provider-name">Whisper Local (Offline)</span>
-                            </div>
-                            <span class="provider-tag offline">100% Offline e Privado</span>
-                        </div>
-                        <p class="provider-desc">Não quer enviar seus áudios para a nuvem? O FlowVoice suporta execução offline da biblioteca <code>faster-whisper</code> rodando diretamente na sua CPU/GPU local. Sem chaves de API necessárias.</p>
-                        <div class="provider-btn-group">
-                            <span class="btn-link" style="cursor: default; text-decoration: none;">Ativável nas Configurações</span>
-                            <span class="provider-speed">Roda na sua máquina</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <hr class="section-divider">
-
-    <!-- What's New Section -->
-    <section>
-        <div class="section-header reveal-element">
-            <span class="section-tag">Novidades</span>
-            <h2>O que há de novo na v1.9.2</h2>
-            <p>Correção crítica de tradução no executável compilado, interface multilíngue estável e ícones reorganizados.</p>
+          </div>
         </div>
 
-        <div class="steps-grid reveal-element" style="grid-template-columns: repeat(3, 1fr);">
-            <div class="step-card">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
-                <h3>Interface Multilíngue (i18n)</h3>
-                <p>Toda a UI — Wizard, painel de configurações, overlay e bandeja — disponível em <strong>Português, Inglês e Espanhol</strong>, com troca de idioma ao vivo sem reiniciar o app.</p>
+        <div class="ov">
+          <div class="panel p-listen">
+            <div class="row">
+              <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="meta"><span class="mode">Ditado</span><span class="sty" data-sty>Profissional<span class="app-n"> · Outlook</span></span></span>
+              <span class="time" data-time>0:00</span>
+              <span class="stopb"><i></i></span>
             </div>
-            <div class="step-card">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
-                <h3>Seletor de Idioma no Wizard</h3>
-                <p>O fluxo de configuração inicial começa pela escolha do idioma, com bandeiras <strong>🇧🇷 🇺🇸 🇪🇸</strong>. O idioma é persistido e aplicado imediatamente a toda a interface.</p>
+            <div class="live"><p data-live></p></div>
+          </div>
+          <div class="panel p-proc">
+            <div class="row"><span class="spin"></span><span class="plabel shimmer">Reescrevendo com Groq…</span></div>
+          </div>
+          <div class="panel p-card">
+            <div class="card-h">
+              <span class="badge"><svg><use href="#i-check"/></svg></span>
+              <b data-cstyle>Profissional</b><span class="muted" data-cmeta>· Outlook · Groq</span>
+              <span class="x"><svg width="14" height="14"><use href="#i-x"/></svg></span>
             </div>
-            <div class="step-card">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                <h3>Correção: Traduções no .exe</h3>
-                <p>Corrigido bug crítico onde o executável compilado não encontrava os arquivos de locale (<code>locales/</code>), exibindo as chaves brutas de tradução em vez dos textos da interface.</p>
+            <p class="card-t" data-ctext></p>
+            <div class="chips" data-chips></div>
+            <div class="acts">
+              <span class="esc">esc</span>
+              <span class="b"><svg><use href="#i-copy"/></svg>Copiar</span>
+              <span class="b pri"><svg><use href="#i-check"/></svg>Colado</span>
             </div>
+          </div>
         </div>
-    </section>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <footer>
-        <div class="footer-inner">
-            <p>© 2026 FlowVoice. Software 100% gratuito de código aberto sob licença GPL-3.0. Criado por <a href="https://caliberda.com.br" target="_blank">Júlio Caliberda</a>. Código disponível no <a href="https://github.com/cesarkali/Flow-Voice" target="_blank">GitHub</a>.</p>
+<section class="strip" aria-label="Em números">
+  <div class="wrap">
+    <ul>
+      <li data-reveal><div class="n">R$ <em>0</em></div><div class="d">sem assinatura, sem conta, sem limite do app</div></li>
+      <li data-reveal style="--d:80ms"><div class="n">~1,5 s</div><div class="d">para o texto ao vivo atualizar enquanto você fala</div></li>
+      <li data-reveal style="--d:160ms"><div class="n">34</div><div class="d">idiomas para traduzir enquanto dita</div></li>
+      <li data-reveal style="--d:240ms"><div class="n">~3 MB</div><div class="d">de instalador; roda quieto na bandeja</div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ COMO FUNCIONA ============ -->
+<section class="sec" id="como" aria-labelledby="como-t">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <div class="idx"><span class="label"><b>01</b> · Como funciona</span></div>
+      <h2 id="como-t">Três passos. Nenhuma janela no caminho.</h2>
+      <p>O FlowVoice fica na bandeja do sistema. Não importa se você está no e-mail, no WhatsApp Web, no Word ou no editor de código: o atalho funciona igual.</p>
+    </div>
+    <ol class="steps">
+      <li class="step" data-reveal>
+        <span class="num">01</span>
+        <div class="vis"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Shift</kbd><span class="plus">+</span><kbd>Espaço</kbd></div>
+        <h3>Aperte o atalho</h3>
+        <p>Em qualquer campo de texto. Prefere segurar enquanto fala? Ative o modo <em>push-to-talk</em>.</p>
+      </li>
+      <li class="step" data-reveal style="--d:100ms">
+        <span class="num">02</span>
+        <div class="vis"><span class="mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <h3>Fale do seu jeito</h3>
+        <p>Pode hesitar, repetir, voltar atrás. Você acompanha o texto ao vivo num overlay discreto.</p>
+      </li>
+      <li class="step" data-reveal style="--d:200ms">
+        <span class="num">03</span>
+        <div class="vis"><div class="mini-doc">Reunião confirmada para quinta, às 10h.<i class="caret-i"></i></div></div>
+        <h3>O texto aparece pronto</h3>
+        <p>Pontuado, limpo e no estilo escolhido, colado onde o cursor estava. Aperte de novo para terminar.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ ESTILOS ============ -->
+<section class="sec" id="estilos" aria-labelledby="est-t">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <div class="idx"><span class="label"><b>02</b> · Estilos</span></div>
+      <h2 id="est-t">A mesma fala, do jeito que cada lugar pede.</h2>
+      <p>Escolha um estilo e veja a frase abaixo ser reescrita. Mudou de ideia depois de colar? Um clique no próprio overlay refaz em outro estilo ou traduz.</p>
+    </div>
+
+    <div class="styler" data-reveal>
+      <div class="tabs" role="tablist" aria-label="Estilos de escrita">
+        <button class="tab" role="tab" id="t-natural" aria-controls="sty-panel" aria-selected="true" data-style="natural">Natural <span class="k ia">IA</span></button>
+        <button class="tab" role="tab" id="t-professional" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="professional">Profissional <span class="k ia">IA</span></button>
+        <button class="tab" role="tab" id="t-prompt" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="prompt">Prompt <span class="k ia">IA</span></button>
+        <button class="tab" role="tab" id="t-raw" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="raw">Cru <span class="k">sem IA</span></button>
+        <button class="tab" role="tab" id="t-verbatim" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="verbatim">Só transcrição <span class="k">sem IA</span></button>
+        <span class="label sep" aria-hidden="true">Seus estilos</span>
+        <button class="tab" role="tab" id="t-topics" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="topics">Tópicos <span class="k">criado por você</span></button>
+      </div>
+
+      <div class="io">
+        <div class="box">
+          <div class="box-h"><span class="label">Você falou</span><span class="meta-pill">0:09 · 39 palavras</span></div>
+          <p class="said">“<span class="f">É, tipo assim,</span> eu preciso de um script em Python que lê uma planilha do Excel, <span class="f">né,</span> e aí manda um e-mail pra cada cliente que tá com a fatura atrasada, mas só se passou de dez dias, <span class="f">sabe?</span>”</p>
         </div>
-    </footer>
+        <div class="box out" id="sty-panel" role="tabpanel" aria-labelledby="t-natural" aria-live="polite">
+          <div class="box-h">
+            <span class="label">Resultado · <span data-sname class="acc">Natural</span><span data-sxl hidden> → inglês</span></span>
+            <div class="box-acts">
+              <div class="seg" role="group" aria-label="Intensidade do Prompt" data-seg hidden>
+              <button type="button" data-int="light" aria-pressed="false">Leve</button>
+              <button type="button" data-int="medium" aria-pressed="true">Média</button>
+              <button type="button" data-int="strong" aria-pressed="false">Forte</button>
+            </div>
+            <button type="button" class="xlate" data-xlate aria-pressed="false"><svg aria-hidden="true"><use href="#i-lang"/></svg>Traduzir para inglês</button>
+            </div>
+          </div>
+          <p class="out-text" data-out>Eu preciso de um script em Python que leia uma planilha do Excel e mande um e-mail para cada cliente com a fatura atrasada, mas só se o atraso passar de dez dias.</p>
+          <p class="out-desc" data-desc>Corrige e limpa a fala mantendo seu jeito de falar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <!-- Interactive auto-looping simulation script -->
-    <script>
-        // Intersection Observer scroll reveals (in both directions with Blur Focus and Denoise theme)
-        const revealObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                } else {
-                    // Animates out when it scrolls out of the viewport in either direction
-                    entry.target.classList.remove('active');
-                }
-            });
-        }, { 
-            rootMargin: "0px 0px -40px 0px", // Triggers transition slightly inside the viewport for fluid visual entering
-            threshold: 0.02
-        });
+<!-- ============ RECURSOS ============ -->
+<section class="sec" id="recursos" aria-labelledby="rec-t">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <div class="idx"><span class="label"><b>03</b> · Recursos</span></div>
+      <h2 id="rec-t">Feito para quem escreve o dia inteiro.</h2>
+    </div>
 
-        document.querySelectorAll('.reveal-element').forEach(el => {
-            revealObserver.observe(el);
-        });
+    <article class="feat" id="ao-vivo">
+      <div class="feat-txt" data-reveal>
+        <span class="label">Prévia ao vivo</span>
+        <h3 style="margin-top:12px">Veja o texto nascer enquanto você fala.</h3>
+        <p>Nada de falar no escuro e torcer. O overlay mostra a transcrição em tempo real, atualizada a cada ~1,5 s pela nuvem (ou por um Whisper local leve). As palavras ainda incertas aparecem mais claras e se firmam conforme você continua.</p>
+        <ul class="ticks">
+          <li><span><b>Overlay que não rouba o foco:</b> o cursor continua no seu app.</span></li>
+          <li><span><b>Cancelar ou parar</b> a qualquer momento, com o mouse ou o atalho.</span></li>
+          <li><span><b>Silencia o PC</b> enquanto grava, se você quiser.</span></li>
+        </ul>
+      </div>
+      <div class="stage" data-reveal style="--d:120ms" data-live-demo aria-hidden="true">
+        <div class="capsule">
+          <div class="row">
+            <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="meta"><span class="mode">Ditado</span><span class="sty">Natural · Slack</span></span>
+            <span class="time" data-time2>0:00</span>
+            <span class="stopb" style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.07)"><i style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></i></span>
+          </div>
+          <div class="live"><p data-live2>gente, subi a versão nova no servidor de teste</p></div>
+        </div>
+        <div class="tl" data-tl><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="tl-cap"><span>atualização ao vivo</span><span>~1,5 s</span></div>
+      </div>
+    </article>
 
-        // Autoloop examples database showing different capabilities (Transcribe, Translate, Search/Assistant)
-        const demoExamples = [
-            {
-                type: "Transcrever",
-                shortcutKey: "Space",
-                shortcutDesc: "Ativar Ditado Inteligente",
-                before: "então queria saber se... é... você recebeu meu relatório ontem a tarde tipo tá com alguns números errados e se puder ver... obrigado",
-                after: "Gostaria de saber se você recebeu o relatório que enviei ontem à tarde. Observei que há alguns números incorretos; se puder verificar, agradeço desde já.",
-                statusLabel: "POLINDO"
-            },
-            {
-                type: "Traduzir",
-                shortcutKey: "Y",
-                shortcutDesc: "Traduzir Fala para Inglês",
-                before: "preciso desse relatório traduzido para o inglês até amanhã cedo por favor",
-                after: "I need this report translated into English by tomorrow morning, please.",
-                statusLabel: "TRADUZINDO"
-            },
-            {
-                type: "Pesquisar",
-                shortcutKey: "U",
-                shortcutDesc: "Acionar Assistente de Voz",
-                before: "como configurar o pool de failover no flowvoice",
-                after: "", 
-                statusLabel: "BUSCANDO"
-            }
-        ];
+    <article class="feat rev" id="comando">
+      <div class="feat-txt" data-reveal>
+        <span class="label">Modo Comando · <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>K</kbd></span>
+        <h3 style="margin-top:12px">Selecione um texto. Diga o que fazer com ele.</h3>
+        <p>Marque qualquer trecho, em qualquer app, aperte o atalho e fale a instrução. O FlowVoice lê a seleção, aplica o pedido e coloca o resultado no lugar.</p>
+        <ul class="ticks">
+          <li><span>“<b>deixa mais formal</b>”, “<b>traduz pro inglês</b>”, “<b>resume em tópicos</b>”</span></li>
+          <li><span>Não gostou? <b>Refazer</b> aplica o comando de novo, e o texto original fica a um clique.</span></li>
+        </ul>
+      </div>
+      <div class="stage cmd" data-reveal data-cycle="0,1,2,3" data-cycle-ms="1400,1300,1900,3600" data-step="0" aria-hidden="true">
+        <div class="doc">
+          <div class="dh">Teams · conversa com Ana</div>
+          <span class="swap"><span class="before"><span class="sel">oi ana, não vou conseguir ir na reunião amanhã não, deu um problema aqui, foi mal</span></span><span class="after"><span class="sel">Oi, Ana. Infelizmente não poderei participar da reunião de amanhã por causa de um imprevisto. Peço desculpas.</span></span></span>
+        </div>
+        <div class="capsule">
+          <div class="row">
+            <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="meta"><span class="mode">Comando</span><span class="sty say"><span class="say-l"><q>deixa mais formal</q></span><span class="done-l">Aplicado</span></span></span>
+          </div>
+        </div>
+      </div>
+    </article>
 
-        let currentExampleIndex = 0;
+    <article class="feat" id="por-app">
+      <div class="feat-txt" data-reveal>
+        <span class="label">Estilo por aplicativo</span>
+        <h3 style="margin-top:12px">Formal no Outlook. Leve no Slack. Enxuto no editor.</h3>
+        <p>Diga uma vez qual estilo cada programa usa e esqueça. O FlowVoice reconhece o app em foco e ajusta sozinho. Os chips do resultado continuam trocando o estilo quando você precisar.</p>
+        <ul class="ticks">
+          <li><span><b>Sugestões prontas</b> para os apps que você mais usa.</span></li>
+          <li><span>Crie <b>seus próprios estilos</b> com instruções em português.</span></li>
+        </ul>
+      </div>
+      <div class="stage" data-reveal style="--d:120ms" aria-hidden="true">
+        <div class="apps" data-apps>
+          <div class="app-row on"><span class="ai" style="background:#0f6cbd">O</span><span><span class="an">Outlook</span><br><span class="ax">outlook.exe</span></span><span class="arrow">→</span><span class="as">Profissional</span></div>
+          <div class="app-row"><span class="ai" style="background:#4a154b">S</span><span><span class="an">Slack</span><br><span class="ax">slack.exe</span></span><span class="arrow">→</span><span class="as">Natural</span></div>
+          <div class="app-row"><span class="ai" style="background:#1f8ad2">VS</span><span><span class="an">VS Code</span><br><span class="ax">code.exe</span></span><span class="arrow">→</span><span class="as">Prompt</span></div>
+          <div class="app-row"><span class="ai" style="background:#128c4a">W</span><span><span class="an">WhatsApp</span><br><span class="ax">whatsapp.exe</span></span><span class="arrow">→</span><span class="as">Natural</span></div>
+          <div class="app-row"><span class="ai" style="background:#2b2b30">C</span><span><span class="an">Cursor</span><br><span class="ax">cursor.exe</span></span><span class="arrow">→</span><span class="as">Prompt</span></div>
+        </div>
+      </div>
+    </article>
 
-        function runAutoLoop() {
-            const notepad = document.getElementById('demo-notepad');
-            const overlay = document.getElementById('demo-overlay');
-            const soundwave = document.getElementById('demo-soundwave');
-            const spinner = document.getElementById('demo-spinner');
-            const doneDot = document.getElementById('demo-done-dot');
-            const label = document.getElementById('demo-label');
-            const sublabel = document.getElementById('demo-sublabel');
-            const windowTitle = document.getElementById('demo-window-title');
-            
-            // Keypress elements
-            const keypress = document.getElementById('demo-keypress');
-            const keyCtrl = document.getElementById('key-ctrl');
-            const keyShift = document.getElementById('key-shift');
-            const keyShortcut = document.getElementById('key-shortcut');
-            const keyDesc = document.getElementById('key-desc');
-            
-            // Assistant element
-            const assistant = document.getElementById('demo-assistant');
+    <ul class="more" data-reveal>
+      <li><span class="ic"><svg aria-hidden="true"><use href="#i-lang"/></svg></span><h4>Tradução por voz</h4><p>Fale em português, cole em inglês, espanhol ou outro dos 34 idiomas.<span class="hk"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Y</kbd></span></p></li>
+      <li><span class="ic"><svg aria-hidden="true"><use href="#i-search"/></svg></span><h4>Assistente com busca</h4><p>Pergunte em voz alta e receba a resposta num chat, com busca na web e fontes citadas (Tavily).<span class="hk"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>U</kbd></span></p></li>
+      <li><span class="ic"><svg aria-hidden="true"><use href="#i-book"/></svg></span><h4>Vocabulário próprio</h4><p>Nomes, marcas e termos técnicos sempre escritos do jeito certo.</p></li>
+      <li><span class="ic"><svg aria-hidden="true"><use href="#i-clock"/></svg></span><h4>Histórico pesquisável</h4><p>Tudo o que você ditou fica salvo no seu PC, com busca.</p></li>
+      <li><span class="ic"><svg aria-hidden="true"><use href="#i-paste"/></svg></span><h4>Colar de novo</h4><p>Cola o último ditado em outro app sem repetir nada.<span class="hk"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd></span></p></li>
+      <li><span class="ic"><svg aria-hidden="true"><use href="#i-hold"/></svg></span><h4>Segurar para falar</h4><p>Modo <em>push-to-talk</em>: grava só enquanto o atalho estiver pressionado.</p></li>
+      <li><span class="ic"><svg aria-hidden="true"><use href="#i-swap"/></svg></span><h4>Failover automático</h4><p>Se um provedor falhar ou bater o limite, tenta o próximo. Se a internet cair, usa o modelo local.</p></li>
+      <li><span class="ic"><svg aria-hidden="true"><use href="#i-upd"/></svg></span><h4>Atualiza sozinho</h4><p>Novas versões chegam pelo próprio app. Interface em português, inglês e espanhol.</p></li>
+    </ul>
+  </div>
+</section>
 
-            const example = demoExamples[currentExampleIndex];
-            windowTitle.innerText = `FLOWVOICE - ${example.type.toUpperCase()}`;
+<!-- ============ GALERIA ============ -->
+<section class="sec" id="app" aria-labelledby="app-t">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <div class="idx"><span class="label"><b>04</b> · O aplicativo</span></div>
+      <h2 id="app-t">Configurações claras, sem manual.</h2>
+      <p>Cada provedor tem um passo a passo e um botão Testar. O resto já vem pronto para usar.</p>
+    </div>
+    <div data-reveal>
+      <div class="gal-tabs" role="tablist" aria-label="Telas do aplicativo">
+        <button role="tab" aria-selected="true" data-shot="0">Início</button>
+        <button role="tab" aria-selected="false" tabindex="-1" data-shot="1">Estilos</button>
+        <button role="tab" aria-selected="false" tabindex="-1" data-shot="2">Provedores</button>
+        <button role="tab" aria-selected="false" tabindex="-1" data-shot="3">Transcrição</button>
+      </div>
+      <div class="gal-frame" role="tabpanel">
+        <img class="on" src="assets/shot-home.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela inicial do FlowVoice com o atalho principal, os provedores ativos, contadores do dia e o histórico de ditados.">
+        <img src="assets/shot-styles.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de estilos do FlowVoice com os estilos prontos e a opção de criar estilos próprios.">
+        <img src="assets/shot-providers.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de provedores do FlowVoice, onde se cadastram as chaves de Groq, Gemini, OpenRouter e Mistral.">
+        <img src="assets/shot-transcricao.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de transcrição do FlowVoice com a escolha entre nuvem e modelos locais do Whisper.">
+      </div>
+      <p class="gal-cap" data-gcap>O atalho principal, os provedores em uso e seu histórico, num lugar só.</p>
+    </div>
+  </div>
+</section>
 
-            // Reset notepad & overlays
-            notepad.innerHTML = '<span class="caret"></span>';
-            notepad.style.color = "var(--text-secondary)";
-            notepad.style.fontStyle = "italic";
-            notepad.style.display = "block";
-            
-            overlay.className = "app-overlay";
-            soundwave.style.display = "none";
-            spinner.style.display = "none";
-            doneDot.style.display = "none";
-            sublabel.style.display = "none";
-            
-            // Hide Assistant Panel
-            assistant.classList.remove('visible');
-            
-            // Reset keypress visual classes
-            keypress.classList.remove('visible');
-            keyCtrl.classList.remove('active');
-            keyShift.classList.remove('active');
-            keyShortcut.classList.remove('active');
+<!-- ============ CHAVES / OFFLINE ============ -->
+<section class="sec" id="chaves" aria-labelledby="ch-t">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <div class="idx"><span class="label"><b>05</b> · Grátis de verdade</span></div>
+      <h2 id="ch-t">Use chaves gratuitas. Ou nem use internet.</h2>
+      <p>O FlowVoice não cobra nada e não tem servidor próprio. Você conecta o provedor que preferir, quase todos com plano gratuito generoso, ou roda tudo no seu computador.</p>
+    </div>
+    <div class="duo">
+      <div class="panel-c" data-reveal>
+        <span class="label">Na nuvem · chaves grátis</span>
+        <h3>Cinco minutos de cadastro.</h3>
+        <table class="tbl">
+          <thead><tr><th scope="col">Provedor</th><th scope="col">Usa para</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pn">Groq</span><span class="rec">recomendado</span><span class="sub">o mais rápido; sem cartão; horas de áudio por dia</span></td><td>voz + texto</td></tr>
+            <tr><td><span class="pn">Google Gemini</span><span class="sub">plano grátis, sem cartão</span></td><td>voz + texto</td></tr>
+            <tr><td><span class="pn">Mistral</span><span class="sub">plano gratuito com limites</span></td><td>voz + texto</td></tr>
+            <tr><td><span class="pn">OpenRouter</span><span class="sub">modelos <code class="mono">:free</code></span></td><td>texto</td></tr>
+          </tbody>
+        </table>
+        <ul class="ticks">
+          <li><span><b>Várias chaves, rotação automática:</b> quando uma bate no limite, a próxima assume.</span></li>
+          <li><span><b>Se conserta sozinho:</b> se um provedor aposenta um modelo, o app troca pelo atual.</span></li>
+        </ul>
+        <p class="foot"><a class="link" href="guia.html">Guia passo a passo para pegar as chaves →</a></p>
+      </div>
+      <div class="panel-c" data-reveal style="--d:100ms">
+        <span class="label">No seu PC · 100% offline</span>
+        <h3>Whisper local. Nada sai da máquina.</h3>
+        <table class="tbl">
+          <thead><tr><th scope="col">Modelo</th><th scope="col">Download</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pn">Tiny</span><span class="sub">para PCs bem modestos</span></td><td>31 MB</td></tr>
+            <tr><td><span class="pn">Base</span><span class="sub">rápido; também move a prévia ao vivo</span></td><td>57 MB</td></tr>
+            <tr><td><span class="pn">Small</span><span class="sub">equilíbrio entre velocidade e precisão</span></td><td>181 MB</td></tr>
+            <tr><td><span class="pn">Distil Large v3 PT-BR</span><span class="rec">pt-BR</span><span class="sub">ajustado para português do Brasil</span></td><td>513 MB</td></tr>
+            <tr><td><span class="pn">Large v3 Turbo</span><span class="sub">máxima precisão, para PCs mais fortes</span></td><td>547 MB</td></tr>
+          </tbody>
+        </table>
+        <ul class="ticks">
+          <li><span>Os modelos <b>só são baixados se você quiser</b>; o instalador continua pequeno.</span></li>
+          <li><span>Para reescrever sem internet também, conecte o <b>Ollama</b>.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
 
-            // Step 1: Show shortcut keys pressing down
-            setTimeout(() => {
-                keyShortcut.innerText = example.shortcutKey;
-                keyDesc.innerText = example.shortcutDesc;
-                keypress.classList.add('visible');
-                
-                // Staggered keypress lighting up
-                setTimeout(() => keyCtrl.classList.add('active'), 200);
-                setTimeout(() => keyShift.classList.add('active'), 400);
-                setTimeout(() => {
-                    keyShortcut.classList.add('active');
-                    
-                    // Step 2: Start Recording once keys are pressed
-                    setTimeout(() => {
-                        overlay.classList.add('visible');
-                        soundwave.style.display = "flex";
-                        label.innerText = "GRAVANDO";
-                        
-                        // Hide keypress overlay after 1.8 seconds (appear briefly in the center-bottom)
-                        setTimeout(() => {
-                            keypress.classList.remove('visible');
-                            // De-highlight keys when it disappears
-                            keyCtrl.classList.remove('active');
-                            keyShift.classList.remove('active');
-                            keyShortcut.classList.remove('active');
-                        }, 1800);
-                        
-                        let i = 0;
-                        const textToType = example.before;
+<!-- ============ PRIVACIDADE ============ -->
+<section class="sec" id="privacidade" aria-labelledby="pv-t">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <div class="idx"><span class="label"><b>06</b> · Privacidade</span></div>
+      <h2 id="pv-t">Sua voz não passa por nenhum servidor nosso.</h2>
+      <p>Porque não existe servidor nosso. O FlowVoice é um programa no seu computador que conversa direto com o provedor que você escolheu, e com nenhum, no modo offline.</p>
+    </div>
+    <ul class="priv">
+      <li data-reveal><h3>Chaves no cofre do sistema</h3><p>Guardadas no Gerenciador de Credenciais do Windows (ou no Secret Service do Linux), nunca em texto puro.</p></li>
+      <li data-reveal style="--d:60ms"><h3>Sem conta, sem nuvem própria</h3><p>Não há cadastro nem sincronização. Histórico e configurações ficam só no seu PC.</p></li>
+      <li data-reveal style="--d:120ms"><h3>Você escolhe o caminho</h3><p>O áudio vai só para o provedor que você configurou. No modo offline, não sai da máquina.</p></li>
+      <li data-reveal style="--d:180ms"><h3>Código aberto (GPL-3.0)</h3><p>Qualquer pessoa pode ler, auditar e compilar o código no GitHub.</p></li>
+    </ul>
+    <p class="note" data-reveal><svg aria-hidden="true"><use href="#i-info"/></svg><span>No plano gratuito do <b>Gemini</b>, o Google pode usar os dados para melhorar os produtos dele. Para conteúdo sensível, prefira o Groq ou o modo offline. <a class="link" href="privacidade.html">Política de privacidade</a></span></p>
+  </div>
+</section>
 
-                        function typeSpeech() {
-                            if (i < textToType.length) {
-                                notepad.innerHTML = `"${textToType.substring(0, i + 1)}"<span class="caret"></span>`;
-                                i++;
-                                setTimeout(typeSpeech, 30);
-                            } else {
-                                // Step 3: De-highlight keys when recording finishes (just in case they are still visible)
-                                keyCtrl.classList.remove('active');
-                                keyShift.classList.remove('active');
-                                keyShortcut.classList.remove('active');
-                                keypress.classList.remove('visible');
-                                
-                                // Step 4: Processing
-                                setTimeout(() => {
-                                    soundwave.style.display = "none";
-                                    spinner.style.display = "block";
-                                    overlay.className = "app-overlay visible processing";
-                                    label.innerText = example.statusLabel;
+<!-- ============ COMPARAÇÃO ============ -->
+<section class="sec" id="comparar" aria-labelledby="cp-t">
+  <div class="wrap">
+    <div class="sec-head" data-reveal>
+      <div class="idx"><span class="label"><b>07</b> · Comparação</span></div>
+      <h2 id="cp-t">O que muda em relação aos apps pagos.</h2>
+      <p>Wispr Flow e Typeless são bons produtos, com planos pagos por assinatura. O FlowVoice segue outro caminho: gratuito, aberto e com o provedor de IA nas suas mãos.</p>
+    </div>
+    <div class="cmp-wrap" data-reveal>
+      <table class="cmp">
+        <thead><tr><th scope="col"><span class="sr">Item</span></th><th scope="col">FlowVoice</th><th scope="col">Apps de ditado por assinatura</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Preço</th><td class="yes" data-l="FlowVoice">Grátis, sem limite do app</td><td data-l="Por assinatura">Assinatura mensal para uso completo</td></tr>
+          <tr><th scope="row">Código-fonte</th><td class="yes" data-l="FlowVoice">Aberto (licença GPL-3.0)</td><td class="no" data-l="Por assinatura">Fechado</td></tr>
+          <tr><th scope="row">Provedor de IA</th><td class="yes" data-l="FlowVoice">Você escolhe: Groq, Gemini, Mistral, OpenRouter, OpenAI ou Ollama</td><td data-l="Por assinatura">Definido pela empresa</td></tr>
+          <tr><th scope="row">Modo 100% offline</th><td class="yes" data-l="FlowVoice">Sim, com Whisper local</td><td data-l="Por assinatura">Varia por produto</td></tr>
+                    <tr><th scope="row">Plataformas</th><td data-l="FlowVoice">Windows e Linux</td><td class="yes" data-l="Por assinatura">Variam; em geral incluem Mac</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cmp-note">Comparação geral e simplificada, com base nas informações públicas desses produtos. Planos e recursos mudam; confira os sites oficiais. As marcas citadas pertencem aos seus donos.</p>
+  </div>
+</section>
 
-                                    setTimeout(() => {
-                                        if (example.type === "Pesquisar") {
-                                            // Search mode opens the assistant overlay panel
-                                            spinner.style.display = "none";
-                                            overlay.classList.remove('visible');
-                                            
-                                            // Hide notepad and show assistant panel
-                                            notepad.style.display = "none";
-                                            assistant.classList.add('visible');
-                                            
-                                            // Loop next example after 6 seconds
-                                            setTimeout(() => {
-                                                assistant.classList.remove('visible');
-                                                setTimeout(() => {
-                                                    currentExampleIndex = (currentExampleIndex + 1) % demoExamples.length;
-                                                    runAutoLoop();
-                                                }, 400);
-                                            }, 6000);
-                                        } else {
-                                            // Translation / Transcription modes type polished text
-                                            spinner.style.display = "none";
-                                            doneDot.style.display = "block";
-                                            overlay.className = "app-overlay visible done";
-                                            label.innerText = example.after.substring(0, 22) + "...";
-                                            sublabel.style.display = "block";
-                                            sublabel.innerText = "COPIADO";
+<!-- ============ FAQ ============ -->
+<section class="sec" id="faq" aria-labelledby="faq-t">
+  <div class="wrap faq">
+    <div class="sec-head" data-reveal>
+      <div class="idx"><span class="label"><b>08</b> · Dúvidas</span></div>
+      <h2 id="faq-t">Perguntas frequentes</h2>
+      <p>Não achou sua resposta? Abra uma <a class="link" href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">issue no GitHub</a>.</p>
+    </div>
+    <div class="qa" data-reveal>
+      <details>
+        <summary>É grátis mesmo? Onde está a pegadinha?<span class="pm" aria-hidden="true"></span></summary>
+        <div class="a"><p>É grátis e de código aberto. O FlowVoice não tem servidor para pagar, porque usa a sua chave direto no provedor ou roda no seu PC. Os planos gratuitos do Groq, do Gemini e do Mistral dão conta de um uso diário normal. Se quiser apoiar o projeto, há Pix e GitHub Sponsors, mas é opcional.</p></div>
+      </details>
+      <details>
+        <summary>Preciso de cartão de crédito para as chaves?<span class="pm" aria-hidden="true"></span></summary>
+        <div class="a"><p>Não para o Groq (o recomendado) nem para o Gemini: os planos gratuitos deles não pedem cartão. O <a class="link" href="guia.html">guia de chaves</a> mostra o passo a passo, e o app tem um botão Testar para cada chave.</p></div>
+      </details>
+      <details>
+        <summary>Funciona sem internet?<span class="pm" aria-hidden="true"></span></summary>
+        <div class="a"><p>Sim. Em Configurações → Transcrição, escolha “100% local” e baixe um modelo do Whisper. Para reescrever o texto offline também, conecte o Ollama. Com internet, você pode deixar o modo local como reserva, caso a nuvem falhe.</p></div>
+      </details>
+      <details>
+        <summary>Em quais programas ele funciona?<span class="pm" aria-hidden="true"></span></summary>
+        <div class="a"><p>Em qualquer lugar onde dá para digitar: navegador, Office, WhatsApp, Slack, Teams, editores de código, chats de IA. O texto é colado onde o cursor estava quando você começou a falar.</p></div>
+      </details>
+      <details>
+        <summary>Quais idiomas ele entende?<span class="pm" aria-hidden="true"></span></summary>
+        <div class="a"><p>O ditado funciona nos idiomas que o Whisper reconhece, com atenção especial ao português do Brasil (há até um modelo local ajustado para pt-BR). A tradução enquanto dita cobre 34 idiomas. A interface está em português, inglês e espanhol.</p></div>
+      </details>
+      <details>
+        <summary>O Windows mostrou um aviso ao instalar. É seguro?<span class="pm" aria-hidden="true"></span></summary>
+        <div class="a"><p>É esperado. O instalador ainda não tem assinatura digital paga (Authenticode), e o SmartScreen do Windows avisa sobre programas sem assinatura ou pouco baixados. Se aparecer “O Windows protegeu o computador”, clique em “Mais informações” e depois em “Executar assim mesmo”.</p><p>Todo o código está aberto no GitHub, e o instalador é gerado lá mesmo, pelo GitHub Actions, a partir desse código. A instalação não pede permissão de administrador.</p></div>
+      </details>
+      <details>
+        <summary>Tem versão para Linux? E para Mac?<span class="pm" aria-hidden="true"></span></summary>
+        <div class="a"><p>Linux sim: baixe o <code>.deb</code> na <a class="link" href="https://github.com/cesarkali/Flow-Voice/releases/latest" rel="noopener">página de versões</a> e rode <code>sudo apt install ./FlowVoice_*.deb</code>. No Wayland, instale também o <code>wtype</code> para colar automaticamente. Mac ainda não.</p></div>
+      </details>
+      <details>
+        <summary>Eu usava a versão 1.x. O que muda?<span class="pm" aria-hidden="true"></span></summary>
+        <div class="a"><p>A 2.0 foi reescrita do zero: mais leve, mais rápida e com prévia ao vivo, modo Comando e estilo por app. Na primeira execução, ela importa suas chaves da 1.x automaticamente. Veja tudo em <a class="link" href="novidades.html">Novidades</a>.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
 
-                                            notepad.innerHTML = `"${example.after}"<span class="caret"></span>`;
-                                            notepad.style.color = "#ffffff";
-                                            notepad.style.fontStyle = "normal";
+<!-- ============ CTA FINAL ============ -->
+<section class="final" aria-labelledby="fin-t">
+  <div class="wrap">
+    <svg class="logo-big" aria-hidden="true" data-reveal><use href="#logo"/></svg>
+    <h2 id="fin-t" data-reveal>Pare de digitar o que você pode falar.</h2>
+    <p data-reveal>Baixe, cole uma chave grátis do Groq e faça o primeiro ditado em menos de cinco minutos.</p>
+    <div class="cta-row" data-reveal>
+      <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>
+        <svg aria-hidden="true"><use href="#i-down"/></svg>Baixar para Windows
+      </a>
+      <a class="btn btn-ghost btn-lg" href="guia.html">Pegar chaves grátis</a>
+    </div>
+    <div class="support" data-reveal>
+      <p><svg class="heart" width="15" height="15" aria-hidden="true" style="display:inline;vertical-align:-2px"><use href="#i-heart"/></svg> <b>O FlowVoice te ajuda?</b> Ele é feito por uma pessoa só. Qualquer apoio mantém o projeto vivo.</p>
+      <div class="btns">
+        <a class="btn btn-ghost btn-sm" href="https://livepix.gg/caliberda" rel="noopener">Pix</a>
+        <a class="btn btn-ghost btn-sm" href="https://github.com/sponsors/cesarkali" rel="noopener"><svg aria-hidden="true"><use href="#i-gh"/></svg>Sponsors</a>
+      </div>
+    </div>
+  </div>
+</section>
 
-                                            // Stay visible, then loop to next
-                                            setTimeout(() => {
-                                                overlay.classList.remove('visible');
-                                                setTimeout(() => {
-                                                    currentExampleIndex = (currentExampleIndex + 1) % demoExamples.length;
-                                                    runAutoLoop();
-                                                }, 400);
-                                            }, 4500);
-                                        }
-                                    }, 1200);
-                                }, 600);
-                            }
-                        }
+</main>
 
-                        typeSpeech();
-                    }, 500);
-                }, 600);
-            }, 600);
-        }
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-about">
+        <a class="brand" href="#top"><svg aria-hidden="true"><use href="#logo"/></svg><span>FlowVoice</span></a>
+        <p>Ditado por voz com IA, gratuito e de código aberto. Feito no Brasil por <a href="https://caliberda.com.br" rel="noopener">Júlio Caliberda</a> (<a href="https://github.com/cesarkali" rel="noopener">@cesarkali</a>).</p>
+      </div>
+      <div>
+        <h2>Produto</h2>
+        <ul>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar para Windows</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/releases/latest" rel="noopener">Linux (.deb)</a></li>
+          <li><a href="novidades.html">Novidades</a></li>
+          <li><a href="guia.html">Guia de chaves grátis</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Projeto</h2>
+        <ul>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">Código no GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">Reportar um problema</a></li>
+          <li><a href="privacidade.html">Privacidade</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/v2/LICENSE" rel="noopener">Licença GPL-3.0</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Apoie</h2>
+        <ul>
+          <li><a href="https://livepix.gg/caliberda" rel="noopener">Pix (LivePix)</a></li>
+          <li><a href="https://github.com/sponsors/cesarkali" rel="noopener">GitHub Sponsors</a></li>
+          <li><a href="https://caliberda.com.br" rel="noopener">caliberda.com.br</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom"><span>© 2026 Júlio Caliberda · GPL-3.0</span><span>Feito com voz, no Brasil.</span></div>
+  </div>
+</footer>
 
-        // Run the autoloop immediately on load
-        window.addEventListener('load', runAutoLoop);
-    </script>
+<script src="site.js" defer></script>
 </body>
 </html>

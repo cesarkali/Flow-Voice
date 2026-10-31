@@ -12,9 +12,7 @@
   import SaveIndicator from "../lib/ui/SaveIndicator.svelte";
   import TitleBar from "../lib/ui/TitleBar.svelte";
   import { rememberAppearance } from "../lib/ui/appearance-cache";
-  import AuthorAvatar from "./AuthorAvatar.svelte";
   import ModelNotice from "./ModelNotice.svelte";
-  import { AUTHOR } from "./author.svelte";
   import Onboarding from "./onboarding/Onboarding.svelte";
   import About from "./pages/About.svelte";
   import General from "./pages/General.svelte";
@@ -259,14 +257,6 @@
       </nav>
 
       <div class="me">
-        <button type="button" class="who" data-tip={t("sh.profile_tip")} onclick={() => api.openUrl(AUTHOR.github)}>
-          <span class="av"><AuthorAvatar size={32} /></span>
-          <span class="who-t">
-            <span class="nm">{AUTHOR.name}</span>
-            <span class="hd mono">@{AUTHOR.handle}</span>
-          </span>
-          <span class="ext"><Icon name="external" size={13} /></span>
-        </button>
         <div class="donate" bind:this={donEl} role="group" aria-label={t("sh.donate")}>
           <span class="dhead">
             <span class="heart"><Icon name="heart" size={14} /></span>
@@ -531,7 +521,7 @@
     animation: fv-pop var(--t-slow) var(--spring) backwards;
   }
 
-  /* author card */
+  /* footer: support + version */
   .me {
     flex: none;
     display: flex;
@@ -540,58 +530,6 @@
     padding-top: 12px;
     border-top: 1px solid var(--line);
     animation: fv-rise var(--t-page) var(--ease-out) 260ms backwards;
-  }
-  .who {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px;
-    margin: 0 -2px;
-    border-radius: var(--r);
-    text-align: left;
-    transition: background-color var(--t-fast) var(--ease);
-  }
-  .who:hover {
-    background: var(--hover);
-  }
-  .av {
-    display: grid;
-    flex: none;
-    border-radius: 50%;
-    transition: transform var(--t-slow) var(--spring);
-  }
-  .who:hover .av {
-    transform: scale(1.06);
-  }
-  .who-t {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    flex: 1;
-    line-height: 1.25;
-  }
-  .nm {
-    font-size: 12.5px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .hd {
-    font-size: 10.5px;
-    color: var(--text-3);
-  }
-  .ext {
-    color: var(--text-3);
-    opacity: 0;
-    transform: translate3d(-3px, 3px, 0);
-    transition:
-      opacity var(--t-fast) var(--ease),
-      transform var(--t) var(--ease);
-  }
-  .who:hover .ext {
-    opacity: 1;
-    transform: none;
   }
   .donate {
     position: relative;
@@ -767,8 +705,6 @@
     .bver,
     .lbl,
     .grp .label,
-    .who-t,
-    .ext,
     .pmarks,
     .verline {
       display: none;
@@ -809,11 +745,6 @@
       width: 6px;
       height: 6px;
       box-shadow: 0 0 0 2px var(--rail);
-    }
-    .who {
-      justify-content: center;
-      padding: 4px 0;
-      margin: 0;
     }
     .donate {
       padding: 0;
@@ -874,7 +805,6 @@
     }
     /* tooltips for the icon-only rail */
     .nav button::after,
-    .who::after,
     .dtoggle::after {
       content: attr(data-tip);
       position: absolute;
@@ -896,15 +826,10 @@
         opacity var(--t-fast) var(--ease),
         transform var(--t-fast) var(--ease);
     }
-    .who {
-      position: relative;
-    }
     .nav button:hover::after,
     .nav button:focus-visible::after,
-    .who:hover::after,
     .dtoggle:not([aria-expanded="true"]):hover::after,
-    .dtoggle:not([aria-expanded="true"]):focus-visible::after,
-    .who:focus-visible::after {
+    .dtoggle:not([aria-expanded="true"]):focus-visible::after {
       opacity: 1;
       transform: translate3d(0, -50%, 0);
       transition-delay: 220ms;

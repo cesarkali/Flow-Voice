@@ -4,7 +4,9 @@ use anyhow::{anyhow, Context, Result};
 use futures_util::StreamExt;
 use parking_lot::Mutex;
 use serde::Serialize;
-use std::path::PathBuf;
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
@@ -143,6 +145,85 @@ pub struct ModelProgress {
     pub total: u64,
     pub done: bool,
     pub error: Option<String>,
+    /// The user stopped it (`error` is then "cancelado"); the UI shows a soft note, not an error.
+    pub cancelled: bool,
+}
+
+/// Cancel signal for one running download: the flag is checked per chunk and the Notify wakes a
+/// download stalled on the network so it stops right away.
+#[derive(Default)]
+pub struct CancelFlag {
+    flag: AtomicBool,
+    notify: tokio::sync::Notify,
+}
+
+impl CancelFlag {
+    pub fn cancel(&self) {
+        self.flag.store(true, Ordering::SeqCst);
+        // notify_one keeps a permit if nobody is waiting yet, so the signal is never lost.
+        self.notify.notify_one();
+    }
+    pub fn is_cancelled(&self) -> bool {
+        self.flag.load(Ordering::SeqCst)
+    }
+    async fn cancelled(&self) {
+        while !self.is_cancelled() {
+            self.notify.notified().await;
+        }
+    }
+}
+
+/// Running downloads by model id. Cancelling removes the entry at once, so the same id can be
+/// downloaded again immediately while the old task winds down on its own (unique `.part` file).
+#[derive(Default)]
+pub struct Downloads(Mutex<HashMap<String, Arc<CancelFlag>>>);
+
+impl Downloads {
+    /// None when `id` is already downloading.
+    pub fn begin(&self, id: &str) -> Option<Arc<CancelFlag>> {
+        let mut m = self.0.lock();
+        if m.contains_key(id) {
+            return None;
+        }
+        let f = Arc::new(CancelFlag::default());
+        m.insert(id.to_string(), f.clone());
+        Some(f)
+    }
+    /// Drops the entry only if it still belongs to this run (a newer run may have replaced it).
+    pub fn finish(&self, id: &str, flag: &Arc<CancelFlag>) {
+        let mut m = self.0.lock();
+        if m.get(id).is_some_and(|f| Arc::ptr_eq(f, flag)) {
+            m.remove(id);
+        }
+    }
+    /// True if a download was running (and is now cancelled); a no-op otherwise.
+    pub fn cancel(&self, id: &str) -> bool {
+        match self.0.lock().remove(id) {
+            Some(f) => {
+                f.cancel();
+                true
+            }
+            None => false,
+        }
+    }
+    #[cfg(test)]
+    pub fn is_running(&self, id: &str) -> bool {
+        self.0.lock().contains_key(id)
+    }
+}
+
+/// Removes leftover `*.part` files (downloads interrupted by a crash or by closing the app).
+fn clean_partials(dir: &Path) {
+    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    for e in rd.flatten() {
+        let p = e.path();
+        if p.extension().is_some_and(|x| x == "part") && p.is_file() {
+            match std::fs::remove_file(&p) {
+                Ok(_) => log::info!("removed stale partial download {}", p.display()),
+                Err(err) => log::warn!("could not remove {}: {err}", p.display()),
+            }
+        }
+    }
 }
 
 /// A loaded model is dropped after this long without use, so nothing sits in RAM between
@@ -153,13 +234,14 @@ pub struct LocalStt {
     dir: PathBuf,
     loaded: Mutex<Option<(String, Arc<WhisperContext>)>>,
     last_used: Mutex<std::time::Instant>,
-    downloading: Mutex<Vec<String>>,
+    downloads: Downloads,
 }
 
 impl LocalStt {
     pub fn new(dir: PathBuf) -> Self {
         whisper_rs::install_logging_hooks();
-        Self { dir, loaded: Mutex::new(None), last_used: Mutex::new(std::time::Instant::now()), downloading: Mutex::new(vec![]) }
+        clean_partials(&dir);
+        Self { dir, loaded: Mutex::new(None), last_used: Mutex::new(std::time::Instant::now()), downloads: Downloads::default() }
     }
 
     /// Background janitor: frees the model once it has been idle for IDLE_UNLOAD.
@@ -351,18 +433,18 @@ impl LocalStt {
         Ok(out.trim().to_string())
     }
 
+    /// Downloads a model, emitting `model-progress`. Resolves Ok when cancelled too (the cancel
+    /// command already emitted the final `cancelled` progress).
     pub async fn download(self: Arc<Self>, app: AppHandle, id: String) -> Result<()> {
         let spec = spec(&id).ok_or_else(|| anyhow!("modelo desconhecido"))?;
-        {
-            let mut d = self.downloading.lock();
-            if d.contains(&id) {
-                return Ok(());
-            }
-            d.push(id.clone());
+        let Some(flag) = self.downloads.begin(&id) else { return Ok(()) };
+        let result = self.download_inner(&app, spec, &flag).await;
+        self.downloads.finish(&id, &flag);
+        if flag.is_cancelled() {
+            log::info!("download of {id} cancelled");
+            return Ok(());
         }
-        let result = self.download_inner(&app, spec).await;
-        self.downloading.lock().retain(|x| x != &id);
-        let progress = |error: Option<String>| ModelProgress { id: id.clone(), downloaded: 0, total: 0, done: true, error };
+        let progress = |error: Option<String>| ModelProgress { id: id.clone(), downloaded: 0, total: 0, done: true, error, cancelled: false };
         match &result {
             Ok(_) => {
                 let _ = app.emit("model-progress", progress(None));
@@ -374,41 +456,67 @@ impl LocalStt {
         result
     }
 
-    async fn download_inner(&self, app: &AppHandle, spec: &ModelSpec) -> Result<()> {
-        std::fs::create_dir_all(&self.dir)?;
-        let resp = reqwest::Client::new()
-            .get(spec.url)
-            .send()
-            .await
-            .context("sem conexão com o Hugging Face")?
-            .error_for_status()
-            .context("download recusado")?;
-        let total = resp.content_length().unwrap_or(spec.size_mb as u64 * 1_048_576);
-        let tmp = self.dir.join(format!("{}.part", spec.file));
-        let mut file = std::fs::File::create(&tmp)?;
-        let mut stream = resp.bytes_stream();
-        let mut downloaded: u64 = 0;
-        let mut last_emit = std::time::Instant::now();
-        while let Some(chunk) = stream.next().await {
-            let chunk = chunk.context("conexão interrompida")?;
-            std::io::Write::write_all(&mut file, &chunk)?;
-            downloaded += chunk.len() as u64;
-            if last_emit.elapsed().as_millis() > 150 {
-                last_emit = std::time::Instant::now();
-                let _ = app.emit(
-                    "model-progress",
-                    ModelProgress { id: spec.id.into(), downloaded, total, done: false, error: None },
-                );
-            }
+    /// Stops a running download of `id` and tells every window; a no-op when none is running.
+    pub fn cancel_download(&self, app: &AppHandle, id: &str) {
+        if self.downloads.cancel(id) {
+            let _ = app.emit(
+                "model-progress",
+                ModelProgress { id: id.into(), downloaded: 0, total: 0, done: true, error: Some("cancelado".into()), cancelled: true },
+            );
         }
-        drop(file);
-        if downloaded < 1_000_000 {
+    }
+
+    async fn download_inner(&self, app: &AppHandle, spec: &ModelSpec, flag: &CancelFlag) -> Result<()> {
+        std::fs::create_dir_all(&self.dir)?;
+        let resp = tokio::select! {
+            r = reqwest::Client::new().get(spec.url).send() => r,
+            _ = flag.cancelled() => return Ok(()),
+        }
+        .context("sem conexão com o Hugging Face")?
+        .error_for_status()
+        .context("download recusado")?;
+        let total = resp.content_length().unwrap_or(spec.size_mb as u64 * 1_048_576);
+        // Unique per run: a cancelled run still winding down never shares a file with a new one.
+        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
+        let tmp = self.dir.join(format!("{}.{nonce}.part", spec.file));
+        let res = stream_to(app, spec, resp, &tmp, total, flag).await;
+        if res.is_err() || flag.is_cancelled() {
             let _ = std::fs::remove_file(&tmp);
-            return Err(anyhow!("arquivo incompleto"));
+            return res;
         }
         std::fs::rename(&tmp, self.dir.join(spec.file))?;
         Ok(())
     }
+}
+
+/// Streams the body into `tmp`, checking the cancel flag per chunk (and while waiting for one).
+async fn stream_to(app: &AppHandle, spec: &ModelSpec, resp: reqwest::Response, tmp: &Path, total: u64, flag: &CancelFlag) -> Result<()> {
+    let mut file = std::fs::File::create(tmp)?;
+    let mut stream = resp.bytes_stream();
+    let mut downloaded: u64 = 0;
+    let mut last_emit = std::time::Instant::now();
+    loop {
+        let next = tokio::select! {
+            biased;
+            _ = flag.cancelled() => return Ok(()),
+            c = stream.next() => c,
+        };
+        let Some(chunk) = next else { break };
+        let chunk = chunk.context("conexão interrompida")?;
+        std::io::Write::write_all(&mut file, &chunk)?;
+        downloaded += chunk.len() as u64;
+        if last_emit.elapsed().as_millis() > 150 && !flag.is_cancelled() {
+            last_emit = std::time::Instant::now();
+            let _ = app.emit(
+                "model-progress",
+                ModelProgress { id: spec.id.into(), downloaded, total, done: false, error: None, cancelled: false },
+            );
+        }
+    }
+    if downloaded < 1_000_000 {
+        return Err(anyhow!("arquivo incompleto"));
+    }
+    Ok(())
 }
 
 /// Benchmark knobs (live_tests): read from the environment in test builds only.
@@ -447,4 +555,58 @@ fn is_hallucination(text: &str, no_speech: f32, avg_logprob: f32) -> bool {
     let ns = tune("FV_NS", 0.6);
     let lp = tune("FV_LP", -1.0);
     no_speech > ns && avg_logprob < lp
+}
+
+#[cfg(test)]
+mod cancel_tests {
+    use super::*;
+
+    #[test]
+    fn cancel_registry() {
+        let d = Downloads::default();
+        // cancelling something that isn't running is a no-op
+        assert!(!d.cancel("base-q5_1"));
+        let f1 = d.begin("base-q5_1").expect("first run starts");
+        assert!(d.begin("base-q5_1").is_none(), "second concurrent run is refused");
+        assert!(d.cancel("base-q5_1"));
+        assert!(f1.is_cancelled());
+        assert!(!d.is_running("base-q5_1"));
+        // can start again right away while the old run winds down
+        let f2 = d.begin("base-q5_1").expect("restart after cancel");
+        assert!(!f2.is_cancelled());
+        // the old run finishing must not drop the new run's entry
+        d.finish("base-q5_1", &f1);
+        assert!(d.is_running("base-q5_1"));
+        d.finish("base-q5_1", &f2);
+        assert!(!d.is_running("base-q5_1"));
+        assert!(!d.cancel("base-q5_1"));
+    }
+
+    #[test]
+    fn cancel_wakes_waiter() {
+        let rt = tokio::runtime::Builder::new_current_thread().enable_time().build().unwrap();
+        rt.block_on(async {
+            let f = Arc::new(CancelFlag::default());
+            let f2 = f.clone();
+            tokio::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+                f2.cancel();
+            });
+            tokio::time::timeout(std::time::Duration::from_secs(2), f.cancelled()).await.expect("woken by cancel");
+            // an already-cancelled flag resolves immediately
+            tokio::time::timeout(std::time::Duration::from_millis(50), f.cancelled()).await.unwrap();
+        });
+    }
+
+    #[test]
+    fn stale_partials_removed() {
+        let dir = std::env::temp_dir().join(format!("fv_part_test_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("ggml-base.bin.123.part"), b"x").unwrap();
+        std::fs::write(dir.join("ggml-base.bin"), b"x").unwrap();
+        clean_partials(&dir);
+        assert!(!dir.join("ggml-base.bin.123.part").exists());
+        assert!(dir.join("ggml-base.bin").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

@@ -36,54 +36,12 @@ const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 // ---------------------------------------------------------------- defaults
 
 export const DEFAULT_STYLES: Style[] = [
-  {
-    id: "natural",
-    name: "Natural",
-    description: "Corrige pontuação e gramática mantendo o seu jeito de falar.",
-    kind: "llm",
-    prompt: "",
-    builtin: true,
-  },
-  {
-    id: "formal",
-    name: "Profissional",
-    description: "Linguagem formal e clara para e-mails e documentos.",
-    kind: "llm",
-    prompt: "",
-    builtin: true,
-  },
-  {
-    id: "prompt",
-    name: "Prompt",
-    description: "Enxuga a fala para mandar a uma IA: menos tokens, mesmo contexto.",
-    kind: "llm",
-    prompt: "",
-    builtin: true,
-  },
-  {
-    id: "casual",
-    name: "Mensagem",
-    description: "Curto e leve, do jeito que se escreve no chat.",
-    kind: "llm",
-    prompt: "",
-    builtin: true,
-  },
-  {
-    id: "raw",
-    name: "Bruto",
-    description: "Sem IA: texto corrido, sem pontuação nem quebras.",
-    kind: "raw",
-    prompt: "",
-    builtin: true,
-  },
-  {
-    id: "verbatim",
-    name: "Literal",
-    description: "Sem IA: exatamente o que o reconhecimento de voz entendeu.",
-    kind: "verbatim",
-    prompt: "",
-    builtin: true,
-  },
+  // Mirrors builtin_styles() in src-tauri/src/settings.rs (ids, names, descriptions).
+  { id: "natural", name: "Natural", description: "Corrige e limpa a fala mantendo seu jeito de falar.", kind: "llm", prompt: "", builtin: true },
+  { id: "professional", name: "Profissional", description: "Texto formal e organizado, pronto para e-mail e trabalho.", kind: "llm", prompt: "", builtin: true },
+  { id: "prompt", name: "Prompt", description: "Enxuga a fala para mandar a uma IA: menos tokens, mesmo contexto.", kind: "llm", prompt: "", builtin: true },
+  { id: "raw", name: "Cru", description: "Só as palavras: sem pontuação, sem quebras de linha, sem IA.", kind: "raw", prompt: "", builtin: true },
+  { id: "verbatim", name: "Só transcrição", description: "A transcrição exatamente como saiu, sem passar por IA.", kind: "verbatim", prompt: "", builtin: true },
 ];
 
 const DEFAULT_SETTINGS: Settings = {
@@ -124,16 +82,16 @@ const DEFAULT_SETTINGS: Settings = {
     },
   ],
   app_styles: [
-    { app: "outlook", style_id: "formal" },
-    { app: "slack", style_id: "casual" },
+    { app: "outlook", style_id: "professional" },
+    { app: "slack", style_id: "natural" },
     { app: "code", style_id: "prompt" },
   ],
   app_styles_enabled: true,
   translation_target: "en",
   hotkeys: {
     dictate: "CommandOrControl+Shift+Space",
-    translate: "CommandOrControl+Shift+T",
-    ask: "Alt+Space",
+    translate: "CommandOrControl+Shift+Y",
+    ask: "CommandOrControl+Shift+U",
     command: "CommandOrControl+Alt+K",
     paste_last: "CommandOrControl+Alt+V",
   },
@@ -196,6 +154,8 @@ const localModels: LocalModel[] = [
 ];
 // ?nomodels: nothing downloaded yet (onboarding live-preview / offline download flows).
 if (params.has("nomodels")) localModels.forEach((m) => (m.installed = false));
+/** Simulated downloads in flight (id -> next tick), so cancel_local_model_download can stop them. */
+const mockDownloads = new Map<string, ReturnType<typeof setTimeout>>();
 
 // ---------------------------------------------------------------- sample texts
 
@@ -271,7 +231,7 @@ function makeCommand(target: string | null = null): DictationResult {
 const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
 let history: DictationResult[] = [
   {
-    ...makeResult("dictate", "formal", null),
+    ...makeResult("dictate", "professional", null),
     id: "h1",
     ts: minutesAgo(4),
   },
@@ -338,7 +298,7 @@ history.splice(
   2,
   0,
   H("h5", 52, {
-    style_id: "casual",
+    style_id: "natural",
     app: "slack",
     app_name: "Slack",
     raw: "fala galera então amanhã o deploy vai ser às dez e meia beleza qualquer coisa me chama",
@@ -372,7 +332,7 @@ history.push(
     duration_ms: 5200,
   }),
   H("h9", 60 * 50, {
-    style_id: "formal",
+    style_id: "professional",
     app: "gmail",
     app_name: "Gmail",
     raw: "oi Marcos tudo bem então sobre aquele contrato eu dei uma olhada e acho que a cláusula de rescisão tá muito vaga a gente precisa definir prazo e multa direitinho antes de assinar e também incluir o reajuste anual pelo IPCA",
@@ -669,16 +629,29 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       return clone(localModels);
     case "download_local_model": {
       const m = localModels.find((x) => x.id === a.id)!;
+      if (mockDownloads.has(m.id)) return;
       const total = m.size_mb * 1024 * 1024;
       let done = 0;
+      // ?dlslow stretches the simulated download (~40 s) so QA can capture it mid-way.
+      const tick = params.has("dlslow") ? 1000 : 90;
       const step = () => {
         done = Math.min(total, done + total / 40);
         const finished = done >= total;
-        if (finished) m.installed = true;
-        mockEmit(EVENTS.modelProgress, { id: m.id, downloaded: done, total, done: finished, error: null });
-        if (!finished) setTimeout(step, 90);
+        if (finished) {
+          m.installed = true;
+          mockDownloads.delete(m.id);
+        } else mockDownloads.set(m.id, setTimeout(step, tick));
+        mockEmit(EVENTS.modelProgress, { id: m.id, downloaded: done, total, done: finished, error: null, cancelled: false });
       };
-      setTimeout(step, 90);
+      mockDownloads.set(m.id, setTimeout(step, tick));
+      return;
+    }
+    case "cancel_local_model_download": {
+      const timer = mockDownloads.get(a.id as string);
+      if (timer === undefined) return;
+      clearTimeout(timer);
+      mockDownloads.delete(a.id as string);
+      mockEmit(EVENTS.modelProgress, { id: a.id, downloaded: 0, total: 0, done: true, error: "cancelado", cancelled: true });
       return;
     }
     case "delete_local_model": {
@@ -835,6 +808,7 @@ export const mock = {
 // ?qa=<steps>: scripted UI state for visual QA screenshots (headless browser, no interaction).
 // Steps separated by "~": click:<css> · clickt:<text> · wait:<ms> · type:<css>=<text> · key:<Key>
 // · press:<css>=<Key> · hover:<css> · scroll:<css>=<px>
+// Add &dlslow to stretch simulated model downloads to ~40 s (capture mid-download / cancel states).
 if (typeof window !== "undefined" && params.get("qa")) {
   const steps = params.get("qa")!.split("~");
   const q = (sel: string) => document.querySelector<HTMLElement>(sel);

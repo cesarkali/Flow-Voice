@@ -53,6 +53,8 @@ export const api = {
   // local whisper models
   listLocalModels: () => call<LocalModel[]>("list_local_models"),
   downloadLocalModel: (id: string) => call<void>("download_local_model", { id }),
+  /** Stops a running download (no-op if none); Rust emits model-progress { done: true, cancelled: true }. */
+  cancelLocalModelDownload: (id: string) => call<void>("cancel_local_model_download", { id }),
   deleteLocalModel: (id: string) => call<void>("delete_local_model", { id }),
 
   // recording / overlay

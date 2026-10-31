@@ -252,11 +252,13 @@ pub fn ensure_preview_model(app: &AppHandle) {
     let st = state(app);
     let s = st.settings();
     let id = s.stt.preview_model.clone();
-    if !s.stt.live_preview
+    // Never during onboarding: the wizard lets the user pick (or skip) the model.
+    if !s.onboarded
+        || !s.stt.live_preview
         || !crate::local_stt::cpu_supported()
         || cloud_stt_keys(app, &s).is_some()
         || st.local.installed(&id)
-        || st.local.any_installed().is_some()
+        || st.local.any_installed_for(&s.speech_language).is_some()
     {
         return;
     }
@@ -417,7 +419,7 @@ fn emit_preview(
             stable = full.chars().count();
         }
     }
-    log::info!("live preview: {} chars ({} stable)", full.chars().count(), stable);
+    log::debug!("live preview: {} chars ({} stable)", full.chars().count(), stable);
     let _ = app.emit_to("overlay", "overlay-partial", json!({ "text": full, "stable": stable }));
 }
 
@@ -614,7 +616,8 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
     }
     // "Ah." alone is a hesitation, not speech: never send an empty text to the LLM.
     if text::is_hallucination_voiced(&raw, voiced_secs) || !text::has_words(&text::remove_fillers(&raw, &s.speech_language)) {
-        log::info!("no speech in transcript: {raw:?}");
+        // Never write what was dictated to the log (privacy): only its length.
+        log::info!("no speech in transcript ({} chars)", raw.chars().count());
         return Err(perr("Nenhuma fala detectada.", None, None));
     }
 

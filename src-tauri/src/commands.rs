@@ -221,6 +221,12 @@ pub async fn download_local_model(app: AppHandle, state: State<'_, AppState>, id
     state.local.clone().download(app, id).await.map_err(err)
 }
 
+/// Stops a running model download (no-op if none); emits the final `model-progress` with `cancelled: true`.
+#[tauri::command]
+pub fn cancel_local_model_download(app: AppHandle, state: State<AppState>, id: String) {
+    state.local.cancel_download(&app, &id);
+}
+
 #[tauri::command]
 pub fn delete_local_model(state: State<AppState>, id: String) -> CmdResult<()> {
     state.local.delete(&id).map_err(err)

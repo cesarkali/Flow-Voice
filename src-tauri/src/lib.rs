@@ -121,7 +121,6 @@ pub fn run() {
 
             let handle = app.handle().clone();
             windows::setup_overlay(&handle);
-            windows::start_follow_watcher(&handle);
             windows::start_pointer_watcher(&handle);
             platform::start_focus_tracker();
             tray::setup(&handle)?;
@@ -185,6 +184,7 @@ pub fn run() {
             commands::list_provider_models,
             commands::list_local_models,
             commands::download_local_model,
+            commands::cancel_local_model_download,
             commands::delete_local_model,
             commands::start_recording,
             commands::stop_recording,

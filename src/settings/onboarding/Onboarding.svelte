@@ -2,7 +2,6 @@
   import AccentPicker from "../../lib/ui/AccentPicker.svelte";
   import LangPicker from "../../lib/ui/LangPicker.svelte";
   import { onMount } from "svelte";
-  import type { TransitionConfig } from "svelte/transition";
   import { api, isTauri, on } from "../../lib/api";
   import { t, type TKey } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
@@ -16,12 +15,14 @@
   import HotkeyInput from "../../lib/ui/HotkeyInput.svelte";
   import Keys from "../../lib/ui/Keys.svelte";
   import { keycapsOf } from "../../lib/ui/hotkeys";
-  import Progress from "../../lib/ui/Progress.svelte";
   import Toggle from "../../lib/ui/Toggle.svelte";
   import TitleBar from "../../lib/ui/TitleBar.svelte";
   import { pname, STT_PROVIDERS } from "../providers";
   import BehaviorStep from "./BehaviorStep.svelte";
   import KeyStep from "./KeyStep.svelte";
+  import ModelPick from "./ModelPick.svelte";
+  import { fmtSize, langName, pickModels } from "./models";
+  import { cssLinear, reduceMotion as reduce, softSpring, spring, stepIn, stepOut } from "./motion";
 
   const s = $derived(app.settings!);
   const TOTAL = 6;
@@ -29,8 +30,9 @@
   /** Step numbers (the progress track, Back/Next and the per-step logic all key off these). */
   const S = { welcome: 1, path: 2, connect: 3, hotkey: 4, behavior: 5, test: 6 } as const;
   const OTHER: KeyProviderId[] = ["gemini", "openrouter", "mistral", "openai"];
-  /** Light whisper model used for the live preview while speaking. */
-  const PREVIEW_ID = "base-q5_1";
+  // Spring curves as CSS easings (progress fill, staggered content, ambient glow).
+  const SPRING_CSS = cssLinear(spring);
+  const SOFT_CSS = cssLinear(softSpring);
 
   // ?obstep=N (browser preview only): open the wizard directly on a step for visual QA.
   let step = $state(isTauri ? 1 : Math.min(6, Math.max(1, Number(new URLSearchParams(location.search).get("obstep")) || 1)));
@@ -44,35 +46,59 @@
   let other = $state<KeyProviderId>(firstKeyed && OTHER.includes(firstKeyed) ? firstKeyed : "gemini");
   let keyOk = $state(false);
 
-  // local models (offline path + live preview)
+  // ---- local models (offline path, and the live preview when there is no cloud key)
   let models = $state<LocalModel[]>([]);
   let progs = $state<Record<string, ModelProgress>>({});
-  const rec = $derived(models.find((m) => m.recommended) ?? models[0]);
-  const modelReady = $derived(!!rec?.installed);
-  const prog = $derived(rec ? progs[rec.id] : undefined);
+  /** Downloads the user explicitly sent to the background (kept running when leaving a step). */
+  let bg = $state<Record<string, boolean>>({});
+  /** Downloads that finished while the wizard was open ("pronto" instead of "você já tem"). */
+  let fresh = $state<Record<string, boolean>>({});
+  const cancelled = new Set<string>();
+  /** The language the user speaks; "auto" falls back to the interface language. */
+  const speech = $derived(s.speech_language && s.speech_language !== "auto" ? s.speech_language : s.ui_language);
+  const speechName = $derived(langName(speech, s.ui_language));
+  const picks = $derived(pickModels(models, speech));
+  /** User's choice; until they pick, whatever is installed, else the best model for the language. */
+  let chosen = $state("");
+  const pick = $derived(picks.options.find((m) => m.id === chosen) ?? picks.installed ?? picks.top);
+  const running = (id: string) => {
+    const p = progs[id];
+    return !!p && !p.done && !p.error;
+  };
+  const frac = (p?: ModelProgress) => (p && p.total ? p.downloaded / p.total : 0);
+  /** A suitable model is on disk, or downloading in the background on the user's say-so. */
+  const localOk = $derived(!!pick && (pick.installed || (running(pick.id) && !!bg[pick.id])));
+  const bgDownloads = $derived(models.filter((m) => bg[m.id] && running(m.id)));
 
+  // ---- live preview: cloud when there is a cloud STT key, otherwise a local model
   let live = $state(app.settings!.stt.live_preview);
-  const previewModel = $derived(models.find((m) => m.id === PREVIEW_ID));
-  const previewProg = $derived(progs[PREVIEW_ID]);
-  const previewReady = $derived(!!previewModel?.installed);
-  const previewBusy = $derived(!!previewProg && !previewProg.done && !previewProg.error);
+  const cloudProv = $derived(
+    s.stt.engine === "cloud" ? (s.stt.cloud_order.find((p) => hasKey(p)) ?? STT_PROVIDERS.find((p) => hasKey(p))) : undefined,
+  );
 
   // test + finish
   let celebrated = $state(false);
   let testText = $state("");
   let finishing = $state(false);
+  let leavingAll = $state(false);
   let finishError = $state("");
 
   const name = $derived((s.user_name ?? "").trim());
-
-  const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   onMount(() => {
     api.listLocalModels().then((m) => (models = m));
     const offs = [
       on<ModelProgress>(EVENTS.modelProgress, async (p) => {
+        if (cancelled.has(p.id)) return;
+        if (p.cancelled || (p.error && /cancel/i.test(p.error))) {
+          drop(p.id);
+          return;
+        }
         progs = { ...progs, [p.id]: p };
-        if (p.done) models = await api.listLocalModels();
+        if (p.done) {
+          if (!p.error) fresh = { ...fresh, [p.id]: true };
+          models = await api.listLocalModels();
+        }
       }),
       on(EVENTS.historyChanged, async () => {
         if (step !== TOTAL) return;
@@ -84,7 +110,10 @@
         celebrated = true;
       }),
     ];
-    return () => offs.forEach((p) => p.then((f) => f()));
+    return () => {
+      stopForeground();
+      offs.forEach((p) => p.then((f) => f()));
+    };
   });
 
   const PATHS: { id: Path; icon: IconName; title: TKey; body: TKey; meta: () => string; tag?: boolean }[] = [
@@ -94,7 +123,10 @@
       icon: "lock",
       title: "ob.path_offline",
       body: "ob.path_offline_body",
-      meta: () => t("obx.meta_offline", { mb: rec?.size_mb ?? "—" }),
+      meta: () =>
+        picks.installed
+          ? t("obx.meta_offline_have", { label: picks.installed.label })
+          : t("obx.meta_offline", { mb: picks.top ? fmtSize(picks.top.size_mb) : "—" }),
     },
     { id: "other", icon: "key", title: "ob.path_other", body: "ob.path_other_body", meta: () => t("obx.meta_other") },
   ];
@@ -104,7 +136,7 @@
   function applyPath() {
     if (path === "offline") {
       s.stt.engine = "local";
-      if (rec) s.stt.local_model = rec.id;
+      if (pick) s.stt.local_model = pick.id;
       return;
     }
     s.stt.engine = "cloud";
@@ -117,15 +149,21 @@
   }
 
   function applyLive() {
+    // With a cloud key the preview runs in the cloud: nothing local is needed.
+    // Without one it uses the local model chosen here; with none on disk (and none coming in the
+    // background) it stays off, so nothing is downloaded behind the user's back.
+    if (live && !cloudProv) {
+      if (localOk && pick) s.stt.preview_model = pick.id;
+      else live = false;
+    }
     s.stt.live_preview = live;
-    if (!live) return;
-    s.stt.preview_model = PREVIEW_ID;
-    if (!previewReady && !previewBusy) startDownload(PREVIEW_ID, previewModel?.size_mb ?? 57);
   }
 
   function leaving(from: number) {
     // Never leave global shortcuts paused if the hotkey field was still capturing.
     if (from === S.hotkey) api.suspendHotkeys(false).catch(() => {});
+    // A download started on this step only keeps going if the user sent it to the background.
+    stopForeground();
   }
 
   function go(to: number) {
@@ -149,50 +187,54 @@
     if (step === S.hotkey) applyLive();
     finishing = true;
     finishError = "";
+    leavingAll = true;
     try {
       // Saves pending edits + onboarded:true in order; App's gate flips as soon as it resolves.
-      await completeOnboarding();
+      // The short wait lets the wizard's exit play first.
+      await Promise.all([completeOnboarding(), new Promise((r) => setTimeout(r, reduce ? 0 : 380))]);
     } catch {
+      leavingAll = false;
       finishError = t("obx.finish_error");
     } finally {
       finishing = false;
     }
   }
 
-  function startDownload(id: string, mb: number) {
-    progs = { ...progs, [id]: { id, downloaded: 0, total: mb * 1048576, done: false, error: null } };
-    api.downloadLocalModel(id).catch((e) => {
-      progs = { ...progs, [id]: { id, downloaded: 0, total: 0, done: false, error: String(e) } };
+  // ---- downloads
+  function drop(id: string) {
+    const { [id]: _p, ...rest } = progs;
+    progs = rest;
+    const { [id]: _b, ...rb } = bg;
+    bg = rb;
+  }
+  function startDownload(m: LocalModel) {
+    cancelled.delete(m.id);
+    chosen = m.id;
+    progs = { ...progs, [m.id]: { id: m.id, downloaded: 0, total: m.size_mb * 1048576, done: false, error: null } };
+    api.downloadLocalModel(m.id).catch((e) => {
+      if (cancelled.has(m.id) || /cancel/i.test(String(e))) return;
+      progs = { ...progs, [m.id]: { id: m.id, downloaded: 0, total: 0, done: true, error: String(e) } };
     });
   }
-  const download = () => rec && startDownload(rec.id, rec.size_mb);
-
-  const canNext = $derived(step !== S.connect || (path === "offline" ? modelReady : keyOk || hasKey(keyProvider)));
-  const frac = (p?: ModelProgress) => (p && p.total ? p.downloaded / p.total : 0);
-
-  // Direction-aware step transitions (transform/opacity only).
-  const outExpo = (x: number) => (x === 1 ? 1 : 1 - Math.pow(2, -10 * x));
-  const inCubic = (x: number) => x * x * x;
-  function stepIn(_n: Element, { d }: { d: number }): TransitionConfig {
-    if (reduce) return { duration: 0 };
-    return {
-      delay: 90,
-      duration: 460,
-      easing: outExpo,
-      css: (k, u) => `opacity:${k};transform:translate3d(${u * 36 * d}px,0,0)`,
-    };
+  function cancelDownload(id: string) {
+    cancelled.add(id);
+    drop(id);
+    api.cancelLocalModelDownload(id).catch(() => {});
   }
-  function stepOut(_n: Element, { d }: { d: number }): TransitionConfig {
-    if (reduce) return { duration: 0 };
-    return {
-      duration: 170,
-      easing: inCubic,
-      css: (k, u) => `opacity:${k};transform:translate3d(${-u * 24 * d}px,0,0);pointer-events:none`,
-    };
+  const toBackground = (id: string) => (bg = { ...bg, [id]: true });
+  function stopForeground() {
+    for (const id of Object.keys(progs)) if (running(id) && !bg[id]) cancelDownload(id);
   }
+
+  const canNext = $derived(step !== S.connect || (path === "offline" ? localOk : keyOk || hasKey(keyProvider)));
 </script>
-
-<div class="ob">
+<div
+  class="ob"
+  class:bye={leavingAll}
+  class:won={celebrated}
+  style="--spring-e: {SPRING_CSS}; --soft-e: {SOFT_CSS}; --p: {step / TOTAL}; --sx: {step}"
+>
+  <span class="aura" aria-hidden="true"></span>
   <TitleBar maximizable={false}>
     {#snippet left()}
       <span class="brand" data-tauri-drag-region><Logo size={18} glow={false} /><span data-tauri-drag-region>FlowVoice</span></span>
@@ -201,43 +243,52 @@
 
   <div class="progress" role="progressbar" aria-label={t("ob.step", { n: step, total: TOTAL })} aria-valuemin={1} aria-valuemax={TOTAL} aria-valuenow={step}>
     <ol class="labels">
-      {#each STEP_NAMES as name, i}
-        <li class:done={i + 1 < step} class:cur={i + 1 === step}>
-          <span class="num mono">{String(i + 1).padStart(2, "0")}</span>
-          <span class="nm">{t(name)}</span>
+      {#each STEP_NAMES as nm, i}
+        {@const n = i + 1}
+        {@const done = n < step || (celebrated && n === TOTAL)}
+        <li class:done class:cur={n === step}>
+          <!-- finished steps are a shortcut back -->
+          <button type="button" tabindex={n < step ? 0 : -1} disabled={n >= step || finishing} onclick={() => go(n)}>
+            <span class="num mono">
+              {#if done}<span class="ck"><Icon name="check" size={10} stroke={2.8} /></span>{:else}{String(n).padStart(2, "0")}{/if}
+            </span>
+            <span class="nm">{t(nm)}</span>
+          </button>
         </li>
       {/each}
     </ol>
     <div class="track">
-      <span class="fill" style="transform: scaleX({step / TOTAL})"></span>
+      <span class="rail"></span>
+      <span class="fill"></span>
       {#each Array(TOTAL - 1) as _, i}<i style="left: {((i + 1) / TOTAL) * 100}%"></i>{/each}
+      <span class="head" aria-hidden="true"><b></b>{#key step}<em></em>{/key}</span>
     </div>
   </div>
 
   <div class="stage">
     {#key step}
-      <section class="step stagger" in:stepIn={{ d: dir }} out:stepOut={{ d: dir }}>
+      <section class="step stagger" style="--d: {dir}" in:stepIn={{ d: dir }} out:stepOut={{ d: dir }}>
         {#if step === S.welcome}
           <div class="welcome">
-          <div class="wl">
-          <div class="mark"><Logo size={88} animate="loop" /></div>
-          <h1 class="big">{t("ob.welcome_title")}</h1>
-          <p class="lead">{t("ob.welcome_body")}</p>
-          </div>
-          <div class="wr">
-          <label class="namef">
-            <span class="label">{t("obx.name_label")}</span>
-            <input class="field" type="text" autocomplete="given-name" maxlength="40" placeholder={t("obx.name_placeholder")} bind:value={s.user_name} />
-          </label>
-          <div class="lang">
-            <span class="label">{t("ob.language")}</span>
-            <LangPicker bind:value={s.ui_language} label={t("ob.language")} />
-          </div>
-          <div class="lang accent">
-            <span class="label">{t("gen.accent")}</span>
-            <AccentPicker bind:value={s.accent_color} label={t("gen.accent")} customLabel={t("gen.accent_custom")} large />
-          </div>
-          </div>
+            <div class="wl stagger">
+              <div class="mark"><Logo size={88} animate="loop" /></div>
+              <h1 class="big">{t("ob.welcome_title")}</h1>
+              <p class="lead">{t("ob.welcome_body")}</p>
+            </div>
+            <div class="wr stagger">
+              <label class="namef">
+                <span class="label">{t("obx.name_label")}</span>
+                <input class="field" type="text" autocomplete="given-name" maxlength="40" placeholder={t("obx.name_placeholder")} bind:value={s.user_name} />
+              </label>
+              <div class="lang">
+                <span class="label">{t("ob.language")}</span>
+                <LangPicker bind:value={s.ui_language} label={t("ob.language")} />
+              </div>
+              <div class="lang accent">
+                <span class="label">{t("gen.accent")}</span>
+                <AccentPicker bind:value={s.accent_color} label={t("gen.accent")} customLabel={t("gen.accent_custom")} large />
+              </div>
+            </div>
           </div>
         {:else if step === S.path}
           <h1>{name ? t("obx.path_named", { name }) : t("ob.path_title")}</h1>
@@ -261,21 +312,21 @@
           </div>
         {:else if step === S.connect}
           {#if path === "offline"}
-            <h1>{t("ob.model_title")}</h1>
-            {#if rec}
-              <p class="lead">{t("ob.model_body", { label: rec.label, mb: rec.size_mb })}</p>
+            <h1>{t("obx.model_title")}</h1>
+            <p class="lead">{t("obx.model_body", { lang: speechName })}</p>
+            {#if picks.options.length}
               <div class="model">
-                {#if modelReady}
-                  <p class="okline"><Icon name="check" size={18} stroke={2} />{t("ob.model_done")}</p>
-                {:else if prog && !prog.done && !prog.error}
-                  <Progress value={frac(prog)} label={rec.label} />
-                  <span class="mono faint tnum">
-                    {Math.round(prog.downloaded / 1048576)} / {Math.round(prog.total / 1048576)} MB
-                  </span>
-                {:else}
-                  <Button variant="primary" size="lg" icon="download" onclick={download}>{t("ob.model_download")}</Button>
-                  {#if prog?.error}<code class="mono err">{prog.error}</code>{/if}
-                {/if}
+                <ModelPick
+                  {picks}
+                  lang={speechName}
+                  {progs}
+                  {bg}
+                  {fresh}
+                  bind:value={chosen}
+                  ondownload={startDownload}
+                  oncancel={cancelDownload}
+                  onbackground={toBackground}
+                />
               </div>
             {/if}
           {:else}
@@ -322,24 +373,43 @@
               <p class="sdesc muted">{s.styles.find((x) => x.id === s.active_style)?.description}</p>
             {/key}
           </div>
-          <div class="liveopt" class:on={live}>
-            <span class="lo-ic"><Icon name="wave" size={18} /></span>
-            <span class="lo-t">
-              <span class="lo-title">{t("obx.live_title")}</span>
-              <span class="lo-body">{t("obx.live_body")}</span>
-              {#if live}
-                <span class="lo-st mono" class:ready={previewReady}>
-                  {#if previewReady}
-                    <Icon name="check" size={13} stroke={2} />{t("obx.live_ready")}
-                  {:else if previewBusy}
-                    {t("obx.live_downloading")} · {Math.round(frac(previewProg) * 100)}%
-                  {:else}
-                    {t("obx.live_later")}
-                  {/if}
-                </span>
-              {/if}
-            </span>
-            <Toggle label={t("obx.live_title")} bind:checked={live} />
+          <div class="livebox" class:on={live}>
+            <div class="liveopt">
+              <span class="lo-ic"><Icon name="wave" size={18} /></span>
+              <span class="lo-t">
+                <span class="lo-title">{t("obx.live_title")}</span>
+                <span class="lo-body">{cloudProv ? t("obx.live_body_cloud") : t("obx.live_body_local")}</span>
+                {#if live}
+                  {#key `${!!cloudProv}${pick?.installed}${pick && bg[pick.id]}`}
+                    {#if cloudProv}
+                      <span class="lo-st ready"><Icon name="cloud" size={13} />{t("obx.live_cloud", { provider: pname(cloudProv) })}</span>
+                    {:else if pick?.installed}
+                      <span class="lo-st ready"><Icon name="check" size={13} stroke={2} />{t("obx.live_uses", { label: pick.label })}</span>
+                    {:else if pick && bg[pick.id] && running(pick.id)}
+                      <span class="lo-st">{t("obx.live_uses_dl", { label: pick.label })}</span>
+                    {:else}
+                      <span class="lo-st">{t("obx.live_needs")}</span>
+                    {/if}
+                  {/key}
+                {/if}
+              </span>
+              <Toggle label={t("obx.live_title")} bind:checked={live} />
+            </div>
+            {#if live && !cloudProv && pick && !pick.installed && !bg[pick.id] && picks.options.length}
+              <div class="livepick">
+                <ModelPick
+                  {picks}
+                  lang={speechName}
+                  {progs}
+                  {bg}
+                  {fresh}
+                  bind:value={chosen}
+                  ondownload={startDownload}
+                  oncancel={cancelDownload}
+                  onbackground={toBackground}
+                />
+              </div>
+            {/if}
           </div>
         {:else if step === S.behavior}
           <h1>{t("obx.beh_title")}</h1>
@@ -351,15 +421,19 @@
             {t("ob.test_body", { hotkey: keycapsOf(s.hotkeys.dictate).join(" + ") })}
           </p>
           <div class="testkeys"><Keys accel={s.hotkeys.dictate} size="lg" /></div>
-          <textarea class="field testarea" rows="4" placeholder={t("ob.test_placeholder")} bind:value={testText}></textarea>
+          <textarea class="field testarea" class:won={celebrated} rows="4" placeholder={t("ob.test_placeholder")} bind:value={testText}></textarea>
           <div class="tstatus">
             {#if celebrated}
               <div class="yay" role="status">
                 <span class="seal" aria-hidden="true">
-                  <span class="rays">{#each Array(10) as _, i}<i style="--a:{i * 36}deg"></i>{/each}</span>
-                  <svg viewBox="0 0 40 40" width="40" height="40">
-                    <circle class="ring" cx="20" cy="20" r="18" />
-                    <path class="tick" d="M12.5 20.5l5 5 10-11" />
+                  <span class="halo"></span>
+                  <span class="ripple"></span>
+                  <span class="ripple r2"></span>
+                  <span class="rays">{#each Array(12) as _, i}<i style="--a:{i * 30}deg;--l:{i % 2 ? 6 : 10}px"></i>{/each}</span>
+                  <svg viewBox="0 0 48 48" width="48" height="48">
+                    <circle class="disc" cx="24" cy="24" r="21" />
+                    <circle class="ring" cx="24" cy="24" r="21" />
+                    <path class="tick" d="M15 24.5l6 6 12-13" />
                   </svg>
                 </span>
                 <span class="yt">
@@ -368,22 +442,10 @@
                 </span>
               </div>
             {:else}
-              <span class="wait"><Icon name="mic" size={16} />{t("ob.test_waiting")}</span>
+              <span class="wait"><span class="mic"><Icon name="mic" size={16} /></span>{t("ob.test_waiting")}</span>
               <Button size="sm" variant="ghost" icon="play" onclick={() => api.startRecording("dictate")}>{t("ob.test_button")}</Button>
             {/if}
           </div>
-          {#if s.stt.live_preview && previewProg}
-            <div class="dl">
-              {#if previewReady}
-                <span class="okmini mono"><Icon name="check" size={13} stroke={2} />{t("obx.live_ready")}</span>
-              {:else if previewProg.error}
-                <span class="err">{t("obx.live_error")}</span>
-              {:else}
-                <span class="mono faint">{t("obx.live_downloading")} · {Math.round(frac(previewProg) * 100)}%</span>
-                <Progress value={frac(previewProg)} label={t("obx.live_downloading")} />
-              {/if}
-            </div>
-          {/if}
         {/if}
       </section>
     {/key}
@@ -393,6 +455,18 @@
     <span class="count mono faint">
       {#key step}<span class="cnum">{String(step).padStart(2, "0")}</span>{/key}<span>/ {String(TOTAL).padStart(2, "0")}</span>
     </span>
+    {#each bgDownloads as m (m.id)}
+      {@const f = frac(progs[m.id])}
+      <span class="bgchip mono tnum" title={t("obx.m_bg_chip", { label: m.label, pct: Math.round(f * 100) })}>
+        <Icon name="download" size={12} />
+        <span class="bgl">{m.label}</span>
+        <span class="mini"><i style="transform: scaleX({f})"></i></span>
+        <span>{Math.round(f * 100)}%</span>
+        <button type="button" class="bgx" aria-label={t("obx.m_cancel")} title={t("obx.m_cancel")} onclick={() => cancelDownload(m.id)}>
+          <Icon name="x" size={11} stroke={2} />
+        </button>
+      </span>
+    {/each}
     {#if finishError}<span class="ferr" role="alert"><Icon name="alert" size={14} />{finishError}</span>{/if}
     <div class="nav">
       {#if step > 1}
@@ -406,7 +480,7 @@
       {:else if step < TOTAL}
         <Button variant="primary" iconRight="arrowRight" disabled={!canNext} onclick={next}>{t("c.next")}</Button>
       {:else if celebrated}
-        <Button variant="primary" iconRight="check" loading={finishing} onclick={finish}>{t("c.finish")}</Button>
+        <span class="fin"><Button variant="primary" iconRight="check" loading={finishing} onclick={finish}>{t("c.finish")}</Button></span>
       {:else}
         <Button variant="default" iconRight="arrowRight" loading={finishing} onclick={finish}>{t("obx.skip_test")}</Button>
       {/if}
@@ -416,6 +490,9 @@
 
 <style>
   .ob {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     flex: 1;
     width: 100%;
     min-width: 0;
@@ -432,6 +509,46 @@
     font-weight: 600;
   }
 
+  /* ---------- ambient accent glow: drifts with the step, blooms on the welcome and on success.
+     A painted-once gradient moved only by transform/opacity (its own compositor layer). */
+  .aura {
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    top: 42%;
+    width: 1100px;
+    height: 760px;
+    margin: -380px 0 0 -550px;
+    border-radius: 50%;
+    background:
+      radial-gradient(closest-side at 50% 50%, var(--accent-soft), transparent 70%),
+      radial-gradient(closest-side at 50% 50%, var(--accent-soft), transparent);
+    pointer-events: none;
+    will-change: transform, opacity;
+    opacity: calc(0.75 * var(--aura-k, 1));
+    transform: translate3d(calc((var(--sx) - 3.5) * 46px), calc((var(--sx) - 3.5) * -10px), 0) scale(0.92);
+    transition:
+      transform 1400ms var(--soft-e),
+      opacity 900ms var(--ease);
+  }
+  /* light backgrounds show the tint much more: dim it */
+  :global(:root[data-theme="light"]) .ob {
+    --aura-k: 0.38;
+  }
+  @media (prefers-color-scheme: light) {
+    :global(:root:not([data-theme="dark"])) .ob {
+      --aura-k: 0.38;
+    }
+  }
+  .ob:has(.welcome) .aura {
+    opacity: var(--aura-k, 1);
+    transform: translate3d(-160px, -40px, 0) scale(1.05);
+  }
+  .ob.won .aura {
+    opacity: var(--aura-k, 1);
+    transform: translate3d(0, 40px, 0) scale(1.18);
+  }
+
   /* ---------- progress */
   .progress {
     width: min(820px, calc(100% - 56px));
@@ -439,24 +556,54 @@
   }
   .labels {
     list-style: none;
-    margin: 0 0 8px;
+    margin: 0 0 9px;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
   }
   .labels li {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
+    min-width: 0;
     font-size: 11.5px;
     color: var(--text-3);
     transition: color var(--t-slow) var(--ease);
+  }
+  .labels button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 2px 0;
+    color: inherit;
     white-space: nowrap;
     overflow: hidden;
+    cursor: default;
+  }
+  .labels .done button:not(:disabled) {
+    cursor: pointer;
+  }
+  .labels .done button:not(:disabled):hover {
+    color: var(--text);
+  }
+  .labels .nm {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .labels .num {
+    display: inline-grid;
+    place-items: center;
+    min-width: 15px;
     font-size: 10px;
     letter-spacing: 0.06em;
+  }
+  .ck {
+    display: grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-fg);
+    animation: ob-pop 520ms var(--spring-e) both;
   }
   .labels li.done {
     color: var(--text-2);
@@ -470,16 +617,21 @@
   .track {
     position: relative;
     height: 2px;
-    border-radius: 2px;
-    background: var(--line-strong);
-    overflow: hidden;
   }
+  .rail,
   .fill {
     position: absolute;
     inset: 0;
+    border-radius: 2px;
+  }
+  .rail {
+    background: var(--line-strong);
+  }
+  .fill {
     background: var(--accent-fg);
     transform-origin: left center;
-    transition: transform 620ms var(--ease-out);
+    transform: scaleX(var(--p));
+    transition: transform 1100ms var(--soft-e);
   }
   .track i {
     position: absolute;
@@ -488,6 +640,49 @@
     height: 100%;
     margin-left: -1.5px;
     background: var(--bg);
+  }
+  /* the glowing head rides the end of the fill (same curve, same time) and pings on each step */
+  .head {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform: translate3d(calc(var(--p) * 100%), 0, 0);
+    transition: transform 1100ms var(--soft-e);
+  }
+  .head b,
+  .head em {
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-fg);
+  }
+  .head b {
+    box-shadow:
+      0 0 0 3px var(--accent-soft),
+      0 0 14px 2px var(--accent-line);
+  }
+  .head em {
+    opacity: 0;
+    animation: ob-ping 900ms 260ms var(--ease-out) both;
+  }
+  @keyframes ob-ping {
+    from {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(4.2);
+    }
+  }
+  @keyframes ob-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.4);
+    }
   }
 
   /* ---------- stage */
@@ -508,9 +703,49 @@
     width: min(820px, calc(100% - 56px));
     padding: 28px 0 24px;
     will-change: transform, opacity;
+    transform-origin: 50% 40%;
   }
   .step.stagger {
-    --stagger: 45ms;
+    --stagger: 55ms;
+  }
+  /* Staggered reveal: every block of the incoming step (and the cards inside nested .stagger
+     groups) springs in from the travel direction, one after another — a cascade, not a slab. */
+  .step > :global(*),
+  .step :global(.stagger > *) {
+    animation: ob-in 760ms var(--spring-e) backwards;
+    animation-delay: calc(var(--base, 110ms) + var(--i, 0) * var(--stagger, 55ms));
+  }
+  .step :global(.stagger) {
+    --base: 170ms;
+  }
+  /* wrappers of a nested cascade stay put; their children do the moving */
+  .step > :global(.stagger),
+  .step > .welcome {
+    animation: none;
+  }
+  /* a first child must not inherit its group's own --i */
+  .step > :global(:first-child),
+  .step :global(.stagger > :first-child) {
+    --i: 0;
+  }
+  @keyframes ob-in {
+    from {
+      opacity: 0;
+      transform: translate3d(calc(var(--d, 1) * 26px), 10px, 0) scale(0.985);
+    }
+  }
+  /* whole wizard recedes as it hands over to the app */
+  .ob.bye .stage,
+  .ob.bye .progress {
+    opacity: 0;
+    transform: scale(0.97) translate3d(0, 8px, 0);
+    transition:
+      opacity 340ms var(--ease),
+      transform 380ms var(--ease-out);
+  }
+  .ob.bye .aura {
+    opacity: 0;
+    transform: scale(1.5);
   }
   h1 {
     font-size: 28px;
@@ -750,23 +985,7 @@
     margin-top: 20px;
   }
   .model {
-    margin-top: 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    font-size: 12px;
-  }
-  .okline {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--accent-fg);
-    font-size: 14px;
-    animation: fv-pop var(--t-slow) var(--spring) both;
-  }
-  .err {
-    color: var(--danger-fg);
+    margin-top: 22px;
   }
 
   /* ---------- hotkey + style + live */
@@ -819,12 +1038,8 @@
     min-height: 1.5em;
     animation: fv-fade var(--t-slow) var(--ease) both;
   }
-  .liveopt {
+  .livebox {
     margin-top: 22px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 16px;
     border-radius: var(--r-lg);
     border: 1px solid var(--line-strong);
     background: var(--surface);
@@ -832,8 +1047,18 @@
       border-color var(--t) var(--ease),
       background-color var(--t) var(--ease);
   }
-  .liveopt.on {
+  .livebox.on {
     border-color: var(--accent-line);
+  }
+  .liveopt {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+  }
+  .livepick {
+    padding: 2px 16px 16px;
+    animation: ob-in 600ms var(--spring-e) backwards;
   }
   .lo-ic {
     width: 34px;
@@ -889,6 +1114,13 @@
     margin-top: 18px;
     font-size: 14px;
     resize: none;
+    transition:
+      border-color var(--t-slow) var(--ease),
+      box-shadow var(--t-slow) var(--ease);
+  }
+  .testarea.won {
+    border-color: var(--accent-line);
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
   .tstatus {
     margin-top: 12px;
@@ -897,50 +1129,135 @@
     gap: 10px;
     font-size: 13px;
     color: var(--text-2);
-    min-height: 48px;
+    min-height: 56px;
   }
   .wait {
     display: inline-flex;
     align-items: center;
     gap: 8px;
   }
+  /* listening mic: a slow breathing ring says "I'm waiting for you" */
+  .mic {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: var(--accent-fg);
+    background: var(--accent-soft);
+  }
+  .mic::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid var(--accent-line);
+    animation: ob-breathe 2.2s var(--ease) infinite;
+  }
+  @keyframes ob-breathe {
+    0% {
+      opacity: 0.9;
+      transform: scale(1);
+    }
+    70%,
+    100% {
+      opacity: 0;
+      transform: scale(1.7);
+    }
+  }
+
+  /* ---------- success: disc fills, ring + tick draw, rays burst, two ripples, soft halo */
   .yay {
     display: flex;
     align-items: center;
-    gap: 14px;
-    animation: fv-rise var(--t-page) var(--ease-out) both;
+    gap: 16px;
+    animation: ob-in 700ms var(--spring-e) backwards;
   }
   .seal {
     position: relative;
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     flex: none;
     color: var(--accent-fg);
   }
   .seal svg {
+    position: relative;
     display: block;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
     stroke-linejoin: round;
+    overflow: visible;
+  }
+  .disc {
+    fill: var(--accent-soft);
+    stroke: none;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ob-pop 620ms var(--spring-e) both;
   }
   .ring {
-    stroke-width: 1.5;
-    stroke-dasharray: 114;
-    stroke-dashoffset: 114;
+    stroke-width: 1.6;
+    stroke-dasharray: 132;
+    stroke-dashoffset: 132;
     transform: rotate(-90deg);
     transform-origin: center;
-    animation: draw 520ms var(--ease-out) forwards;
+    animation: draw 560ms 80ms var(--ease-out) forwards;
   }
   .tick {
-    stroke-width: 2.4;
-    stroke-dasharray: 24;
-    stroke-dashoffset: 24;
-    animation: draw 320ms 380ms var(--ease-out) forwards;
+    stroke-width: 2.6;
+    stroke-dasharray: 28;
+    stroke-dashoffset: 28;
+    animation: draw 340ms 420ms var(--ease-out) forwards;
   }
   @keyframes draw {
     to {
       stroke-dashoffset: 0;
+    }
+  }
+  .halo,
+  .ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .halo {
+    inset: -40px;
+    background: radial-gradient(closest-side, var(--accent-line), transparent);
+    opacity: 0;
+    animation: ob-halo 1400ms 300ms var(--ease-out) both;
+  }
+  @keyframes ob-halo {
+    0% {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    35% {
+      opacity: 0.7;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.25);
+    }
+  }
+  .ripple {
+    border: 1.5px solid var(--accent-fg);
+    opacity: 0;
+    animation: ob-ripple 1100ms 380ms var(--ease-out) both;
+  }
+  .ripple.r2 {
+    animation-delay: 560ms;
+  }
+  @keyframes ob-ripple {
+    from {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(2.4);
     }
   }
   .rays {
@@ -951,23 +1268,22 @@
   .rays i {
     position: absolute;
     left: -1px;
-    top: -4px;
+    top: calc(var(--l) / -2);
     width: 2px;
-    height: 8px;
+    height: var(--l);
     border-radius: 2px;
     background: var(--accent-fg);
     opacity: 0;
-    transform: rotate(var(--a)) translate3d(0, -18px, 0);
-    animation: ray 640ms 300ms var(--ease-out) both;
+    animation: ray 700ms 360ms var(--ease-out) both;
   }
   @keyframes ray {
     0% {
       opacity: 1;
-      transform: rotate(var(--a)) translate3d(0, -18px, 0) scaleY(1);
+      transform: rotate(var(--a)) translate3d(0, -24px, 0) scaleY(1);
     }
     100% {
       opacity: 0;
-      transform: rotate(var(--a)) translate3d(0, -32px, 0) scaleY(0.3);
+      transform: rotate(var(--a)) translate3d(0, -44px, 0) scaleY(0.2);
     }
   }
   .yt {
@@ -978,26 +1294,10 @@
   .yt b {
     color: var(--accent-fg);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
   }
   .yt span {
     font-size: 12.5px;
-  }
-  .dl {
-    margin-top: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 11px;
-    animation: fv-fade var(--t-slow) var(--ease) both;
-  }
-
-  .okmini {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--ok);
-    animation: fv-pop var(--t-slow) var(--spring) both;
   }
 
   /* ---------- footer */
@@ -1012,7 +1312,6 @@
     margin: 0 auto;
     padding: 14px 0 22px;
     border-top: 1px solid var(--line);
-    background: var(--bg);
   }
   .nav {
     display: flex;
@@ -1031,6 +1330,77 @@
     color: var(--text);
     animation: fv-rise var(--t-slow) var(--ease-out) both;
   }
+  /* background download (the user chose "continuar em segundo plano") */
+  .bgchip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    height: 26px;
+    padding: 0 4px 0 9px;
+    border-radius: 13px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    font-size: 10.5px;
+    color: var(--text-2);
+    animation: ob-in 600ms var(--spring-e) backwards;
+  }
+  .bgl {
+    max-width: 16ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mini {
+    position: relative;
+    width: 44px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--surface-3);
+    overflow: hidden;
+    flex: none;
+  }
+  .mini i {
+    position: absolute;
+    inset: 0;
+    background: var(--accent-fg);
+    transform-origin: left;
+    transition: transform 260ms var(--ease);
+  }
+  .bgx {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: var(--text-3);
+  }
+  .bgx:hover {
+    color: var(--text);
+    background: var(--surface-2);
+  }
+  /* Finish after a successful test: one light sweep across the button */
+  .fin {
+    position: relative;
+    display: inline-flex;
+    border-radius: var(--r);
+    overflow: hidden;
+    animation: ob-pop 520ms var(--spring-e) backwards;
+  }
+  .fin::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
+    transform: translate3d(-120%, 0, 0);
+    animation: ob-sheen 1100ms 650ms var(--ease-out) both;
+  }
+  @keyframes ob-sheen {
+    to {
+      transform: translate3d(120%, 0, 0);
+    }
+  }
   .ferr {
     display: inline-flex;
     align-items: center;
@@ -1041,6 +1411,11 @@
   }
   @media (max-width: 620px) {
     .labels .nm {
+      display: none;
+    }
+  }
+  @media (max-width: 860px) {
+    .bgl {
       display: none;
     }
   }

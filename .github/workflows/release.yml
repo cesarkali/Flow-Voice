@@ -61,3 +61,16 @@ jobs:
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
+
+      # The website and the 1.x updater download "FlowVoiceSetup.exe" from the latest release:
+      # publish the Windows installer under that stable name too.
+      - name: Stable installer name (FlowVoiceSetup.exe)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $exe = Get-ChildItem src-tauri/target/release/bundle/nsis -Filter "*-setup.exe" | Select-Object -First 1
+          Copy-Item $exe.FullName FlowVoiceSetup.exe
+          gh release upload "v$version" FlowVoiceSetup.exe --clobber

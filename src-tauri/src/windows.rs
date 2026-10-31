@@ -14,41 +14,29 @@ pub fn setup_overlay(app: &AppHandle) {
     }
 }
 
-/// Monitor the overlay should use right now. Follow mode: the screen of the focused window
-/// (where the text will be pasted), else the one under the mouse; otherwise the primary monitor.
+/// Monitor for a NEW overlay. "Monitor em uso" mode (overlay_follow_mouse): the screen of the
+/// focused window (where the text will be pasted), or the one under the mouse when the focus is
+/// the desktop/taskbar or FlowVoice itself; otherwise the primary monitor. Chosen once per
+/// appearance: the overlay never follows the mouse or the focus while it is up.
 fn target_monitor(app: &AppHandle, w: &tauri::WebviewWindow) -> Option<tauri::Monitor> {
     let follow = app.state::<AppState>().settings().overlay_follow_mouse;
+    let monitors = w.available_monitors().unwrap_or_default();
     let under_mouse = || {
         app.cursor_position()
             .ok()
             .and_then(|p| app.monitor_from_point(p.x, p.y).ok().flatten())
     };
     let under_focus = || {
-        crate::platform::foreground_center(app)
-            .and_then(|(x, y)| app.monitor_from_point(x, y).ok().flatten())
+        let (x, y) = crate::platform::foreground_monitor_origin(app)?;
+        monitors.iter().find(|m| m.position().x == x && m.position().y == y).cloned()
     };
+    // Test hook: FLOWVOICE_TEST_MONITOR=<index> forces a monitor (multi-monitor/DPI checks).
+    if let Some(m) = std::env::var("FLOWVOICE_TEST_MONITOR").ok().and_then(|i| i.parse::<usize>().ok()).and_then(|i| monitors.get(i)) {
+        return Some(m.clone());
+    }
     if follow { under_focus().or_else(under_mouse) } else { None }
         .or_else(|| w.primary_monitor().ok().flatten())
         .or_else(under_mouse)
-}
-
-/// While the overlay is visible in follow mode, move it (with a fade) when focus or the mouse
-/// goes to another screen.
-pub fn start_follow_watcher(app: &AppHandle) {
-    let app = app.clone();
-    std::thread::spawn(move || loop {
-        std::thread::sleep(std::time::Duration::from_millis(250));
-        let follow = app.state::<AppState>().settings.read().overlay_follow_mouse;
-        let Some(w) = app.get_webview_window("overlay") else { continue };
-        if !follow || !WANTED.load(Ordering::SeqCst) || !w.is_visible().unwrap_or(false) {
-            continue;
-        }
-        let target = target_monitor(&app, &w).map(|m| monitor_key(&m));
-        let pinned = *app.state::<AppState>().overlay_monitor.lock();
-        if target.is_some() && target != pinned {
-            show_overlay(&app);
-        }
-    });
 }
 
 fn monitor_key(m: &tauri::Monitor) -> (i32, i32) {
@@ -75,7 +63,7 @@ static HITBOX: once_cell::sync::Lazy<parking_lot::Mutex<Option<(f64, f64, f64, f
 /// Bumped by every show; a pending delayed hide only runs if no show happened meanwhile.
 static SHOW_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 /// The overlay is meant to be up (the native window lingers ~240 ms after a hide for the exit
-/// animation; the follow watcher must not "re-show" it during that time).
+/// animation, so is_visible alone can't tell a new appearance from a phase change).
 static WANTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Places the fixed-size overlay bottom/top-center on its pinned monitor.
@@ -94,34 +82,64 @@ fn place_overlay(app: &AppHandle) {
     } else {
         area.position.y + area.size.height as i32 - height - margin
     };
+    log::info!(
+        "overlay on {} ({}x{} @{}x{}, scale {scale}) at {x},{y} {width}x{height}",
+        m.name().map(String::as_str).unwrap_or("?"),
+        m.size().width,
+        m.size().height,
+        m.position().x,
+        m.position().y,
+    );
     crate::platform::set_bounds_no_activate(&w, x, y, width, height);
+    *TARGET_RECT.lock() = Some((x, y, width, height));
+}
+
+/// Where the overlay window must be (physical px), re-applied while it settles.
+static TARGET_RECT: once_cell::sync::Lazy<parking_lot::Mutex<Option<(i32, i32, i32, i32)>>> =
+    once_cell::sync::Lazy::new(|| parking_lot::Mutex::new(None));
+
+/// Windows rescales a window that lands on a monitor with another DPI (sometimes only after it
+/// is shown), which would leave the card off-center or below the screen edge. For a moment after
+/// showing, put the window back on its exact rectangle whenever that happens.
+fn settle_overlay(app: &AppHandle) {
+    let app = app.clone();
+    let gen = SHOW_GEN.load(Ordering::SeqCst);
+    std::thread::spawn(move || {
+        for _ in 0..8 {
+            std::thread::sleep(std::time::Duration::from_millis(40));
+            if SHOW_GEN.load(Ordering::SeqCst) != gen {
+                return;
+            }
+            let Some(w) = app.get_webview_window("overlay") else { return };
+            let Some((x, y, width, height)) = *TARGET_RECT.lock() else { return };
+            let now = crate::platform::window_rect(&w);
+            if now.is_some_and(|r| r != (x, y, width, height)) {
+                log::info!("overlay rect drifted to {now:?}, restoring {x},{y} {width}x{height}");
+                crate::platform::set_bounds_no_activate(&w, x, y, width, height);
+            }
+        }
+    });
 }
 
 pub fn show_overlay(app: &AppHandle) {
     let Some(w) = app.get_webview_window("overlay") else { return };
-    let Some(target) = target_monitor(app, &w) else { return };
     SHOW_GEN.fetch_add(1, Ordering::SeqCst);
-    WANTED.store(true, Ordering::SeqCst);
-    let key = monitor_key(&target);
+    let was_up = WANTED.swap(true, Ordering::SeqCst);
     let visible = w.is_visible().unwrap_or(false);
-    let previous = app.state::<AppState>().overlay_monitor.lock().replace(key);
-    if visible && previous.is_some() && previous != Some(key) {
-        // Changing screens while visible: fade out, move, fade back in (no hard jump).
-        let _ = app.emit_to("overlay", "overlay-move", serde_json::json!({ "phase": "out" }));
-        let app = app.clone();
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(140));
-            place_overlay(&app);
-            let _ = app.emit_to("overlay", "overlay-move", serde_json::json!({ "phase": "in" }));
-        });
-        return;
+    if visible && was_up {
+        return; // already showing (phase change): it stays on its monitor
     }
+    // New appearance (or a show during the exit animation of the previous one): pick the
+    // monitor now and keep it until the overlay hides.
+    let Some(target) = target_monitor(app, &w) else { return };
+    *app.state::<AppState>().overlay_monitor.lock() = Some(monitor_key(&target));
+    place_overlay(app);
     if !visible {
-        place_overlay(app);
         // Click-through until the UI reports where the card is.
         let _ = w.set_ignore_cursor_events(true);
         crate::platform::show_without_focus(&w);
     }
+    settle_overlay(app);
 }
 
 pub fn hide_overlay(app: &AppHandle) {

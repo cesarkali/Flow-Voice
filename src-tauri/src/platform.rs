@@ -55,38 +55,6 @@ pub fn foreground_window() -> isize {
     }
 }
 
-/// Center of the focused window (physical px), ignoring FlowVoice's own windows.
-pub fn foreground_center(app: &tauri::AppHandle) -> Option<(f64, f64)> {
-    #[cfg(windows)]
-    {
-        use tauri::Manager;
-        use windows::Win32::Foundation::RECT;
-        use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowRect};
-        let fg = unsafe { GetForegroundWindow() };
-        if fg.0.is_null() {
-            return None;
-        }
-        for label in ["main", "overlay", "chat"] {
-            if let Some(w) = app.get_webview_window(label) {
-                if w.hwnd().map(|h| h.0 as isize == fg.0 as isize).unwrap_or(false) {
-                    return None;
-                }
-            }
-        }
-        let mut r = RECT::default();
-        unsafe { GetWindowRect(fg, &mut r) }.ok()?;
-        if r.right <= r.left || r.bottom <= r.top {
-            return None;
-        }
-        return Some((((r.left + r.right) / 2) as f64, ((r.top + r.bottom) / 2) as f64));
-    }
-    #[allow(unreachable_code)]
-    {
-        let _ = app;
-        None
-    }
-}
-
 /// Can we synthesize Ctrl+V here? (Not on Wayland without wtype.)
 pub fn can_paste() -> bool {
     #[cfg(target_os = "linux")]
@@ -632,15 +600,81 @@ fn win_mute(mute: bool) -> windows::core::Result<bool> {
 
 // ---------------------------------------------------------------- overlay window
 
-/// Sets position and size together (physical px) without activating the window.
+/// Current outer rectangle (physical px) as (x, y, width, height).
+pub fn window_rect(window: &tauri::WebviewWindow) -> Option<(i32, i32, i32, i32)> {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::{HWND, RECT};
+        use windows::Win32::UI::WindowsAndMessaging::GetWindowRect;
+        let hwnd = window.hwnd().ok()?;
+        let mut r = RECT::default();
+        unsafe { GetWindowRect(HWND(hwnd.0 as *mut _), &mut r) }.ok()?;
+        return Some((r.left, r.top, r.right - r.left, r.bottom - r.top));
+    }
+    #[allow(unreachable_code)]
+    {
+        let p = window.outer_position().ok()?;
+        let s = window.outer_size().ok()?;
+        Some((p.x, p.y, s.width as i32, s.height as i32))
+    }
+}
+
+/// Origin (physical px) of the monitor showing the focused window — the one Windows itself
+/// assigns it to (largest overlap). None when the focus is the desktop, the taskbar or a
+/// FlowVoice window, so the caller can fall back to the monitor under the mouse.
+pub fn foreground_monitor_origin(app: &tauri::AppHandle) -> Option<(i32, i32)> {
+    #[cfg(windows)]
+    {
+        use tauri::Manager;
+        use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONULL};
+        use windows::Win32::UI::WindowsAndMessaging::{GetClassNameW, GetForegroundWindow};
+        let fg = unsafe { GetForegroundWindow() };
+        if fg.0.is_null() {
+            return None;
+        }
+        for label in ["main", "overlay", "chat"] {
+            if let Some(w) = app.get_webview_window(label) {
+                if w.hwnd().map(|h| h.0 as isize == fg.0 as isize).unwrap_or(false) {
+                    return None;
+                }
+            }
+        }
+        let mut buf = [0u16; 64];
+        let n = unsafe { GetClassNameW(fg, &mut buf) };
+        let class = String::from_utf16_lossy(&buf[..n.max(0) as usize]);
+        if ["Progman", "WorkerW", "Shell_TrayWnd", "Shell_SecondaryTrayWnd"].contains(&class.as_str()) {
+            return None;
+        }
+        let mon = unsafe { MonitorFromWindow(fg, MONITOR_DEFAULTTONULL) };
+        if mon.is_invalid() {
+            return None;
+        }
+        let mut info = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
+        if !unsafe { GetMonitorInfoW(mon, &mut info) }.as_bool() {
+            return None;
+        }
+        return Some((info.rcMonitor.left, info.rcMonitor.top));
+    }
+    #[allow(unreachable_code)]
+    {
+        let _ = app;
+        None
+    }
+}
+
+/// Sets position and size (physical px) without activating the window. Two steps: first move it
+/// onto the target monitor (Windows may rescale it there if that monitor has another DPI), then
+/// apply the exact size, so a DPI change can't leave it bigger and off-center.
 pub fn set_bounds_no_activate(window: &tauri::WebviewWindow, x: i32, y: i32, w: i32, h: i32) {
     #[cfg(windows)]
     {
         use windows::Win32::Foundation::HWND;
-        use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE};
+        use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOSIZE};
         if let Ok(hwnd) = window.hwnd() {
+            let hwnd = HWND(hwnd.0 as *mut _);
             unsafe {
-                let _ = SetWindowPos(HWND(hwnd.0 as *mut _), HWND_TOPMOST, x, y, w, h, SWP_NOACTIVATE);
+                let _ = SetWindowPos(hwnd, HWND_TOPMOST, x, y, 0, 0, SWP_NOACTIVATE | SWP_NOSIZE);
+                let _ = SetWindowPos(hwnd, HWND_TOPMOST, x, y, w, h, SWP_NOACTIVATE);
             }
             return;
         }

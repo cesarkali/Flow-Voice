@@ -194,7 +194,7 @@ fn publish(app: &AppHandle, sh: &mut Shared, t0: Instant) {
         sh.first_text_at = Some(at);
     }
     sh.publishes.push(at);
-    log::info!("live preview: {n} chars ({stable} stable)");
+    log::debug!("live preview: {n} chars ({stable} stable)");
     let _ = app.emit_to("overlay", "overlay-partial", json!({ "text": full, "stable": stable }));
 }
 

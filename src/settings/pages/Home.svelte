@@ -4,7 +4,7 @@
   import { prefersReducedMotion, Tween } from "svelte/motion";
   import { fly, slide } from "svelte/transition";
   import { api, on } from "../../lib/api";
-  import { clockTime, langName, locale, relTime, t } from "../../lib/i18n.svelte";
+  import { clockTime, i18n, langName, locale, relTime, t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
   import ProviderLogo from "../../lib/icons/ProviderLogo.svelte";
   import { app, hasKey, usableLlm } from "../../lib/stores.svelte";
@@ -13,15 +13,19 @@
   import { keycapsOf } from "../../lib/ui/hotkeys";
   import Keys from "../../lib/ui/Keys.svelte";
   import Modal from "../../lib/ui/Modal.svelte";
+  import { greeting } from "../greetings";
   import { pname, STT_PROVIDERS } from "../providers";
 
   let { onnavigate }: { onnavigate?: (p: SettingsPage) => void } = $props();
   const s = $derived(app.settings!);
-  const greeting = $derived.by(() => {
-    const h = new Date().getHours();
-    const part = t(h < 5 ? "home.greet_evening" : h < 12 ? "home.greet_morning" : h < 18 ? "home.greet_afternoon" : "home.greet_evening");
-    const name = s.user_name?.trim();
-    return name ? `${part}, ${name}` : t("home.kicker");
+  /** Casual greeting (one per app open), split into words for the entrance; `nm` marks the name. */
+  const hello = $derived.by(() => {
+    const name = s.user_name?.trim() ?? "";
+    const tpl = greeting(i18n.lang, !!name);
+    return tpl.split(" ").map((w) => {
+      const [pre, post] = w.includes("{n}") ? w.split("{n}") : [w, null];
+      return post === null ? { pre, nm: "", post: "" } : { pre, nm: name, post };
+    });
   });
 
   let history = $state<DictationResult[]>([]);
@@ -149,10 +153,20 @@
   const enterDelay = (i: number) => (prefersReducedMotion.current ? 0 : Math.min(i, 8) * 28);
 </script>
 
+<!-- casual greeting, re-rolled each app open -->
+<p class="hello">
+  <span class="spark" aria-hidden="true"><Icon name="sparkle" size={18} /></span>
+  <span class="words">
+    {#each hello as w, i (i)}
+      <span class="w" style:--i={i}>{w.pre}{#if w.nm}<span class="nm">{w.nm}</span>{/if}{w.post}</span>{" "}
+    {/each}
+  </span>
+</p>
+
 <!-- HERO: teaches the one thing that matters -->
 <section class="hero" aria-labelledby="home-hero">
   <div class="hero-top">
-    <span class="label">{greeting}</span>
+    <span class="label">{t("home.kicker")}</span>
     <button type="button" class="link" onclick={() => onnavigate?.("shortcuts")}>
       {t("home.change_hotkey")}<Icon name="chevronRight" size={14} />
     </button>
@@ -367,6 +381,55 @@
 </Modal>
 
 <style>
+  /* ------------------------------------------------------------ greeting */
+  .hello {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 16px 2px;
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 560;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+    color: var(--text);
+  }
+  .spark {
+    display: grid;
+    flex: none;
+    color: var(--accent-fg);
+    animation: spark-in 900ms var(--spring) 60ms both;
+  }
+  @keyframes spark-in {
+    from {
+      opacity: 0;
+      transform: rotate(-120deg) scale(0.3);
+    }
+  }
+  .words {
+    min-width: 0;
+  }
+  .w {
+    display: inline-block;
+    animation: word-in 620ms var(--ease-out) calc(140ms + var(--i) * 55ms) both;
+  }
+  @keyframes word-in {
+    from {
+      opacity: 0;
+      filter: blur(6px);
+      transform: translate3d(0, 6px, 0);
+    }
+  }
+  .nm {
+    color: var(--accent-fg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spark,
+    .w {
+      animation: none;
+    }
+  }
+
   /* ------------------------------------------------------------ hero */
   .hero {
     position: relative;

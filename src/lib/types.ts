@@ -158,6 +158,8 @@ export interface ModelProgress {
   total: number;
   done: boolean;
   error: string | null;
+  /** Stopped by the user (cancel_local_model_download); `error` is then "cancelado". */
+  cancelled?: boolean;
 }
 
 /** command = apply a spoken instruction to the text selected in the target app. */

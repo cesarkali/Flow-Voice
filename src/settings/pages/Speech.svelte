@@ -37,11 +37,18 @@
   onMount(() => {
     loadModels();
     api.listInputDevices().then((d) => (devices = d));
+    // Every window hears this, so a download started elsewhere (onboarding) shows up here too.
     const un = on<ModelProgress>(EVENTS.modelProgress, (p) => {
+      if (p.cancelled) return showCancelled(p.id);
+      // A last tick from a run that was just cancelled must not bring the bar back.
+      if (progress[p.id]?.cancelled && !p.done) return;
       progress = { ...progress, [p.id]: p };
       if (p.done || p.error) loadModels();
     });
-    return () => un.then((f) => f());
+    return () => {
+      un.then((f) => f());
+      noteTimers.forEach(clearTimeout);
+    };
   });
 
   // ---------------------------------------------------------------- languages
@@ -132,12 +139,35 @@
   const onlyLangs = (m: LocalModel) => (m.langs.includes("*") ? null : m.langs);
 
   async function download(m: LocalModel) {
+    clearTimeout(noteTimers.get(m.id));
     progress = { ...progress, [m.id]: { id: m.id, downloaded: 0, total: m.size_mb * 1048576, done: false, error: null } };
     try {
       await api.downloadLocalModel(m.id);
     } catch (e) {
       progress = { ...progress, [m.id]: { ...progress[m.id], error: String(e) } };
     }
+  }
+
+  /** Brief "Download cancelado" note; the card is back to its Baixar state underneath. */
+  const noteTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  function showCancelled(id: string) {
+    if (progress[id]?.cancelled) return;
+    progress = { ...progress, [id]: { id, downloaded: 0, total: 0, done: true, error: null, cancelled: true } };
+    clearTimeout(noteTimers.get(id));
+    noteTimers.set(
+      id,
+      setTimeout(() => {
+        noteTimers.delete(id);
+        if (progress[id]?.cancelled) {
+          const { [id]: _gone, ...rest } = progress;
+          progress = rest;
+        }
+      }, 3200),
+    );
+  }
+  function cancelDownload(m: LocalModel) {
+    showCancelled(m.id); // instant feedback; Rust confirms with a cancelled model-progress
+    api.cancelLocalModelDownload(m.id).catch(() => {});
   }
 
   /** Where the offline engine goes if `m` disappears: best other installed model for the speech language. */
@@ -341,11 +371,24 @@
                 <span class="mono tnum">{mbOf(p)}</span>
               </div>
             {/if}
-            {#if p?.error}<p class="perr mono">{p.error}</p>{/if}
+            {#if p?.cancelled}
+              <p class="pnote" transition:slide={{ duration: 200, easing: cubicOut }}>
+                <Icon name="x" size={12} stroke={2} />{t("lm.dl_cancelled")}
+              </p>
+            {:else if p?.error}<p class="perr mono">{p.error}</p>{/if}
           </div>
           <div class="ma">
             {#if busy}
               <span class="mono pct tnum">{t("speech.downloading", { pct: Math.round(pct(p) * 100) })}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                icon="x"
+                class="dlx"
+                aria-label={t("lm.dl_cancel_aria", { name: nameOfModel(m) })}
+                title={t("lm.dl_cancel_aria", { name: nameOfModel(m) })}
+                onclick={() => cancelDownload(m)}>{t("lm.dl_cancel")}</Button
+              >
             {:else if m.installed}
               {#if !inUse && !foreign}
                 <Button size="sm" onclick={() => (s.stt.local_model = m.id)}>{t("speech.use")}</Button>
@@ -885,6 +928,29 @@
     font-size: 11px;
     font-weight: 400;
     color: var(--text-3);
+  }
+  .pnote {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-3);
+    animation: pnote-in 0.22s ease-out;
+  }
+  .pnote :global(svg) {
+    opacity: 0.8;
+  }
+  @keyframes pnote-in {
+    from {
+      opacity: 0;
+    }
+  }
+  .ma :global(.dlx) {
+    color: var(--text-2);
+  }
+  .ma :global(.dlx:hover) {
+    color: var(--danger-fg);
   }
   .perr {
     margin-top: 6px;

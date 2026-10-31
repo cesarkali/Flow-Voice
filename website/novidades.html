@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Novidades · FlowVoice 2.0, reescrito do zero</title>
+  <meta name="description" content="O que mudou no FlowVoice 2.0: reescrito do zero em Rust, prévia ao vivo, estilo Prompt, modo Comando, troca automática de modelos aposentados, modo offline com modelo para pt-BR e mais.">
+  <link rel="canonical" href="https://flowvoice.caliberda.com.br/novidades">
+  <meta name="theme-color" content="#0b0b0c">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="FlowVoice">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:url" content="https://flowvoice.caliberda.com.br/novidades">
+  <meta property="og:title" content="FlowVoice 2.0: reescrito do zero">
+  <meta property="og:description" content="Mais rápido, mais leve e com prévia ao vivo. Veja tudo o que mudou em relação à 1.x.">
+  <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="pages.css">
+  <script>document.documentElement.classList.add("js")</script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body class="pg">
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="top" id="top">
+    <div class="wrap">
+      <a class="brand" href="./" aria-label="FlowVoice, página inicial"><img src="assets/logo.svg" alt="" width="30" height="30"><span>FlowVoice</span><span class="ver">2.0</span></a>
+      <nav class="nav" id="nav" aria-label="Principal">
+        <a href="./">Início</a>
+        <a href="guia.html">Guia</a>
+        <a href="novidades.html" aria-current="page">Novidades</a>
+        <a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a>
+      </nav>
+      <div class="top-cta">
+        <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar</a>
+        <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menu"><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <div class="pg-hero">
+      <div class="wrap">
+        <div class="idx"><span class="label"><b>Novidades</b> · changelog</span></div>
+        <h1>2.0: reescrito <span class="acc">do zero.</span></h1>
+        <p class="pg-lede">O FlowVoice foi refeito por inteiro, do motor à interface. Ficou mais rápido, mais leve e muito mais difícil de quebrar quando um provedor muda as regras.</p>
+        <div class="pg-meta"><span>Versão <b>2.0</b></span><span><b>Windows</b> e Linux</span><span>Atualiza <b>sozinho</b></span></div>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <section class="pg-rel" aria-labelledby="v2">
+        <div class="pg-rel-meta">
+          <p class="pg-rel-ver">2<span class="acc">.</span>0</p>
+          <span class="label">Outubro de 2026</span>
+        </div>
+        <div class="pg-rel-body">
+          <h2 id="v2" data-reveal>Por que reescrever</h2>
+          <p data-reveal>Em 2026 a 1.x parou de funcionar para muita gente: o GitHub Models, que ela recomendava, foi descontinuado; modelos que eram grátis na Groq saíram do plano gratuito; versões antigas do Gemini foram desligadas. E a 1.x escondia o erro real, então parecia que o app simplesmente “não funcionava”.</p>
+          <p data-reveal>A 2.0 nasceu para não passar por isso de novo: ela mostra a mensagem real do provedor e <strong>troca sozinha um modelo que foi aposentado</strong>.</p>
+
+          <ul class="pg-grid" data-reveal>
+            <li>
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h3l3-8 4 16 3-8h3"/></svg></span>
+              <h3>Ditado</h3>
+              <ul>
+                <li><span><b>Prévia ao vivo</b>: o texto aparece enquanto você fala.</span></li>
+                <li><span>Novo estilo <b>Prompt</b>, que enxuga a fala para mandar a uma IA, com intensidade ajustável.</span></li>
+                <li><span>Natural, Profissional, Cru, Só transcrição e estilos seus.</span></li>
+                <li><span><b>Estilo por aplicativo</b>: Outlook sempre Profissional, VS Code sempre Prompt.</span></li>
+                <li><span>Tira vícios de linguagem (“né”, “tipo”, gagueira) e respeita seu vocabulário.</span></li>
+              </ul>
+            </li>
+            <li>
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M8 12h8"/></svg></span>
+              <h3>Overlay novo</h3>
+              <ul>
+                <li><span>Depois do resultado, um clique <b>refaz em outro estilo</b> ou <b>traduz</b> para dezenas de idiomas.</span></li>
+                <li><span><b>Substituir</b> desfaz a colagem anterior e cola a nova versão.</span></li>
+                <li><span>Acompanha o mouse ou a janela em foco, no monitor em que você está.</span></li>
+                <li><span><kbd>Esc</kbd> cancela a qualquer momento.</span></li>
+              </ul>
+            </li>
+            <li>
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M4 12h16M4 17h7"/><path d="m17 15 3 2-3 2"/></svg></span>
+              <h3>Novos atalhos</h3>
+              <ul>
+                <li><span><b>Comando na seleção</b>: selecione um texto em qualquer app e diga o que fazer (“mais formal”, “resume em tópicos”).</span></li>
+                <li><span><b>Colar de novo</b> o último ditado no app em foco.</span></li>
+                <li><span>Tradução por voz e assistente por voz com busca na web e fontes.</span></li>
+                <li><span>Modo segurar para falar (push-to-talk).</span></li>
+              </ul>
+            </li>
+            <li>
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.4 3.4 8.3 8 9 4.6-.7 8-4.6 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+              <h3>Confiável</h3>
+              <ul>
+                <li><span><b>Failover</b> entre provedores e entre várias chaves; se a nuvem cair, usa o modelo local.</span></li>
+                <li><span>Modelos aposentados <b>trocados automaticamente</b>, com checagem diária.</span></li>
+                <li><span>Colagem segura: confere a janela de destino e devolve o que estava na sua área de transferência.</span></li>
+                <li><span>Avisa se o microfone desconectar e usa outro.</span></li>
+              </ul>
+            </li>
+            <li>
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4"/></svg></span>
+              <h3>Offline melhor</h3>
+              <ul>
+                <li><span>Catálogo de modelos por idioma, com recomendação para o seu.</span></li>
+                <li><span>Modelo <b>ajustado para o português do Brasil</b> (Distil-Whisper pt-BR).</span></li>
+                <li><span>Transcrição local várias vezes mais rápida.</span></li>
+                <li><span>O modelo sai da memória quando você para de ditar; apague modelos quando quiser.</span></li>
+              </ul>
+            </li>
+            <li>
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg></span>
+              <h3>Interface</h3>
+              <ul>
+                <li><span>Configurações redesenhadas, com <b>busca</b> (<kbd>Ctrl</kbd> <kbd>K</kbd>).</span></li>
+                <li><span>Assistente de primeira execução com tutorial e teste de cada chave.</span></li>
+                <li><span>Temas claro e escuro, cor de destaque à sua escolha, PT/EN/ES.</span></li>
+                <li><span>Ícone novo e histórico pesquisável.</span></li>
+              </ul>
+            </li>
+          </ul>
+
+          <h2 data-reveal>1.x × 2.0</h2>
+          <div class="pg-table cmp-ver" data-reveal>
+            <table>
+              <caption class="sr">Comparação entre a versão 1.x e a 2.0</caption>
+              <thead><tr><th scope="col"><span class="sr">Aspecto</span></th><th scope="col">1.x</th><th scope="col">2.0</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Base</th><td>Python + PySide6</td><td>Rust (Tauri 2) + Svelte</td></tr>
+                <tr><th scope="row">Instalador</th><td>Grande, com Python embutido</td><td>Poucos MB; modelos só se você quiser</td></tr>
+                <tr><th scope="row">Enquanto você fala</th><td>Sem texto na tela</td><td>Prévia do texto ao vivo</td></tr>
+                <tr><th scope="row">Depois do resultado</th><td>Colar e pronto</td><td>Trocar estilo, traduzir, substituir</td></tr>
+                <tr><th scope="row">Quando o provedor falha</th><td>Erro genérico</td><td>Próxima chave ou provedor, com a mensagem real</td></tr>
+                <tr><th scope="row">Modelo aposentado</th><td>Parava de funcionar</td><td>Trocado automaticamente</td></tr>
+                <tr><th scope="row">Chaves</th><td>Arquivo de configuração</td><td>Cofre de credenciais do sistema</td></tr>
+                <tr><th scope="row">Atualização</th><td>Automática</td><td>Automática e assinada digitalmente</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pg-callout hot" data-reveal>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            <p><b>Vindo da 1.x?</b>Instale por cima. Na primeira execução, a 2.0 importa suas chaves antigas automaticamente para o cofre do sistema. Se você usava o GitHub Models, crie uma chave grátis na Groq: <a href="guia.html#groq">leva 2 minutos</a>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pg-rel" aria-labelledby="v1">
+        <div class="pg-rel-meta">
+          <p class="pg-rel-ver">1<span class="acc">.</span>x</p>
+          <span class="label">Até junho de 2026</span>
+        </div>
+        <div class="pg-rel-body">
+          <h2 id="v1" data-reveal>A primeira geração</h2>
+          <p data-reveal>A versão original, em Python. Os destaques, do mais recente ao mais antigo:</p>
+          <ul class="pg-old" data-reveal>
+            <li><span>1.9</span>Busca na web pelo Tavily no modo Pesquisa, senha para revelar as chaves e interface em português, inglês e espanhol.</li>
+            <li><span>1.8</span>Overlay redesenhado e filtro contra “alucinações” da transcrição.</li>
+            <li><span>1.5–1.7</span>Atualização automática dentro do app.</li>
+            <li><span>1.4</span>Versão para Ubuntu, com instalador .deb.</li>
+          </ul>
+          <p class="pg-gap" data-reveal>Notas completas de cada versão no <a href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">GitHub Releases</a>.</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="pg-cta" aria-labelledby="cta-title">
+      <div class="wrap">
+        <div>
+          <h2 id="cta-title">Pronto para a 2.0?</h2>
+          <p>Grátis, de código aberto e sem conta.</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe">Baixar o FlowVoice</a>
+          <a class="btn btn-ghost btn-lg" href="guia.html">Pegar uma chave grátis</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot-site">
+    <div class="wrap">
+      <div class="foot-grid">
+        <div class="foot-about">
+          <a class="brand" href="./"><img src="assets/logo.svg" alt="" width="30" height="30"><span>FlowVoice</span></a>
+          <p>Ditado por voz com IA em qualquer app. Grátis, de código aberto e sem conta. Feito no Brasil por <a href="https://caliberda.com.br" rel="noopener">Júlio Caliberda</a>.</p>
+        </div>
+        <div>
+          <h2>Produto</h2>
+          <ul>
+            <li><a href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe">Baixar para Windows</a></li>
+            <li><a href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">Todas as versões</a></li>
+            <li><a href="novidades.html" aria-current="page">Novidades</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Ajuda</h2>
+          <ul>
+            <li><a href="guia.html">Chaves grátis</a></li>
+            <li><a href="privacidade.html">Privacidade</a></li>
+            <li><a href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">Relatar um problema</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Projeto</h2>
+          <ul>
+            <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a></li>
+            <li><a href="https://github.com/sponsors/cesarkali" rel="noopener">GitHub Sponsors</a></li>
+            <li><a href="https://livepix.gg/caliberda" rel="noopener">Pix</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="foot-bottom"><span>© 2026 Júlio Caliberda · GPL-3.0</span><span>Feito com voz, no Brasil.</span></div>
+    </div>
+  </footer>
+
+  <script src="site.js" defer></script>
+  <script>
+    /* Table of contents: highlights the section being read. Header, menu and reveal live in site.js. */
+    addEventListener("DOMContentLoaded", function () {
+      var links = document.querySelectorAll(".pg-toc a");
+      if (!links.length || !("IntersectionObserver" in window)) return;
+      var map = {};
+      links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+      var spy = new IntersectionObserver(function (es) {
+        es.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          links.forEach(function (a) { a.classList.remove("is-active"); a.removeAttribute("aria-current"); });
+          var a = map[en.target.id]; if (a) { a.classList.add("is-active"); a.setAttribute("aria-current", "location"); }
+        });
+      }, { rootMargin: "-25% 0px -65% 0px" });
+      Object.keys(map).forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
+    });
+  </script>
+</body>
+</html>

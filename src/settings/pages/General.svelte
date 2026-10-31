@@ -96,7 +96,7 @@
 </Section>
 
 <Section label={t("ctl.sec_overlay")}>
-  <!-- live miniature: two monitors, the capsule moves to where it would appear -->
+  <!-- live miniature: the pointer focuses a window on each screen, the capsule shows where it would appear -->
   <div
     class="mini"
     aria-hidden="true"
@@ -104,13 +104,23 @@
     class:follow={s.overlay_follow_mouse}
     data-w={s.overlay_width}
   >
-    <div class="scr main">
-      <span class="cap"><i></i><i></i><i></i></span>
-      <span class="tag mono">1</span>
-    </div>
-    <div class="scr second">
-      <span class="cap"><i></i><i></i><i></i></span>
-      <span class="tag mono">2</span>
+    <div class="desk">
+      <div class="mon">
+        <div class="scr main">
+          <span class="win a"><b></b></span>
+          <span class="cap"><i></i><i></i><i></i></span>
+        </div>
+        <span class="stand"></span>
+        <span class="tag"><span class="star"></span>{t("ctl.mon_main")}</span>
+      </div>
+      <div class="mon">
+        <div class="scr second">
+          <span class="win b"><b></b></span>
+          <span class="cap"><i></i><i></i><i></i></span>
+        </div>
+        <span class="stand"></span>
+        <span class="tag">{t("ctl.mon_other")}</span>
+      </div>
       <svg class="mouse" viewBox="0 0 12 16" width="12" height="16"><path d="M1 1l9 8.5H5.6L3.4 14z" /></svg>
     </div>
   </div>
@@ -135,7 +145,7 @@
       ]}
     />
   </Row>
-  <Row label={t("ctl.ov_follow")} hint={t("obx.beh_follow_body")}>
+  <Row label={t("ctl.ov_follow")} hint={t("ctl.ov_follow_hint")}>
     <Toggle label={t("ctl.ov_follow")} bind:checked={s.overlay_follow_mouse} />
   </Row>
 </Section>
@@ -194,47 +204,134 @@
   }
 
   /* ---------------------------------------------------------------- overlay miniature */
+  /* One 7 s loop: the pointer clicks a window on "Principal" (dictation: capsule there), then
+     hops to the other screen and clicks a window there (capsule on that screen when the toggle
+     is on, back on "Principal" when it is off). Only opacity/transform animate. */
   .mini {
     --spr: var(--spring);
+    --loop: 7s;
+    --mw: 168px; /* main screen: 168 x 105 */
+    --ow: 128px; /* other screen: 128 x 80 */
+    --gap: 22px;
     display: flex;
-    align-items: flex-end;
     justify-content: center;
-    gap: 10px;
-    padding: 16px 12px 14px;
+    padding: 18px 12px 12px;
     margin-bottom: 14px;
     border-radius: 10px;
     border: 1px solid var(--line);
     background:
       radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0) 0 0 / 12px 12px,
       var(--surface);
+    overflow: hidden;
   }
   @supports (transition-timing-function: linear(0, 1)) {
     .mini {
       --spr: linear(0, 0.063, 0.206, 0.379, 0.549, 0.698, 0.818, 0.907, 0.968, 1.007, 1.028, 1.037, 1.038, 1.034, 1.028, 1.021, 1.015, 1.01, 1.006, 1.003, 1);
     }
   }
+  .desk {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    gap: var(--gap);
+  }
+  .mon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
   .scr {
     position: relative;
-    width: 168px;
+    width: var(--mw);
     aspect-ratio: 16 / 10;
-    border-radius: 4px;
+    border-radius: 5px;
     border: 1.5px solid var(--line-strong);
     background: var(--bg);
+    overflow: hidden;
   }
   .scr.second {
-    width: 128px;
+    width: var(--ow);
+  }
+  .stand {
+    width: 24px;
+    height: 7px;
+    background: var(--line-strong);
+    clip-path: polygon(25% 0, 75% 0, 100% 100%, 0 100%);
   }
   .tag {
-    position: absolute;
-    left: 5px;
-    bottom: 2px;
-    font-size: 9px;
-    color: var(--text-3);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 7px;
+    font-size: 11px;
+    font-weight: 550;
+    color: var(--text-2);
+    white-space: nowrap;
   }
+  .star {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent-fg);
+  }
+
+  /* a window on each screen; the focused one gets an accent ring */
+  .win {
+    position: absolute;
+    top: 25%;
+    height: 45%;
+    border-radius: 3px;
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+  .win.a {
+    left: 14%;
+    width: 54%;
+  }
+  .win.b {
+    left: 18%;
+    width: 64%;
+  }
+  .win::before {
+    /* title bar */
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 5px;
+    border-radius: 3px 3px 0 0;
+    background: var(--line-strong);
+  }
+  .win b {
+    position: absolute;
+    inset: -1px;
+    border-radius: 4px;
+    box-shadow:
+      0 0 0 1.5px var(--accent-fg),
+      0 0 0 4px var(--accent-soft);
+    opacity: 0;
+  }
+  .win.a b {
+    animation: focus-a var(--loop) var(--ease) infinite;
+  }
+  .win.b b {
+    animation: focus-b var(--loop) var(--ease) infinite;
+  }
+  @keyframes focus-a {
+    0%, 11% { opacity: 0; }
+    13%, 58% { opacity: 1; }
+    60%, 100% { opacity: 0; }
+  }
+  @keyframes focus-b {
+    0%, 11% { opacity: 1; }
+    13%, 58% { opacity: 0; }
+    60%, 100% { opacity: 1; }
+  }
+
+  /* the capsule */
   .cap {
     position: absolute;
     left: 50%;
-    bottom: 12px;
+    bottom: 9px;
     height: 10px;
     width: 46%;
     display: flex;
@@ -243,12 +340,13 @@
     gap: 1.5px;
     border-radius: 6px;
     background: var(--accent);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     translate: -50% 0;
+    opacity: 0;
+    scale: 0.6;
     transition:
       bottom 420ms var(--spr),
-      width 420ms var(--spr),
-      opacity 220ms var(--ease),
-      scale 320ms var(--spr);
+      width 420ms var(--spr);
   }
   .cap i {
     width: 2px;
@@ -260,7 +358,7 @@
     height: 6px;
   }
   .top .cap {
-    bottom: calc(100% - 18px);
+    bottom: calc(100% - 19px);
   }
   [data-w="compact"] .cap {
     width: 32%;
@@ -268,28 +366,76 @@
   [data-w="wide"] .cap {
     width: 70%;
   }
-  /* follow mouse: capsule shows on the second screen (where the pointer is) */
-  .second .cap,
+  /* on: the capsule shows on the screen in use; off: always on "Principal" */
+  .main .cap {
+    animation: cap-both var(--loop) var(--ease-out) infinite;
+  }
   .follow .main .cap {
-    opacity: 0;
-    scale: 0.6;
+    animation-name: cap-first;
   }
   .follow .second .cap {
-    opacity: 1;
-    scale: 1;
+    animation: cap-second var(--loop) var(--ease-out) infinite;
   }
+  @keyframes cap-first {
+    0%, 16% { opacity: 0; scale: 0.6; }
+    20%, 42% { opacity: 1; scale: 1; }
+    46%, 100% { opacity: 0; scale: 0.85; }
+  }
+  @keyframes cap-second {
+    0%, 63% { opacity: 0; scale: 0.6; }
+    67%, 90% { opacity: 1; scale: 1; }
+    94%, 100% { opacity: 0; scale: 0.85; }
+  }
+  @keyframes cap-both {
+    0%, 16% { opacity: 0; scale: 0.6; }
+    20%, 42% { opacity: 1; scale: 1; }
+    46%, 63% { opacity: 0; scale: 0.6; }
+    67%, 90% { opacity: 1; scale: 1; }
+    94%, 100% { opacity: 0; scale: 0.85; }
+  }
+
+  /* the pointer: hops between the two windows and "clicks" each one */
   .mouse {
+    --ax: calc(var(--mw) * 0.42);
+    --ay: 52px;
+    --bx: calc(var(--mw) + var(--gap) + var(--ow) * 0.52);
+    --by: 63px;
     position: absolute;
-    right: 22%;
-    top: 46%;
+    left: -1px;
+    top: -1px;
     fill: var(--text);
     stroke: var(--bg);
     stroke-width: 1;
-    opacity: 0.35;
-    transition: opacity var(--t) var(--ease);
+    filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.3));
+    transform-origin: 1px 1px;
+    animation: hop var(--loop) cubic-bezier(0.65, 0, 0.35, 1) infinite;
   }
-  .follow .mouse {
-    opacity: 1;
+  @keyframes hop {
+    0% { transform: translate(var(--bx), var(--by)); }
+    9% { transform: translate(var(--ax), var(--ay)); }
+    11% { transform: translate(var(--ax), var(--ay)) scale(0.8); }
+    13%, 47% { transform: translate(var(--ax), var(--ay)); }
+    56% { transform: translate(var(--bx), var(--by)); }
+    58% { transform: translate(var(--bx), var(--by)) scale(0.8); }
+    60%, 100% { transform: translate(var(--bx), var(--by)); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mini * {
+      animation: none !important;
+    }
+    .mouse {
+      transform: translate(var(--bx), var(--by));
+    }
+    .win.b b,
+    .main .cap,
+    .follow .second .cap {
+      opacity: 1;
+      scale: 1;
+    }
+    .follow .main .cap {
+      opacity: 0;
+    }
   }
 
   /* first block under the section label: the label's hairline is the separator (like Section rows) */
