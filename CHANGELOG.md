@@ -2,6 +2,29 @@
 
 Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases antigos](https://github.com/cesarkali/Flow-Voice/releases?q=v1&expanded=true) e no histórico do Git.
 
+## 2.1.0
+
+### Prévia ao vivo mais estável
+
+- O texto não volta mais atrás: cada modelo tem um pedido por vez, e uma resposta atrasada (de um trecho mais antigo) é descartada.
+- Palavras confirmadas: uma palavra só fica firme quando duas respostas seguidas concordam nela; o resto aparece mais claro e ainda pode mudar.
+- A prévia não manda mais o texto anterior como contexto (às vezes ele voltava repetido).
+- O ritmo segue os limites que o próprio Groq informa e sempre guarda espaço para a transcrição final, que não leva mais "limite atingido" logo depois da prévia.
+- Frases longas são fechadas em até 15 s: respostas mais rápidas e menos segundos gastos do plano grátis.
+- A faixa extra do Gemini na prévia saiu (escrevia diferente do Whisper e era mais lenta, o texto pulava).
+- Medido com os mesmos 4 áudios: texto já mostrado como firme e depois trocado caiu de 2,5–7,5 vezes por ditado para zero; o total de texto reescrito caiu ~4×; atualizações a cada ~1,2–1,5 s (antes ~1,7–2,0 s); nenhum "limite atingido".
+
+### Vidro na cápsula
+
+- Nova opção em **Geral → Janela flutuante**: **Vidro** (transparente e desfocada, com borda de luz) ou **Translúcido** (tinta mais leve), usando o desfoque do próprio Windows, feito pela placa de vídeo.
+- **Luz e sombra como no macOS 27**: brilho, borda chanfrada, luz na parte de baixo e sombra suave (ideia de Thiago Silva).
+- Precisa dos efeitos de transparência do Windows; com eles desligados ou com a economia de energia, a cápsula fica sólida.
+
+### Correções
+
+- Num PC ocupado, ao iniciar com o Windows, a janela às vezes mostrava `state not managed for field state…` no lugar das configurações.
+- Depois de atualizar, o FlowVoice reabre sozinho com a janela aberta (se tinha iniciado com o Windows, voltava só na bandeja e parecia não ter reaberto).
+
 ## 2.0.0
 
 Reescrita completa: de Python/PySide6 para **Tauri 2 (Rust) + Svelte 5**.
