@@ -105,6 +105,8 @@ const DEFAULT_SETTINGS: Settings = {
   overlay_position: "bottom",
   overlay_width: "normal",
   overlay_follow_mouse: true,
+  overlay_glass: "solid",
+  overlay_glass_light: false,
   dictionary: ["FlowVoice", "Caliberda", "Tauri", "Svelte"],
   onboarded: true,
 };
@@ -737,6 +739,10 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       // The browser preview draws it and emulates Rust's overlay-pointer (src/overlay/Preview.svelte).
       mockEmit("mock:overlay-hitbox", a.rect ?? null);
       return;
+    case "overlay_glass":
+      return;
+    case "glass_available":
+      return true;
     case "dismiss_overlay":
       stopSimulation();
       return;

@@ -84,6 +84,10 @@ export const api = {
    */
   overlayHitbox: (rect: { x: number; y: number; width: number; height: number } | null) =>
     call<void>("overlay_hitbox", { rect }),
+  /** Windows' blur under the card ("Vidro"); null fades it out. */
+  overlayGlass: (rect: { x: number; y: number; width: number; height: number; radius: number; opacity: number } | null) =>
+    call<void>("overlay_glass", { rect }),
+  glassAvailable: () => call<boolean>("glass_available"),
   dismissOverlay: () => call<void>("dismiss_overlay"),
 
   // history

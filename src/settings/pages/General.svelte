@@ -25,6 +25,12 @@
   let installing = $state(false);
   let dl = $state<{ downloaded: number; total: number | null } | null>(null);
 
+  /** Windows' blur can show now (transparency effects on, no energy saver). */
+  let glassOk = $state<boolean | null>(null);
+  $effect(() => {
+    if (s.overlay_glass !== "solid") api.glassAvailable().then((v) => (glassOk = v)).catch(() => (glassOk = null));
+  });
+
   onMount(() => {
     api.appInfo().then((i) => (info = i));
     const un = on<{ downloaded: number; total: number | null }>(EVENTS.updateProgress, (p) => (dl = p));
@@ -148,6 +154,25 @@
   <Row label={t("ctl.ov_follow")} hint={t("ctl.ov_follow_hint")}>
     <Toggle label={t("ctl.ov_follow")} bind:checked={s.overlay_follow_mouse} />
   </Row>
+  <Row label={t("ctl.ov_glass")} hint={t("ctl.ov_glass_hint")}>
+    <Segmented
+      label={t("ctl.ov_glass")}
+      bind:value={s.overlay_glass}
+      options={[
+        { value: "solid", label: t("ctl.glass_solid") },
+        { value: "glass", label: t("ctl.glass_glass") },
+        { value: "translucent", label: t("ctl.glass_translucent") },
+      ]}
+    />
+  </Row>
+  {#if s.overlay_glass !== "solid"}
+    <Row label={t("ctl.ov_glass_light")} hint={t("ctl.ov_glass_light_hint")}>
+      <Toggle label={t("ctl.ov_glass_light")} bind:checked={s.overlay_glass_light} />
+    </Row>
+    {#if glassOk === false}
+      <p class="gnote">{t("ctl.glass_off_note")}</p>
+    {/if}
+  {/if}
 </Section>
 
 <Section label={t("gen.sec_behavior")}>
@@ -500,6 +525,11 @@
     outline: none;
     border-color: var(--accent-line);
     box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .gnote {
+    margin: -4px 0 12px;
+    font-size: 12px;
+    color: var(--text-2);
   }
   .langp {
     width: 360px;

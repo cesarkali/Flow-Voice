@@ -115,6 +115,10 @@ pub struct Settings {
     pub overlay_position: String, // "bottom" | "top"
     pub overlay_width: String,    // "compact" | "normal" | "wide"
     pub overlay_follow_mouse: bool,
+    /// The card's look: "solid" | "glass" (Windows' blur) | "translucent" (lighter tint).
+    pub overlay_glass: String,
+    /// Light and shadow like macOS 27 on the glass (sheen, beveled edge, soft shadow).
+    pub overlay_glass_light: bool,
     pub dictionary: Vec<String>,
     pub onboarded: bool,
     /// One-shot migrations already applied to this file (missing in old files = 0).
@@ -154,6 +158,8 @@ impl Default for Settings {
             overlay_position: "bottom".into(),
             overlay_width: "normal".into(),
             overlay_follow_mouse: true,
+            overlay_glass: "solid".into(),
+            overlay_glass_light: false,
             dictionary: vec![],
             onboarded: false,
             schema: 2,
@@ -483,6 +489,9 @@ impl Settings {
         self.user_name = self.user_name.trim().chars().take(40).collect();
         if !["light", "medium", "strong"].contains(&self.prompt_strength.as_str()) {
             self.prompt_strength = "medium".into();
+        }
+        if !["solid", "glass", "translucent"].contains(&self.overlay_glass.as_str()) {
+            self.overlay_glass = "solid".into();
         }
         if !["compact", "normal", "wide"].contains(&self.overlay_width.as_str()) {
             self.overlay_width = "normal".into();

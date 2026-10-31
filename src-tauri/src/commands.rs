@@ -313,6 +313,17 @@ pub fn overlay_hitbox(rect: Option<HitRect>) {
     windows::set_overlay_hitbox(rect.map(|r| (r.x, r.y, r.width, r.height)));
 }
 
+/// "Vidro": Windows' blur under the card's box (None: fades out). See glass.rs.
+#[tauri::command]
+pub fn overlay_glass(app: AppHandle, rect: Option<crate::glass::GlassRect>) {
+    crate::glass::update(&app, rect);
+}
+
+#[tauri::command]
+pub fn glass_available() -> bool {
+    crate::glass::available()
+}
+
 #[tauri::command]
 /// The card's close button / auto-close. It acts on what the card shows NOW: a recording is
 /// never cancelled from here (a result card's countdown can end just as a new recording starts;

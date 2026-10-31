@@ -3,6 +3,7 @@ mod audio;
 mod cloud;
 mod commands;
 mod feedback;
+mod glass;
 mod heal;
 mod hotkeys;
 mod keys;
@@ -225,6 +226,8 @@ pub fn run() {
             commands::overlay_hold,
             commands::overlay_resize,
             commands::overlay_hitbox,
+            commands::overlay_glass,
+            commands::glass_available,
             commands::dismiss_overlay,
             commands::test_probe,
             commands::get_history,

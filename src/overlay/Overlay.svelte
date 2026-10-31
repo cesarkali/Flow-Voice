@@ -379,7 +379,54 @@
     hbSent = r;
     api.overlayHitbox(r);
   }
-  const hbUpdate = () => hbSend(hbMeasure());
+  const hbUpdate = () => {
+    hbSend(hbMeasure());
+    glUpdate();
+  };
+
+  // ---- glass ("Vidro"): Rust puts Windows' own blur under the card's exact box (its radius and
+  // opacity too), following it every frame like the hitbox; the tint and the light are CSS.
+  let glassAvail = $state(false);
+  const glassOn = $derived(!!settings && settings.overlay_glass !== "solid" && glassAvail);
+  let glSent: string | null | undefined = undefined;
+  function glUpdate() {
+    let rect: { x: number; y: number; width: number; height: number; radius: number; opacity: number } | null = null;
+    if (glassOn && visible && shellEl && stageEl) {
+      const s = stageEl.getBoundingClientRect();
+      const r = shellEl.getBoundingClientRect();
+      if (r.width >= 1 && r.height >= 1) {
+        const cs = getComputedStyle(shellEl);
+        // The appear/exit transform scales the box: the radius scales with it.
+        const k = shellEl.offsetWidth ? r.width / shellEl.offsetWidth : 1;
+        const mo = moverEl ? parseFloat(getComputedStyle(moverEl).opacity) : 1;
+        const q = (v: number) => Math.round(v * 2) / 2;
+        rect = {
+          x: q(r.left - s.left),
+          y: q(r.top - s.top),
+          width: q(r.width),
+          height: q(r.height),
+          radius: q((parseFloat(cs.borderTopLeftRadius) || 0) * k),
+          opacity: Math.round(parseFloat(cs.opacity) * (isNaN(mo) ? 1 : mo) * 100) / 100,
+        };
+      }
+    }
+    const key = rect && JSON.stringify(rect);
+    if (key === glSent) return;
+    glSent = key;
+    api.overlayGlass(rect).catch(() => {});
+  }
+  const checkGlass = () => {
+    if (settings?.overlay_glass !== "solid") api.glassAvailable().then((v) => (glassAvail = v)).catch(() => (glassAvail = false));
+  };
+  // Look switched (settings) or Windows' transparency changed since the last dictation.
+  $effect(() => {
+    void settings?.overlay_glass;
+    if (visible) untrack(checkGlass);
+  });
+  $effect(() => {
+    void glassOn;
+    untrack(() => visible && track(120));
+  });
   /** The card's box is still moving: its own size morph / appear transition, or the move fade. */
   const boxAnimating = () => !!shellEl?.getAnimations().length || !!moverEl?.getAnimations().length;
   /** Follow the card's box every frame for at least the next `ms` and for as long as it animates
@@ -413,6 +460,7 @@
         trackUntil = 0;
         pointerIn = false;
         hbSend(null);
+        glUpdate();
       });
       return;
     }
@@ -1007,6 +1055,9 @@
       bind:this={shellEl}
       class="shell v-{view} w-{settings?.overlay_width ?? 'normal'}"
       class:hidden={!visible}
+      class:glass={glassOn}
+      class:translucent={glassOn && settings?.overlay_glass === "translucent"}
+      class:glight={glassOn && settings?.overlay_glass_light}
       role="region"
       aria-label="FlowVoice"
       aria-live="polite"
@@ -1454,6 +1505,82 @@
   .shell.v-error {
     border-color: rgba(255, 90, 78, 0.42);
     background: color-mix(in srgb, var(--cap-bg) 92%, #ff5a4e);
+  }
+
+  /* ---------------------------------------------------------------- glass ("Vidro")
+     Rust draws Windows' blur under the card's box (glass.rs); here only a tint over it, a bright
+     edge (lighter at the top, like light caught by the glass) and, with "luz e sombra", a sheen,
+     a beveled edge, light along the bottom and a softer, wider shadow. */
+  .shell.glass {
+    --glass-tint: color-mix(in srgb, var(--cap-bg) 58%, transparent);
+    --rim: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1) 38%, rgba(255, 255, 255, 0.05) 62%, rgba(255, 255, 255, 0.2));
+    background: var(--glass-tint);
+    border-color: transparent;
+  }
+  .shell.glass.translucent {
+    --glass-tint: color-mix(in srgb, var(--cap-bg) 30%, transparent);
+  }
+  :global([data-theme="light"]) .shell.glass {
+    --glass-tint: color-mix(in srgb, var(--cap-bg) 66%, transparent);
+    --rim: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 40%, rgba(0, 0, 0, 0.06) 70%, rgba(255, 255, 255, 0.6));
+  }
+  :global([data-theme="light"]) .shell.glass.translucent {
+    --glass-tint: color-mix(in srgb, var(--cap-bg) 40%, transparent);
+  }
+  .shell.glass.v-error {
+    background: color-mix(in srgb, var(--glass-tint) 86%, rgba(255, 90, 78, 0.5));
+  }
+  .shell.glass::before,
+  .shell.glight::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .shell.glass::before {
+    padding: 1px;
+    background: var(--rim);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  .shell.glass.v-error::before {
+    background: linear-gradient(180deg, rgba(255, 140, 130, 0.6), rgba(255, 90, 78, 0.3));
+  }
+  /* The result/error card also gets base.css's `.card` surface (opaque): it would cover the glass
+     once the morph ends. */
+  .shell.glass .card {
+    background: transparent;
+    border-color: transparent;
+  }
+  .shell.glass .fadeb {
+    background: linear-gradient(to bottom, transparent, var(--glass-tint) 92%);
+  }
+  .shell.glight {
+    box-shadow:
+      0 18px 40px -14px rgba(0, 0, 0, 0.5),
+      0 4px 12px -2px rgba(0, 0, 0, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.32),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 0 0 1.5px rgba(255, 255, 255, 0.05);
+  }
+  .shell.glight::after {
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.03) 46%, transparent 52%),
+      radial-gradient(120% 60% at 50% 115%, rgba(255, 255, 255, 0.12), transparent 70%);
+    z-index: -1; /* the shell (contain: paint) is a stacking context: under the content */
+  }
+  :global([data-theme="light"]) .shell.glight {
+    box-shadow:
+      0 18px 40px -14px rgba(0, 0, 0, 0.3),
+      0 4px 12px -2px rgba(0, 0, 0, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.5);
   }
 
   /* ---------------------------------------------------------------- layers */

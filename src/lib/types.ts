@@ -95,6 +95,8 @@ export interface Settings {
   overlay_width: "compact" | "normal" | "wide";
   /** true = overlay appears on the monitor under the mouse; false = always on the primary monitor. */
   overlay_follow_mouse: boolean;
+  overlay_glass: "solid" | "glass" | "translucent";
+  overlay_glass_light: boolean;
   /** Custom vocabulary: names/terms to bias transcription and the LLM. */
   dictionary: string[];
   onboarded: boolean;
