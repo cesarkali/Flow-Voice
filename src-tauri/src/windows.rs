@@ -7,10 +7,15 @@ use crate::state::AppState;
 
 const MARGIN: f64 = 28.0;
 
+/// The overlay window is driven ONLY through crate::platform's Win32 calls (show, hide,
+/// click-through), never through tao/Tauri: tao keeps its own "visible" flag, which is false
+/// for a window shown with ShowWindow, and every later tao call on it (set_ignore_cursor_events,
+/// hide) re-applies that flag — hiding the overlay whenever the mouse crossed the card, and
+/// turning hide() into a no-op that left an invisible window on screen.
 pub fn setup_overlay(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("overlay") {
         crate::platform::make_non_activating(&w);
-        let _ = w.set_ignore_cursor_events(true);
+        crate::platform::set_click_through(&w, true);
     }
 }
 
@@ -30,9 +35,16 @@ fn target_monitor(app: &AppHandle, w: &tauri::WebviewWindow) -> Option<tauri::Mo
         let (x, y) = crate::platform::foreground_monitor_origin(app)?;
         monitors.iter().find(|m| m.position().x == x && m.position().y == y).cloned()
     };
-    // Test hook: FLOWVOICE_TEST_MONITOR=<index> forces a monitor (multi-monitor/DPI checks).
-    if let Some(m) = std::env::var("FLOWVOICE_TEST_MONITOR").ok().and_then(|i| i.parse::<usize>().ok()).and_then(|i| monitors.get(i)) {
-        return Some(m.clone());
+    // Test hook: FLOWVOICE_TEST_MONITOR=<index>[,<index>...] forces the monitor of each new
+    // appearance in turn (multi-monitor/DPI checks without touching the real mouse).
+    if let Ok(list) = std::env::var("FLOWVOICE_TEST_MONITOR") {
+        let ids: Vec<usize> = list.split(',').filter_map(|i| i.trim().parse().ok()).collect();
+        if !ids.is_empty() {
+            let n = TEST_MONITOR_TURN.fetch_add(1, Ordering::SeqCst);
+            if let Some(m) = monitors.get(ids[n % ids.len()]) {
+                return Some(m.clone());
+            }
+        }
     }
     if follow { under_focus().or_else(under_mouse) } else { None }
         .or_else(|| w.primary_monitor().ok().flatten())
@@ -56,6 +68,25 @@ fn pinned_monitor(app: &AppHandle, w: &tauri::WebviewWindow) -> Option<tauri::Mo
 /// fixed transparent canvas anchored to the screen edge, click-through except over the card.
 pub const OVERLAY_W: f64 = 760.0;
 pub const OVERLAY_H: f64 = 560.0;
+
+static TEST_MONITOR_TURN: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// Test hook (isolated instances only): pretend the mouse is inside/outside the card.
+static TEST_POINTER: parking_lot::Mutex<Option<bool>> = parking_lot::Mutex::new(None);
+
+pub fn test_set_pointer(inside: Option<bool>) {
+    *TEST_POINTER.lock() = inside;
+}
+
+/// Test hook: what the overlay window really is right now.
+pub fn test_snapshot(app: &AppHandle) -> serde_json::Value {
+    let w = app.get_webview_window("overlay");
+    serde_json::json!({
+        "native_visible": w.as_ref().map(crate::platform::is_window_visible),
+        "rect": w.as_ref().and_then(crate::platform::window_rect),
+        "wanted": WANTED.load(Ordering::SeqCst),
+        "hitbox": *HITBOX.lock(),
+    })
+}
 
 /// Card rectangle reported by the UI (logical px relative to the window); None = nothing visible.
 static HITBOX: once_cell::sync::Lazy<parking_lot::Mutex<Option<(f64, f64, f64, f64)>>> =
@@ -121,24 +152,42 @@ fn settle_overlay(app: &AppHandle) {
     });
 }
 
+/// Shows the overlay for a later phase of the current dictation (processing, result, error):
+/// if it is already up it stays exactly where it is.
 pub fn show_overlay(app: &AppHandle) {
+    show(app, false);
+}
+
+/// Shows the overlay for a NEW recording: it goes to the monitor in use right now, even if the
+/// card of the previous dictation is still showing on another screen.
+pub fn show_overlay_for_recording(app: &AppHandle) {
+    show(app, true);
+}
+
+fn show(app: &AppHandle, new_session: bool) {
     let Some(w) = app.get_webview_window("overlay") else { return };
     SHOW_GEN.fetch_add(1, Ordering::SeqCst);
     let was_up = WANTED.swap(true, Ordering::SeqCst);
-    let visible = w.is_visible().unwrap_or(false);
-    if visible && was_up {
-        return; // already showing (phase change): it stays on its monitor
+    let visible = crate::platform::is_window_visible(&w);
+    if visible && was_up && !new_session {
+        return; // phase change: it stays on its monitor
     }
-    // New appearance (or a show during the exit animation of the previous one): pick the
-    // monitor now and keep it until the overlay hides.
     let Some(target) = target_monitor(app, &w) else { return };
-    *app.state::<AppState>().overlay_monitor.lock() = Some(monitor_key(&target));
-    place_overlay(app);
-    if !visible {
-        // Click-through until the UI reports where the card is.
-        let _ = w.set_ignore_cursor_events(true);
-        crate::platform::show_without_focus(&w);
+    let key = monitor_key(&target);
+    let previous = app.state::<AppState>().overlay_monitor.lock().replace(key);
+    if visible && previous == Some(key) {
+        // Same screen (a new recording right after the last card, or a show during the exit
+        // animation): the card simply morphs into its new phase.
+        return;
     }
+    if visible {
+        // Another screen: jump there without dragging the old card across monitors.
+        crate::platform::hide_window(&w);
+    }
+    place_overlay(app);
+    // Click-through until the UI reports where the card is.
+    crate::platform::set_click_through(&w, true);
+    crate::platform::show_without_focus(&w);
     settle_overlay(app);
 }
 
@@ -149,6 +198,7 @@ pub fn hide_overlay(app: &AppHandle) {
     st.overlay_gen.fetch_add(1, Ordering::SeqCst);
     WANTED.store(false, Ordering::SeqCst);
     *HITBOX.lock() = None;
+    crate::pipeline::set_overlay_phase("hidden");
     let _ = app.emit_to("overlay", "overlay-state", serde_json::json!({ "phase": "hidden" }));
     // Let the UI play its exit animation before the native window disappears.
     let app = app.clone();
@@ -158,8 +208,8 @@ pub fn hide_overlay(app: &AppHandle) {
         let st = app.state::<AppState>();
         if SHOW_GEN.load(Ordering::SeqCst) == gen && st.session.lock().is_none() {
             if let Some(w) = app.get_webview_window("overlay") {
-                let _ = w.set_ignore_cursor_events(true);
-                let _ = w.hide();
+                crate::platform::set_click_through(&w, true);
+                crate::platform::hide_window(&w);
             }
         }
     });
@@ -180,25 +230,26 @@ pub fn start_pointer_watcher(app: &AppHandle) {
             let up = WANTED.load(Ordering::SeqCst);
             std::thread::sleep(std::time::Duration::from_millis(if up { 16 } else { 250 }));
             let Some(w) = app.get_webview_window("overlay") else { continue };
-            if !up || !w.is_visible().unwrap_or(false) {
+            if !up || !crate::platform::is_window_visible(&w) {
                 if inside_prev == Some(true) {
-                    let _ = w.set_ignore_cursor_events(true);
+                    crate::platform::set_click_through(&w, true);
                 }
                 inside_prev = None;
                 continue;
             }
-            let inside = (|| {
+            let forced = *TEST_POINTER.lock();
+            let inside = forced.or_else(|| {
                 let hb = (*HITBOX.lock())?;
                 let cur = app.cursor_position().ok()?;
                 let pos = w.outer_position().ok()?;
                 let scale = w.scale_factor().ok()?;
                 let (x, y) = ((cur.x - pos.x as f64) / scale, (cur.y - pos.y as f64) / scale);
                 Some(x >= hb.0 && y >= hb.1 && x <= hb.0 + hb.2 && y <= hb.1 + hb.3)
-            })()
+            })
             .unwrap_or(false);
             if inside_prev != Some(inside) {
                 inside_prev = Some(inside);
-                let _ = w.set_ignore_cursor_events(!inside);
+                crate::platform::set_click_through(&w, !inside);
                 let _ = app.emit_to("overlay", "overlay-pointer", serde_json::json!({ "inside": inside }));
             }
         }

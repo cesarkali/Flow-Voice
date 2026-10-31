@@ -164,7 +164,10 @@ pub fn run() {
         .on_window_event(|window, event| {
             // Closing the settings or chat window only hides it; the app lives in the tray.
             if let WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "main" || window.label() == "overlay" {
+                if window.label() == "overlay" {
+                    api.prevent_close();
+                    windows::hide_overlay(window.app_handle());
+                } else if window.label() == "main" {
                     api.prevent_close();
                     let _ = window.hide();
                 }
@@ -196,6 +199,7 @@ pub fn run() {
             commands::overlay_resize,
             commands::overlay_hitbox,
             commands::dismiss_overlay,
+            commands::test_probe,
             commands::get_history,
             commands::delete_history_item,
             commands::clear_history,

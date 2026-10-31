@@ -20,7 +20,22 @@ fn state(app: &AppHandle) -> tauri::State<'_, AppState> {
     app.state::<AppState>()
 }
 
+/// Last phase sent to the overlay ("listening", "transcribing", "done", ...).
+static OVERLAY_PHASE: once_cell::sync::Lazy<parking_lot::Mutex<String>> =
+    once_cell::sync::Lazy::new(|| parking_lot::Mutex::new("hidden".into()));
+
+pub fn overlay_phase() -> String {
+    OVERLAY_PHASE.lock().clone()
+}
+
+pub fn set_overlay_phase(phase: &str) {
+    *OVERLAY_PHASE.lock() = phase.to_string();
+}
+
 pub fn emit_overlay(app: &AppHandle, payload: serde_json::Value) {
+    if let Some(p) = payload["phase"].as_str() {
+        set_overlay_phase(p);
+    }
     state(app).overlay_gen.fetch_add(1, Ordering::SeqCst);
     let _ = app.emit_to("overlay", "overlay-state", payload);
 }
@@ -63,7 +78,9 @@ pub fn start(app: &AppHandle, mode: RecordMode) {
 /// `keys_held`: started by a push-to-talk press (the shortcut is still down until the release).
 pub fn start_with(app: &AppHandle, mode: RecordMode, keys_held: bool) {
     let st = state(app);
-    if st.busy.load(Ordering::SeqCst) || st.session.lock().is_some() {
+    // An earlier dictation may still be transcribing/refining: that's fine, it finishes (and
+    // pastes) in the background while this one records; only the newest one drives the overlay.
+    if st.session.lock().is_some() {
         return;
     }
     let s = st.settings();
@@ -127,7 +144,7 @@ pub fn start_with(app: &AppHandle, mode: RecordMode, keys_held: bool) {
         selection: selection.clone(),
     });
 
-    windows::show_overlay(app);
+    windows::show_overlay_for_recording(app);
     emit_overlay(
         app,
         json!({
@@ -459,39 +476,52 @@ fn cloud_stt_target(app: &AppHandle, s: &Settings) -> Option<(String, crate::set
     })
 }
 
-/// Identifies the dictation being processed. Esc/cancel bumps it, so a dictation that is still
-/// transcribing or refining in the background can't paste, save or show anything afterwards.
+/// Number of the newest stopped dictation. Each one keeps its number while it is processed;
+/// only the newest one (and only while nothing is recording) drives the overlay, older ones
+/// finish quietly in the background (paste + history).
 static DICTATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Esc/cancel while processing: every dictation numbered up to this one is dropped (no paste,
+/// no history, no overlay).
+static CANCELLED_UPTO: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Dictations being processed right now.
+static IN_FLIGHT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 /// Upper bound for transcription + refinement; past it the user gets an error instead of a
 /// card stuck on "Transcrevendo…".
 const PROCESS_DEADLINE: Duration = Duration::from_secs(75);
 
+/// Not cancelled: may still paste and save.
 fn is_current(gen: u64) -> bool {
-    DICTATION.load(Ordering::SeqCst) == gen
+    gen > CANCELLED_UPTO.load(Ordering::SeqCst)
 }
 
-/// Clears `busy` when the processing task ends, unless a newer dictation took over.
-struct BusyGuard {
-    app: AppHandle,
-    gen: u64,
+/// May change the overlay: the newest dictation, not cancelled, and no new recording running.
+fn owns_overlay(app: &AppHandle, gen: u64) -> bool {
+    is_current(gen) && DICTATION.load(Ordering::SeqCst) == gen && !is_recording(app)
+}
+
+/// Counts a dictation in flight for as long as its processing task lives.
+struct BusyGuard;
+
+impl BusyGuard {
+    fn new() -> Self {
+        IN_FLIGHT.fetch_add(1, Ordering::SeqCst);
+        BusyGuard
+    }
 }
 
 impl Drop for BusyGuard {
     fn drop(&mut self) {
-        if is_current(self.gen) {
-            state(&self.app).busy.store(false, Ordering::SeqCst);
-        }
+        IN_FLIGHT.fetch_sub(1, Ordering::SeqCst);
     }
 }
 
-pub fn is_busy(app: &AppHandle) -> bool {
-    state(app).busy.load(Ordering::SeqCst)
+pub fn is_busy(_app: &AppHandle) -> bool {
+    IN_FLIGHT.load(Ordering::SeqCst) > 0
 }
 
-/// Esc while transcribing/refining: drop the result, free the app for a new dictation.
+/// Esc / close while transcribing or refining: drop those results.
 pub fn cancel_processing(app: &AppHandle) {
-    DICTATION.fetch_add(1, Ordering::SeqCst);
-    state(app).busy.store(false, Ordering::SeqCst);
+    CANCELLED_UPTO.store(DICTATION.load(Ordering::SeqCst), Ordering::SeqCst);
     log::info!("processing cancelled");
     windows::hide_overlay(app);
 }
@@ -528,8 +558,8 @@ pub fn stop(app: &AppHandle) {
     }
     log::info!("recording stop: {duration_ms} ms, {} samples", samples.len());
     after_recording(app);
-    st.busy.store(true, Ordering::SeqCst);
     let gen = DICTATION.fetch_add(1, Ordering::SeqCst) + 1;
+    let busy = BusyGuard::new();
     emit_overlay(app, json!({ "phase": "transcribing" }));
     let job = Job {
         mode: session.mode,
@@ -541,7 +571,7 @@ pub fn stop(app: &AppHandle) {
     };
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
-        let _busy = BusyGuard { app: app.clone(), gen };
+        let _busy = busy;
         let work = process_recording(&app, samples, job, gen, warnings);
         let result = match tokio::time::timeout(PROCESS_DEADLINE, work).await {
             Ok(r) => r,
@@ -551,11 +581,12 @@ pub fn stop(app: &AppHandle) {
                 None,
             )),
         };
-        if !is_current(gen) {
-            return; // cancelled with Esc: stay quiet
-        }
         if let Err(e) = result {
             log::warn!("dictation failed: {e}");
+            // Cancelled, or a newer dictation/recording owns the overlay: don't cover it.
+            if !owns_overlay(&app, gen) {
+                return;
+            }
             let (message, detail, raw) = match e.downcast::<PipelineError>() {
                 Ok(pe) => (pe.message, pe.detail, pe.raw),
                 Err(e) => (e.to_string(), None, None),
@@ -622,7 +653,9 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
     }
 
     if mode == RecordMode::Ask {
-        emit_overlay(app, json!({ "phase": "answer", "query": raw }));
+        if owns_overlay(app, gen) {
+            emit_overlay(app, json!({ "phase": "answer", "query": raw }));
+        }
         start_chat(app, raw).await;
         return Ok(());
     }
@@ -672,8 +705,10 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
     state(app).push_history(&result);
     *state(app).last.lock() = Some((result.clone(), target_window));
     let _ = app.emit("history-changed", ());
-    emit_overlay(app, json!({ "phase": "done", "result": result }));
-    crate::hotkeys::register_escape(app, true);
+    if owns_overlay(app, gen) {
+        emit_overlay(app, json!({ "phase": "done", "result": result }));
+        crate::hotkeys::register_escape(app, true);
+    }
     Ok(())
 }
 
@@ -706,7 +741,7 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
         return;
     }
     if let Some(system) = llm_prompt {
-        if progress.is_some_and(is_current) {
+        if progress.is_some_and(|g| owns_overlay(app, g)) {
             let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
             emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint }));
         }
@@ -737,7 +772,7 @@ async fn command_into(app: &AppHandle, result: &mut DictationResult, s: &Setting
     let selection = result.source.clone().unwrap_or_default();
     let instruction =
         if s.remove_fillers { text::remove_fillers(&result.raw, &s.speech_language) } else { result.raw.clone() };
-    if progress.is_some_and(is_current) {
+    if progress.is_some_and(|g| owns_overlay(app, g)) {
         let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
         emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint, "mode": "command" }));
     }

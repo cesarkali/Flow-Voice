@@ -33,7 +33,7 @@ pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
         (Action::Cancel, ShortcutState::Pressed) => {
             if pipeline::is_recording(app) {
                 pipeline::cancel(app);
-            } else if pipeline::is_busy(app) {
+            } else if pipeline::is_busy(app) && matches!(pipeline::overlay_phase().as_str(), "transcribing" | "refining") {
                 pipeline::cancel_processing(app);
             } else {
                 crate::windows::hide_overlay(app);

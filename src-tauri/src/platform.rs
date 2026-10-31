@@ -703,6 +703,70 @@ pub fn show_without_focus(window: &tauri::WebviewWindow) {
     let _ = window.show();
 }
 
+/// Hides a window shown with show_without_focus (see windows::setup_overlay for why the overlay
+/// never goes through tao's hide()).
+pub fn hide_window(window: &tauri::WebviewWindow) {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_HIDE};
+        if let Ok(hwnd) = window.hwnd() {
+            unsafe {
+                let _ = ShowWindow(HWND(hwnd.0 as *mut _), SW_HIDE);
+            }
+            return;
+        }
+    }
+    let _ = window.hide();
+}
+
+pub fn is_window_visible(window: &tauri::WebviewWindow) -> bool {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::IsWindowVisible;
+        if let Ok(hwnd) = window.hwnd() {
+            return unsafe { IsWindowVisible(HWND(hwnd.0 as *mut _)) }.as_bool();
+        }
+    }
+    window.is_visible().unwrap_or(false)
+}
+
+/// Mouse passes through the window (true) or is caught by it (false). Same styles tao uses
+/// (WS_EX_TRANSPARENT | WS_EX_LAYERED), set directly so nothing else about the window changes.
+pub fn set_click_through(window: &tauri::WebviewWindow, on: bool) {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{
+            GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE,
+            SWP_NOSIZE, SWP_NOZORDER, WS_EX_LAYERED, WS_EX_TRANSPARENT,
+        };
+        if let Ok(hwnd) = window.hwnd() {
+            unsafe {
+                let hwnd = HWND(hwnd.0 as *mut _);
+                let style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+                let bits = (WS_EX_TRANSPARENT.0 | WS_EX_LAYERED.0) as isize;
+                let next = if on { style | bits } else { style & !bits };
+                if next != style {
+                    SetWindowLongPtrW(hwnd, GWL_EXSTYLE, next);
+                    let _ = SetWindowPos(
+                        hwnd,
+                        None,
+                        0,
+                        0,
+                        0,
+                        0,
+                        SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+                    );
+                }
+            }
+            return;
+        }
+    }
+    let _ = window.set_ignore_cursor_events(on);
+}
+
 /// Lets the overlay be clicked without stealing focus from the app being dictated into.
 pub fn make_non_activating(window: &tauri::WebviewWindow) {
     #[cfg(windows)]

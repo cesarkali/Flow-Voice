@@ -1291,7 +1291,11 @@
       class="life"
       class:paused={hovered || busy || picker || detailOpen}
       style="animation-duration:{ms}ms"
-      onanimationend={() => visible && dismiss()}
+      onanimationend={(e) => {
+        // Only the card on screen may close itself: a result's countdown that ends while the
+        // card is already morphing into a new recording must not close (or cancel) anything.
+        if (e.target === e.currentTarget && visible && (view === "done" || view === "error")) dismiss();
+      }}
     ></div>
   {/key}
 {/snippet}

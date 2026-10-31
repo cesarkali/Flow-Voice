@@ -91,7 +91,6 @@ pub struct AppState {
     pub local: Arc<LocalStt>,
     pub http: reqwest::Client,
     pub session: Mutex<Option<ActiveSession>>,
-    pub busy: AtomicBool,
     /// Last finished dictation + the window it was pasted into (for reprocess/replace).
     pub last: Mutex<Option<(DictationResult, isize)>>,
     pub history: Mutex<Vec<DictationResult>>,
@@ -120,7 +119,6 @@ impl AppState {
             http: crate::cloud::http(),
             settings: RwLock::new(settings),
             session: Mutex::new(None),
-            busy: AtomicBool::new(false),
             last: Mutex::new(None),
             history: Mutex::new(history),
             chat: Mutex::new(vec![]),

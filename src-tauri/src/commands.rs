@@ -298,13 +298,18 @@ pub fn overlay_hitbox(rect: Option<HitRect>) {
 }
 
 #[tauri::command]
+/// The card's close button / auto-close. It acts on what the card shows NOW: a recording is
+/// never cancelled from here (a result card's countdown can end just as a new recording starts;
+/// the listening card's own X calls cancel_recording), and processing is only cancelled when
+/// the processing card is the one being closed.
 pub fn dismiss_overlay(app: AppHandle) {
     if pipeline::is_recording(&app) {
-        pipeline::cancel(&app);
-    } else if pipeline::is_busy(&app) {
-        pipeline::cancel_processing(&app);
-    } else {
-        windows::hide_overlay(&app);
+        log::info!("dismiss ignored: recording");
+        return;
+    }
+    match pipeline::overlay_phase().as_str() {
+        "transcribing" | "refining" if pipeline::is_busy(&app) => pipeline::cancel_processing(&app),
+        _ => windows::hide_overlay(&app),
     }
 }
 
@@ -474,4 +479,22 @@ pub fn quit_app(app: AppHandle) {
 #[tauri::command]
 pub fn take_model_notices() -> Vec<crate::heal::Notice> {
     crate::heal::take_notices()
+}
+
+/// Test probe, only in isolated test instances (FLOWVOICE_DATA_DIR): reads the real overlay
+/// state and simulates the pointer, so stress tests never touch the user's mouse or keyboard.
+#[tauri::command]
+pub fn test_probe(app: AppHandle, action: String, inside: Option<bool>) -> CmdResult<serde_json::Value> {
+    if std::env::var_os("FLOWVOICE_DATA_DIR").is_none() {
+        return Err("indisponível".into());
+    }
+    if action == "pointer" {
+        windows::test_set_pointer(inside);
+    }
+    let mut v = windows::test_snapshot(&app);
+    v["phase"] = json!(pipeline::overlay_phase());
+    v["recording"] = json!(pipeline::is_recording(&app));
+    v["busy"] = json!(pipeline::is_busy(&app));
+    v["history"] = json!(tauri::Manager::state::<AppState>(&app).history.lock().len());
+    Ok(v)
 }
