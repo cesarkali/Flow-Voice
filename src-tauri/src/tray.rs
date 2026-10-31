@@ -52,7 +52,7 @@ pub fn setup(app: &AppHandle) -> tauri::Result<()> {
         .on_menu_event(|app, event| {
             let id = event.id().as_ref();
             match id {
-                "dictate" => pipeline::toggle(app, RecordMode::Dictate),
+                "dictate" => pipeline::control(app, pipeline::Ctl::Toggle(RecordMode::Dictate)),
                 // The menu took the focus: paste into the app the user was in before.
                 "paste_last" => pipeline::paste_last(app, crate::platform::last_app_window()),
                 "settings" => windows::open_settings(app, Some("general".into())),

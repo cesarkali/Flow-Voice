@@ -30,40 +30,40 @@ pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     log::info!("hotkey {} {:?}", shortcut.into_string(), event.state());
     let hold = app.state::<AppState>().settings.read().hotkey_mode == "hold";
     match (action, event.state()) {
-        (Action::Cancel, ShortcutState::Pressed) => {
-            if pipeline::is_recording(app) {
-                pipeline::cancel(app);
-            } else if pipeline::is_busy(app) && matches!(pipeline::overlay_phase().as_str(), "transcribing" | "refining") {
-                pipeline::cancel_processing(app);
-            } else {
-                crate::windows::hide_overlay(app);
-            }
-        }
+        (Action::Cancel, ShortcutState::Pressed) => pipeline::control(app, pipeline::Ctl::Escape),
         (Action::PasteLast, ShortcutState::Pressed) => {
-            // Into whatever has focus now (not where the dictation originally went).
-            pipeline::paste_last(app, crate::platform::foreground_window());
+            // Into whatever has focus now (not where the dictation originally went); off the
+            // main thread (paste waits for modifier keys to be released).
+            let target = crate::platform::foreground_window();
+            let app = app.clone();
+            std::thread::spawn(move || pipeline::paste_last(&app, target));
         }
         (Action::Record(mode), ShortcutState::Pressed) => {
-            if hold {
-                if !pipeline::is_recording(app) {
-                    pipeline::start_with(app, mode, true);
-                }
-            } else {
-                pipeline::toggle(app, mode);
-            }
+            pipeline::control(app, if hold { pipeline::Ctl::Hold(mode) } else { pipeline::Ctl::Toggle(mode) });
         }
-        (Action::Record(_), ShortcutState::Released) if hold => pipeline::stop(app),
+        (Action::Record(_), ShortcutState::Released) if hold => pipeline::control(app, pipeline::Ctl::Stop),
         _ => {}
     }
 }
 
 /// (Re)registers the recording shortcuts and "paste last". Returns the ones that failed.
+/// The plugin's register/unregister block until the main thread runs them, so BINDINGS is never
+/// held across those calls (a thread waiting on the main thread while holding it, with the main
+/// thread waiting for BINDINGS in the hotkey handler, froze the whole app). Esc (Action::Cancel)
+/// is managed only by register_escape and survives these rebuilds.
+fn take_actions() -> Vec<Shortcut> {
+    let mut bindings = BINDINGS.lock();
+    let (keep, gone): (Vec<_>, Vec<_>) = bindings.drain(..).partition(|(_, a)| *a == Action::Cancel);
+    *bindings = keep;
+    gone.into_iter().map(|(s, _)| s).collect()
+}
+
 pub fn register_all(app: &AppHandle) -> Vec<String> {
     let gs = app.global_shortcut();
-    let mut bindings = BINDINGS.lock();
-    for (s, _) in bindings.drain(..) {
+    for s in take_actions() {
         let _ = gs.unregister(s);
     }
+    let mut bindings: Vec<(Shortcut, Action)> = vec![];
     let hk = app.state::<AppState>().settings.read().hotkeys.clone();
     let mut failed = vec![];
     let actions = [
@@ -92,30 +92,44 @@ pub fn register_all(app: &AppHandle) -> Vec<String> {
             Err(e) => failed.push(e.to_string()),
         }
     }
+    BINDINGS.lock().extend(bindings);
     failed
 }
 
-/// Drops every shortcut (while the user captures a new one in Settings).
+/// Drops the action shortcuts (while the user captures a new one in Settings).
 pub fn unregister_all(app: &AppHandle) {
     let gs = app.global_shortcut();
-    for (s, _) in BINDINGS.lock().drain(..) {
+    for s in take_actions() {
         let _ = gs.unregister(s);
     }
 }
 
-/// Esc is only grabbed while the overlay is up so it keeps working in other apps.
+/// Esc should be grabbed (only while the overlay is up, so it keeps working in other apps).
+static ESC_WANTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Callable from any thread without blocking: records the wish and lets the main thread
+/// reconcile it (the last wish wins, whatever order the calls arrive in).
 pub fn register_escape(app: &AppHandle, on: bool) {
+    ESC_WANTED.store(on, std::sync::atomic::Ordering::SeqCst);
+    let app2 = app.clone();
+    let _ = app.run_on_main_thread(move || sync_escape(&app2));
+}
+
+fn sync_escape(app: &AppHandle) {
     let Ok(esc) = parse("Escape") else { return };
+    let want = ESC_WANTED.load(std::sync::atomic::Ordering::SeqCst);
+    let present = BINDINGS.lock().iter().any(|(_, a)| *a == Action::Cancel);
+    if want == present {
+        return;
+    }
     let gs = app.global_shortcut();
-    let mut bindings = BINDINGS.lock();
-    let present = bindings.iter().any(|(s, _)| *s == esc);
-    if on && !present {
+    if want {
         if gs.register(esc).is_ok() {
-            bindings.push((esc, Action::Cancel));
+            BINDINGS.lock().push((esc, Action::Cancel));
         }
-    } else if !on && present {
+    } else {
         let _ = gs.unregister(esc);
-        bindings.retain(|(s, _)| *s != esc);
+        BINDINGS.lock().retain(|(_, a)| *a != Action::Cancel);
     }
 }
 

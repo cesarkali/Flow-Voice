@@ -75,6 +75,68 @@ pub fn start(app: &AppHandle, mode: RecordMode) {
     start_with(app, mode, false);
 }
 
+/// What hotkeys, tray, command line and UI ask for. Everything runs IN ORDER on one worker
+/// thread: opening the mic can block for seconds (Bluetooth), which must never freeze the main
+/// thread (all windows + hotkey registration), and a quick "stop" must never overtake the
+/// "start" it belongs to (push-to-talk tap) nor two starts run at once.
+pub enum Ctl {
+    Toggle(RecordMode),
+    /// Start (no-op if already recording).
+    Start(RecordMode),
+    /// Push-to-talk press (the shortcut is still held).
+    Hold(RecordMode),
+    Stop,
+    Cancel,
+    /// Esc: cancel the recording, or the processing on screen, or close the card.
+    Escape,
+}
+
+static CTL: once_cell::sync::OnceCell<parking_lot::Mutex<std::sync::mpsc::Sender<Ctl>>> = once_cell::sync::OnceCell::new();
+
+pub fn start_control(app: &AppHandle) {
+    let (tx, rx) = std::sync::mpsc::channel::<Ctl>();
+    if CTL.set(parking_lot::Mutex::new(tx)).is_err() {
+        return;
+    }
+    let app = app.clone();
+    std::thread::spawn(move || {
+        for c in rx {
+            run_ctl(&app, c);
+        }
+    });
+}
+
+fn run_ctl(app: &AppHandle, c: Ctl) {
+    match c {
+        Ctl::Toggle(m) => toggle(app, m),
+        Ctl::Start(m) => start_with(app, m, false),
+        Ctl::Hold(m) => start_with(app, m, true),
+        Ctl::Stop => stop(app),
+        Ctl::Cancel => cancel(app),
+        Ctl::Escape => escape(app),
+    }
+}
+
+pub fn control(app: &AppHandle, c: Ctl) {
+    match CTL.get() {
+        Some(tx) => {
+            let _ = tx.lock().send(c);
+        }
+        None => run_ctl(app, c),
+    }
+}
+
+fn escape(app: &AppHandle) {
+    if is_recording(app) {
+        cancel(app);
+    } else if is_busy(app) && matches!(overlay_phase().as_str(), "transcribing" | "refining") {
+        cancel_processing(app);
+    } else {
+        release_overlay();
+        windows::hide_overlay(app);
+    }
+}
+
 /// `keys_held`: started by a push-to-talk press (the shortcut is still down until the release).
 pub fn start_with(app: &AppHandle, mode: RecordMode, keys_held: bool) {
     let st = state(app);
@@ -221,8 +283,9 @@ fn spawn_selection_copy(
         }
         match sel {
             Selection::Got(t) => {
-                drop(guard);
+                // Emitted while the session lock is held, so it can't land on the next card.
                 let _ = app.emit_to("overlay", "overlay-selection", json!({ "text": selection_preview(&t) }));
+                drop(guard);
             }
             Selection::Empty | Selection::Failed(_) => {
                 let Some(session) = guard.take() else { return };
@@ -480,9 +543,15 @@ fn cloud_stt_target(app: &AppHandle, s: &Settings) -> Option<(String, crate::set
 /// only the newest one (and only while nothing is recording) drives the overlay, older ones
 /// finish quietly in the background (paste + history).
 static DICTATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-/// Esc/cancel while processing: every dictation numbered up to this one is dropped (no paste,
-/// no history, no overlay).
-static CANCELLED_UPTO: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Dictations dropped with Esc/close while their processing card was on screen (no paste, no
+/// history). Only that one: an older dictation finishing in the background is not touched.
+static CANCELLED: once_cell::sync::Lazy<parking_lot::Mutex<std::collections::HashSet<u64>>> =
+    once_cell::sync::Lazy::new(|| parking_lot::Mutex::new(std::collections::HashSet::new()));
+/// The user closed/cancelled the overlay: dictations up to this number finish quietly (they
+/// still paste) instead of popping a card back up.
+static OVERLAY_RELEASED_UPTO: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// Newest dictation stored in `last` (an older one finishing later must not replace it).
+static LAST_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 /// Dictations being processed right now.
 static IN_FLIGHT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 /// Upper bound for transcription + refinement; past it the user gets an error instead of a
@@ -491,12 +560,32 @@ const PROCESS_DEADLINE: Duration = Duration::from_secs(75);
 
 /// Not cancelled: may still paste and save.
 fn is_current(gen: u64) -> bool {
-    gen > CANCELLED_UPTO.load(Ordering::SeqCst)
+    !CANCELLED.lock().contains(&gen)
 }
 
-/// May change the overlay: the newest dictation, not cancelled, and no new recording running.
+/// May change the overlay: the newest dictation, not cancelled, the user didn't close the
+/// overlay since, and no new recording is running.
 fn owns_overlay(app: &AppHandle, gen: u64) -> bool {
-    is_current(gen) && DICTATION.load(Ordering::SeqCst) == gen && !is_recording(app)
+    is_current(gen)
+        && DICTATION.load(Ordering::SeqCst) == gen
+        && gen > OVERLAY_RELEASED_UPTO.load(Ordering::SeqCst)
+        && !is_recording(app)
+}
+
+/// The user closed the overlay: whatever is still processing finishes without showing a card.
+pub fn release_overlay() {
+    OVERLAY_RELEASED_UPTO.store(DICTATION.load(Ordering::SeqCst), Ordering::SeqCst);
+}
+
+/// Shows `payload` if `gen` owns the overlay, making sure the window is really up (the user
+/// may have closed it meanwhile). Returns whether it was shown.
+fn emit_owned(app: &AppHandle, gen: u64, payload: serde_json::Value) -> bool {
+    if !owns_overlay(app, gen) {
+        return false;
+    }
+    windows::show_overlay(app);
+    emit_overlay(app, payload);
+    true
 }
 
 /// Counts a dictation in flight for as long as its processing task lives.
@@ -521,8 +610,10 @@ pub fn is_busy(_app: &AppHandle) -> bool {
 
 /// Esc / close while transcribing or refining: drop those results.
 pub fn cancel_processing(app: &AppHandle) {
-    CANCELLED_UPTO.store(DICTATION.load(Ordering::SeqCst), Ordering::SeqCst);
-    log::info!("processing cancelled");
+    let gen = DICTATION.load(Ordering::SeqCst);
+    CANCELLED.lock().insert(gen);
+    release_overlay();
+    log::info!("processing of dictation {gen} cancelled");
     windows::hide_overlay(app);
 }
 
@@ -532,6 +623,7 @@ pub fn cancel(app: &AppHandle) {
     session.stop_flag.store(true, Ordering::SeqCst);
     drop(session.rec);
     after_recording(app);
+    release_overlay();
     windows::hide_overlay(app);
 }
 
@@ -544,6 +636,13 @@ fn after_recording(app: &AppHandle) {
 
 pub fn stop(app: &AppHandle) {
     let st = state(app);
+    // A tap (double press / push-to-talk blip) is not a dictation: drop it without an error card.
+    let tap = st.session.lock().as_ref().is_some_and(|s| s.started.elapsed() < Duration::from_millis(250));
+    if tap {
+        log::info!("recording too short: dropped");
+        cancel(app);
+        return;
+    }
     let Some(session) = st.session.lock().take() else { return };
     session.stop_flag.store(true, Ordering::SeqCst);
     let duration_ms = session.started.elapsed().as_millis() as u64;
@@ -653,10 +752,8 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
     }
 
     if mode == RecordMode::Ask {
-        if owns_overlay(app, gen) {
-            emit_overlay(app, json!({ "phase": "answer", "query": raw }));
-        }
-        start_chat(app, raw).await;
+        let shown = emit_owned(app, gen, json!({ "phase": "answer", "query": raw }));
+        start_chat(app, raw, shown).await;
         return Ok(());
     }
 
@@ -703,10 +800,12 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
     }
 
     state(app).push_history(&result);
-    *state(app).last.lock() = Some((result.clone(), target_window));
+    // Only the newest finished dictation becomes `last` (chips, Colar/Substituir, paste-last).
+    if LAST_GEN.fetch_max(gen, Ordering::SeqCst) <= gen {
+        *state(app).last.lock() = Some((result.clone(), target_window));
+    }
     let _ = app.emit("history-changed", ());
-    if owns_overlay(app, gen) {
-        emit_overlay(app, json!({ "phase": "done", "result": result }));
+    if emit_owned(app, gen, json!({ "phase": "done", "result": result })) {
         crate::hotkeys::register_escape(app, true);
     }
     Ok(())
@@ -741,9 +840,9 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
         return;
     }
     if let Some(system) = llm_prompt {
-        if progress.is_some_and(|g| owns_overlay(app, g)) {
+        if let Some(g) = progress {
             let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
-            emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint }));
+            emit_owned(app, g, json!({ "phase": "refining", "provider": provider_hint }));
         }
         let user = format!("<transcricao>\n{source}\n</transcricao>");
         let max_tokens = ((source.len() as u32) + 1024).clamp(1024, 8192);
@@ -772,9 +871,9 @@ async fn command_into(app: &AppHandle, result: &mut DictationResult, s: &Setting
     let selection = result.source.clone().unwrap_or_default();
     let instruction =
         if s.remove_fillers { text::remove_fillers(&result.raw, &s.speech_language) } else { result.raw.clone() };
-    if progress.is_some_and(|g| owns_overlay(app, g)) {
+    if let Some(g) = progress {
         let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
-        emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint, "mode": "command" }));
+        emit_owned(app, g, json!({ "phase": "refining", "provider": provider_hint, "mode": "command" }));
     }
     let system = settings::command_prompt(&s.dictionary, result.app_name.as_deref());
     let user = settings::command_message(&instruction, &selection, result.target.as_deref());
@@ -817,11 +916,23 @@ pub async fn reprocess(app: &AppHandle, style_id: String, target: Option<String>
         result.style_id = style_id;
         refine_into(app, &mut result, &s, None).await;
     }
-    platform::set_clipboard(&result.text).ok();
     state(app).push_history(&result);
-    *state(app).last.lock() = Some((result.clone(), window));
     let _ = app.emit("history-changed", ());
-    emit_overlay(app, json!({ "phase": "done", "result": result }));
+    // A newer dictation may have finished, or a new recording started, while the chip was
+    // being applied: then only the history gets it — the screen and `last` belong to the new one.
+    let st = state(app);
+    let still_last = {
+        let mut last = st.last.lock();
+        let same = last.as_ref().is_some_and(|(r, _)| r.id == result.id);
+        if same {
+            *last = Some((result.clone(), window));
+        }
+        same
+    };
+    if still_last && !is_recording(app) {
+        platform::set_clipboard(&result.text).ok();
+        emit_overlay(app, json!({ "phase": "done", "result": result }));
+    }
     Ok(result)
 }
 
@@ -1099,10 +1210,14 @@ async fn answer(app: &AppHandle, history: &[ChatMessage]) -> ChatMessage {
     ChatMessage { role: "assistant".into(), content, sources }
 }
 
-async fn start_chat(app: &AppHandle, query: String) {
+/// `show`: open the chat window (only when this dictation still owns the screen — never in the
+/// middle of a newer recording, where it would hide its card and steal the focus).
+async fn start_chat(app: &AppHandle, query: String, show: bool) {
     let snapshot = push_chat(app, ChatMessage { role: "user".into(), content: query, sources: vec![] }, true);
-    windows::open_chat(app);
-    windows::hide_overlay(app);
+    if show {
+        windows::open_chat(app);
+        windows::hide_overlay(app);
+    }
     let _ = app.emit_to("chat", "chat-updated", &snapshot);
     let reply = answer(app, &snapshot).await;
     let snapshot = push_chat(app, reply, false);

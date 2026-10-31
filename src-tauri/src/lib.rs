@@ -67,17 +67,17 @@ pub fn run() {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             let has = |flag: &str| args.iter().any(|a| a == flag);
             if has("--toggle") || has("--dictate") {
-                pipeline::toggle(app, state::RecordMode::Dictate);
+                pipeline::control(app, pipeline::Ctl::Toggle(state::RecordMode::Dictate));
             } else if has("--translate") {
-                pipeline::toggle(app, state::RecordMode::Translate);
+                pipeline::control(app, pipeline::Ctl::Toggle(state::RecordMode::Translate));
             } else if has("--ask") {
-                pipeline::toggle(app, state::RecordMode::Ask);
+                pipeline::control(app, pipeline::Ctl::Toggle(state::RecordMode::Ask));
             } else if has("--command") {
-                pipeline::toggle(app, state::RecordMode::Command);
+                pipeline::control(app, pipeline::Ctl::Toggle(state::RecordMode::Command));
             } else if has("--paste-last") {
                 pipeline::paste_last(app, platform::last_app_window());
             } else if has("--cancel") {
-                pipeline::cancel(app);
+                pipeline::control(app, pipeline::Ctl::Cancel);
             } else if !has("--hidden") {
                 windows::open_settings(app, None);
             }
@@ -122,6 +122,7 @@ pub fn run() {
             let handle = app.handle().clone();
             windows::setup_overlay(&handle);
             windows::start_pointer_watcher(&handle);
+            pipeline::start_control(&handle);
             platform::start_focus_tracker();
             tray::setup(&handle)?;
             let failed = hotkeys::register_all(&handle);

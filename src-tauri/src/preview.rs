@@ -136,7 +136,9 @@ fn build_lanes(app: &AppHandle, s: &Settings) -> Vec<Lane> {
     let Some(primary) = s.stt.cloud_order.iter().find(|p| with_keys(p).is_some()).cloned() else {
         return vec![];
     };
-    let (cfg, keys) = with_keys(&primary).unwrap();
+    let Some((cfg, keys)) = with_keys(&primary) else {
+        return vec![];
+    };
     let mut lanes = vec![Lane::new(&primary, cfg.clone(), keys.clone(), Role::Primary, false)];
     if primary == "groq" {
         // Same family, separate rate limit: doubles the Groq refresh rate.

@@ -8,6 +8,10 @@ use std::time::Duration;
 // On Linux the clipboard content dies with the Clipboard object, so keep one alive.
 static CLIPBOARD: Lazy<Mutex<Option<arboard::Clipboard>>> = Lazy::new(|| Mutex::new(arboard::Clipboard::new().ok()));
 
+/// One synthetic keyboard sequence at a time (a background paste must not interleave its
+/// Ctrl+V with a Command's Ctrl+C, nor two pastes with each other).
+static INPUT_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
+
 pub fn set_clipboard(text: &str) -> Result<()> {
     with_clipboard(|cb| cb.set_text(text.to_string()))
 }
@@ -86,6 +90,7 @@ fn which(bin: &str) -> bool {
 /// Returns Ok(false) when it could not paste safely; the text is then left on the clipboard for
 /// the user to paste. After a successful paste the user's previous clipboard text comes back.
 pub fn paste(text: &str, target: isize, replace: bool) -> Result<bool> {
+    let _input = INPUT_LOCK.lock();
     let manual = |why: &str| -> Result<bool> {
         log::info!("paste skipped: {why}");
         set_clipboard(text)?;
@@ -137,6 +142,7 @@ pub const SELECTION_MAX_CHARS: usize = 12_000;
 /// Copies what is selected in `target` with a synthetic Ctrl+C and gives the user's clipboard
 /// text back right after. Ok(None) = nothing selected (the app left the clipboard untouched).
 pub fn copy_selection(target: isize) -> Result<Option<String>> {
+    let _input = INPUT_LOCK.lock();
     if !can_paste() {
         return Err(anyhow!("Este sistema não permite ler o texto selecionado (instale o xdotool ou o wtype)."));
     }

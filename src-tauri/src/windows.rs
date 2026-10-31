@@ -181,10 +181,20 @@ fn show(app: &AppHandle, new_session: bool) {
         return;
     }
     if visible {
-        // Another screen: jump there without dragging the old card across monitors.
+        // Another screen: blank the card at once (no exit animation) and let one frame paint
+        // before hiding, so Windows never re-shows the old card on the new monitor.
+        crate::pipeline::set_overlay_phase("hidden");
+        let _ = app.emit_to("overlay", "overlay-state", serde_json::json!({ "phase": "hidden", "instant": true }));
+        std::thread::sleep(std::time::Duration::from_millis(60));
         crate::platform::hide_window(&w);
     }
+    let dpi_change = w.scale_factor().map(|s| (s - target.scale_factor()).abs() > 0.01).unwrap_or(false);
     place_overlay(app);
+    if dpi_change {
+        // The webview re-rasterizes for the new scale; showing it right away would flash one
+        // frame at the old scale.
+        std::thread::sleep(std::time::Duration::from_millis(90));
+    }
     // Click-through until the UI reports where the card is.
     crate::platform::set_click_through(&w, true);
     crate::platform::show_without_focus(&w);

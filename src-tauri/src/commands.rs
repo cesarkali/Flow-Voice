@@ -236,17 +236,17 @@ pub fn delete_local_model(state: State<AppState>, id: String) -> CmdResult<()> {
 
 #[tauri::command]
 pub fn start_recording(app: AppHandle, mode: RecordMode) {
-    pipeline::start(&app, mode);
+    pipeline::control(&app, pipeline::Ctl::Start(mode));
 }
 
 #[tauri::command]
 pub fn stop_recording(app: AppHandle) {
-    pipeline::stop(&app);
+    pipeline::control(&app, pipeline::Ctl::Stop);
 }
 
 #[tauri::command]
 pub fn cancel_recording(app: AppHandle) {
-    pipeline::cancel(&app);
+    pipeline::control(&app, pipeline::Ctl::Cancel);
 }
 
 #[tauri::command]
@@ -309,7 +309,10 @@ pub fn dismiss_overlay(app: AppHandle) {
     }
     match pipeline::overlay_phase().as_str() {
         "transcribing" | "refining" if pipeline::is_busy(&app) => pipeline::cancel_processing(&app),
-        _ => windows::hide_overlay(&app),
+        _ => {
+            pipeline::release_overlay();
+            windows::hide_overlay(&app);
+        }
     }
 }
 

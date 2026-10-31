@@ -146,7 +146,11 @@
     hideTip();
     if (e.phase === "hidden") {
       snapNext = true;
+      // Moving to another monitor: vanish in THIS frame, no fade (the native window is hidden
+      // ~60 ms later and Windows would re-show its last frame on the new screen).
+      if ((e as { instant?: boolean }).instant && stageEl) stageEl.style.visibility = "hidden";
     } else {
+      if (stageEl) stageEl.style.visibility = "";
       if (ev.phase === "hidden") snapNext = true;
       view = e.phase === "transcribing" || e.phase === "refining" ? "processing" : e.phase;
     }

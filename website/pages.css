@@ -95,6 +95,21 @@
 .pg-table .rec { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; color: var(--accent-fg); border: 1px solid var(--accent-line); border-radius: 4px; padding: 1px 5px; margin-left: 8px; vertical-align: 2px; text-transform: uppercase; white-space: nowrap; }
 .pg-table.cmp-ver td:nth-child(3) { color: var(--text); background: rgba(255, 46, 0, 0.035); }
 .pg-table.cmp-ver thead th:nth-child(3) { color: var(--accent-fg); box-shadow: inset 0 2px 0 var(--accent); }
+/* phones: each row becomes a card of "label: value" pairs (like the index .cmp table), so no column is hidden */
+@media (max-width: 640px) {
+  .pg-table { overflow: hidden; }
+  .pg-table table { min-width: 0; }
+  .pg-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .pg-table tr { display: block; border-bottom: 1px solid var(--line); }
+  .pg-table tbody tr:last-child { border-bottom: 0; }
+  .pg-table tbody th { display: block; padding: 14px 16px 4px; border: 0; font-weight: 600; }
+  .pg-table td { display: block; position: relative; padding: 28px 16px 8px; border: 0; }
+  .pg-table td:last-child { padding-bottom: 14px; }
+  .pg-table td::before { content: attr(data-l); position: absolute; top: 9px; left: 16px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+  .pg-table .num { white-space: normal; }
+  .pg-table.cmp-ver td:nth-child(3) { background: transparent; }
+  .pg-table.cmp-ver td:nth-child(3)::before { color: var(--accent-fg); }
+}
 
 /* ---------- privacy summary ---------- */
 .pg-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }

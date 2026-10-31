@@ -25,7 +25,6 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="pages.css">
   <script>document.documentElement.classList.add("js")</script>
-  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body class="pg">
   <a class="skip" href="#conteudo">Pular para o conteúdo</a>
@@ -137,20 +136,20 @@
               <caption class="sr">Comparação entre a versão 1.x e a 2.0</caption>
               <thead><tr><th scope="col"><span class="sr">Aspecto</span></th><th scope="col">1.x</th><th scope="col">2.0</th></tr></thead>
               <tbody>
-                <tr><th scope="row">Base</th><td>Python + PySide6</td><td>Rust (Tauri 2) + Svelte</td></tr>
-                <tr><th scope="row">Instalador</th><td>Grande, com Python embutido</td><td>Poucos MB; modelos só se você quiser</td></tr>
-                <tr><th scope="row">Enquanto você fala</th><td>Sem texto na tela</td><td>Prévia do texto ao vivo</td></tr>
-                <tr><th scope="row">Depois do resultado</th><td>Colar e pronto</td><td>Trocar estilo, traduzir, substituir</td></tr>
-                <tr><th scope="row">Quando o provedor falha</th><td>Erro genérico</td><td>Próxima chave ou provedor, com a mensagem real</td></tr>
-                <tr><th scope="row">Modelo aposentado</th><td>Parava de funcionar</td><td>Trocado automaticamente</td></tr>
-                <tr><th scope="row">Chaves</th><td>Arquivo de configuração</td><td>Cofre de credenciais do sistema</td></tr>
-                <tr><th scope="row">Atualização</th><td>Automática</td><td>Automática e assinada digitalmente</td></tr>
+                <tr><th scope="row">Base</th><td data-l="1.x">Python + PySide6</td><td data-l="2.0">Rust (Tauri 2) + Svelte</td></tr>
+                <tr><th scope="row">Instalador</th><td data-l="1.x">Grande, com Python embutido</td><td data-l="2.0">Poucos MB; modelos só se você quiser</td></tr>
+                <tr><th scope="row">Enquanto você fala</th><td data-l="1.x">Sem texto na tela</td><td data-l="2.0">Prévia do texto ao vivo</td></tr>
+                <tr><th scope="row">Depois do resultado</th><td data-l="1.x">Colar e pronto</td><td data-l="2.0">Trocar estilo, traduzir, substituir</td></tr>
+                <tr><th scope="row">Quando o provedor falha</th><td data-l="1.x">Erro genérico</td><td data-l="2.0">Próxima chave ou provedor, com a mensagem real</td></tr>
+                <tr><th scope="row">Modelo aposentado</th><td data-l="1.x">Parava de funcionar</td><td data-l="2.0">Trocado automaticamente</td></tr>
+                <tr><th scope="row">Chaves</th><td data-l="1.x">Arquivo de configuração</td><td data-l="2.0">Cofre de credenciais do sistema</td></tr>
+                <tr><th scope="row">Atualização</th><td data-l="1.x">Automática</td><td data-l="2.0">Automática e assinada digitalmente</td></tr>
               </tbody>
             </table>
           </div>
           <div class="pg-callout hot" data-reveal>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-            <p><b>Vindo da 1.x?</b>Instale por cima. Na primeira execução, a 2.0 importa suas chaves antigas automaticamente para o cofre do sistema. Se você usava o GitHub Models, crie uma chave grátis na Groq: <a href="guia.html#groq">leva 2 minutos</a>.</p>
+            <p><b>Vindo da 1.x?</b>Instale por cima. Na primeira execução, a 2.0 importa suas chaves antigas automaticamente para o cofre do sistema. Se você usava o GitHub Models, crie uma chave grátis na Groq: <a href="guia.html#groq">leva poucos minutos</a>.</p>
           </div>
         </div>
       </section>

@@ -51,12 +51,10 @@
   "license": "https://www.gnu.org/licenses/gpl-3.0.html",
   "isAccessibleForFree": true,
   "downloadUrl": "https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe",
-  "codeRepository": "https://github.com/cesarkali/Flow-Voice",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
   "author": { "@type": "Person", "name": "Júlio Caliberda", "url": "https://caliberda.com.br", "sameAs": ["https://github.com/cesarkali"] }
 }
 </script>
-<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -90,7 +88,7 @@
   </defs>
 </svg>
 
-<header class="top" id="top">
+<header class="top wide" id="top">
   <div class="wrap">
     <a class="brand" href="#top" aria-label="FlowVoice, início">
       <svg aria-hidden="true"><use href="#logo"/></svg>
@@ -134,7 +132,7 @@
           <svg aria-hidden="true"><use href="#i-gh"/></svg>Ver no GitHub
         </a>
       </div>
-      <p class="hero-meta"><span>Windows 10 e 11</span><span>instalador de ~3 MB</span><span>também para <a class="link" href="https://github.com/cesarkali/Flow-Voice/releases/latest" rel="noopener">Linux (.deb)</a></span></p>
+      <p class="hero-meta"><span>Windows 10 e 11</span><span>instalador de ~3 MB</span><span>também para <a class="link" href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">Linux (.deb)</a></span></p>
     </div>
 
     <div class="demo" role="img" aria-label="Demonstração: num e-mail do Outlook, a pessoa aperta o atalho e fala. O texto aparece ao vivo no overlay do FlowVoice, é reescrito no estilo Profissional e colado no e-mail. Depois, no chat de uma IA, a fala vira um prompt enxuto.">
@@ -381,12 +379,12 @@
     </div>
     <div data-reveal>
       <div class="gal-tabs" role="tablist" aria-label="Telas do aplicativo">
-        <button role="tab" aria-selected="true" data-shot="0">Início</button>
-        <button role="tab" aria-selected="false" tabindex="-1" data-shot="1">Estilos</button>
-        <button role="tab" aria-selected="false" tabindex="-1" data-shot="2">Provedores</button>
-        <button role="tab" aria-selected="false" tabindex="-1" data-shot="3">Transcrição</button>
+        <button role="tab" id="g-home" aria-controls="gal-panel" aria-selected="true" data-shot="0">Início</button>
+        <button role="tab" id="g-styles" aria-controls="gal-panel" aria-selected="false" tabindex="-1" data-shot="1">Estilos</button>
+        <button role="tab" id="g-providers" aria-controls="gal-panel" aria-selected="false" tabindex="-1" data-shot="2">Provedores</button>
+        <button role="tab" id="g-transcription" aria-controls="gal-panel" aria-selected="false" tabindex="-1" data-shot="3">Transcrição</button>
       </div>
-      <div class="gal-frame" role="tabpanel">
+      <div class="gal-frame" id="gal-panel" role="tabpanel" aria-labelledby="g-home">
         <img class="on" src="assets/shot-home.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela inicial do FlowVoice com o atalho principal, os provedores ativos, contadores do dia e o histórico de ditados.">
         <img src="assets/shot-styles.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de estilos do FlowVoice com os estilos prontos e a opção de criar estilos próprios.">
         <img src="assets/shot-providers.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de provedores do FlowVoice, onde se cadastram as chaves de Groq, Gemini, OpenRouter e Mistral.">
@@ -408,7 +406,7 @@
     <div class="duo">
       <div class="panel-c" data-reveal>
         <span class="label">Na nuvem · chaves grátis</span>
-        <h3>Cinco minutos de cadastro.</h3>
+        <h3>Chaves grátis em poucos minutos.</h3>
         <table class="tbl">
           <thead><tr><th scope="col">Provedor</th><th scope="col">Usa para</th></tr></thead>
           <tbody>
@@ -433,7 +431,7 @@
             <tr><td><span class="pn">Tiny</span><span class="sub">para PCs bem modestos</span></td><td>31 MB</td></tr>
             <tr><td><span class="pn">Base</span><span class="sub">rápido; também move a prévia ao vivo</span></td><td>57 MB</td></tr>
             <tr><td><span class="pn">Small</span><span class="sub">equilíbrio entre velocidade e precisão</span></td><td>181 MB</td></tr>
-            <tr><td><span class="pn">Distil Large v3 PT-BR</span><span class="rec">pt-BR</span><span class="sub">ajustado para português do Brasil</span></td><td>513 MB</td></tr>
+            <tr><td><span class="pn">Distil-Whisper pt-BR</span><span class="rec">pt-BR</span><span class="sub">ajustado para português do Brasil</span></td><td>513 MB</td></tr>
             <tr><td><span class="pn">Large v3 Turbo</span><span class="sub">máxima precisão, para PCs mais fortes</span></td><td>547 MB</td></tr>
           </tbody>
         </table>
@@ -455,7 +453,7 @@
       <p>Porque não existe servidor nosso. O FlowVoice é um programa no seu computador que conversa direto com o provedor que você escolheu, e com nenhum, no modo offline.</p>
     </div>
     <ul class="priv">
-      <li data-reveal><h3>Chaves no cofre do sistema</h3><p>Guardadas no Gerenciador de Credenciais do Windows (ou no Secret Service do Linux), nunca em texto puro.</p></li>
+      <li data-reveal><h3>Chaves no cofre do sistema</h3><p>Guardadas no Gerenciador de Credenciais do Windows (ou no Secret Service do Linux). Só em casos raros, com o cofre indisponível, ficam num arquivo local na sua pasta de usuário.</p></li>
       <li data-reveal style="--d:60ms"><h3>Sem conta, sem nuvem própria</h3><p>Não há cadastro nem sincronização. Histórico e configurações ficam só no seu PC.</p></li>
       <li data-reveal style="--d:120ms"><h3>Você escolhe o caminho</h3><p>O áudio vai só para o provedor que você configurou. No modo offline, não sai da máquina.</p></li>
       <li data-reveal style="--d:180ms"><h3>Código aberto (GPL-3.0)</h3><p>Qualquer pessoa pode ler, auditar e compilar o código no GitHub.</p></li>
@@ -523,7 +521,7 @@
       </details>
       <details>
         <summary>Tem versão para Linux? E para Mac?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>Linux sim: baixe o <code>.deb</code> na <a class="link" href="https://github.com/cesarkali/Flow-Voice/releases/latest" rel="noopener">página de versões</a> e rode <code>sudo apt install ./FlowVoice_*.deb</code>. No Wayland, instale também o <code>wtype</code> para colar automaticamente. Mac ainda não.</p></div>
+        <div class="a"><p>Linux sim: baixe o <code>.deb</code> na <a class="link" href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">página de versões</a> e rode <code>sudo apt install ./FlowVoice_*.deb</code>. No Wayland, instale também o <code>wtype</code> para colar automaticamente. Mac ainda não.</p></div>
       </details>
       <details>
         <summary>Eu usava a versão 1.x. O que muda?<span class="pm" aria-hidden="true"></span></summary>
@@ -568,7 +566,7 @@
         <h2>Produto</h2>
         <ul>
           <li><a href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar para Windows</a></li>
-          <li><a href="https://github.com/cesarkali/Flow-Voice/releases/latest" rel="noopener">Linux (.deb)</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">Linux (.deb)</a></li>
           <li><a href="novidades.html">Novidades</a></li>
           <li><a href="guia.html">Guia de chaves grátis</a></li>
         </ul>
@@ -579,7 +577,7 @@
           <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">Código no GitHub</a></li>
           <li><a href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">Reportar um problema</a></li>
           <li><a href="privacidade.html">Privacidade</a></li>
-          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/v2/LICENSE" rel="noopener">Licença GPL-3.0</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" rel="noopener">Licença GPL-3.0</a></li>
         </ul>
       </div>
       <div>

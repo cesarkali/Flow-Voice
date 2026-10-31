@@ -208,6 +208,7 @@
     const render = (animate = true) => {
       const o = OUT[cur];
       const canXl = !!o.en;
+      if (!canXl) english = false; // a non-AI style resets the toggle, so it never comes back on by surprise
       const showEn = english && canXl;
       const txt = pick(showEn ? o.en : o.text);
       sname.textContent = o.name;
@@ -342,20 +343,22 @@
   ];
   const gtabs = $$(".gal-tabs [data-shot]");
   if (gtabs.length) {
-    const imgs = $$(".gal-frame img"), cap = $("[data-gcap]");
+    const imgs = $$(".gal-frame img"), cap = $("[data-gcap]"), frame = $(".gal-frame");
     const pick = (b, focus) => {
       const n = +b.dataset.shot;
       gtabs.forEach((t) => { const on = t === b; t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1; });
       imgs.forEach((im, i) => im.classList.toggle("on", i === n));
       cap.textContent = CAPS[n];
+      if (frame) frame.setAttribute("aria-labelledby", b.id);
       if (focus) b.focus();
     };
     gtabs.forEach((b) => b.addEventListener("click", () => pick(b)));
     $(".gal-tabs").addEventListener("keydown", (e) => {
       const i = gtabs.indexOf(document.activeElement);
       if (i < 0) return;
-      if (e.key === "ArrowRight") { e.preventDefault(); pick(gtabs[(i + 1) % gtabs.length], true); }
-      if (e.key === "ArrowLeft") { e.preventDefault(); pick(gtabs[(i - 1 + gtabs.length) % gtabs.length], true); }
+      const k = e.key, n = gtabs.length;
+      const j = k === "ArrowRight" ? (i + 1) % n : k === "ArrowLeft" ? (i - 1 + n) % n : k === "Home" ? 0 : k === "End" ? n - 1 : null;
+      if (j !== null) { e.preventDefault(); pick(gtabs[j], true); }
     });
   }
 })();
