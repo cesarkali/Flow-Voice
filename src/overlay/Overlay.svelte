@@ -22,9 +22,10 @@
   const MAX_W = 760;
   const MAX_H = 560;
   const ROW_H = 54;
-  const BARS = 20;
+  /** 12 (was 20, "too many bars"): the ripple and the processing wave scale with the count. */
+  const BARS = 12;
   const BAR_W = 3;
-  const BAR_GAP = 2.5;
+  const BAR_GAP = 3;
   const WAVE_W = BARS * BAR_W + (BARS - 1) * BAR_GAP;
   const PAD_L = 20;
   const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -37,7 +38,7 @@
   /** Bar envelope (center taller) — edges still move so the whole wave feels alive. */
   const ENV = Array.from({ length: BARS }, (_, i) => 0.42 + 0.58 * Math.pow(Math.sin((Math.PI * (i + 0.5)) / BARS), 1.3));
   /** History delay (frames) per bar: speech ripples outward from the center. */
-  const LAG = Array.from({ length: BARS }, (_, i) => Math.round(Math.abs(i - (BARS - 1) / 2) * 1.15));
+  const LAG = Array.from({ length: BARS }, (_, i) => Math.round(Math.abs(i - (BARS - 1) / 2) * (23 / BARS)));
   const SIZES = {
     compact: { card: 440, cap: 368, live: 440, err: 440 },
     normal: { card: 600, cap: 388, live: 500, err: 520 },
@@ -697,7 +698,7 @@
         anims.push(
           el.animate([{ transform: `scaleY(${LO})` }, { transform: `scaleY(${hi.toFixed(3)})` }, { transform: `scaleY(${LO})` }], {
             duration: 1500,
-            delay: i * 75,
+            delay: Math.round((i * 1500) / BARS), // one sweep across all bars per cycle
             iterations: Infinity,
             easing: "cubic-bezier(0.45, 0, 0.55, 1)",
             fill: "backwards",
