@@ -1,108 +1,115 @@
+<div align="center">
+
 # FlowVoice
 
-**Ditado por voz com IA em qualquer app.** Aperte um atalho, fale, e o texto aparece onde está o cursor: limpo, pontuado e no estilo que você escolher. Funciona com chaves **gratuitas** (Groq, Gemini, OpenRouter, Mistral) ou **100% offline**.
+**Ditado por voz com IA em qualquer app.**
 
-Feito por **Júlio Caliberda** · [github.com/cesarkali](https://github.com/cesarkali) · [caliberda.com.br](https://caliberda.com.br)
+[![Release](https://img.shields.io/github/v/release/cesarkali/Flow-Voice?label=release)](https://github.com/cesarkali/Flow-Voice/releases/latest)
+[![Licença GPL-3.0](https://img.shields.io/badge/licen%C3%A7a-GPL--3.0-blue)](LICENSE)
 
-**Versão atual:** 2.0.0 · Windows e Linux (Ubuntu/Debian)
+[Baixar](https://github.com/cesarkali/Flow-Voice/releases/latest) · [Site](https://flowvoice.caliberda.com.br) · [Guia](https://flowvoice.caliberda.com.br/guia) · [Privacidade](https://flowvoice.caliberda.com.br/privacidade)
 
----
+![FlowVoice](website/assets/og.png)
 
-## O que ele faz
+</div>
 
-- **Ditado em qualquer lugar**: `Ctrl + Shift + Espaço` começa, o mesmo atalho para. O texto é colado na janela onde você estava.
-- **Prévia ao vivo**: enquanto você fala, o texto aparece em tempo real no overlay (Whisper local leve).
-- **Estilos**
-  - **Natural**: corrige e limpa a fala sem mudar seu jeito de falar.
-  - **Profissional**: texto formal e organizado, pronto para e-mail.
-  - **Prompt**: enxuga a fala para mandar a uma IA. Corta "né", "tipo", rodeios e repetições e mantém todo o contexto, então gasta menos tokens.
-  - **Cru**: só as palavras, sem pontuação e sem quebra de linha.
-  - **Só transcrição**: exatamente o que foi transcrito, sem passar por IA.
-  - Você pode editar os prompts e criar estilos próprios.
-- **Mudou de ideia? Troque no próprio overlay**: depois do resultado, um clique refaz em outro estilo ou **traduz** (inglês, espanhol e outros). **Substituir** desfaz a colagem anterior e cola a nova.
-- **Tradução por voz**: `Ctrl + Shift + Y` dita já traduzindo.
-- **Assistente por voz**: `Ctrl + Shift + U` faz uma pergunta falada e abre um chat. Com a chave Tavily, busca na web e cita as fontes.
-- **Failover**: cadastre vários provedores e várias chaves. Se um falhar ou estourar o limite, o FlowVoice tenta o próximo. Se a nuvem cair, usa o modelo local. Os erros aparecem com a mensagem real do provedor.
-- **Remoção de vícios de linguagem** antes da IA ("né", "tipo", "hã", gagueira), que economiza tokens.
-- **Vocabulário próprio**: nomes e termos técnicos que você quer sempre escritos certo.
-- **Histórico** pesquisável, **push-to-talk** (segurar para falar), silenciar o PC enquanto grava, iniciar com o sistema, temas claro e escuro, interface em PT/EN/ES e atualização automática.
-- **Leve**: roda na bandeja, sem janela aberta. O instalador tem poucos MB e os modelos locais só são baixados se você quiser.
+Aperte um atalho, fale, e o texto aparece onde está o cursor: limpo, pontuado e no estilo que você escolher. O FlowVoice fica na bandeja do sistema, funciona em qualquer aplicativo (e-mail, chat, editor, navegador) e usa chaves de API **gratuitas** (Groq, Gemini, OpenRouter, Mistral) ou modelos Whisper que rodam **100% offline** no seu PC. Para Windows 10 e 11.
 
-## Provedores e chaves (todas grátis, menos a OpenAI)
+## Recursos
 
-| Provedor | Para quê | Onde pegar a chave | Plano grátis |
-|---|---|---|---|
-| **Groq** (recomendado) | voz + texto | [console.groq.com/keys](https://console.groq.com/keys) → *Create API Key* | ~8 h de áudio/dia, `gpt-oss-20b` |
-| **Google Gemini** | voz + texto | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) → *Create API key* | sim (o Google pode usar os dados para melhorar produtos) |
-| **OpenRouter** | texto | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) → *Create Key* | modelos `:free`, 50 pedidos/dia |
-| **Mistral** | voz + texto | [console.mistral.ai](https://console.mistral.ai) → *API Keys* | sim, sem cartão |
-| **OpenAI** | voz + texto | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | pago |
-| **Ollama** | texto, local | [ollama.com/download](https://ollama.com/download) → `ollama pull gemma3:4b` | grátis e offline |
-| **Tavily** | busca na web | [app.tavily.com](https://app.tavily.com) | 1.000 buscas/mês |
+- **Ditado em qualquer lugar**, com o texto aparecendo ao vivo no overlay enquanto você fala. Modo alternar ou segurar para falar (push-to-talk); `Esc` cancela.
+- **Estilos de IA**: *Natural*, *Profissional*, *Prompt* (enxuga a fala para mandar a uma IA, com menos tokens e o mesmo contexto), *Cru* e *Só transcrição*. Prompts editáveis e estilos próprios.
+- **Tradução para 34 idiomas**, por atalho ou com um clique no overlay depois do resultado.
+- **Modo Comando**: selecione um texto em qualquer app e diga o que fazer com ele ("resuma", "deixe mais formal").
+- **Estilos por aplicativo**: Profissional no Outlook, Natural no Slack, Prompt no VS Code; apps web (Gmail, WhatsApp Web, ChatGPT…) são reconhecidos pela aba do navegador.
+- **Assistente por voz**: faça uma pergunta falada e receba a resposta num chat; com uma chave Tavily, busca na web e cita as fontes.
+- **Chaves grátis com rotação automática**: cadastre várias chaves e provedores; se um estourar o limite ou falhar, o próximo assume.
+- **Modelos que se corrigem sozinhos**: quando um provedor aposenta um modelo, o FlowVoice encontra, testa e salva o substituto.
+- **100% offline** com whisper.cpp: modelos de 31 MB a 547 MB baixados sob demanda, incluindo um *Distil Large v3* ajustado para português do Brasil. Para refinar sem internet, use o Ollama.
+- **Chaves no cofre do sistema** (Gerenciador de Credenciais do Windows), nunca em texto puro.
+- Vocabulário próprio, remoção de vícios de linguagem ("né", "tipo", "hã"), histórico pesquisável, colar de novo a última transcrição, interface em PT/EN/ES, tema claro e escuro.
+- **Leve**: instalador de ~3 MB, sem pedir administrador, com **atualização automática** assinada.
 
-Cada provedor tem um tutorial passo a passo e um botão **Testar** dentro do app. Os modelos podem ser trocados nas configurações se algum for descontinuado.
+## Download
 
-> O **GitHub Models** (recomendado na 1.x) foi descontinuado pelo GitHub em 30/07/2026. Os modelos `llama` do Groq saíram do plano grátis, e os do Gemini 1.5/2.0 foram desligados. Por isso a 1.x parou de funcionar.
+**Windows 10/11:** baixe o [`FlowVoiceSetup.exe`](https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe) (também publicado como `FlowVoice_x.y.z_x64-setup.exe`) em **[Releases → última versão](https://github.com/cesarkali/Flow-Voice/releases/latest)**. Não precisa de administrador. Na primeira execução, a 2.0 importa automaticamente as chaves salvas pela 1.x.
 
-As chaves ficam no **cofre de credenciais do sistema** (Gerenciador de Credenciais do Windows / Secret Service no Linux), nunca em texto puro. Na primeira execução, a 2.0 importa as chaves da 1.x automaticamente.
+## Atalhos padrão
 
-## Modo 100% offline
+| Ação | Atalho |
+|---|---|
+| Ditar (começa e para) | `Ctrl + Shift + Espaço` |
+| Ditar já traduzindo | `Ctrl + Shift + Y` |
+| Assistente por voz | `Ctrl + Shift + U` |
+| Comando sobre o texto selecionado | `Ctrl + Alt + K` |
+| Colar de novo a última transcrição | `Ctrl + Alt + V` |
+| Cancelar a gravação | `Esc` |
 
-Em **Configurações → Transcrição**, escolha *100% local* e baixe um modelo do whisper.cpp:
+Todos podem ser trocados em **Configurações**. Para Stream Deck, AutoHotkey ou scripts, a linha de comando controla o app já aberto: `FlowVoice.exe --toggle` (também `--translate`, `--ask`, `--command`, `--paste-last`, `--cancel`).
 
-| Modelo | Tamanho | Uso |
-|---|---|---|
-| Tiny | 31 MB | PCs bem fracos |
-| **Base** | 57 MB | rápido, usado também na prévia ao vivo |
-| Small | 181 MB | equilíbrio |
-| Large v3 Turbo | 547 MB | máxima precisão |
+## Começo rápido
 
-Para refinar o texto sem internet, use o **Ollama**.
+1. Instale e abra o FlowVoice (ele fica na bandeja).
+2. Crie uma chave grátis do **Groq** em [console.groq.com/keys](https://console.groq.com/keys).
+3. Cole a chave em **Provedores** e clique em **Testar**.
+4. Coloque o cursor em qualquer campo de texto, aperte `Ctrl + Shift + Espaço`, fale e aperte de novo.
 
-## Instalação
+O [guia completo](https://flowvoice.caliberda.com.br/guia) explica cada provedor (Groq, Gemini, OpenRouter, Mistral, OpenAI, Ollama, Tavily), o modo offline e os estilos.
 
-- **Windows**: baixe `FlowVoice_x.y.z_x64-setup.exe` em [Releases](https://github.com/cesarkali/Flow-Voice/releases). Não precisa de administrador.
-- **Ubuntu/Debian**: baixe o `.deb` em Releases e rode `sudo apt install ./FlowVoice_*.deb`. Para colar automaticamente, o pacote instala o `xdotool` (X11). No Wayland, instale o `wtype`, ou o texto fica só copiado.
+## Privacidade
+
+Sem conta, sem servidor próprio e sem telemetria. No modo nuvem, o áudio e o texto vão direto do seu PC para o provedor que **você** configurou, com a sua chave; no modo local, nada sai do computador. As chaves ficam no cofre de credenciais do sistema. Detalhes em [flowvoice.caliberda.com.br/privacidade](https://flowvoice.caliberda.com.br/privacidade).
 
 ## Desenvolvimento
 
-Stack: **Tauri 2** (Rust) + **Svelte 5** + Vite. O código da versão 1.x (Python) está em `legacy/`.
+Stack: **Tauri 2** (Rust) + **Svelte 5** + Vite. Transcrição local com [whisper.cpp](https://github.com/ggml-org/whisper.cpp) via `whisper-rs`.
 
-Pré-requisitos: Node 22+, Rust estável e, no Windows, o Visual Studio Build Tools (C++ e CMake) mais a `libclang` (LLVM). Se o LLVM não estiver instalado, aponte `LIBCLANG_PATH` para uma pasta com `libclang.dll`.
+**Requisitos**
+
+- Node 22 e Rust estável.
+- Visual Studio Build Tools (C++ e CMake), **Ninja** e **LLVM** (`libclang`, para o bindgen do whisper.cpp). Se o LLVM não estiver no lugar padrão, defina `LIBCLANG_PATH` para a pasta com `libclang.dll`. O Ninja é obrigatório na prática: sem ele o whisper.cpp compila sem otimização (veja `src-tauri/.cargo/config.toml`).
+- O código tem caminhos para Linux, mas a versão para Linux ainda não é suportada.
+
+**Comandos**
 
 ```bash
-npm install
-npm run tauri dev      # app completo
-npm run dev            # só a interface no navegador, com dados simulados
-npm run tauri build    # instalador
+npm ci               # dependências
+npx tauri dev        # app completo, com recarga ao vivo
+npm run dev          # só a interface no navegador, com dados simulados
+npm run check        # svelte-check
+npx tauri build      # instalador (.exe)
 ```
 
-Estrutura:
+**Estrutura**
 
-```
-src/            interface (settings, overlay, chat) em Svelte
-src-tauri/src/  núcleo em Rust
-  audio.rs      captura do microfone → 16 kHz mono
-  local_stt.rs  whisper.cpp + download de modelos
-  cloud.rs      transcrição/IA na nuvem, erros legíveis
-  pipeline.rs   gravar → transcrever → refinar → colar, assistente
-  text.rs       vícios de linguagem, estilo cru, filtro de alucinações
-  settings.rs   configurações e prompts dos estilos
-```
+| Caminho | Conteúdo |
+|---|---|
+| `src/settings`, `src/overlay`, `src/chat` | as três janelas em Svelte (configurações, overlay de gravação, chat do assistente) |
+| `src/lib` | componentes, i18n (PT/EN/ES), tipos e ponte com o Rust |
+| `index.html`, `overlay.html`, `chat.html` | entradas do Vite, uma por janela |
+| `src-tauri/src` | núcleo em Rust: áudio, whisper local, nuvem, pipeline, atalhos, colagem, bandeja |
+| `src-tauri/tauri.conf.json` | janelas, instalador (NSIS) e atualizador |
+| `website/` | site estático [flowvoice.caliberda.com.br](https://flowvoice.caliberda.com.br) |
+| `.github/workflows/release.yml` | build e publicação do instalador |
 
-### Publicar uma versão
+## Publicar uma versão
 
-1. Atualize a versão em `package.json`, `src-tauri/Cargo.toml` e `src-tauri/tauri.conf.json`.
-2. Cadastre uma vez os secrets `TAURI_SIGNING_PRIVATE_KEY` (conteúdo da chave privada do atualizador) e `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` no repositório.
-3. Crie e envie a tag: `git tag v2.0.0 && git push origin v2.0.0`. O GitHub Actions gera os instaladores, o `latest.json` do atualizador e um release em rascunho.
+1. Atualize a versão em `package.json`, `src-tauri/Cargo.toml` e `src-tauri/tauri.conf.json`, e descreva as mudanças no [CHANGELOG](CHANGELOG.md).
+2. Uma única vez: cadastre os secrets `TAURI_SIGNING_PRIVATE_KEY` (chave privada do atualizador) e `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` no repositório.
+3. Crie e envie a tag:
+
+   ```bash
+   git tag vX.Y.Z && git push origin vX.Y.Z
+   ```
+
+   O GitHub Actions gera o instalador assinado para Windows, o `latest.json` do atualizador e um release em rascunho. Revise e publique.
 
 ## Apoie o projeto
 
-O FlowVoice é gratuito. Se ele te ajuda, considere apoiar:
+O FlowVoice é gratuito. Se ele te ajuda, considere apoiar: **Pix** em [livepix.gg/caliberda](https://livepix.gg/caliberda) ou [GitHub Sponsors](https://github.com/sponsors/cesarkali).
 
-- **Pix (Brasil)**: [livepix.gg/caliberda](https://livepix.gg/caliberda)
-- **GitHub Sponsors**: [github.com/sponsors/cesarkali](https://github.com/sponsors/cesarkali)
+## Créditos e licença
 
-## Licença
+Feito por **Júlio Caliberda** · [github.com/cesarkali](https://github.com/cesarkali) · [caliberda.com.br](https://caliberda.com.br)
 
-GPL-3.0 © Júlio Caliberda
+Licença [GPL-3.0](LICENSE).

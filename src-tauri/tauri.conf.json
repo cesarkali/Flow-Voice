@@ -50,7 +50,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "deb"],
+    "targets": ["nsis"],
     "createUpdaterArtifacts": true,
     "publisher": "Júlio Caliberda",
     "homepage": "https://github.com/cesarkali/Flow-Voice",

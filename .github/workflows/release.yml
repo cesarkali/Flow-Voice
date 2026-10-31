@@ -1,6 +1,6 @@
 name: Release
 
-# Push a tag like v2.0.0 to build Windows (.exe) and Linux (.deb) installers,
+# Push a tag like v2.0.0 to build the Windows (.exe) installer,
 # publish them on GitHub Releases and update latest.json for the in-app updater.
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-          - platform: ubuntu-22.04
+          # Linux builds are disabled until tested; re-enable with: - platform: ubuntu-22.04
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: FlowVoice v__VERSION__
-          releaseBody: Veja as novidades em releases/ no repositório.
+          releaseBody: "Veja as novidades no [CHANGELOG](https://github.com/cesarkali/Flow-Voice/blob/main/CHANGELOG.md)."
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true

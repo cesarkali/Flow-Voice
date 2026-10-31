@@ -9,23 +9,17 @@ src-tauri/gen/schemas/
 # Updater signing key (never commit)
 *.key
 
-# Legacy Python app
-__pycache__/
-*.pyc
-venv/
-.venv/
-build/
-*.spec
-legacy/ubuntu/build/
-legacy/ubuntu/dist/
-
 # Local config, logs and audio
 config.json
-checkmark.svg
-flowvoice.log
+*.log
 *.wav
 *.mp3
 *.tmp
+
+# Local leftovers of the 1.x Python app (not part of the repo anymore)
+/legacy/
+
+# Website build artifact and local dev tools
 website/FlowVoiceSetup.exe
-.claude
 tools/dev/
+.claude
