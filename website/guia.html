@@ -7,8 +7,9 @@
 <meta name="description" content="Passo a passo para pegar chaves de API gratuitas (Groq, Google Gemini, OpenRouter, Mistral e Tavily) e usar no FlowVoice. Ou use 100% offline, sem chave nenhuma.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#f6f6f4">
-<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <link rel="canonical" href="https://flowvoice.caliberda.com.br/guia">
 
 <meta property="og:type" content="article">
@@ -34,7 +35,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="pages.css">
-<script>document.documentElement.classList.add("js")</script>
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
 </head>
 <body class="pg">
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -46,6 +47,8 @@
     <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
     <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
   </defs>
 </svg>
 
@@ -57,9 +60,10 @@
       <a href="./#gratis">Grátis e offline</a>
       <a href="guia.html" aria-current="page">Guia de chaves</a>
       <a href="novidades.html">Novidades</a>
-      <a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
     </nav>
     <div class="top-cta">
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="Tema escuro" title="Tema escuro"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
       <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar</a>
       <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menu"><span></span></button>
     </div>
@@ -119,13 +123,13 @@
             <div class="pg-prov-h"><h3 id="groq-t">Groq</h3><span class="pg-tag rec">Recomendado</span><span class="pg-tag">Grátis</span></div>
             <p class="uses">Voz e texto. Transcrição e refinamento muito rápidos.</p>
             <ol class="pg-steps">
-              <li><span>Abra o <a href="https://console.groq.com/keys" rel="noopener">console da Groq</a> e entre com Google, GitHub ou e-mail.</span></li>
+              <li><span>Abra o <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">console da Groq</a> e entre com Google, GitHub ou e-mail.</span></li>
               <li><span>Em <strong>API Keys</strong>, clique em <strong>Create API Key</strong> e dê um nome qualquer, como “FlowVoice”.</span></li>
               <li><span>Copie a chave (começa com <code>gsk_</code>). Ela só aparece uma vez.</span></li>
               <li><span>Cole no FlowVoice e clique em <strong>Testar</strong>.</span></li>
             </ol>
             <div class="pg-prov-f">
-              <a class="btn btn-ghost btn-sm" href="https://console.groq.com/keys" rel="noopener">Abrir console.groq.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <a class="btn btn-ghost btn-sm" href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Abrir console.groq.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
               <span class="lim">Plano grátis: <b>horas de áudio por dia</b>, sem cartão.</span>
             </div>
           </article>
@@ -134,13 +138,13 @@
             <div class="pg-prov-h"><h3 id="gemini-t">Google Gemini</h3><span class="pg-tag">Grátis</span></div>
             <p class="uses">Voz e texto. A IA do Google, com plano gratuito generoso.</p>
             <ol class="pg-steps">
-              <li><span>Abra o <a href="https://aistudio.google.com/apikey" rel="noopener">Google AI Studio</a> e entre com sua conta Google.</span></li>
+              <li><span>Abra o <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a> e entre com sua conta Google.</span></li>
               <li><span>Clique em <strong>Create API key</strong>.</span></li>
               <li><span>Escolha um projeto existente ou crie um novo.</span></li>
               <li><span>Copie a chave (começa com <code>AIza</code>) e cole no app.</span></li>
             </ol>
             <div class="pg-prov-f">
-              <a class="btn btn-ghost btn-sm" href="https://aistudio.google.com/apikey" rel="noopener">Abrir aistudio.google.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <a class="btn btn-ghost btn-sm" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Abrir aistudio.google.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
               <span class="lim">No plano grátis, o Google <b>pode usar o que você envia</b> para melhorar os produtos dele.</span>
             </div>
           </article>
@@ -149,12 +153,12 @@
             <div class="pg-prov-h"><h3 id="openrouter-t">OpenRouter</h3><span class="pg-tag">Modelos :free</span></div>
             <p class="uses">Só texto: refinamento, tradução e perguntas. Dá acesso a dezenas de modelos, e os que terminam em <code>:free</code> não custam nada.</p>
             <ol class="pg-steps">
-              <li><span>Abra o <a href="https://openrouter.ai/settings/keys" rel="noopener">OpenRouter</a> e entre com Google, GitHub ou e-mail.</span></li>
+              <li><span>Abra o <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener noreferrer">OpenRouter</a> e entre com Google, GitHub ou e-mail.</span></li>
               <li><span>Clique em <strong>Create Key</strong> e dê um nome. O limite de crédito é opcional.</span></li>
               <li><span>Copie a chave (começa com <code>sk-or-</code>) e cole no app.</span></li>
             </ol>
             <div class="pg-prov-f">
-              <a class="btn btn-ghost btn-sm" href="https://openrouter.ai/settings/keys" rel="noopener">Abrir openrouter.ai<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <a class="btn btn-ghost btn-sm" href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener noreferrer">Abrir openrouter.ai<svg aria-hidden="true"><use href="#i-out"/></svg></a>
               <span class="lim">Sem créditos na conta: <b>cerca de 50 pedidos por dia</b> nos modelos grátis.</span>
             </div>
           </article>
@@ -163,13 +167,13 @@
             <div class="pg-prov-h"><h3 id="mistral-t">Mistral</h3><span class="pg-tag">Sem cartão</span></div>
             <p class="uses">Voz e texto. IA europeia, com um modelo de transcrição muito bom.</p>
             <ol class="pg-steps">
-              <li><span>Abra o <a href="https://console.mistral.ai" rel="noopener">console da Mistral</a> e crie sua conta.</span></li>
+              <li><span>Abra o <a href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">console da Mistral</a> e crie sua conta.</span></li>
               <li><span>Escolha o plano gratuito (<strong>Experiment</strong>). Ele não pede cartão.</span></li>
               <li><span>Em <strong>API Keys</strong>, crie uma chave nova.</span></li>
               <li><span>Copie a chave e cole no app.</span></li>
             </ol>
             <div class="pg-prov-f">
-              <a class="btn btn-ghost btn-sm" href="https://console.mistral.ai" rel="noopener">Abrir console.mistral.ai<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <a class="btn btn-ghost btn-sm" href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">Abrir console.mistral.ai<svg aria-hidden="true"><use href="#i-out"/></svg></a>
             </div>
           </article>
 
@@ -177,12 +181,12 @@
             <div class="pg-prov-h"><h3 id="tavily-t">Tavily</h3><span class="pg-tag">Busca na web</span></div>
             <p class="uses">Opcional. Dá ao assistente por voz (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>U</kbd>) acesso à internet: ele pesquisa e responde citando as fontes.</p>
             <ol class="pg-steps">
-              <li><span>Abra o <a href="https://app.tavily.com" rel="noopener">Tavily</a> e crie sua conta.</span></li>
+              <li><span>Abra o <a href="https://app.tavily.com" target="_blank" rel="noopener noreferrer">Tavily</a> e crie sua conta.</span></li>
               <li><span>A chave (começa com <code>tvly-</code>) já aparece no painel.</span></li>
               <li><span>Copie e cole no app.</span></li>
             </ol>
             <div class="pg-prov-f">
-              <a class="btn btn-ghost btn-sm" href="https://app.tavily.com" rel="noopener">Abrir app.tavily.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <a class="btn btn-ghost btn-sm" href="https://app.tavily.com" target="_blank" rel="noopener noreferrer">Abrir app.tavily.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
               <span class="lim">Plano grátis: <b>1.000 créditos por mês</b>, sem cartão.</span>
             </div>
           </article>
@@ -197,7 +201,7 @@
           <li>A ordem dos provedores é a ordem de tentativa. Arraste para mudar.</li>
         </ul>
         <h3>Onde a chave fica guardada</h3>
-        <p>No <strong>Gerenciador de Credenciais do Windows</strong> (no Linux, no chaveiro do sistema). Só em casos raros, com o cofre indisponível ou recusando uma chave muito longa, ela fica num arquivo local na sua pasta de usuário. Ela só sai do seu PC para o próprio provedor, a cada pedido.</p>
+        <p>No <strong>Gerenciador de Credenciais do Windows</strong>. Só em casos raros, com o cofre indisponível ou recusando uma chave muito longa, ela fica num arquivo local na sua pasta de usuário. Ela só sai do seu PC para o próprio provedor, a cada pedido.</p>
         <h3>Mais de uma chave</h3>
         <p>Você pode cadastrar várias chaves no mesmo provedor. Quando uma bate no limite ou falha, o FlowVoice passa para a próxima automaticamente.</p>
         <h3>E quando um modelo é aposentado?</h3>
@@ -246,7 +250,7 @@
           <li><strong>Sendo honesto:</strong> offline é mais lento que a nuvem, principalmente com os modelos grandes em PCs modestos. O modo local precisa de um processador com AVX2 (a maioria dos últimos dez anos tem; se o seu não tiver, o app avisa).</li>
           <li>O modelo só ocupa memória enquanto você dita e é liberado poucos segundos depois.</li>
           <li>Cada modelo é baixado uma vez, só quando você pede, e pode ser <strong>apagado a qualquer momento</strong> na mesma tela.</li>
-          <li>Para refinar o texto sem internet também, use o <a href="https://ollama.com/download" rel="noopener">Ollama</a>, que roda uma IA de texto no seu PC.</li>
+          <li>Para refinar o texto sem internet também, use o <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Ollama</a>, que roda uma IA de texto no seu PC.</li>
         </ul>
       </section>
     </div>
@@ -271,20 +275,20 @@
 <footer class="foot-site">
   <div class="wrap">
     <div class="foot-row">
-      <p class="foot-about">FlowVoice 2.0 · feito no Brasil por <a href="https://caliberda.com.br" rel="noopener">Júlio Caliberda</a></p>
+      <p class="foot-about">FlowVoice 2.0 · feito no Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
       <nav aria-label="Rodapé">
         <ul>
           <li><a href="guia.html" aria-current="page">Guia de chaves</a></li>
           <li><a href="novidades.html">Novidades</a></li>
           <li><a href="privacidade.html">Privacidade</a></li>
-          <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a></li>
-          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" rel="noopener">Licença GPL-3.0</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Licença GPL-3.0</a></li>
         </ul>
       </nav>
     </div>
     <div class="foot-bottom">
       <span>© 2026 Júlio Caliberda</span>
-      <span>Apoie o projeto: <a href="https://livepix.gg/caliberda" rel="noopener">Pix</a> · <a href="https://github.com/sponsors/cesarkali" rel="noopener">GitHub Sponsors</a></span>
+      <span>Apoie o projeto: <a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
     </div>
   </div>
 </footer>

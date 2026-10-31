@@ -7,8 +7,9 @@
 <meta name="description" content="O que mudou no FlowVoice 2.0: reescrito do zero em Rust, prévia ao vivo, estilo Prompt, modo Comando, troca automática de modelos aposentados, modo offline com modelo para pt-BR e mais.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#f6f6f4">
-<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <link rel="canonical" href="https://flowvoice.caliberda.com.br/novidades">
 
 <meta property="og:type" content="article">
@@ -34,7 +35,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="pages.css">
-<script>document.documentElement.classList.add("js")</script>
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
 </head>
 <body class="pg">
 <a class="skip" href="#main">Pular para o conteúdo</a>
@@ -46,6 +47,8 @@
     <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
     <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
   </defs>
 </svg>
 
@@ -57,9 +60,10 @@
       <a href="./#gratis">Grátis e offline</a>
       <a href="guia.html">Guia de chaves</a>
       <a href="novidades.html" aria-current="page">Novidades</a>
-      <a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
     </nav>
     <div class="top-cta">
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="Tema escuro" title="Tema escuro"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
       <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar</a>
       <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menu"><span></span></button>
     </div>
@@ -72,7 +76,7 @@
       <div class="pg-head-in">
         <h1>2.0: reescrito do <span class="nowrap">zero.<span class="caret" aria-hidden="true"></span></span></h1>
         <p class="pg-lede">O FlowVoice foi refeito por inteiro, do motor à interface. Ficou mais rápido, mais leve e muito mais difícil de quebrar quando um provedor muda as regras.</p>
-        <p class="pg-meta"><span>Versão <b>2.0</b></span><span>Windows e Linux</span><span>Atualiza sozinho</span></p>
+        <p class="pg-meta"><span>Versão <b>2.0</b></span><span>Windows 10 e 11</span><span>Atualiza sozinho</span></p>
       </div>
     </div>
   </header>
@@ -183,9 +187,8 @@
           <li><span>1.9</span>Busca na web pelo Tavily no modo Pesquisa, senha para revelar as chaves e interface em português, inglês e espanhol.</li>
           <li><span>1.8</span>Overlay redesenhado e filtro contra “alucinações” da transcrição.</li>
           <li><span>1.5–1.7</span>Atualização automática dentro do app.</li>
-          <li><span>1.4</span>Versão para Ubuntu, com instalador .deb.</li>
         </ul>
-        <p class="pg-gap">Notas completas de cada versão no <a href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">GitHub Releases</a>.</p>
+        <p class="pg-gap">Notas completas de cada versão no <a href="https://github.com/cesarkali/Flow-Voice/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>.</p>
       </div>
     </section>
   </div>
@@ -209,20 +212,20 @@
 <footer class="foot-site">
   <div class="wrap">
     <div class="foot-row">
-      <p class="foot-about">FlowVoice 2.0 · feito no Brasil por <a href="https://caliberda.com.br" rel="noopener">Júlio Caliberda</a></p>
+      <p class="foot-about">FlowVoice 2.0 · feito no Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
       <nav aria-label="Rodapé">
         <ul>
           <li><a href="guia.html">Guia de chaves</a></li>
           <li><a href="novidades.html" aria-current="page">Novidades</a></li>
           <li><a href="privacidade.html">Privacidade</a></li>
-          <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a></li>
-          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" rel="noopener">Licença GPL-3.0</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Licença GPL-3.0</a></li>
         </ul>
       </nav>
     </div>
     <div class="foot-bottom">
       <span>© 2026 Júlio Caliberda</span>
-      <span>Apoie o projeto: <a href="https://livepix.gg/caliberda" rel="noopener">Pix</a> · <a href="https://github.com/sponsors/cesarkali" rel="noopener">GitHub Sponsors</a></span>
+      <span>Apoie o projeto: <a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
     </div>
   </div>
 </footer>

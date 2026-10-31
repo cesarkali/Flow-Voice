@@ -37,6 +37,81 @@
     matchMedia("(min-width: 861px)").addEventListener("change", (e) => { if (e.matches) setMenu(false); });
   }
 
+  /* ---------- theme: follows the OS until the visitor picks one; the pick is remembered ----------
+     The inline script in <head> applies a stored pick before first paint; this keeps the button,
+     the theme-color metas and color-scheme in step. */
+  const themeBtn = $(".theme-btn");
+  if (themeBtn) {
+    const root = document.documentElement;
+    const osDark = matchMedia("(prefers-color-scheme: dark)");
+    const COLORS = { light: "#f6f6f4", dark: "#0b0b0a" };
+    const current = () => root.getAttribute("data-theme") || (osDark.matches ? "dark" : "light");
+    const sync = () => {
+      const stored = root.getAttribute("data-theme");
+      const dark = current() === "dark";
+      themeBtn.setAttribute("aria-pressed", String(dark));
+      // with no stored pick the media-based metas already match the OS; with a pick both follow it
+      $$('meta[name="theme-color"]').forEach((m) => {
+        const media = m.getAttribute("media") || "";
+        m.content = stored ? COLORS[stored] : media.includes("dark") ? COLORS.dark : COLORS.light;
+      });
+      const cs = $('meta[name="color-scheme"]');
+      if (cs) cs.content = stored || "light dark";
+    };
+    const apply = (next) => {
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("fv-theme", next); } catch {}
+      sync();
+    };
+    /* Only a click animates (never the first paint or an OS change). The new theme is revealed by a circle
+       growing from the switch; without View Transitions, a short colour crossfade; reduced motion, instant. */
+    themeBtn.addEventListener("click", () => {
+      const next = current() === "dark" ? "light" : "dark";
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) { apply(next); return; }
+      if (!document.startViewTransition) {
+        root.classList.add("theme-fade");
+        apply(next);
+        setTimeout(() => root.classList.remove("theme-fade"), 300);
+        return;
+      }
+      const r = themeBtn.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      const end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      root.classList.add("theme-vt");
+      const vt = document.startViewTransition(() => apply(next));
+      vt.ready.then(() => {
+        root.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] },
+          { duration: 520, easing: "cubic-bezier(0.22, 1, 0.36, 1)", pseudoElement: "::view-transition-new(root)" },
+        );
+      }).catch(() => {});
+      vt.finished.finally(() => root.classList.remove("theme-vt"));
+    });
+    osDark.addEventListener("change", sync);
+    sync();
+  }
+
+  /* ---------- page loader: if the next page takes more than ~120 ms, a caret types a line across the top ----------
+     Internal page links only (not same-page anchors, new tabs, downloads or modified clicks). */
+  const bar = document.createElement("div");
+  bar.className = "nav-progress";
+  bar.setAttribute("aria-hidden", "true");
+  document.body.append(bar);
+  let barTimer = 0;
+  const pagePath = (p) => p.replace(/index\.html$/, "");
+  document.addEventListener("click", (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest("a[href]");
+    if (!a || (a.target && a.target !== "_self") || a.hasAttribute("download") || a.hasAttribute("data-dl")) return;
+    const u = new URL(a.href, location.href);
+    if (u.origin !== location.origin || pagePath(u.pathname) === pagePath(location.pathname)) return;
+    clearTimeout(barTimer);
+    barTimer = setTimeout(() => bar.classList.add("go"), 120);
+  });
+  // back/forward cache: the page comes back exactly as it was left, so clear the loader
+  addEventListener("pageshow", () => { clearTimeout(barTimer); bar.classList.remove("go"); });
+
   /* Older markup on secondary pages may still carry data-reveal; it is visible by default now. */
   $$("[data-reveal]").forEach((el) => el.classList.add("in"));
 
@@ -57,7 +132,7 @@
       {
         app: "ChatGPT", style: "Prompt",
         said: "é, eu preciso de um script em python que lê uma planilha do excel, né, e manda um e-mail pra cada cliente com a fatura atrasada há mais de dez dias",
-        out: "Escreva um script em Python que leia uma planilha do Excel e envie um e-mail a cada cliente com fatura atrasada há mais de 10 dias.",
+        out: "Preciso de um script em Python que leia uma planilha do Excel e envie um e-mail a cada cliente com fatura atrasada há mais de 10 dias.",
       },
     ];
     const panes = $$(".pane", demo);
@@ -232,40 +307,99 @@
     }
   }
 
-  /* ---------- styles switcher ---------- */
+  /* ---------- styles switcher ----------
+     Each style has its own scene: what was said, where, and what lands at the cursor. Prompt has the app's
+     three intensities. The said line and the result sit in stacks with hidden copies of every variant, so the
+     card keeps one height and the tabs never move. */
   const styler = $(".styler");
   if (styler) {
-    const OUT = {
+    const icon = (app) => `<img src="assets/apps/${app}.svg" alt="" width="16" height="16">`;
+    const STY = {
       natural: {
-        text: "Pessoal, a reunião de quinta vai ser às 10h. Quem não puder, me avisa.",
+        ctx: icon("whatsapp") + "no WhatsApp",
+        said: "“<s>é,</s> mãe, vou chegar mais tarde hoje, <s>tipo,</s> o trânsito tá parado aqui na marginal, <s>né,</s> guarda um prato pra mim que eu janto quando chegar”",
+        text: "Mãe, vou chegar mais tarde hoje, o trânsito tá parado aqui na Marginal. Guarda um prato pra mim que eu janto quando chegar.",
         desc: "Corrige e limpa a fala, mantendo o seu jeito de falar.",
       },
       professional: {
-        text: "Olá a todos, a reunião de quinta-feira será às 10h. Quem não puder participar, por favor me avise.",
+        ctx: icon("outlook") + "no Outlook",
+        said: "“<s>é,</s> oi, pessoal, <s>então,</s> sobre o relatório do trimestre, <s>né,</s> eu preciso que cada um mande a sua parte até sexta, <s>tipo,</s> até o meio-dia, pra eu conseguir revisar tudo antes da reunião de segunda”",
+        text: "Olá, pessoal. Sobre o relatório trimestral: preciso que cada um envie a sua parte até sexta-feira, ao meio-dia, para que eu consiga revisar tudo antes da reunião de segunda-feira.",
         desc: "Formal e organizado, pronto para e-mail.",
       },
       prompt: {
-        text: "Reunião de quinta às 10h. Quem não puder participar deve avisar.",
-        desc: "Enxuto para mandar a uma IA: sem rodeios, mesmo contexto, menos tokens.",
+        ctx: icon("claude") + "no Claude",
+        said: "“<s>é, então,</s> eu queria que você me ajudasse a corrigir uma função em JavaScript, <s>né,</s> ela devia somar os preços do carrinho, mas tá retornando NaN quando algum produto vem sem preço, <s>tipo,</s> e não muda o nome da função porque ela é usada em outros lugares”",
+        levels: {
+          light: {
+            text: "Eu queria que você me ajudasse a corrigir uma função em JavaScript. Ela devia somar os preços do carrinho, mas tá retornando NaN quando algum produto vem sem preço. E não muda o nome da função, porque ela é usada em outros lugares.",
+            desc: "Fraco: só tira vícios e palavras sobrando; mantém as suas frases.",
+          },
+          medium: {
+            text: "Preciso corrigir uma função em JavaScript que deveria somar os preços do carrinho, mas retorna NaN quando algum produto vem sem preço. Não mude o nome da função: ela é usada em outros lugares.",
+            desc: "Médio: enxuga com equilíbrio para mandar a uma IA, sem perder contexto.",
+          },
+          strong: {
+            text: "Corrigir função JavaScript que soma os preços do carrinho:\n- retorna NaN quando um produto vem sem preço\n- não mudar o nome (usada em outros lugares)",
+            desc: "Forte: condensa em tópicos curtos, sem perder requisitos, números e prazos.",
+          },
+        },
       },
       raw: {
-        text: "pessoal a reunião de quinta vai ser às dez e quem não puder me avisa",
-        desc: "Só as palavras: sem pontuação e sem IA.",
+        ctx: icon("chrome") + "na busca do Chrome",
+        said: "“melhores fones bluetooth até 300 reais, <s>tipo,</s> com cancelamento de ruído, <s>né,</s> pra usar na academia”",
+        text: "Melhores fones bluetooth até 300 reais com cancelamento de ruído pra usar na academia",
+        desc: "Só as palavras: sem pontuação e sem IA. Bom para buscas e anotações rápidas.",
       },
       verbatim: {
-        text: "É, tipo, pessoal, a reunião de quinta vai ser às dez, né, e quem não puder me avisa.",
-        desc: "Exatamente o que foi transcrito, sem passar por IA.",
+        ctx: "nas notas de uma entrevista",
+        said: "“é, então, a ideia é a gente lançar em março, né, mas, tipo, só se o teste com os clientes der certo”",
+        text: "É, então, a ideia é a gente lançar em março, né? Mas, tipo, só se o teste com os clientes der certo.",
+        desc: "Exatamente o que foi transcrito, com cada “né” e “tipo”, sem passar por IA.",
       },
     };
+    let level = "medium";
+    let currentKey = "professional";
+    const pick = (key) => (STY[key].levels ? STY[key].levels[level] : STY[key]);
+
     const tabs = $$(".tab", styler);
     const panel = $("#sty-panel");
     const out = $("[data-out]", styler);
     const desc = $("[data-desc]", styler);
+    const said = $("[data-said]", styler);
+    const ctx = $("[data-ctx]", styler);
+    const strength = $(".strength", styler);
+    const levelBtns = $$("[data-level]", styler);
     const picks = $$("[data-pick]");
 
+    /* hidden copies of every variant reserve the tallest size in each stack */
+    const sizers = (stack, list, html) => list.forEach((v) => {
+      const p = document.createElement("p");
+      p.className = stack.firstElementChild.className + " sizer";
+      p.setAttribute("aria-hidden", "true");
+      if (html) p.innerHTML = v; else p.textContent = v;
+      stack.append(p);
+    });
+    const allOut = Object.values(STY).flatMap((v) => (v.levels ? Object.values(v.levels) : [v]));
+    sizers($("[data-said-stack]", styler), Object.values(STY).map((v) => v.said), true);
+    sizers($("[data-out-stack]", styler), allOut.map((v) => v.text), false);
+
+    const render = (key, animate) => {
+      const v = pick(key);
+      out.textContent = v.text;
+      desc.textContent = v.desc;
+      said.innerHTML = STY[key].said;
+      ctx.innerHTML = STY[key].ctx;
+      strength.classList.toggle("off", !STY[key].levels);
+      levelBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.level === level)));
+      if (animate && !reduce) {
+        for (const el of [out, said]) { el.classList.remove("swap"); void el.offsetWidth; el.classList.add("swap"); }
+      }
+    };
     const setStyle = (key, focus) => {
       const tab = tabs.find((t) => t.dataset.style === key);
       if (!tab) return;
+      currentKey = key;
       tabs.forEach((t) => {
         const on = t === tab;
         t.setAttribute("aria-selected", String(on));
@@ -273,9 +407,7 @@
       });
       panel.setAttribute("aria-labelledby", tab.id);
       picks.forEach((p) => p.setAttribute("aria-pressed", String(p.dataset.pick === key)));
-      out.textContent = OUT[key].text;
-      desc.textContent = OUT[key].desc;
-      if (!reduce) { out.classList.remove("swap"); void out.offsetWidth; out.classList.add("swap"); }
+      render(key, true);
       if (focus) tab.focus();
     };
     tabs.forEach((t, i) => {
@@ -287,6 +419,7 @@
         if (e.key === "End") { e.preventDefault(); setStyle(tabs[tabs.length - 1].dataset.style, true); }
       });
     });
+    levelBtns.forEach((b) => b.addEventListener("click", () => { level = b.dataset.level; render(currentKey, true); }));
     picks.forEach((p) => p.addEventListener("click", () => setStyle(p.dataset.pick)));
     picks.forEach((p) => p.setAttribute("aria-pressed", String(p.dataset.pick === "professional")));
   }

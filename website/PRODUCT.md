@@ -2,7 +2,7 @@
 
 ## Product
 
-FlowVoice 2.0 is free, open-source (GPL-3.0) voice dictation for Windows 10/11 (and Linux, .deb for Ubuntu/Debian), made by one person in Brazil: Júlio Caliberda (GitHub `cesarkali`). Built with Tauri 2 (Rust) and Svelte 5.
+FlowVoice 2.0 is free, open-source (GPL-3.0) voice dictation for Windows 10/11, made by one person in Brazil: Júlio Caliberda (GitHub `cesarkali`). Built with Tauri 2 (Rust) and Svelte 5.
 
 Mechanism, in one sentence: press a hotkey in any app, speak, and the text appears where the cursor is, already cleaned up by AI in the style that app needs.
 
@@ -17,7 +17,7 @@ Mechanism, in one sentence: press a hotkey in any app, speak, and the text appea
 - Voice assistant (`Ctrl + Shift + U`) with web search via Tavily.
 - Providers: Groq (recommended, free, no card), Google Gemini (free tier; Google may use data), Mistral (free), OpenRouter (`:free` models), OpenAI (paid), Ollama (local). Several keys rotate; failover to next provider and to the local model.
 - 100% offline: local Whisper models (Tiny 31 MB, Base 57 MB, Small 181 MB, Distil-Whisper pt-BR 513 MB, Large v3 Turbo 547 MB), downloaded only if wanted.
-- Keys stored in the Windows Credential Manager (Secret Service on Linux). No account, no FlowVoice server.
+- Keys stored in the Windows Credential Manager. No account, no FlowVoice server.
 - Installer ~3 MB, no admin needed, auto-updates. Unsigned installer: SmartScreen warning is expected.
 - Interface in PT, EN, ES. Imports 1.x keys automatically.
 
@@ -37,3 +37,7 @@ Primary action: "Baixar para Windows" → `https://github.com/cesarkali/Flow-Voi
 
 - Logo: dark rounded tile, light voice bars turning into a red I-beam text cursor. Accent `#FF2E00` (the app's own record/caret red).
 - Owner's verdict on the previous site: "ugly, AI copycat, wrong app icons, a Wikipedia". Wanted: basic, elegant, beautiful, professional; little text; real app icons.
+
+## Platform (owner decision, 2026-10-31)
+
+Windows only on the site, for now. The Linux build is not tested yet, so no page mentions Linux, Ubuntu, Debian or `.deb` (JSON-LD `operatingSystem` is "Windows 10, Windows 11"), and the site makes no "em breve" promise for it.
