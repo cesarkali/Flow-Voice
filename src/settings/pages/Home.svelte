@@ -398,13 +398,15 @@
                         <button
                           type="button"
                           class="rchip"
-                          class:loading={redoing?.id === h.id}
+                          class:on={h.style_id === "command"}
+                          class:loading={redoing?.id === h.id && redoing.key === "command"}
                           disabled={!!redoing}
-                          onclick={() => redo(h, h.style_id, h.target ?? null, "cmd")}
+                          title={t("ovx.redo_tip")}
+                          onclick={() => redo(h, "command", h.target ?? null, "command")}
                         >
-                          <Icon name="refresh" size={13} />{t("hx.redo_cmd")}
+                          <Icon name="refresh" size={13} />{t("ovx.redo")}
                         </button>
-                      {:else}
+                      {/if}
                         {#each s.styles as st (st.id)}
                           <button
                             type="button"
@@ -426,7 +428,6 @@
                             onchange={(v) => v !== (h.target ?? null) && redo(h, h.style_id, v, "lang")}
                           />
                         </span>
-                      {/if}
                     </div>
                     {#if redoMsg?.id === h.id}
                       <p class="redo-msg" class:bad={!redoMsg.ok} role="status" in:fly={{ y: 4, duration: 160 }}>

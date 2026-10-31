@@ -249,6 +249,12 @@ pub fn cancel_recording(app: AppHandle) {
     pipeline::control(&app, pipeline::Ctl::Cancel);
 }
 
+/// Command card: rewrite the selection in a style instead of speaking an instruction.
+#[tauri::command]
+pub fn command_style(app: AppHandle, style_id: String, target: Option<String>) {
+    pipeline::control(&app, pipeline::Ctl::CommandStyle(style_id, target));
+}
+
 #[tauri::command]
 pub async fn reprocess_history(
     app: AppHandle,

@@ -66,6 +66,8 @@ export const api = {
     call<DictationResult>("reprocess", { styleId, target }),
   /** History: redo any saved dictation from its original transcript with another style/language
    *  (the item is updated in place and the result is copied). */
+  /** Command card: rewrite the selected text in a style (no spoken instruction needed). */
+  commandStyle: (styleId: string, target: string | null) => call<void>("command_style", { styleId, target }),
   reprocessHistory: (id: string, styleId: string, target: string | null) =>
     call<DictationResult>("reprocess_history", { id, styleId, target }),
   /** Paste into the app that was focused when recording started. replace = undo the previous paste first. */

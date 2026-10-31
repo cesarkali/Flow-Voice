@@ -89,6 +89,9 @@ pub enum Ctl {
     Cancel,
     /// Esc: cancel the recording, or the processing on screen, or close the card.
     Escape,
+    /// Command card: rewrite the selected text in a style (and/or translate it) instead of a
+    /// spoken instruction.
+    CommandStyle(String, Option<String>),
 }
 
 static CTL: once_cell::sync::OnceCell<parking_lot::Mutex<std::sync::mpsc::Sender<Ctl>>> = once_cell::sync::OnceCell::new();
@@ -114,7 +117,121 @@ fn run_ctl(app: &AppHandle, c: Ctl) {
         Ctl::Stop => stop(app),
         Ctl::Cancel => cancel(app),
         Ctl::Escape => escape(app),
+        Ctl::CommandStyle(style, target) => command_style(app, style, target),
     }
+}
+
+/// Style id of a Command result that came from a spoken instruction (not from a style chip).
+pub const COMMAND_STYLE: &str = "command";
+
+/// Command card → style chip: stop listening (the audio is dropped), take the selection and
+/// rewrite it in that style (and/or translate it), then paste it over the selection.
+fn command_style(app: &AppHandle, style_id: String, target: Option<String>) {
+    let st = state(app);
+    let session = {
+        let mut guard = st.session.lock();
+        if !guard.as_ref().is_some_and(|s| s.mode == RecordMode::Command) {
+            return;
+        }
+        guard.take().unwrap()
+    };
+    session.stop_flag.store(true, Ordering::SeqCst);
+    let duration_ms = session.started.elapsed().as_millis() as u64;
+    let (target_window, selection, app_ctx) = (session.target_window, session.selection.clone(), session.app.clone());
+    drop(session.rec);
+    after_recording(app);
+    let gen = DICTATION.fetch_add(1, Ordering::SeqCst) + 1;
+    let busy = BusyGuard::new();
+    let s = st.settings();
+    let provider_hint = first_llm(app, &s).map(display_name).unwrap_or("IA");
+    emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint, "mode": "command" }));
+    log::info!("command: style {style_id} on the selection");
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let _busy = busy;
+        let work = async {
+            let source = resolve_selection(&selection, target_window).await?;
+            let s = state(&app).settings();
+            let style = s.style(&style_id);
+            let mut result = DictationResult {
+                id: new_id(),
+                ts: chrono::Local::now().to_rfc3339(),
+                mode: RecordMode::Command,
+                // Also the instruction used by "Outra versão" later.
+                raw: format!("Reescreva no estilo {}", style.name),
+                text: String::new(),
+                style_id: style.id.clone(),
+                target: target.filter(|t| !t.is_empty()),
+                provider: None,
+                stt_provider: String::new(),
+                pasted: false,
+                duration_ms,
+                warnings: vec![],
+                app: app_ctx.as_ref().map(|c| c.id.clone()),
+                app_name: app_ctx.as_ref().map(|c| c.name.clone()),
+                source: Some(source),
+            };
+            style_selection_into(&app, &mut result, &s, None).await;
+            if !is_current(gen) {
+                return Ok(());
+            }
+            finish_dictation(&app, result, target_window, gen, &s).await
+        };
+        let res = tokio::time::timeout(PROCESS_DEADLINE, work).await.unwrap_or_else(|_| {
+            Err(perr("Demorou demais — os serviços não responderam. Tente de novo.", None, None))
+        });
+        if let Err(e) = res {
+            log::warn!("command style failed: {e}");
+            if !owns_overlay(&app, gen) {
+                return;
+            }
+            let (message, detail, raw) = match e.downcast::<PipelineError>() {
+                Ok(pe) => (pe.message, pe.detail, pe.raw),
+                Err(e) => (e.to_string(), None, None),
+            };
+            overlay_error(&app, &message, detail, raw);
+        }
+    });
+}
+
+/// A Command with a regular style: the selected text is treated as the transcript and gets the
+/// same rewrite (and translation) a dictation would. `result.style_id` must be that style.
+async fn style_selection_into(app: &AppHandle, result: &mut DictationResult, s: &Settings, progress: Option<u64>) {
+    let mut tmp = result.clone();
+    tmp.raw = result.source.clone().unwrap_or_default();
+    // Written text, not speech: no filler removal ("tipo", "né" can be meant there).
+    let mut s2 = s.clone();
+    s2.remove_fillers = false;
+    refine_into(app, &mut tmp, &s2, progress).await;
+    result.text = tmp.text;
+    result.provider = tmp.provider;
+    result.warnings = tmp.warnings;
+}
+
+/// Paste (auto-paste on), history, `last` and the result card — shared end of every dictation.
+async fn finish_dictation(app: &AppHandle, mut result: DictationResult, target_window: isize, gen: u64, s: &Settings) -> Result<()> {
+    if s.auto_paste {
+        let text = result.text.clone();
+        let pasted = tauri::async_runtime::spawn_blocking(move || platform::paste(&text, target_window, false))
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+        match pasted {
+            Ok(true) => result.pasted = true,
+            Ok(false) => result.warnings.push("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.".into()),
+            Err(e) => result.warnings.push(e.to_string()),
+        }
+    } else if let Err(e) = platform::set_clipboard(&result.text) {
+        result.warnings.push(e.to_string());
+    }
+    state(app).push_history(&result);
+    if LAST_GEN.fetch_max(gen, Ordering::SeqCst) <= gen {
+        *state(app).last.lock() = Some((result.clone(), target_window));
+    }
+    let _ = app.emit("history-changed", ());
+    if emit_owned(app, gen, json!({ "phase": "done", "result": result })) {
+        crate::hotkeys::register_escape(app, true);
+    }
+    Ok(())
 }
 
 pub fn control(app: &AppHandle, c: Ctl) {
@@ -770,6 +887,7 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
         source,
     };
     if mode == RecordMode::Command {
+        result.style_id = COMMAND_STYLE.into();
         command_into(app, &mut result, &s, Some(gen)).await?;
     } else {
         refine_into(app, &mut result, &s, Some(gen)).await;
@@ -894,8 +1012,21 @@ async fn command_into(app: &AppHandle, result: &mut DictationResult, s: &Setting
     }
 }
 
-/// Re-runs the last transcript with another style/target (overlay chips). A Command result is
-/// re-applied to the same selection (the style is ignored; a target also translates it).
+/// A Command result redone from its original selection: "command" (or the legacy "redo")
+/// asks for another version of the spoken instruction; any other id rewrites the selection in
+/// that style. A target also translates.
+async fn command_restyle(app: &AppHandle, result: &mut DictationResult, s: &Settings, style_id: String) -> Result<()> {
+    if style_id == COMMAND_STYLE || style_id == "redo" {
+        result.style_id = COMMAND_STYLE.into();
+        command_into(app, result, s, None).await
+    } else {
+        result.style_id = style_id;
+        style_selection_into(app, result, s, None).await;
+        Ok(())
+    }
+}
+
+/// Re-runs the last transcript with another style/target (overlay chips).
 pub async fn reprocess(app: &AppHandle, style_id: String, target: Option<String>) -> Result<DictationResult> {
     let (mut result, window) = state(app).last.lock().clone().ok_or_else(|| anyhow!("nada para refazer"))?;
     let s = state(app).settings();
@@ -904,7 +1035,7 @@ pub async fn reprocess(app: &AppHandle, style_id: String, target: Option<String>
     // Keep `pasted` so the card knows the previous version is in the target app (for "Substituir").
     // The overlay stays on the result card: no progress events, just a final "done".
     if result.mode == RecordMode::Command {
-        command_into(app, &mut result, &s, None).await?;
+        command_restyle(app, &mut result, &s, style_id).await?;
     } else {
         result.style_id = style_id;
         refine_into(app, &mut result, &s, None).await;
@@ -948,7 +1079,7 @@ pub async fn reprocess_history(app: &AppHandle, id: String, style_id: String, ta
     result.target = target.filter(|t| !t.is_empty());
     result.warnings.clear();
     if result.mode == RecordMode::Command {
-        command_into(app, &mut result, &s, None).await?;
+        command_restyle(app, &mut result, &s, style_id).await?;
     } else {
         result.style_id = style_id;
         result.mode = if result.target.is_some() { RecordMode::Translate } else { RecordMode::Dictate };

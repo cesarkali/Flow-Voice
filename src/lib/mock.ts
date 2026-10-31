@@ -685,6 +685,16 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       mockEmit(EVENTS.overlayState, { phase: "done", result: clone(lastResult) } satisfies OverlayEvent);
       return clone(lastResult);
     }
+    case "command_style": {
+      // Like Rust: the listening card turns into "applying", then the restyled selection.
+      stopSimulation();
+      mockEmit(EVENTS.overlayState, { phase: "refining", provider: "Groq", mode: "command" } satisfies OverlayEvent);
+      await sleep(1100);
+      const target = (a.target as string | null) ?? null;
+      lastResult = { ...makeCommand(target), style_id: String(a.styleId), raw: "Reescreva no estilo " + String(a.styleId) };
+      mockEmit(EVENTS.overlayState, { phase: "done", result: clone(lastResult) } satisfies OverlayEvent);
+      return;
+    }
     case "reprocess_history": {
       await sleep(900);
       const i = history.findIndex((h) => h.id === a.id);

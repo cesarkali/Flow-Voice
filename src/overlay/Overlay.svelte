@@ -82,6 +82,9 @@
 
   const live = $derived(ev.phase === "listening" && ev.live);
   const hasText = $derived(live && chunks.length > 0);
+  /** Command while listening (toggle mode): the styles can be applied to the selection without
+   *  speaking. Not in push-to-talk, where the keys are still held. */
+  const cmdChips = $derived(ev.phase === "listening" && ev.mode === "command" && ev.selection !== "at_stop");
   const position = $derived(settings?.overlay_position ?? "bottom");
   const sz = $derived(SIZES[settings?.overlay_width ?? "normal"] ?? SIZES.normal);
   const fit = $derived(view === "processing" || view === "answer");
@@ -89,10 +92,10 @@
   /** Size of the newest content layer, tagged with the layer it came from. */
   let measured = $state({ key: "", w: 0, h: 0 });
   const fixedW = $derived(
-    view === "listening" ? (hasText ? sz.live : sz.cap) : view === "done" ? sz.card : view === "error" ? sz.err : 300,
+    view === "listening" ? (hasText || cmdChips ? sz.live : sz.cap) : view === "done" ? sz.card : view === "error" ? sz.err : 300,
   );
   const targetW = $derived(Math.min(MAX_W - M * 2, fit && measured.key === layerKey ? measured.w : fixedW));
-  const targetR = $derived(view === "done" || view === "error" ? 18 : view === "listening" && hasText ? 22 : ROW_H / 2 + 1);
+  const targetR = $derived(view === "done" || view === "error" ? 18 : view === "listening" && (hasText || cmdChips) ? 22 : ROW_H / 2 + 1);
   const waveMode = $derived(!visible ? "off" : view === "listening" ? "listen" : fit ? "proc" : "off");
 
   // ------------------------------------------------------------ sounds (tiny synthesized blips, no assets)
@@ -1054,6 +1057,34 @@
                   <Icon name="x" size={16} />
                 </button>
               </div>
+              {#if cmdChips}
+                <div class="cmdstyles" in:rise={{ delay: 140, y: 8 * dir }} out:fadeOut>
+                  <span class="cmdlab">{t("ovx.cmd_or_style")}</span>
+                  <div class="cmdrow">
+                    {#each settings?.styles ?? [] as st, i (st.id)}
+                      <button
+                        type="button"
+                        class="chip"
+                        style="--i:{i}"
+                        data-tip={st.description || null}
+                        onclick={() => api.commandStyle(st.id, null)}
+                      >
+                        {st.name}
+                      </button>
+                    {/each}
+                    <button
+                      type="button"
+                      class="chip"
+                      data-k="translate"
+                      data-tip={t("ovx.cmd_translate_tip", { lang: langName(settings?.translation_target ?? "en") })}
+                      onclick={() => api.commandStyle(settings?.active_style ?? "natural", settings?.translation_target ?? "en")}
+                    >
+                      <Icon name="translate" size={14} />{t("ov.translate")}
+                      <Flag code={settings?.translation_target ?? "en"} size={16} />
+                    </button>
+                  </div>
+                </div>
+              {/if}
               {#if hasText}
                 <div class="live" in:rise={{ delay: 120, y: 10 * dir }} out:fadeOut>
                   <div class="lwin" style="--llh:{LIVE_LH}px;--llines:{LIVE_LINES}">
@@ -1087,7 +1118,7 @@
                   {:else if result.target}
                     <span class="iflag"><Flag code={result.target} size={16} /></span>{t("ov.translate_to", { lang: langName(result.target) })}
                   {:else}
-                    {isCommand ? t("mode.command") : styleName(result.style_id)}
+                    {isCommand && result.style_id === "command" ? t("mode.command") : styleName(result.style_id)}
                   {/if}
                   {#if result.app_name && !busy}<span class="app">· {result.app_name}</span>{/if}
                   {#if result.provider && !showOriginal && !busy}<span class="via">· {result.provider}</span>{/if}
@@ -1169,35 +1200,36 @@
                       {/each}
                     {:else}
                       {#if isCommand}
-                        <!-- a Command has no styles: re-apply the same instruction to the same selection -->
+                        <!-- the spoken instruction again, on the same selection, for a different take -->
                         <button
                           type="button"
                           class="chip"
                           data-k="redo"
                           style="--i:0"
-                          class:loading={pending?.key === "redo"}
+                          class:on={!showOriginal && result.style_id === "command"}
+                          class:loading={pending?.key === "command"}
                           disabled={busy}
                           data-tip={t("ovx.redo_tip")}
-                          onclick={() => reprocess("redo", null)}
+                          onclick={() => reprocess("command", result!.target ?? null)}
                         >
                           <Icon name="refresh" size={14} />{t("ovx.redo")}
                         </button>
-                      {:else}
-                        {#each settings?.styles ?? [] as st, i (st.id)}
-                          <button
-                            type="button"
-                            class="chip"
-                            style="--i:{i}"
-                            class:on={!showOriginal && result.style_id === st.id}
-                            class:loading={pending?.key === st.id}
-                            disabled={busy}
-                            data-tip={st.description || null}
-                            onclick={() => reprocess(st.id, result!.target ?? null)}
-                          >
-                            {st.name}
-                          </button>
-                        {/each}
                       {/if}
+                      <!-- a Command's styles rewrite the text that was selected -->
+                      {#each settings?.styles ?? [] as st, i (st.id)}
+                        <button
+                          type="button"
+                          class="chip"
+                          style="--i:{i + (isCommand ? 1 : 0)}"
+                          class:on={!showOriginal && result.style_id === st.id}
+                          class:loading={pending?.key === st.id}
+                          disabled={busy}
+                          data-tip={st.description || null}
+                          onclick={() => reprocess(st.id, result!.target ?? null)}
+                        >
+                          {st.name}
+                        </button>
+                      {/each}
                       <button
                         type="button"
                         class="chip"
@@ -2179,6 +2211,22 @@
     opacity: 1;
     scale: 1;
     transition-duration: 160ms, 260ms;
+  }
+
+  /* Command while listening: styles that apply to the selection without speaking */
+  .cmdstyles {
+    display: grid;
+    gap: 8px;
+    padding: 2px 14px 14px;
+  }
+  .cmdlab {
+    font-size: 11.5px;
+    color: var(--cap-dim, rgba(255, 255, 255, 0.55));
+  }
+  .cmdrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   /* countdown */

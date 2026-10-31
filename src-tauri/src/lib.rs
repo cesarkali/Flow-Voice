@@ -195,6 +195,7 @@ pub fn run() {
             commands::cancel_recording,
             commands::reprocess,
             commands::reprocess_history,
+            commands::command_style,
             commands::paste_text,
             commands::copy_text,
             commands::overlay_hold,
