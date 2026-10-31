@@ -325,7 +325,7 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
 .demo-pause[aria-pressed="true"] .ic-play { display: block; }
 
 .sheet {
-  position: relative; overflow: hidden; height: clamp(400px, 34vw, 448px);
+  position: relative; overflow: hidden; height: clamp(430px, 35vw, 466px);
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow);
 }
 .pane {
@@ -360,50 +360,247 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
 .keys kbd { font-size: 12px; transition: transform 120ms, background-color 120ms, border-color 120ms, color 120ms; }
 .keys.down kbd { transform: translateY(1px); border-bottom-width: 1px; margin-top: 1px; background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
 
-/* the overlay, faithful to the app's own */
-.ov {
-  position: absolute; left: 50%; bottom: 16px; width: min(560px, calc(100% - 24px));
-  background: var(--ov-bg); color: var(--ink-text); border-radius: 26px; padding: 18px 18px 14px 22px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 24px 48px -16px rgba(0, 0, 0, 0.45), var(--ov-ring);
-  opacity: 0; visibility: hidden; transform: translate(-50%, 18px) scale(0.98); filter: blur(6px);
-  transition: opacity 380ms var(--ease), transform 520ms var(--ease), filter 380ms var(--ease), visibility 0s 520ms;
-}
-.ov.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); filter: blur(0); transition: opacity 380ms var(--ease), transform 520ms var(--ease), filter 380ms var(--ease); }
-.ov-text { min-height: 3.2em; font-size: 16.5px; line-height: 1.6; color: var(--ink-text); }
-.ov-text .tail { color: #8c8c93; }
-.ov-row { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
+/* the small voice wave on the Command row */
 .wave { display: inline-flex; align-items: center; gap: 3px; height: 26px; flex: none; }
 .wave i { width: 3px; height: 100%; border-radius: 2px; background: var(--accent); transform: scaleY(0.22); transform-origin: center; }
-.ov.listening .wave i, .wave.sm i { animation: wv 0.86s ease-in-out infinite alternate; }
+.wave.sm i { animation: wv 0.86s ease-in-out infinite alternate; }
 .wave i:nth-child(2n) { animation-delay: -0.3s !important; animation-duration: 0.7s !important; }
 .wave i:nth-child(3n) { animation-delay: -0.55s !important; animation-duration: 1.05s !important; }
 .wave i:nth-child(5n) { animation-delay: -0.15s !important; }
 @keyframes wv { 0% { transform: scaleY(0.2); } 100% { transform: scaleY(1); } }
-.ov-meta { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; font-size: 14.5px; line-height: 1.3; color: #b2b2b8; white-space: nowrap; }
-.ov-meta > span { overflow: hidden; text-overflow: ellipsis; }
-.ov-meta b { color: var(--ink-text); font-weight: 600; }
-.ov-mode { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #8c8c93; }
-.ov-time { margin-left: auto; font-family: var(--mono); font-size: 15px; color: #c4c4c9; font-variant-numeric: tabular-nums; }
-.ov-stop { width: 40px; height: 40px; flex: none; border-radius: 50%; background: var(--ink-3); display: grid; place-items: center; }
-.ov-stop i { width: 11px; height: 11px; border-radius: 2px; background: #fff; }
-.ov-x { width: 18px; height: 18px; color: #8c8c93; flex: none; }
-.ov-x svg { width: 18px; height: 18px; }
 
-.pill {
-  position: absolute; left: 50%; bottom: 22px; display: inline-flex; align-items: center; gap: 10px;
-  height: 44px; padding: 0 18px 0 12px; border-radius: 999px; background: var(--ov-bg); color: #b2b2b8; font-size: 14.5px; white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 18px 36px -14px rgba(0, 0, 0, 0.4), var(--ov-ring);
-  opacity: 0; visibility: hidden; transform: translate(-50%, 10px); filter: blur(4px);
-  transition: opacity 320ms var(--ease), transform 420ms var(--ease), filter 320ms var(--ease), visibility 0s 420ms;
+/* ---------- the FlowVoice overlay (.fvo), rebuilt from the app's src/overlay/Overlay.svelte ----------
+   Same structure, sizes, radii, type and motion as the real one: a dark capsule (56px tall, radius 28)
+   that morphs into the live text window (radius 22), the processing pill and the result card (radius 18).
+   Colours are the app's dark capsule (--cap-*) with the accent set to the site's red, one of the app's own
+   accent choices. site.js sets the shell's width/height/radius; CSS animates the morph. */
+.fvo {
+  --cap-bg: #0e0e10; --cap-card: #141416; --cap-text: #ededea; --cap-text-2: #9b9b96;
+  --cap-line: rgba(255, 255, 255, 0.1); --cap-hover: rgba(255, 255, 255, 0.07);
+  --cap-accent: #ff2e00; --cap-accent-soft: rgba(255, 46, 0, 0.22); --cap-ok: #62d98f;
+  --morph: cubic-bezier(0.22, 1, 0.36, 1);
+  position: absolute; left: 0; right: 0; bottom: 16px; z-index: 2;
+  display: flex; justify-content: center; pointer-events: none;
+  font-family: "Segoe UI Variable Text", "Segoe UI", var(--font); font-size: 13px; line-height: 1.4;
+  color: var(--cap-text); text-align: left; letter-spacing: 0;
 }
-.pill.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); filter: blur(0); transition: opacity 320ms var(--ease), transform 420ms var(--ease), filter 320ms var(--ease); }
-.pill b { color: var(--ink-text); font-weight: 600; }
-.pill .spin { width: 18px; height: 18px; margin: 0 2px 0 4px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.16); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
-.pill .ok { width: 22px; height: 22px; border-radius: 50%; background: #4fd283; color: #0b2a17; display: grid; place-items: center; }
-.pill .ok svg { width: 14px; height: 14px; }
-.pill [data-p="done"], .pill.done [data-p="proc"] { display: none; }
-.pill.done [data-p="done"] { display: contents; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.fvo-shell {
+  position: relative; flex: none; isolation: isolate;
+  width: 388px; height: 56px; border-radius: 28px; overflow: hidden;
+  background: var(--cap-bg); border: 1px solid var(--cap-line);
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transform-origin: 50% 100%;
+  transition:
+    width 460ms cubic-bezier(0.3, 0.2, 0.15, 1), height 460ms cubic-bezier(0.3, 0.2, 0.15, 1), border-radius 460ms cubic-bezier(0.3, 0.2, 0.15, 1),
+    background-color 260ms var(--ease), box-shadow 260ms var(--ease), opacity 220ms var(--ease), transform 420ms cubic-bezier(0.25, 1.1, 0.4, 1.04), visibility 0s;
+}
+.fvo-shell.snap { transition: opacity 220ms var(--ease), transform 420ms cubic-bezier(0.25, 1.1, 0.4, 1.04), visibility 0s; }
+.fvo-shell.hidden {
+  opacity: 0; visibility: hidden; transform: translateY(10px) scale(0.94);
+  transition: opacity 170ms ease-in, transform 200ms ease-in, visibility 0s 200ms;
+}
+
+/* waveform: one set of 12 bars (3px, 3px apart), listening -> processing wave (site.js drives the listening bars) */
+.fvo-wave {
+  position: absolute; left: 19px; bottom: 0; z-index: 1; width: 69px; height: 54px;
+  display: flex; align-items: center; justify-content: space-between; pointer-events: none;
+  transition: opacity 200ms var(--ease);
+}
+.fvo-wave i { display: block; width: 3px; height: 30px; border-radius: 2px; background: var(--cap-accent); transform: scaleY(0.1); }
+.fvo-wave.m-off { opacity: 0; transition-duration: 140ms; }
+.fvo-wave.m-proc i { animation: fvo-proc 1500ms cubic-bezier(0.45, 0, 0.55, 1) infinite; animation-delay: calc(var(--i) * 125ms); }
+@keyframes fvo-proc { 0%, 100% { transform: scaleY(0.16); } 50% { transform: scaleY(var(--hi)); } }
+
+/* content layers cross-fade on top of the morphing shell, anchored bottom-centre so nothing reflows */
+.fvo-layer {
+  position: absolute; left: 50%; bottom: 0; translate: -50% 0; opacity: 0; visibility: hidden;
+  transition: opacity 140ms var(--ease), visibility 0s 140ms;
+}
+.fvo-layer.on { opacity: 1; visibility: visible; transition: opacity 280ms var(--ease) 110ms, visibility 0s; }
+.fvo-row { display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 9px 0 20px; }
+.fvo-wslot { flex: none; width: 69px; height: 30px; }
+
+.fvo-listen { display: flex; flex-direction: column-reverse; }
+.fvo-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; padding-left: 2px; }
+.fvo-mode { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cap-text-2); white-space: nowrap; }
+.fvo-sty { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fvo-app { margin-left: 0.35em; font-weight: 400; color: var(--cap-text-2); }
+.fvo-time { font-family: var(--mono); font-size: 12px; color: var(--cap-text-2); margin-right: 2px; font-variant-numeric: tabular-nums; }
+.fvo-stop, .fvo-x { flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--cap-text-2); }
+.fvo-stop { width: 34px; height: 34px; background: var(--cap-hover); color: var(--cap-text); }
+.fvo-x { width: 30px; height: 30px; }
+.fvo svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* live text: grows to three lines, then older lines slide up under a soft top fade */
+.fvo-live { display: none; padding: 6px 22px 0; }
+.fvo.has-text .fvo-live { display: block; }
+.fvo-lwin {
+  max-height: calc(8px + 22px * 3); padding-top: 8px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 6px, rgba(0, 0, 0, 0.55) 14px, #000 30px);
+  mask-image: linear-gradient(to bottom, transparent 0, transparent 6px, rgba(0, 0, 0, 0.55) 14px, #000 30px);
+}
+.fvo-lwin p { flex: none; font-size: 14.5px; line-height: 22px; letter-spacing: -0.003em; overflow-wrap: anywhere; }
+/* a word turns solid once two answers agree on it; until then it is lighter and may still change */
+.fvo .ck { transition: opacity 700ms var(--ease); }
+.fvo .ck.un { opacity: 0.7; }
+.fvo .ck.add { animation: fvo-ckadd 380ms var(--ease); }
+.fvo .ck.fix { animation: fvo-ckfix 650ms var(--ease); }
+@keyframes fvo-ckadd { from { opacity: 0; } }
+@keyframes fvo-ckfix { from { opacity: 0.3; } }
+
+.fvo-proc { width: max-content; }
+.fvo-proc .fvo-row { padding-right: 24px; }
+.fvo-pl { font-size: 13px; font-weight: 500; white-space: nowrap; }
+
+/* result card */
+.fvo-card { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px 16px; background: var(--cap-card); --fs: 14px; --lh: 21px; }
+.fvo-head { display: flex; align-items: center; gap: 8px; height: 26px; margin-right: -6px; }
+.fvo-badge { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--cap-ok); color: #0b0b0c; }
+.fvo .fvo-badge svg { width: 14px; height: 14px; stroke-width: 2.2; }
+.fvo-ht { font-weight: 600; font-size: 13px; white-space: nowrap; }
+.fvo-hm { flex: 1; min-width: 0; font-size: 12px; color: var(--cap-text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fvo-hm .fvo-app { margin-left: 0; }
+.fvo-via { font-family: var(--mono); font-size: 10.5px; }
+.fvo-rw { color: var(--cap-text); }
+.fvo-tbox { position: relative; margin-right: -4px; clip-path: inset(0); }
+.fvo-text { font-size: var(--fs); line-height: var(--lh); padding-right: 6px; white-space: pre-wrap; transition: opacity 240ms var(--ease); }
+.fvo-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fvo-chip {
+  position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 12px;
+  border-radius: 14px; border: 1px solid var(--cap-line); font-size: 12px; color: var(--cap-text-2); white-space: nowrap;
+  transition: background-color 120ms var(--ease), color 120ms var(--ease), border-color 180ms var(--ease);
+}
+.fvo .fvo-chip svg { width: 14px; height: 14px; }
+.fvo-chip.on { color: var(--cap-text); border-color: var(--cap-accent); background: var(--cap-accent-soft); }
+.fvo-chip.loading { color: var(--cap-text); border-color: var(--cap-accent); }
+.fvo-chip.loading::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cap-accent), transparent); animation: fvo-chipbar 900ms cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes fvo-chipbar { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.fvo-acts { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.fvo-esc { margin-right: auto; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--cap-text-2); opacity: 0.7; border: 1px solid var(--cap-line); border-radius: 4px; padding: 1px 5px; }
+.fvo-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 9px;
+  font-size: 12.5px; font-weight: 500; border: 1px solid var(--cap-line); color: var(--cap-text); white-space: nowrap;
+}
+.fvo .fvo-btn svg { width: 15px; height: 15px; }
+.fvo-btn.primary { background: var(--cap-accent); border-color: var(--cap-accent); color: #fff; font-weight: 600; }
+.fvo-btn[hidden] { display: none; }
+.fvo-life {
+  position: absolute; left: 16px; right: 16px; bottom: 0; height: 2px; border-radius: 2px 2px 0 0;
+  background: var(--cap-accent); opacity: 0.75; transform: scaleX(0);
+}
+.fvo-card.on .fvo-life { animation: fvo-life var(--life, 6s) linear both; }
+.fvo-card.busy .fvo-life, .paused .fvo-life { animation-play-state: paused; }
+.fvo-card.busy .fvo-life { opacity: 0.25; }
+@keyframes fvo-life { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+/* busy: rewriting in another style */
+.fvo-card.busy .fvo-text { opacity: 0.45; }
+.fvo-tbox::after {
+  content: ""; position: absolute; inset: -2px 0; pointer-events: none; opacity: 0;
+  background: linear-gradient(100deg, transparent 30%, var(--cap-accent-soft) 50%, transparent 70%); transform: translateX(-100%);
+  transition: opacity 200ms var(--ease);
+}
+.fvo-card.busy .fvo-tbox::after { opacity: 1; animation: fvo-shimmer 1300ms cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes fvo-shimmer { to { transform: translateX(100%); } }
+/* entrance details: the badge pops, the check draws, chips rise in, the text sweeps in */
+.fvo-card.on .fvo-badge { animation: fvo-badge 520ms cubic-bezier(0.2, 0.9, 0.25, 1.15) 80ms both; }
+.fvo-card.on .fvo-badge path { stroke-dasharray: 22; stroke-dashoffset: 22; animation: fvo-draw 380ms var(--morph) 260ms forwards; }
+.fvo-card.on .fvo-chip { animation: fvo-chipin 360ms var(--morph) both; animation-delay: calc(140ms + var(--i, 8) * 22ms); }
+.fvo-text.reveal {
+  -webkit-mask-image: linear-gradient(100deg, #000 42%, transparent 58%); mask-image: linear-gradient(100deg, #000 42%, transparent 58%);
+  -webkit-mask-size: 280% 100%; mask-size: 280% 100%; animation: fvo-reveal 620ms var(--morph) both;
+}
+@keyframes fvo-badge { from { transform: scale(0.3) rotate(-30deg); opacity: 0; } }
+@keyframes fvo-draw { to { stroke-dashoffset: 0; } }
+@keyframes fvo-chipin { from { opacity: 0; transform: translateY(4px) scale(0.96); } }
+@keyframes fvo-reveal {
+  from { -webkit-mask-position: 100% 0; mask-position: 100% 0; transform: translateY(3px); }
+  to { -webkit-mask-position: 0 0; mask-position: 0 0; transform: none; }
+}
+
+/* the app's "Compacto" width, used where the Normal card would not fit (phones) */
+.fvo.compact .fvo-card { --fs: 13px; --lh: 19px; padding: 11px 12px 12px 14px; gap: 9px; }
+.fvo.compact .fvo-chips { gap: 5px; }
+.fvo.compact .fvo-chip { height: 25px; padding: 0 10px; font-size: 11.5px; }
+.fvo.compact .fvo-lwin p { font-size: 13.5px; }
+.fvo.narrow .fvo-sty .fvo-app, .fvo.narrow .fvo-x, .fvo.narrow .fvo-via { display: none; }
+
+/* Vidro (2.1): a tint over Windows' own blur and a bright edge, lighter at the top; "Translúcido" is a lighter tint.
+   On the site the blur is the browser's backdrop-filter over the desktop mock, which is what Windows does natively. */
+.fvo-shell.glass {
+  --tint: color-mix(in srgb, var(--cap-bg) 58%, transparent);
+  --rim: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1) 38%, rgba(255, 255, 255, 0.05) 62%, rgba(255, 255, 255, 0.2));
+  background: var(--tint); border-color: transparent;
+  -webkit-backdrop-filter: blur(30px) saturate(1.5); backdrop-filter: blur(30px) saturate(1.5);
+}
+.fvo-shell.glass.translucent { --tint: color-mix(in srgb, var(--cap-bg) 30%, transparent); }
+.fvo-shell.glass .fvo-card { background: transparent; }
+.fvo-shell.glass::before, .fvo-shell.glight::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; }
+.fvo-shell.glass::before {
+  z-index: 5; padding: 1px; background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* "Luz e sombra como no macOS 27": sheen on the upper half, beveled edge, light along the bottom, softer wider shadow */
+.fvo-shell.glight {
+  box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0 1.5px rgba(255, 255, 255, 0.05);
+}
+.fvo-shell.glight::after {
+  inset: 0; z-index: -1;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.03) 46%, transparent 52%),
+    radial-gradient(120% 60% at 50% 115%, rgba(255, 255, 255, 0.12), transparent 70%);
+}
+
+/* ---------- the overlay section: a desktop with the capsule on top, and the look switch ---------- */
+.ovsec { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(36px, 6vw, 88px); align-items: center; }
+.ovsec h2 { font-size: clamp(2rem, 3.7vw, 3.15rem); letter-spacing: -0.035em; line-height: 1.04; }
+.ov-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 12px; }
+.ov-bar .demo-pause { margin-left: auto; }
+.ov-bar .label { margin: 0; }
+.seg { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border: 1px solid var(--line-2); border-radius: 999px; }
+.seg button, .ov-light {
+  height: 30px; padding: 0 13px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--text-2);
+  transition: background-color 160ms, color 160ms, border-color 160ms, opacity 160ms;
+}
+.seg button:hover { color: var(--text); background: var(--surface-2); }
+.seg button[aria-pressed="true"] { background: var(--btn-bg); color: var(--btn-fg); }
+.ov-light { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 10px; border: 1px solid var(--line-2); }
+.ov-light .sw { position: relative; flex: none; width: 28px; height: 16px; border-radius: 999px; background: var(--line-2); transition: background-color 160ms; }
+.ov-light .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); transition: transform 220ms var(--ease); }
+.ov-light[aria-pressed="true"] .sw { background: var(--btn-bg); }
+.ov-light[aria-pressed="true"] .sw::after { transform: translateX(12px); background: var(--btn-fg); }
+.ov-light:hover:not(:disabled) { color: var(--text); border-color: var(--text-3); }
+.ov-light:disabled { opacity: 0.45; cursor: default; }
+
+.desk {
+  position: relative; overflow: hidden; height: clamp(400px, 33vw, 440px); border-radius: var(--r-lg);
+  background:
+    radial-gradient(60% 75% at 74% 62%, #8cc6ff 0%, rgba(140, 198, 255, 0) 60%),
+    radial-gradient(45% 55% at 58% 78%, #c9b8ff 0%, rgba(201, 184, 255, 0) 70%),
+    radial-gradient(70% 90% at 88% 30%, #2f7bff 0%, rgba(47, 123, 255, 0) 70%),
+    linear-gradient(160deg, #0a1f4d 0%, #123d8f 55%, #0b2a66 100%);
+  box-shadow: var(--shadow);
+}
+.desk-win {
+  position: absolute; left: 6%; top: 9%; width: 62%; bottom: 22%; border-radius: 10px; overflow: hidden;
+  background: #fbfbfa; color: #1c1c1f; box-shadow: 0 20px 50px -18px rgba(0, 0, 0, 0.55);
+}
+.desk-bar { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; background: #ececea; font-size: 12.5px; color: #55555c; }
+.desk-bar img { width: 16px; height: 16px; }
+.desk-body { padding: 16px 18px; }
+.desk-body i { display: block; height: 8px; margin-bottom: 10px; border-radius: 4px; background: #e2e2de; }
+.desk-chart { display: flex; align-items: flex-end; gap: 8px; height: 74px; margin-top: 16px; }
+.desk-chart b { flex: 1; border-radius: 4px 4px 0 0; }
+.desk-chart b:nth-child(1) { height: 46%; background: #2f7bff; }
+.desk-chart b:nth-child(2) { height: 74%; background: #12b5a6; }
+.desk-chart b:nth-child(3) { height: 58%; background: #f5a524; }
+.desk-chart b:nth-child(4) { height: 92%; background: #7b61ff; }
+.desk-chart b:nth-child(5) { height: 66%; background: #2f7bff; }
+.desk-task { position: absolute; left: 0; right: 0; bottom: 0; height: 36px; background: rgba(20, 24, 38, 0.55); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.desk .fvo { bottom: 52px; }
+.ov-real { margin-top: 14px; font-size: 14px; color: var(--text-3); }
 
 /* ---------- sections ---------- */
 .sec { padding: clamp(64px, 8.5vw, 116px) 0; border-top: 1px solid var(--line); }
@@ -553,10 +750,10 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
 @media (max-width: 960px) {
   .hero-grid { grid-template-columns: minmax(0, 1fr); }
   .hero h1 { max-width: 11em; }
-  .sheet { height: 430px; }
+  .sheet { height: 480px; }
 }
 @media (max-width: 860px) {
-  .styles, .free { grid-template-columns: minmax(0, 1fr); }
+  .styles, .free, .ovsec { grid-template-columns: minmax(0, 1fr); }
   .free-txt { max-width: 40rem; }
   .shot { max-width: 40rem; }
 }
@@ -565,18 +762,10 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
   .faq-grid { grid-template-columns: minmax(0, 1fr); }
   .cmd-steps li { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 20px 0; }
   .specs { grid-template-columns: minmax(0, 1fr); }
-  .sheet { height: 470px; }
+  .sheet { height: 540px; }
   .pane-head { padding-right: 0; }
   .pane-head span { display: none; }
   .keys { display: none; }
-  .ov { padding: 14px 14px 12px 16px; border-radius: 22px; }
-  .ov-text { font-size: 15px; min-height: 3.2em; }
-  .ov-app { display: none; }
-  .ov-row { gap: 10px; }
-  .wave i:nth-child(n + 9) { display: none; }
-  .ov-x { display: none; }
-  .ov-stop { width: 34px; height: 34px; }
-  .ov-time { font-size: 13.5px; }
   .hero-side .cta-row .btn { flex: 1 1 auto; }
   .demo-apps { gap: 2px; flex-wrap: nowrap; }
   .demo-app { padding: 0 10px 0 8px; gap: 6px; font-size: 14px; }

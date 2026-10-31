@@ -47,7 +47,7 @@
   "image": "https://flowvoice.caliberda.com.br/assets/og.png",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Windows 10, Windows 11",
-  "softwareVersion": "2.0",
+  "softwareVersion": "2.1",
   "inLanguage": ["pt-BR", "en", "es"],
   "license": "https://www.gnu.org/licenses/gpl-3.0.html",
   "isAccessibleForFree": true,
@@ -72,6 +72,12 @@
     <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+    <symbol id="fv-stop" viewBox="0 0 20 20"><rect x="5.5" y="5.5" width="9" height="9" rx="1.75" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="fv-x" viewBox="0 0 20 20"><path d="m5.5 5.5 9 9"/><path d="m14.5 5.5-9 9"/></symbol>
+    <symbol id="fv-check" viewBox="0 0 20 20"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></symbol>
+    <symbol id="fv-copy" viewBox="0 0 20 20"><rect x="7" y="7" width="9.5" height="9.5" rx="1.75"/><path d="M13 7V5.25c0-.97-.78-1.75-1.75-1.75h-6c-.97 0-1.75.78-1.75 1.75v6c0 .97.78 1.75 1.75 1.75H7"/></symbol>
+    <symbol id="fv-replace" viewBox="0 0 20 20"><path d="M4 8h10.5"/><path d="m11.5 5 3 3-3 3"/><path d="M16 12H5.5"/><path d="m8.5 9-3 3 3 3"/></symbol>
+    <symbol id="fv-translate" viewBox="0 0 20 20"><path d="M3 5h8"/><path d="M7 3.25V5"/><path d="M5 5c.6 2.4 2.4 4.6 5 5.75"/><path d="M9.25 5c-.6 2.6-2.5 4.9-5.75 6.5"/><path d="m10.75 16.5 3-7 3 7"/><path d="M11.75 14.25h4"/></symbol>
   </defs>
 </svg>
 
@@ -142,21 +148,80 @@
 
         <div class="keys" data-keys><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Espaço</kbd></div>
 
-        <div class="ov show listening" data-ov>
-          <div class="ov-live">
-            <p class="ov-text" data-live>é, tipo, pessoal, <span class="tail">a reunião de</span></p>
-            <div class="ov-row">
-              <span class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-              <span class="ov-meta"><span class="ov-mode">Ditado</span><span><b data-style>Profissional</b><span class="ov-app"> · <span data-app>Outlook</span></span></span></span>
-              <span class="ov-time" data-time>00:01</span>
-              <span class="ov-stop"><i></i></span>
-              <span class="ov-x"><svg><use href="#i-x"/></svg></span>
+        <div class="fvo has-text" data-fvo>
+          <div class="fvo-shell" data-shell style="width:500px;height:92px;border-radius:22px">
+            <div class="fvo-wave m-listen" aria-hidden="true"><i style="--i:0;--e:0.461;--hi:0.474"></i><i style="--i:1;--e:0.586;--hi:0.526"></i><i style="--i:2;--e:0.724;--hi:0.584"></i><i style="--i:3;--e:0.849;--hi:0.637"></i><i style="--i:4;--e:0.943;--hi:0.676"></i><i style="--i:5;--e:0.994;--hi:0.697"></i><i style="--i:6;--e:0.994;--hi:0.697"></i><i style="--i:7;--e:0.943;--hi:0.676"></i><i style="--i:8;--e:0.849;--hi:0.637"></i><i style="--i:9;--e:0.724;--hi:0.584"></i><i style="--i:10;--e:0.586;--hi:0.526"></i><i style="--i:11;--e:0.461;--hi:0.474"></i></div>
+            <div class="fvo-layer fvo-listen on" data-layer="listen">
+              <div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-meta"><span class="fvo-mode">Ditado</span><span class="fvo-sty"><span data-style>Profissional</span><span class="fvo-app">· <span data-app>Outlook</span></span></span></span><span class="fvo-time" data-time>00:01</span><span class="fvo-stop"><svg><use href="#fv-stop"/></svg></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-live"><div class="fvo-lwin"><p data-live><span class="ck">é, tipo, pessoal, a </span><span class="ck un">reunião de</span></p></div></div>
+            </div>
+            <div class="fvo-layer fvo-proc" data-layer="proc"><div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-pl" data-proc>Transcrevendo…</span></div></div>
+            <div class="fvo-layer fvo-card" data-layer="card">
+              <div class="fvo-head"><span class="fvo-badge"><svg><use href="#fv-check"/></svg></span><span class="fvo-ht" data-head>Colado</span><span class="fvo-hm"><span data-hm><span data-style>Profissional</span><span class="fvo-app"> · <span data-app>Outlook</span></span></span><span class="fvo-via"> · groq · openai/gpt-oss-20b</span></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-tbox"><p class="fvo-text" data-result>Olá, pessoal. A reunião de quinta-feira está confirmada para as 10h. Quem não puder participar, por favor me avise.</p></div>
+              <div class="fvo-chips"><span class="fvo-chip" data-chip="natural" style="--i:0">Natural</span><span class="fvo-chip on" data-chip="professional" style="--i:1">Profissional</span><span class="fvo-chip" data-chip="prompt" style="--i:2">Prompt</span><span class="fvo-chip" data-chip="raw" style="--i:3">Cru</span><span class="fvo-chip" data-chip="verbatim" style="--i:4">Só transcrição</span><span class="fvo-chip" style="--i:5"><svg><use href="#fv-translate"/></svg>Traduzir</span><span class="fvo-chip" style="--i:6">Original</span></div>
+              <div class="fvo-acts"><span class="fvo-esc">esc</span><span class="fvo-btn"><svg><use href="#fv-copy"/></svg>Copiar</span><span class="fvo-btn primary" data-primary hidden><svg><use href="#fv-replace"/></svg>Substituir</span></div>
+              <i class="fvo-life"></i>
             </div>
           </div>
         </div>
-        <div class="pill" data-pill>
-          <span data-p="proc"><span class="spin"></span></span><span data-p="proc">Reescrevendo com Groq…</span>
-          <span data-p="done"><span class="ok"><svg><use href="#i-check"/></svg></span><b>Colado</b><span><span data-style2>Profissional</span> · <span data-app2>Outlook</span></span></span>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="overlay" aria-labelledby="ov-t">
+  <div class="wrap ovsec">
+    <div class="ovsec-txt">
+      <h2 id="ov-t">Você vê o texto enquanto fala.</h2>
+      <dl class="facts">
+        <div>
+          <dt>Ao vivo, sem voltar atrás</dt>
+          <dd>Palavras ainda incertas aparecem mais claras e firmam quando duas respostas concordam. O que firmou não muda mais.</dd>
+        </div>
+        <div>
+          <dt>Um clique para refazer</dt>
+          <dd>No resultado, troque o estilo, traduza, cole ou copie. Se já colou, <b>Substituir</b> troca o texto no lugar.</dd>
+        </div>
+        <div>
+          <dt>Vidro, novo na 2.1</dt>
+          <dd>A cápsula pode ser de vidro, com o desfoque do próprio Windows, ou translúcida. Em Geral → Janela flutuante.</dd>
+        </div>
+      </dl>
+    </div>
+    <figure class="ovdemo" aria-labelledby="ovdemo-cap">
+      <figcaption id="ovdemo-cap" class="sr">Demonstração da janela flutuante do FlowVoice sobre a área de trabalho: o texto aparece enquanto a pessoa fala, com as palavras ainda incertas mais claras; depois vem o resultado, que é refeito no estilo Profissional com um clique. Os botões trocam a aparência da cápsula entre sólida, vidro e translúcida.</figcaption>
+      <div class="ov-bar">
+        <div class="seg" role="group" aria-label="Aparência da cápsula">
+          <button type="button" data-look="solid" aria-pressed="false">Sólida</button>
+          <button type="button" data-look="glass" aria-pressed="true">Vidro</button>
+          <button type="button" data-look="translucent" aria-pressed="false">Translúcido</button>
+        </div>
+        <button type="button" class="ov-light" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Luz e sombra</button>
+        <button type="button" class="demo-pause" aria-pressed="false" aria-label="Pausar demonstração"><svg class="ic-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="ic-play" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </div>
+      <div class="desk" aria-hidden="true">
+        <div class="desk-win">
+          <div class="desk-bar"><img src="assets/apps/word.svg" alt="" width="16" height="16">Relatório do trimestre</div>
+          <div class="desk-body"><i style="width:72%"></i><i style="width:90%"></i><i style="width:56%"></i><div class="desk-chart"><b></b><b></b><b></b><b></b><b></b></div></div>
+        </div>
+        <div class="desk-task"></div>
+        <div class="fvo" data-fvo>
+          <div class="fvo-shell" data-shell>
+            <div class="fvo-wave m-listen" aria-hidden="true"><i style="--i:0;--e:0.461;--hi:0.474"></i><i style="--i:1;--e:0.586;--hi:0.526"></i><i style="--i:2;--e:0.724;--hi:0.584"></i><i style="--i:3;--e:0.849;--hi:0.637"></i><i style="--i:4;--e:0.943;--hi:0.676"></i><i style="--i:5;--e:0.994;--hi:0.697"></i><i style="--i:6;--e:0.994;--hi:0.697"></i><i style="--i:7;--e:0.943;--hi:0.676"></i><i style="--i:8;--e:0.849;--hi:0.637"></i><i style="--i:9;--e:0.724;--hi:0.584"></i><i style="--i:10;--e:0.586;--hi:0.526"></i><i style="--i:11;--e:0.461;--hi:0.474"></i></div>
+            <div class="fvo-layer fvo-listen on" data-layer="listen">
+              <div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-meta"><span class="fvo-mode">Ditado</span><span class="fvo-sty"><span data-style>Natural</span></span></span><span class="fvo-time" data-time>00:01</span><span class="fvo-stop"><svg><use href="#fv-stop"/></svg></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-live"><div class="fvo-lwin"><p data-live></p></div></div>
+            </div>
+            <div class="fvo-layer fvo-proc" data-layer="proc"><div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-pl" data-proc>Transcrevendo…</span></div></div>
+            <div class="fvo-layer fvo-card" data-layer="card">
+              <div class="fvo-head"><span class="fvo-badge"><svg><use href="#fv-check"/></svg></span><span class="fvo-ht" data-head>Colado</span><span class="fvo-hm"><span data-hm><span data-style>Natural</span></span><span class="fvo-via"> · groq · openai/gpt-oss-20b</span></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-tbox"><p class="fvo-text" data-result>Eu queria saber se a gente consegue marcar aquela reunião para quinta-feira à tarde, porque na quarta eu não consigo.</p></div>
+              <div class="fvo-chips"><span class="fvo-chip on" data-chip="natural" style="--i:0">Natural</span><span class="fvo-chip" data-chip="professional" style="--i:1">Profissional</span><span class="fvo-chip" data-chip="prompt" style="--i:2">Prompt</span><span class="fvo-chip" data-chip="raw" style="--i:3">Cru</span><span class="fvo-chip" data-chip="verbatim" style="--i:4">Só transcrição</span><span class="fvo-chip" style="--i:5"><svg><use href="#fv-translate"/></svg>Traduzir</span><span class="fvo-chip" style="--i:6">Original</span></div>
+              <div class="fvo-acts"><span class="fvo-esc">esc</span><span class="fvo-btn"><svg><use href="#fv-copy"/></svg>Copiar</span><span class="fvo-btn primary" data-primary hidden><svg><use href="#fv-replace"/></svg>Substituir</span></div>
+              <i class="fvo-life"></i>
+            </div>
+          </div>
         </div>
       </div>
     </figure>
@@ -306,7 +371,7 @@
 <footer class="foot-site">
   <div class="wrap">
     <div class="foot-row">
-      <p class="foot-about">FlowVoice 2.0 · feito no Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
+      <p class="foot-about">FlowVoice 2.1 · feito no Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
       <nav aria-label="Rodapé">
         <ul>
           <li><a href="guia.html">Guia de chaves</a></li>

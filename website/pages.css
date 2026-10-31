@@ -210,3 +210,10 @@
 @media (prefers-reduced-motion: reduce) {
   .pg-toc a, .pg-toc a::before { transition: none; }
 }
+
+/* real app captures inside a release (novidades) */
+.pg-fig { margin: 22px 0 26px; max-width: 40rem; }
+.pg-fig img { display: block; width: 100%; height: auto; }
+.pg-fig img[src$=".webp"] { border-radius: 10px; box-shadow: var(--shadow-shot); }
+.pg-fig figcaption { margin-top: 8px; font-size: 14px; color: var(--text-3); }
+.pg-rel-body .pg-fig figcaption a { color: var(--text-2); }

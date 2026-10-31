@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novidades · FlowVoice 2.0, reescrito do zero</title>
-<meta name="description" content="O que mudou no FlowVoice 2.0: reescrito do zero em Rust, prévia ao vivo, estilo Prompt, modo Comando, troca automática de modelos aposentados, modo offline com modelo para pt-BR e mais.">
+<title>Novidades · FlowVoice 2.1: prévia mais estável e cápsula de vidro</title>
+<meta name="description" content="O que mudou no FlowVoice: na 2.1, prévia ao vivo que não volta atrás e cápsula de vidro; na 2.0, reescrito do zero em Rust, estilo Prompt, modo Comando, troca automática de modelos aposentados e modo offline com modelo para pt-BR.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
@@ -16,14 +16,14 @@
 <meta property="og:site_name" content="FlowVoice">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:url" content="https://flowvoice.caliberda.com.br/novidades">
-<meta property="og:title" content="FlowVoice 2.0: reescrito do zero">
-<meta property="og:description" content="Mais rápido, mais leve e com prévia ao vivo. Veja tudo o que mudou em relação à 1.x.">
+<meta property="og:title" content="FlowVoice 2.1: prévia mais estável e cápsula de vidro">
+<meta property="og:description" content="A prévia ao vivo não volta mais atrás, e a cápsula pode ser de vidro. Veja o que mudou na 2.1 e na 2.0.">
 <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="FlowVoice 2.0: reescrito do zero">
-<meta name="twitter:description" content="Mais rápido, mais leve e com prévia ao vivo. Veja tudo o que mudou em relação à 1.x.">
+<meta name="twitter:title" content="FlowVoice 2.1: prévia mais estável e cápsula de vidro">
+<meta name="twitter:description" content="A prévia ao vivo não volta mais atrás, e a cápsula pode ser de vidro. Veja o que mudou na 2.1 e na 2.0.">
 <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
@@ -74,14 +74,62 @@
   <header class="pg-head">
     <div class="wrap">
       <div class="pg-head-in">
-        <h1>2.0: reescrito do <span class="nowrap">zero.<span class="caret" aria-hidden="true"></span></span></h1>
-        <p class="pg-lede">O FlowVoice foi refeito por inteiro, do motor à interface. Ficou mais rápido, mais leve e muito mais difícil de quebrar quando um provedor muda as regras.</p>
-        <p class="pg-meta"><span>Versão <b>2.0</b></span><span>Windows 10 e 11</span><span>Atualiza sozinho</span></p>
+        <h1>2.1: o texto não volta <span class="nowrap">atrás.<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">A prévia ao vivo ficou estável: o que já apareceu firme não muda mais. E a cápsula ganhou uma aparência de vidro, com o desfoque do próprio Windows.</p>
+        <p class="pg-meta"><span>Versão <b>2.1</b></span><span>Windows 10 e 11</span><span>Atualiza sozinho</span></p>
       </div>
     </div>
   </header>
 
   <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v21">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.1</p>
+        <span class="pg-rel-date">Outubro de 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v21">Prévia mais estável e cápsula de vidro</h2>
+        <p>Uma palavra só fica firme quando duas respostas seguidas concordam nela. Até lá, aparece mais clara e ainda pode mudar. Depois, não volta atrás.</p>
+        <figure class="pg-fig">
+          <img src="assets/shot-overlay-live.png" width="1120" height="348" loading="lazy" decoding="async" alt="Overlay do FlowVoice ouvindo: o começo da frase já firme, em branco, e as últimas palavras, ainda não confirmadas, em cinza mais claro.">
+          <figcaption>No app: “quinta-feira à tarde” já firmou; o final ainda está mais claro.</figcaption>
+        </figure>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Prévia ao vivo</h3>
+            <ul>
+              <li>O texto <b>não volta mais atrás</b>: cada modelo tem um pedido por vez, e uma resposta atrasada é descartada.</li>
+              <li>A prévia não manda mais o texto anterior como contexto (às vezes ele voltava repetido).</li>
+              <li>O ritmo segue os limites que o próprio Groq informa e sempre guarda espaço para a transcrição final, que não leva mais “limite atingido” logo depois da prévia.</li>
+              <li>Frases longas são fechadas em até 15 s: respostas mais rápidas e menos segundos gastos do plano grátis.</li>
+              <li>Saiu a faixa extra do Gemini na prévia (escrevia diferente do Whisper e era mais lenta).</li>
+              <li>Medido com os mesmos 4 áudios: texto mostrado como firme e depois trocado caiu de 2,5–7,5 vezes por ditado para zero, e as atualizações chegam a cada ~1,2–1,5 s (antes ~1,7–2,0 s).</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Vidro na cápsula</h3>
+            <ul>
+              <li>Em <b>Geral → Janela flutuante</b>: <b>Vidro</b> (transparente e desfocada, com borda de luz) ou <b>Translúcido</b> (tinta mais leve), com o desfoque do próprio Windows, feito pela placa de vídeo.</li>
+              <li><b>Luz e sombra como no macOS 27</b>: brilho, borda chanfrada, luz na parte de baixo e sombra suave (ideia de Thiago Silva).</li>
+              <li>Precisa dos efeitos de transparência do Windows; com eles desligados ou com a economia de energia, a cápsula fica sólida.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Correções</h3>
+            <ul>
+              <li>Num PC ocupado, ao iniciar com o Windows, a janela às vezes mostrava um erro no lugar das configurações.</li>
+              <li>Depois de atualizar, o FlowVoice reabre sozinho com a janela aberta.</li>
+            </ul>
+          </li>
+        </ul>
+        <figure class="pg-fig">
+          <img src="assets/shot-glass-setting.webp" width="1700" height="388" loading="lazy" decoding="async" alt="Configurações do FlowVoice, Geral: Aparência da cápsula com as opções Sólida, Vidro e Translúcido, Vidro selecionado, e a opção Luz e sombra como no macOS 27 ligada.">
+          <figcaption>A opção em Geral → Janela flutuante. <a href="./#overlay">Veja o vidro na página inicial</a>.</figcaption>
+        </figure>
+      </div>
+    </section>
+
     <section class="pg-rel" aria-labelledby="v2">
       <div class="pg-rel-meta">
         <p class="pg-rel-ver">2.0</p>
@@ -93,6 +141,10 @@
         <p>A 2.0 nasceu para não passar por isso de novo: ela mostra a mensagem real do provedor e <strong>troca sozinha um modelo que foi aposentado</strong>.</p>
 
         <h2>O que mudou</h2>
+        <figure class="pg-fig">
+          <img src="assets/shot-overlay-result.png" width="1320" height="492" loading="lazy" decoding="async" alt="Resultado no overlay do FlowVoice: Colado, estilo Profissional no Outlook, o texto reescrito e os chips Natural, Profissional, Prompt, Cru, Só transcrição, Traduzir e Original, com o botão Copiar.">
+          <figcaption>O resultado no overlay: um clique refaz em outro estilo ou traduz.</figcaption>
+        </figure>
         <ul class="pg-changes">
           <li>
             <h3>Ditado</h3>
@@ -197,7 +249,7 @@
     <div class="wrap">
       <div class="pg-next-in">
         <div>
-          <h2 id="next-t">Pronto para a 2.0?</h2>
+          <h2 id="next-t">Pronto para a 2.1?</h2>
           <p>Grátis, de código aberto e sem conta.</p>
         </div>
         <div class="cta-row">
@@ -212,7 +264,7 @@
 <footer class="foot-site">
   <div class="wrap">
     <div class="foot-row">
-      <p class="foot-about">FlowVoice 2.0 · feito no Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
+      <p class="foot-about">FlowVoice 2.1 · feito no Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
       <nav aria-label="Rodapé">
         <ul>
           <li><a href="guia.html">Guia de chaves</a></li>
