@@ -138,8 +138,23 @@ fn net_error(provider: &str, e: reqwest::Error) -> ProviderError {
 }
 
 async fn read(provider: &str, resp: reqwest::Response) -> Result<Value, ProviderError> {
+    read_rated(provider, resp).await.map(|(v, _)| v)
+}
+
+/// Like `read`, plus the rate-limit state the provider reported with the response.
+async fn read_rated(provider: &str, resp: reqwest::Response) -> Result<(Value, RateInfo), ProviderError> {
     let status = resp.status().as_u16();
     let retry_after = retry_after(resp.headers());
+    let rate = rate_info(resp.headers());
+    if std::env::var_os("FLOWVOICE_LOG_PREVIEW").is_some() {
+        let hs: Vec<String> = resp
+            .headers()
+            .iter()
+            .filter(|(k, _)| k.as_str().starts_with("x-ratelimit") || k.as_str().starts_with("x-groq") || k.as_str() == "retry-after")
+            .map(|(k, v)| format!("{k}={}", v.to_str().unwrap_or("?")))
+            .collect();
+        log::info!("http {provider} {status} headers: {}", hs.join(" "));
+    }
     let body = resp.text().await.map_err(|e| net_error(provider, e))?;
     if !(200..300).contains(&status) {
         let mut e = friendly(provider, status, &body);
@@ -148,14 +163,77 @@ async fn read(provider: &str, resp: reqwest::Response) -> Result<Value, Provider
         }
         return Err(e);
     }
-    serde_json::from_str(&body).map_err(|_| ProviderError {
+    let v = serde_json::from_str(&body).map_err(|_| ProviderError {
         provider: provider.into(),
         message: "resposta inesperada do serviço".into(),
         detail: body.chars().take(300).collect(),
         key_problem: false,
         model_gone: false,
         retry_after: None,
-    })
+    })?;
+    Ok((v, rate))
+}
+
+/// Rate-limit state reported with a response (Groq's `x-ratelimit-*` headers). Groq documents
+/// the `-requests` headers as the per-day request budget and `-tokens` as the per-minute one;
+/// audio models may also report audio seconds. Every field is optional: other providers send
+/// nothing (or other names) and callers fall back to fixed spacing.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RateInfo {
+    pub limit_requests: Option<u32>,
+    pub remaining_requests: Option<u32>,
+    /// Seconds until the request budget is full again.
+    pub reset_requests: Option<f32>,
+    pub limit_audio: Option<f32>,
+    pub remaining_audio: Option<f32>,
+    pub reset_audio: Option<f32>,
+    /// Organization/account id when the provider names it (lanes per account).
+    pub org: Option<String>,
+}
+
+pub fn rate_info(h: &reqwest::header::HeaderMap) -> RateInfo {
+    let s = |k: &str| h.get(k).and_then(|v| v.to_str().ok()).map(str::trim).filter(|v| !v.is_empty());
+    let num = |k: &str| s(k).and_then(|v| v.parse::<f32>().ok());
+    RateInfo {
+        limit_requests: s("x-ratelimit-limit-requests").and_then(|v| v.parse().ok()),
+        remaining_requests: s("x-ratelimit-remaining-requests").and_then(|v| v.parse().ok()),
+        reset_requests: s("x-ratelimit-reset-requests").and_then(parse_reset),
+        limit_audio: num("x-ratelimit-limit-audio-seconds"),
+        remaining_audio: num("x-ratelimit-remaining-audio-seconds"),
+        reset_audio: s("x-ratelimit-reset-audio-seconds").and_then(parse_reset),
+        org: s("x-groq-org-id").or_else(|| s("openai-organization")).map(str::to_string),
+    }
+}
+
+/// "2m59.56s", "7.66s", "1h2m3s", "120ms", "0.5" → seconds.
+pub fn parse_reset(v: &str) -> Option<f32> {
+    let v = v.trim();
+    if let Ok(x) = v.parse::<f32>() {
+        return Some(x);
+    }
+    let (mut total, mut num, mut any) = (0.0f32, String::new(), false);
+    let mut chars = v.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c.is_ascii_digit() || c == '.' {
+            num.push(c);
+            continue;
+        }
+        let x: f32 = num.parse().ok()?;
+        num.clear();
+        let mult = match c {
+            'h' => 3600.0,
+            'm' if chars.peek() == Some(&'s') => {
+                chars.next();
+                0.001
+            }
+            'm' => 60.0,
+            's' => 1.0,
+            _ => return None,
+        };
+        total += x * mult;
+        any = true;
+    }
+    (any && num.is_empty()).then_some(total)
 }
 
 /// `retry-after: 7` / `retry-after: 1.5` (seconds) on 429s.
@@ -199,8 +277,21 @@ pub async fn transcribe(
     lang: &str,
     prompt: &str,
 ) -> Result<String, ProviderError> {
+    transcribe_rated(client, provider, cfg, key, wav, lang, prompt).await.map(|(t, _)| t)
+}
+
+/// `transcribe` plus the rate-limit state the provider reported (live preview scheduling).
+pub async fn transcribe_rated(
+    client: &reqwest::Client,
+    provider: &str,
+    cfg: &ProviderSettings,
+    key: &str,
+    wav: &[u8],
+    lang: &str,
+    prompt: &str,
+) -> Result<(String, RateInfo), ProviderError> {
     if provider == "gemini" {
-        return transcribe_gemini(client, cfg, key, wav, lang, prompt).await;
+        return transcribe_gemini(client, cfg, key, wav, lang, prompt).await.map(|t| (t, RateInfo::default()));
     }
     let url = format!("{}/audio/transcriptions", base_url(provider, cfg));
     let part = reqwest::multipart::Part::bytes(wav.to_vec())
@@ -228,8 +319,8 @@ pub async fn transcribe(
         .send()
         .await
         .map_err(|e| net_error(provider, e))?;
-    let v = read(provider, resp).await?;
-    Ok(v["text"].as_str().unwrap_or_default().trim().to_string())
+    let (v, rate) = read_rated(provider, resp).await?;
+    Ok((v["text"].as_str().unwrap_or_default().trim().to_string(), rate))
 }
 
 async fn transcribe_gemini(
@@ -496,5 +587,29 @@ mod tests {
         assert_eq!(retry_from_body("Please try again in 7.5s"), Some(7.5));
         assert_eq!(retry_from_body("Please retry in 2.5s."), Some(2.5));
         assert_eq!(retry_from_body("try again in 1m2.5s"), Some(62.5));
+    }
+
+    #[test]
+    fn rate_limit_headers() {
+        let close = |a: Option<f32>, b: f32| a.is_some_and(|a| (a - b).abs() < 1e-3);
+        assert!(close(parse_reset("2m59.56s"), 179.56));
+        assert!(close(parse_reset("7.66s"), 7.66));
+        assert!(close(parse_reset("1h2m3s"), 3723.0));
+        assert!(close(parse_reset("120ms"), 0.12));
+        assert!(close(parse_reset("3"), 3.0));
+        assert_eq!(parse_reset("soon"), None);
+        assert_eq!(parse_reset("5x"), None);
+        let mut h = reqwest::header::HeaderMap::new();
+        h.insert("x-ratelimit-limit-requests", "2000".parse().unwrap());
+        h.insert("x-ratelimit-remaining-requests", "1987".parse().unwrap());
+        h.insert("x-ratelimit-reset-requests", "6m14.4s".parse().unwrap());
+        h.insert("x-ratelimit-remaining-audio-seconds", "6950".parse().unwrap());
+        let r = rate_info(&h);
+        assert_eq!(r.limit_requests, Some(2000));
+        assert_eq!(r.remaining_requests, Some(1987));
+        assert!(close(r.reset_requests, 374.4));
+        assert!(close(r.remaining_audio, 6950.0));
+        assert_eq!(r.reset_audio, None);
+        assert_eq!(rate_info(&reqwest::header::HeaderMap::new()), RateInfo::default());
     }
 }

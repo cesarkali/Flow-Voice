@@ -1134,6 +1134,32 @@ pub fn paste_last(app: &AppHandle, target: isize) {
 
 // ---------------------------------------------------------------- speech to text
 
+/// One cloud STT call, also noted in the live preview's view of the model's rate budget.
+#[allow(clippy::too_many_arguments)]
+async fn stt_rated(
+    http: &reqwest::Client,
+    provider: &str,
+    cfg: &crate::settings::ProviderSettings,
+    key: &str,
+    wav: &[u8],
+    lang: &str,
+    prompt: &str,
+    secs: f32,
+) -> Result<String, ProviderError> {
+    match cloud::transcribe_rated(http, provider, cfg, key, wav, lang, prompt).await {
+        Ok((text, rate)) => {
+            crate::preview::note_request(provider, &cfg.stt_model, secs, Some(&rate), None);
+            Ok(text)
+        }
+        Err(e) => {
+            // A refused request still counted against the minute; a 429 pauses the preview too.
+            let limited = e.detail.starts_with("HTTP 429").then(|| e.retry_after.unwrap_or(10.0));
+            crate::preview::note_request(provider, &cfg.stt_model, secs, None, limited);
+            Err(e)
+        }
+    }
+}
+
 async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, String)> {
     let st = state(app);
     let s = st.settings();
@@ -1167,6 +1193,7 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
 
     let normalized = audio::normalize(samples);
     let wav = audio::to_wav(&normalized);
+    let secs = samples.len() as f32 / audio::SAMPLE_RATE as f32;
     let mut errors: Vec<ProviderError> = vec![];
     for provider in &s.stt.cloud_order {
         let keys = st.keys.get(provider);
@@ -1177,14 +1204,14 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
         let mut cfg = cfg.clone();
         let mut healed = false;
         for key in keys {
-            let mut res = cloud::transcribe(&st.http, provider, &cfg, &key, &wav, &lang, &prompt).await;
+            let mut res = stt_rated(&st.http, provider, &cfg, &key, &wav, &lang, &prompt, secs).await;
             // Retired model: switch to a verified replacement (persisted) and retry once.
             if let Err(e) = &res {
                 if e.model_gone && !healed {
                     healed = true;
                     if let Some(m) = crate::heal::heal(app, provider, crate::heal::Kind::Stt, &cfg.stt_model).await {
                         cfg.stt_model = m;
-                        res = cloud::transcribe(&st.http, provider, &cfg, &key, &wav, &lang, &prompt).await;
+                        res = stt_rated(&st.http, provider, &cfg, &key, &wav, &lang, &prompt, secs).await;
                     }
                 }
             }
@@ -1196,13 +1223,13 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
                     if wait <= 3.0 {
                         log::info!("stt {provider}: rate limited, retrying in {wait:.1}s");
                         tokio::time::sleep(Duration::from_secs_f32(wait.max(0.3))).await;
-                        res = cloud::transcribe(&st.http, provider, &cfg, &key, &wav, &lang, &prompt).await;
+                        res = stt_rated(&st.http, provider, &cfg, &key, &wav, &lang, &prompt, secs).await;
                     } else if provider == "groq" {
                         let alt = if cfg.stt_model.contains("turbo") { "whisper-large-v3" } else { "whisper-large-v3-turbo" };
                         log::info!("stt groq: rate limited, trying {alt}");
                         let mut alt_cfg = cfg.clone();
                         alt_cfg.stt_model = alt.into();
-                        res = cloud::transcribe(&st.http, provider, &alt_cfg, &key, &wav, &lang, &prompt).await;
+                        res = stt_rated(&st.http, provider, &alt_cfg, &key, &wav, &lang, &prompt, secs).await;
                     }
                 }
             }
