@@ -214,7 +214,7 @@
       <div class="brand" data-tauri-drag-region>
         <span class="logo"><Logo size={24} glow={false} /></span>
         <span class="bname" data-tauri-drag-region>FlowVoice</span>
-        <span class="bver mono" data-tauri-drag-region>2.0</span>
+        <span class="bver mono" data-tauri-drag-region>{(version || "2.1").split(".").slice(0, 2).join(".")}</span>
       </div>
 
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -325,7 +325,8 @@
   .shell {
     height: 100%;
     display: flex;
-    background: var(--bg);
+    background: var(--win-tint, var(--bg));
+    transition: background-color var(--t-slow) var(--ease);
   }
 
   /* ------------------------------------------------------------------ rail */
@@ -334,7 +335,7 @@
     flex: none;
     display: flex;
     flex-direction: column;
-    background: var(--rail);
+    background: var(--win-rail, var(--rail));
     border-right: 1px solid var(--line);
     padding: 0 12px 12px;
     position: relative;

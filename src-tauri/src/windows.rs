@@ -266,6 +266,29 @@ pub fn start_pointer_watcher(app: &AppHandle) {
     });
 }
 
+/// The capsule's glass on the settings window too (`window_glass`): Windows 11's acrylic (the
+/// system's own blur of what's behind) under a page whose background turns translucent. The
+/// window is transparent (tauri.conf.json); solid, the page paints it opaque as before. The
+/// window's dark/light mode follows the app's theme so the acrylic's own tint matches it.
+pub fn apply_window_glass(app: &AppHandle, s: &crate::settings::Settings) {
+    use tauri::window::{Effect, EffectsBuilder};
+    let Some(w) = app.get_webview_window("main") else { return };
+    let theme = match s.theme.as_str() {
+        "dark" => Some(tauri::Theme::Dark),
+        "light" => Some(tauri::Theme::Light),
+        _ => None,
+    };
+    let _ = w.set_theme(theme);
+    let res = if s.window_glass && s.overlay_glass != "solid" {
+        w.set_effects(EffectsBuilder::new().effect(Effect::Acrylic).build())
+    } else {
+        w.set_effects(None)
+    };
+    if let Err(e) = res {
+        log::warn!("window glass: {e}");
+    }
+}
+
 pub fn open_settings(app: &AppHandle, page: Option<String>) {
     let Some(w) = app.get_webview_window("main") else { return };
     let _ = w.unminimize();

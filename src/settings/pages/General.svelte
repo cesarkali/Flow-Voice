@@ -169,6 +169,9 @@
     <Row label={t("ctl.ov_glass_light")} hint={t("ctl.ov_glass_light_hint")}>
       <Toggle label={t("ctl.ov_glass_light")} bind:checked={s.overlay_glass_light} />
     </Row>
+    <Row label={t("ctl.win_glass")} hint={t("ctl.win_glass_hint")}>
+      <Toggle label={t("ctl.win_glass")} bind:checked={s.window_glass} />
+    </Row>
     {#if glassOk === false}
       <p class="gnote">{t("ctl.glass_off_note")}</p>
     {/if}

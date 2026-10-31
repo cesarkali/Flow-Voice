@@ -16,7 +16,6 @@
         "label": "main",
         "create": false,
         "title": "FlowVoice",
-        "backgroundColor": "#0B0B0C",
         "url": "index.html",
         "width": 980,
         "height": 660,
@@ -24,7 +23,7 @@
         "minHeight": 560,
         "center": true,
         "decorations": false,
-        "transparent": false,
+        "transparent": true,
         "visible": false,
         "resizable": true
       },

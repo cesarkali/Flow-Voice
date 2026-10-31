@@ -97,6 +97,7 @@ export interface Settings {
   overlay_follow_mouse: boolean;
   overlay_glass: "solid" | "glass" | "translucent";
   overlay_glass_light: boolean;
+  window_glass: boolean;
   /** Custom vocabulary: names/terms to bias transcription and the LLM. */
   dictionary: string[];
   onboarded: boolean;

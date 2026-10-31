@@ -15,6 +15,7 @@
   import HotkeyInput from "../../lib/ui/HotkeyInput.svelte";
   import Keys from "../../lib/ui/Keys.svelte";
   import { keycapsOf } from "../../lib/ui/hotkeys";
+  import Segmented from "../../lib/ui/Segmented.svelte";
   import Toggle from "../../lib/ui/Toggle.svelte";
   import TitleBar from "../../lib/ui/TitleBar.svelte";
   import { pname, STT_PROVIDERS } from "../providers";
@@ -288,6 +289,33 @@
                 <span class="label">{t("gen.accent")}</span>
                 <AccentPicker bind:value={s.accent_color} label={t("gen.accent")} customLabel={t("gen.accent_custom")} large />
               </div>
+              <div class="lang look">
+                <span class="label">{t("ctl.ov_glass")}</span>
+                <Segmented
+                  label={t("ctl.ov_glass")}
+                  size="sm"
+                  bind:value={s.overlay_glass}
+                  options={[
+                    { value: "solid", label: t("ctl.glass_solid") },
+                    { value: "glass", label: t("ctl.glass_glass") },
+                    { value: "translucent", label: t("ctl.glass_translucent") },
+                  ]}
+                />
+                <!-- the capsule over a colorful "wallpaper": glass is CSS blur here, Windows' own in the app -->
+                <div class="capprev" aria-label={t("ctl.glass_preview")} role="img">
+                  <span class="wall" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <span class="pill {s.overlay_glass}" aria-hidden="true">
+                    <span class="bars">{#each [5, 9, 14, 8, 12, 6, 10, 4] as h, i (i)}<b style="height:{h}px; animation-delay:{i * 90}ms"></b>{/each}</span>
+                    <span class="said">{t("obx.look_sample")}</span>
+                  </span>
+                </div>
+                {#if s.overlay_glass !== "solid"}
+                  <label class="wglass">
+                    <Toggle label={t("ctl.win_glass")} bind:checked={s.window_glass} />
+                    <span>{t("ctl.win_glass")}</span>
+                  </label>
+                {/if}
+              </div>
             </div>
           </div>
         {:else if step === S.path}
@@ -499,7 +527,8 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: var(--bg);
+    background: var(--win-tint, var(--bg));
+    transition: background-color var(--t-slow) var(--ease);
   }
   .brand {
     display: inline-flex;
@@ -1452,5 +1481,107 @@
   }
   .wr .lang {
     align-items: stretch;
+  }
+
+  /* ---------- capsule look (welcome): a live miniature over a colorful "wallpaper" */
+  .capprev {
+    position: relative;
+    height: 58px;
+    border-radius: var(--r);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: #1b2a4a;
+    isolation: isolate;
+  }
+  .wall i {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    z-index: -1;
+  }
+  .wall i:nth-child(1) {
+    width: 120px;
+    height: 120px;
+    left: -10px;
+    top: -40px;
+    background: #ff6b4a;
+  }
+  .wall i:nth-child(2) {
+    width: 90px;
+    height: 90px;
+    left: 44%;
+    top: 14px;
+    background: var(--accent);
+  }
+  .wall i:nth-child(3) {
+    width: 130px;
+    height: 130px;
+    right: -30px;
+    top: -60px;
+    background: #5be3ff;
+  }
+  .pill {
+    width: calc(100% - 28px);
+    height: 36px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    color: var(--cap-text);
+    background: var(--cap-bg);
+    border: 1px solid var(--cap-line);
+    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    transition:
+      background-color var(--t-slow) var(--ease),
+      backdrop-filter var(--t-slow) var(--ease),
+      border-color var(--t-slow) var(--ease);
+  }
+  .pill.glass,
+  .pill.translucent {
+    background: color-mix(in srgb, var(--cap-bg) 58%, transparent);
+    border-color: rgba(255, 255, 255, 0.22);
+    border-top-color: rgba(255, 255, 255, 0.42);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+  .pill.translucent {
+    background: color-mix(in srgb, var(--cap-bg) 30%, transparent);
+  }
+  .bars {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+  }
+  .bars b {
+    width: 2.5px;
+    border-radius: 2px;
+    background: var(--cap-wave);
+    animation: capbar 1.1s var(--ease-in-out) infinite alternate;
+  }
+  @keyframes capbar {
+    to {
+      transform: scaleY(0.45);
+    }
+  }
+  .said {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .wglass {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bars b {
+      animation: none;
+    }
   }
 </style>

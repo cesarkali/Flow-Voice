@@ -128,6 +128,7 @@ pub fn run() {
             }
 
             let handle = app.handle().clone();
+            windows::apply_window_glass(&handle, &s);
             windows::setup_overlay(&handle);
             windows::start_pointer_watcher(&handle);
             pipeline::start_control(&handle);

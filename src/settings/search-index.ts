@@ -90,6 +90,7 @@ const STATIC: SearchEntry[] = [
   { page: "general", key: "ctl.ov_width", hint: "ctl.ov_width_hint", kw: "overlay largura width" },
   { page: "general", key: "ctl.ov_follow", hint: "ctl.ov_follow_hint", kw: "seguir mouse follow monitor tela em uso ativo principal active main screen display" },
   { page: "general", key: "ctl.ov_glass", hint: "ctl.ov_glass_hint", kw: "vidro glass cristal transparente translucido translúcido desfoque blur acrylic acrílico tema aparência cápsula" },
+  { page: "general", key: "ctl.win_glass", hint: "ctl.win_glass_hint", kw: "vidro janela configurações acrílico acrylic mica glass window transparente" },
   { page: "general", key: "ctl.ov_glass_light", hint: "ctl.ov_glass_light_hint", kw: "luz sombra light shadow macos brilho vidro glass" },
   { page: "general", key: "gen.auto_paste", hint: "gen.auto_paste_hint", kw: "colar paste pegar" },
   { page: "general", key: "gen.mute", hint: "ctl.mute_hint", kw: "silenciar mute audio som volume" },

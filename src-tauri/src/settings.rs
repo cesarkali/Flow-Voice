@@ -119,6 +119,8 @@ pub struct Settings {
     pub overlay_glass: String,
     /// Light and shadow like macOS 27 on the glass (sheen, beveled edge, soft shadow).
     pub overlay_glass_light: bool,
+    /// The capsule's glass also on the settings window (Windows 11's acrylic behind it).
+    pub window_glass: bool,
     pub dictionary: Vec<String>,
     pub onboarded: bool,
     /// One-shot migrations already applied to this file (missing in old files = 0).
@@ -160,6 +162,7 @@ impl Default for Settings {
             overlay_follow_mouse: true,
             overlay_glass: "solid".into(),
             overlay_glass_light: false,
+            window_glass: false,
             dictionary: vec![],
             onboarded: false,
             schema: 2,

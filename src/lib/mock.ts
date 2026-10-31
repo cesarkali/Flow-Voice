@@ -107,6 +107,7 @@ const DEFAULT_SETTINGS: Settings = {
   overlay_follow_mouse: true,
   overlay_glass: "solid",
   overlay_glass_light: false,
+  window_glass: false,
   dictionary: ["FlowVoice", "Caliberda", "Tauri", "Svelte"],
   onboarded: true,
 };

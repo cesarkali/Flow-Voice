@@ -161,6 +161,22 @@
   box-sizing: border-box;
 }
 
+/* The capsule's glass on the settings window (Settings.window_glass): Windows draws its acrylic
+   behind the transparent window; the page keeps only a tint of its background over it (sidebar a
+   touch lighter), cards and popovers stay solid so text reads on any wallpaper. */
+:root[data-win-glass] {
+  --win-tint: color-mix(in srgb, var(--bg) 64%, transparent);
+  --win-rail: color-mix(in srgb, var(--rail) 46%, transparent);
+  background: transparent !important;
+}
+:root[data-win-glass="translucent"] {
+  --win-tint: color-mix(in srgb, var(--bg) 40%, transparent);
+  --win-rail: color-mix(in srgb, var(--rail) 26%, transparent);
+}
+:root[data-win-glass] body {
+  background: transparent;
+}
+
 html,
 body {
   margin: 0;

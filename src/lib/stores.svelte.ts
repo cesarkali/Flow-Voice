@@ -55,6 +55,14 @@ function remember(json: string) {
   for (const [k, ts] of recent) if (now - ts > ECHO_WINDOW_MS) recent.delete(k);
 }
 
+/** The capsule's glass also on this (settings) window: Rust puts Windows' acrylic behind it, the
+ *  page's own background turns translucent (base.css `data-win-glass`). */
+function applyWinGlass(s: Settings) {
+  const g = s.window_glass && s.overlay_glass !== "solid" ? s.overlay_glass : "";
+  if (g) document.documentElement.dataset.winGlass = g;
+  else delete document.documentElement.dataset.winGlass;
+}
+
 function adopt(s: Settings) {
   lastJson = canon(s);
   if (onboardedLocally && !s.onboarded) {
@@ -63,6 +71,7 @@ function adopt(s: Settings) {
   }
   app.settings = s;
   applyTheme(s.theme);
+  applyWinGlass(s);
   applyAccent(s.accent_color);
   setLanguage(s.ui_language);
 }
@@ -121,6 +130,7 @@ export async function initApp() {
       // live side effects
       applyTheme(app.settings.theme);
       applyAccent(app.settings.accent_color);
+      applyWinGlass(app.settings);
       setLanguage(app.settings.ui_language);
       clearTimeout(timer);
       timerPending = true;

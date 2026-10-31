@@ -18,6 +18,8 @@ Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases
 
 - Nova opção em **Geral → Janela flutuante**: **Vidro** (transparente e desfocada, com borda de luz) ou **Translúcido** (tinta mais leve), usando o desfoque do próprio Windows, feito pela placa de vídeo.
 - **Luz e sombra como no macOS 27**: brilho, borda chanfrada, luz na parte de baixo e sombra suave (ideia de Thiago Silva).
+- **Usar também nesta janela**: a janela de configurações ganha o mesmo vidro (o acrílico do Windows 11 atrás dela), com os cartões continuando sólidos para ler bem.
+- A aparência da cápsula também pode ser escolhida no primeiro passo do tour, com uma prévia ao vivo.
 - Precisa dos efeitos de transparência do Windows; com eles desligados ou com a economia de energia, a cápsula fica sólida.
 
 ### Correções

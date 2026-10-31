@@ -79,6 +79,9 @@ pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings, from
     if before.start_with_os != after.start_with_os {
         set_autostart(app, after.start_with_os);
     }
+    if before.window_glass != after.window_glass || before.overlay_glass != after.overlay_glass || before.theme != after.theme {
+        windows::apply_window_glass(app, after);
+    }
     crate::pipeline::ensure_preview_model(app);
     broadcast_settings(app, after, from_window);
     let hk_changed = before.hotkeys != after.hotkeys;
