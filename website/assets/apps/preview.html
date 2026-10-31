@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App icons preview</title>
+<style>
+  body { margin: 0; font: 12px/1.3 system-ui, sans-serif; background: #fff; }
+  .panel { padding: 14px 16px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px 8px; }
+  .dark { background: #0b0b0c; color: #ddd; }
+  .light { background: #fff; color: #222; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .row { display: flex; align-items: flex-end; gap: 8px; }
+  img { display: block; }
+</style>
+</head>
+<body>
+<div class="panel dark" id="dark"></div>
+<div class="panel light" id="light"></div>
+<script>
+  const names = ['outlook','gmail','slack','whatsapp','teams','discord','notion','vscode','chatgpt','claude','word','chrome'];
+  for (const id of ['dark','light']) {
+    const p = document.getElementById(id);
+    for (const n of names) {
+      const c = document.createElement('div'); c.className = 'cell';
+      const r = document.createElement('div'); r.className = 'row';
+      for (const s of [16,24,40]) { const i = new Image(s,s); i.src = n + '.svg'; i.alt = n; r.appendChild(i); }
+      const l = document.createElement('div'); l.textContent = n;
+      c.append(r, l); p.appendChild(c);
+    }
+  }
+</script>
+</body>
+</html>

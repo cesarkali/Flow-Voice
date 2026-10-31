@@ -1,4 +1,5 @@
-/* FlowVoice site: hero demo, styles showcase, small feature loops, reveal, nav. No dependencies. */
+/* FlowVoice site: header, mobile menu, hero dictation demo, styles switcher. No dependencies.
+   Header and menu are shared by every page (index, guia, privacidade, novidades). */
 (() => {
   "use strict";
   const $ = (s, r = document) => r.querySelector(s);
@@ -6,359 +7,287 @@
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  /** Resolves once `el` is on screen and the tab is visible (loops idle otherwise). */
-  function whenVisible(el) {
-    if (el._vis && !document.hidden) return Promise.resolve();
-    return new Promise((res) => {
-      const check = () => {
-        if (el._vis && !document.hidden) { el._wake = null; res(); }
-      };
-      el._wake = check;
-      document.addEventListener("visibilitychange", check, { once: true });
-    });
-  }
-  const viz = new IntersectionObserver((es) => {
-    for (const e of es) {
-      e.target._vis = e.isIntersecting;
-      if (e.isIntersecting && e.target._wake) e.target._wake();
-    }
-  }, { threshold: 0.15 });
-  const watch = (el) => { el._vis = false; viz.observe(el); };
-
   /* ---------- header + mobile nav ---------- */
-  // Shared by every page (index, guia, privacidade, novidades): each block checks its elements.
   const top = $(".top");
   if (top) {
     const onScroll = () => top.classList.toggle("scrolled", scrollY > 8);
     addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   }
-
+  /* Home on phones: the header's "Baixar" waits until the hero's own download button has scrolled away. */
+  const heroCta = $(".hero .btn-primary");
+  if (top && heroCta && top.hasAttribute("data-hero-cta")) {
+    new IntersectionObserver(([e]) => {
+      top.classList.toggle("past-hero", !e.isIntersecting && e.boundingClientRect.top < 0);
+    }).observe(heroCta);
+  }
   const menuBtn = $(".menu-btn");
   const nav = $("#nav");
   if (menuBtn && nav) {
-  const setMenu = (open) => {
-    menuBtn.setAttribute("aria-expanded", String(open));
-    menuBtn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
-    nav.classList.toggle("open", open);
-  };
-  menuBtn.addEventListener("click", () => setMenu(menuBtn.getAttribute("aria-expanded") !== "true"));
-  nav.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
-  addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("open")) { setMenu(false); menuBtn.focus(); } });
+    const setMenu = (open) => {
+      menuBtn.setAttribute("aria-expanded", String(open));
+      menuBtn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+      nav.classList.toggle("open", open);
+    };
+    menuBtn.addEventListener("click", () => setMenu(menuBtn.getAttribute("aria-expanded") !== "true"));
+    nav.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
+    addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && nav.classList.contains("open")) { setMenu(false); menuBtn.focus(); }
+    });
+    matchMedia("(min-width: 861px)").addEventListener("change", (e) => { if (e.matches) setMenu(false); });
   }
 
-  /* ---------- reveal ---------- */
-  const rev = new IntersectionObserver((es) => {
-    for (const e of es) if (e.isIntersecting) { e.target.classList.add("in"); rev.unobserve(e.target); }
-  }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
-  $$("[data-reveal]").forEach((el) => (reduce ? el.classList.add("in") : rev.observe(el)));
+  /* Older markup on secondary pages may still carry data-reveal; it is visible by default now. */
+  $$("[data-reveal]").forEach((el) => el.classList.add("in"));
 
   /* ---------- hero demo ---------- */
-  const SCENES = [
-    {
-      scene: "mail", ico: ["#0f6cbd", "O"], title: "Nova mensagem · Outlook",
-      style: "Profissional", app: "Outlook", active: 1,
-      chunks: ["oi pessoal, é só pra avisar", " que a reunião de amanhã", " vai ser às dez e não às nove,", " e quem puder traz", " os números do trimestre"],
-      result: "Olá, pessoal. Apenas um aviso: a reunião de amanhã será às 10h, e não às 9h. Quem puder, por favor, traga os números do trimestre.",
-    },
-    {
-      scene: "chat", ico: ["#1b1b1d", "AI"], title: "Chat de IA · Navegador",
-      style: "Prompt", app: "Navegador", active: 2,
-      chunks: ["então, tipo, eu queria que você", " revisasse esse código", " e visse se tem algum vazamento", " de memória, né, e aí", " me explica bem curtinho"],
-      result: "Revise este código e verifique se há vazamento de memória. Explique de forma curta.",
-    },
-  ];
-  const CHIPS = ["Natural", "Profissional", "Prompt", "Traduzir"];
-
   const demo = $(".demo");
   if (demo) {
-    const keys = $(".keys", demo);
-    const pListen = $(".p-listen", demo), pProc = $(".p-proc", demo), pCard = $(".p-card", demo);
-    const live = $("[data-live]", demo), time = $("[data-time]", demo), sty = $("[data-sty]", demo);
-    const cStyle = $("[data-cstyle]", demo), cMeta = $("[data-cmeta]", demo), cText = $("[data-ctext]", demo), chips = $("[data-chips]", demo);
-    const title = $("[data-title]", demo), ico = $("[data-ico]", demo);
-    const show = (p) => [pListen, pProc, pCard].forEach((x) => x.classList.toggle("on", x === p));
+    const SCENES = [
+      {
+        app: "Outlook", style: "Profissional",
+        said: "é, tipo, pessoal, a reunião de quinta tá confirmada às dez, né, e quem não puder me avisa",
+        out: "Olá, pessoal. A reunião de quinta-feira está confirmada para as 10h. Quem não puder participar, por favor me avise.",
+      },
+      {
+        app: "Slack", style: "Natural",
+        said: "então, subi a versão nova no servidor de teste, tipo, dá uma olhada quando puder e me fala se quebrou alguma coisa",
+        out: "Subi a versão nova no servidor de teste. Dá uma olhada quando puder e me fala se quebrou alguma coisa.",
+      },
+      {
+        app: "ChatGPT", style: "Prompt",
+        said: "é, eu preciso de um script em python que lê uma planilha do excel, né, e manda um e-mail pra cada cliente com a fatura atrasada há mais de dez dias",
+        out: "Escreva um script em Python que leia uma planilha do Excel e envie um e-mail a cada cliente com fatura atrasada há mais de 10 dias.",
+      },
+    ];
+    const panes = $$(".pane", demo);
+    const appBtns = $$(".demo-app", demo);
+    const pauseBtn = $(".demo-pause", demo);
+    const ov = $("[data-ov]", demo);
+    const pill = $("[data-pill]", demo);
+    const keys = $("[data-keys]", demo);
+    const live = $("[data-live]", demo);
+    const time = $("[data-time]", demo);
+    const fill = (sel, v) => $$(sel, demo).forEach((el) => (el.textContent = v));
 
-    const setScene = (s) => {
-      $$(".scene", demo).forEach((el) => el.classList.toggle("on", el.dataset.scene === s.scene));
-      title.textContent = s.title;
-      ico.style.background = s.ico[0];
-      ico.textContent = s.ico[1];
-      sty.innerHTML = `${s.style}<span class="app-n"> · ${s.app}</span>`;
-      cStyle.textContent = s.style;
-      cMeta.textContent = `· ${s.app} · Groq`;
-      chips.innerHTML = CHIPS.map((c, i) => `<span class="chip${i === s.active ? " on" : ""}">${c}</span>`).join("");
-      cText.textContent = s.result;
+    let gen = 0;
+    let paused = false;
+    let onScreen = false;
+    let started = false;
+    const ABORT = Symbol("abort");
+
+    /** Waits `ms` of running time: the clock stops while paused, off screen or in a hidden tab. */
+    async function wait(ms, my) {
+      let left = ms;
+      while (left > 0) {
+        if (my !== gen) throw ABORT;
+        if (paused || !onScreen || document.hidden) { await sleep(120); continue; }
+        const step = Math.min(left, 60);
+        await sleep(step);
+        left -= step;
+      }
+      if (my !== gen) throw ABORT;
+    }
+
+    const words = (s) => s.split(" ");
+    function setOut(pane, text, animate) {
+      const out = $(".out", pane);
+      out.textContent = "";
+      if (!text) return [];
+      const spans = words(text).map((w, i, a) => {
+        const s = document.createElement("span");
+        s.className = "w" + (animate ? " new" : "");
+        s.textContent = w + (i < a.length - 1 ? " " : "");
+        out.append(s);
+        return s;
+      });
+      return spans;
+    }
+    function select(i) {
+      panes.forEach((p, k) => p.classList.toggle("on", k === i));
+      appBtns.forEach((b, k) => b.setAttribute("aria-pressed", String(k === i)));
+      fill("[data-style]", SCENES[i].style);
+      fill("[data-style2]", SCENES[i].style);
+      fill("[data-app]", SCENES[i].app);
+      fill("[data-app2]", SCENES[i].app);
+    }
+    function resetChrome() {
+      ov.classList.remove("show", "listening");
+      pill.classList.remove("show", "done");
+      keys.classList.remove("down");
       live.textContent = "";
-      time.textContent = "0:00";
-      setTyped(s, "");
-    };
-    const setTyped = (s, txt) => {
-      const sc = $(`[data-scene="${s.scene}"]`, demo);
-      $(".typed", sc).textContent = txt;
-      const ph = $(".ph", sc);
-      if (ph) ph.hidden = !!txt;
-    };
-    const press = async () => { keys.classList.add("down"); await sleep(260); keys.classList.remove("down"); };
+      time.textContent = "00:00";
+    }
+    /** The finished state of a scene, for reduced motion and for a paused demo. */
+    function still(i) {
+      resetChrome();
+      select(i);
+      panes.forEach((p, k) => setOut(p, k === i ? SCENES[k].out : "", false));
+      pill.classList.add("show", "done");
+    }
+    function renderLive(list, firm) {
+      live.textContent = "";
+      const tail = firm ? 0 : Math.min(3, list.length);
+      const head = list.slice(0, list.length - tail).join(" ");
+      if (head) live.append(head + (tail ? " " : ""));
+      if (tail) {
+        const t = document.createElement("span");
+        t.className = "tail";
+        t.textContent = list.slice(-tail).join(" ");
+        live.append(t);
+      }
+    }
+    async function press(my) {
+      keys.classList.add("down");
+      await wait(240, my);
+      keys.classList.remove("down");
+    }
+
+    const wordMs = (w) => 110 + w.length * 16;
+    /* The markup paints scene 0 already listening, with its first FIRST_WORDS words in the overlay,
+       so the first frame shows the mechanism instead of an empty compose window. */
+    const FIRST_WORDS = 6;
+
+    async function scene(i, my, from = 0) {
+      const sc = SCENES[i];
+      const pane = panes[i];
+      const said = words(sc.said);
+      let spoken = 0; // ms of speech so far, drives the overlay's timer
+      if (from) {
+        select(i);
+        ov.classList.add("show", "listening");
+        spoken = said.slice(0, from).reduce((t, w) => t + wordMs(w), 0);
+      } else {
+        resetChrome();
+        select(i);
+        panes.forEach((p) => setOut(p, "", false));
+        await wait(900, my);
+        await press(my);
+        ov.classList.add("show", "listening");
+        await wait(450, my);
+      }
+
+      for (let k = from + 1; k <= said.length; k++) {
+        renderLive(said.slice(0, k), false);
+        const ms = wordMs(said[k - 1]);
+        await wait(ms, my);
+        spoken += ms;
+        time.textContent = "00:" + String(Math.min(59, Math.floor(spoken / 1000))).padStart(2, "0");
+      }
+      renderLive(said, true);
+      await wait(700, my);
+      await press(my);
+      ov.classList.remove("listening");
+      ov.classList.remove("show");
+      pill.classList.add("show");
+      await wait(1100, my);
+
+      pill.classList.add("done");
+      const spans = setOut(pane, sc.out, true);
+      await wait(30, my);
+      spans.forEach((s, k) => setTimeout(() => s.classList.remove("new"), k * 22));
+      await wait(3600, my);
+      pill.classList.remove("show");
+      await wait(900, my);
+    }
+
+    async function loop(from, resume = 0) {
+      const my = ++gen;
+      let i = from;
+      try {
+        for (;;) {
+          await scene(i, my, resume);
+          resume = 0;
+          i = (i + 1) % SCENES.length;
+        }
+      } catch (e) {
+        if (e !== ABORT) throw e;
+      }
+    }
+
+    appBtns.forEach((b, k) =>
+      b.addEventListener("click", () => {
+        if (reduce || paused) { gen++; still(k); return; }
+        started = true;
+        loop(k);
+      }),
+    );
 
     if (reduce) {
-      const s = SCENES[0];
-      setScene(s);
-      setTyped(s, s.result);
-      show(pCard);
+      pauseBtn.hidden = true;
+      still(0);
     } else {
-      watch(demo);
-      (async () => {
-        for (let n = 0; ; n++) {
-          const s = SCENES[n % SCENES.length];
-          await whenVisible(demo);
-          setScene(s);
-          show(null);
-          await sleep(1100);
-          await press();
-          show(pListen);
-          const t0 = performance.now();
-          const tick = setInterval(() => {
-            const sec = Math.floor((performance.now() - t0) / 1000);
-            time.textContent = `0:${String(sec).padStart(2, "0")}`;
-          }, 250);
-          await sleep(500);
-          for (const c of s.chunks) {
-            $$(".ck", live).forEach((k) => k.classList.remove("un", "new"));
-            const sp = document.createElement("span");
-            sp.className = "ck un new";
-            sp.textContent = c;
-            live.append(sp);
-            await sleep(850);
-          }
-          $$(".ck", live).forEach((k) => k.classList.remove("un"));
-          await sleep(700);
-          clearInterval(tick);
-          await press();
-          show(pProc);
-          await sleep(1300);
-          show(pCard);
-          setTyped(s, s.result);
-          const typed = $(`[data-scene="${s.scene}"] .typed`, demo);
-          typed.classList.add("flash");
-          requestAnimationFrame(() => requestAnimationFrame(() => typed.classList.remove("flash")));
-          await sleep(4600);
-          show(null);
-          await sleep(900);
+      pauseBtn.addEventListener("click", () => {
+        paused = !paused;
+        pauseBtn.setAttribute("aria-pressed", String(paused));
+        pauseBtn.setAttribute("aria-label", paused ? "Continuar demonstração" : "Pausar demonstração");
+        demo.classList.toggle("paused", paused);
+      });
+      new IntersectionObserver((es) => {
+        for (const e of es) {
+          onScreen = e.isIntersecting;
+          if (onScreen && !started) { started = true; loop(0, FIRST_WORDS); }
         }
-      })();
+      }, { threshold: 0.2 }).observe($(".sheet", demo));
     }
   }
 
-  /* ---------- styles showcase ---------- */
-  const OUT = {
-    natural: {
-      name: "Natural",
-      desc: "Corrige e limpa a fala mantendo seu jeito de falar.",
-      text: "Eu preciso de um script em Python que leia uma planilha do Excel e mande um e-mail para cada cliente com a fatura atrasada, mas só se o atraso passar de dez dias.",
-      en: "I need a Python script that reads an Excel spreadsheet and sends an email to every client with an overdue invoice, but only if it is more than ten days late.",
-    },
-    professional: {
-      name: "Profissional",
-      desc: "Texto formal e organizado, pronto para e-mail e trabalho.",
-      text: "Preciso de um script em Python que leia uma planilha do Excel e envie um e-mail a cada cliente com fatura em atraso há mais de dez dias.",
-      en: "I need a Python script that reads an Excel spreadsheet and emails each client whose invoice is more than ten days overdue.",
-    },
-    prompt: {
-      name: "Prompt",
-      desc: "Enxuga a fala para mandar a uma IA: menos tokens, mesmo contexto. A intensidade define o quanto ele condensa.",
-      text: {
-        light: "Crie um script em Python que leia uma planilha do Excel e envie um e-mail para cada cliente com fatura atrasada, apenas quando o atraso passar de dez dias.",
-        medium: "Script em Python:\n- Ler a planilha do Excel com os clientes\n- Enviar um e-mail a cada cliente com fatura atrasada\n- Condição: atraso maior que 10 dias",
-        strong: "Python: ler Excel → e-mail a clientes com fatura atrasada > 10 dias.",
-      },
-      en: {
-        light: "Write a Python script that reads an Excel spreadsheet and emails each client with an overdue invoice, only when it is more than ten days late.",
-        medium: "Python script:\n- Read the Excel spreadsheet of clients\n- Email each client with an overdue invoice\n- Condition: more than 10 days late",
-        strong: "Python: read Excel → email clients with invoices > 10 days overdue.",
-      },
-    },
-    raw: {
-      name: "Cru",
-      desc: "Só as palavras: sem pontuação, sem quebras de linha, sem IA.",
-      text: "eu preciso de um script em python que lê uma planilha do excel e aí manda um email pra cada cliente que tá com a fatura atrasada mas só se passou de dez dias",
-    },
-    verbatim: {
-      name: "Só transcrição",
-      desc: "A transcrição exatamente como saiu, sem passar por IA.",
-      text: "É, tipo assim, eu preciso de um script em Python que lê uma planilha do Excel, né, e aí manda um e-mail pra cada cliente que tá com a fatura atrasada, mas só se passou de dez dias, sabe?",
-    },
-    topics: {
-      name: "Tópicos",
-      desc: "Um estilo criado por você, com uma instrução simples: “Transforme em tópicos curtos, um por linha.”",
-      text: "• Script em Python\n• Lê uma planilha do Excel\n• Envia e-mail aos clientes com fatura atrasada\n• Só quando o atraso passa de 10 dias",
-      en: "• Python script\n• Reads an Excel spreadsheet\n• Emails clients with an overdue invoice\n• Only when it is more than 10 days late",
-    },
-  };
-  const XLATE_DESC = "Tradução é uma ação, não um estilo: dite já traduzindo (Ctrl + Shift + Y) ou traduza o resultado com um clique no overlay. 34 idiomas.";
+  /* ---------- styles switcher ---------- */
   const styler = $(".styler");
   if (styler) {
-    const tabs = $$(".tab", styler);
-    const out = $("[data-out]", styler), desc = $("[data-desc]", styler), sname = $("[data-sname]", styler);
-    const seg = $("[data-seg]", styler), panel = $("#sty-panel");
-    const xl = $("[data-xlate]", styler), sxl = $("[data-sxl]", styler);
-    let cur = "natural", intensity = "medium", english = false;
-
-    const pick = (v) => (typeof v === "string" ? v : v[intensity]);
-    const render = (animate = true) => {
-      const o = OUT[cur];
-      const canXl = !!o.en;
-      if (!canXl) english = false; // a non-AI style resets the toggle, so it never comes back on by surprise
-      const showEn = english && canXl;
-      const txt = pick(showEn ? o.en : o.text);
-      sname.textContent = o.name;
-      sxl.hidden = !showEn;
-      desc.textContent = showEn ? XLATE_DESC : o.desc;
-      seg.hidden = cur !== "prompt";
-      xl.hidden = !canXl;
-      xl.setAttribute("aria-pressed", String(showEn));
-      if (!animate || reduce) { out.textContent = txt; return; }
-      out.textContent = "";
-      const frag = document.createDocumentFragment();
-      // Split into words but keep line breaks and spaces as plain text nodes.
-      txt.split(/(\s+)/).forEach((part, i) => {
-        if (/^\s+$/.test(part) || !part) { frag.append(part); return; }
-        const w = document.createElement("span");
-        w.className = "w";
-        w.style.animationDelay = `${Math.min(i * 9, 520)}ms`;
-        w.textContent = part;
-        frag.append(w);
-      });
-      out.append(frag);
+    const OUT = {
+      natural: {
+        text: "Pessoal, a reunião de quinta vai ser às 10h. Quem não puder, me avisa.",
+        desc: "Corrige e limpa a fala, mantendo o seu jeito de falar.",
+      },
+      professional: {
+        text: "Olá a todos, a reunião de quinta-feira será às 10h. Quem não puder participar, por favor me avise.",
+        desc: "Formal e organizado, pronto para e-mail.",
+      },
+      prompt: {
+        text: "Reunião de quinta às 10h. Quem não puder participar deve avisar.",
+        desc: "Enxuto para mandar a uma IA: sem rodeios, mesmo contexto, menos tokens.",
+      },
+      raw: {
+        text: "pessoal a reunião de quinta vai ser às dez e quem não puder me avisa",
+        desc: "Só as palavras: sem pontuação e sem IA.",
+      },
+      verbatim: {
+        text: "É, tipo, pessoal, a reunião de quinta vai ser às dez, né, e quem não puder me avisa.",
+        desc: "Exatamente o que foi transcrito, sem passar por IA.",
+      },
     };
-    const select = (tab, focus) => {
+    const tabs = $$(".tab", styler);
+    const panel = $("#sty-panel");
+    const out = $("[data-out]", styler);
+    const desc = $("[data-desc]", styler);
+    const picks = $$("[data-pick]");
+
+    const setStyle = (key, focus) => {
+      const tab = tabs.find((t) => t.dataset.style === key);
+      if (!tab) return;
       tabs.forEach((t) => {
         const on = t === tab;
         t.setAttribute("aria-selected", String(on));
         t.tabIndex = on ? 0 : -1;
       });
       panel.setAttribute("aria-labelledby", tab.id);
+      picks.forEach((p) => p.setAttribute("aria-pressed", String(p.dataset.pick === key)));
+      out.textContent = OUT[key].text;
+      desc.textContent = OUT[key].desc;
+      if (!reduce) { out.classList.remove("swap"); void out.offsetWidth; out.classList.add("swap"); }
       if (focus) tab.focus();
-      if (cur === tab.dataset.style) return;
-      cur = tab.dataset.style;
-      render();
     };
-    tabs.forEach((t) => t.addEventListener("click", () => select(t)));
-    $(".tabs", styler).addEventListener("keydown", (e) => {
-      const i = tabs.indexOf(document.activeElement);
-      if (i < 0) return;
-      const k = e.key;
-      let j = null;
-      if (k === "ArrowDown" || k === "ArrowRight") j = (i + 1) % tabs.length;
-      else if (k === "ArrowUp" || k === "ArrowLeft") j = (i - 1 + tabs.length) % tabs.length;
-      else if (k === "Home") j = 0;
-      else if (k === "End") j = tabs.length - 1;
-      if (j !== null) { e.preventDefault(); select(tabs[j], true); }
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => setStyle(t.dataset.style));
+      t.addEventListener("keydown", (e) => {
+        const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+        if (d) { e.preventDefault(); setStyle(tabs[(i + d + tabs.length) % tabs.length].dataset.style, true); }
+        if (e.key === "Home") { e.preventDefault(); setStyle(tabs[0].dataset.style, true); }
+        if (e.key === "End") { e.preventDefault(); setStyle(tabs[tabs.length - 1].dataset.style, true); }
+      });
     });
-    xl.addEventListener("click", () => { english = !english; render(); });
-    $$("button", seg).forEach((b) =>
-      b.addEventListener("click", () => {
-        intensity = b.dataset.int;
-        $$("button", seg).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-        render();
-      }),
-    );
-    render(false);
-  }
-
-  /* ---------- live preview stage ---------- */
-  const lstage = $("[data-live-demo]");
-  if (lstage) {
-    const p = $("[data-live2]", lstage), tl = $("[data-tl]", lstage), t2 = $("[data-time2]", lstage);
-    const bars = $$("i", tl);
-    const CH = ["gente,", " subi a versão nova", " no servidor de teste,", " dá uma olhada", " antes do almoço", " e me avisa se quebrou algo"];
-    const TICK = 1500;
-    if (reduce) {
-      p.innerHTML = CH.map((c) => `<span class="ck">${c}</span>`).join("");
-      bars.forEach((b) => b.classList.add("done"));
-      t2.textContent = "0:09";
-    } else {
-      watch(lstage);
-      lstage.style.setProperty("--tick", TICK + "ms");
-      (async () => {
-        for (;;) {
-          await whenVisible(lstage);
-          p.textContent = "";
-          bars.forEach((b) => b.classList.remove("done", "cur"));
-          for (let i = 0; i < CH.length; i++) {
-            const b = bars[i];
-            b.classList.add("cur");
-            t2.textContent = `0:${String(Math.round(((i + 1) * TICK) / 1000)).padStart(2, "0")}`;
-            await sleep(TICK);
-            b.classList.replace("cur", "done");
-            $$(".ck", p).forEach((k) => k.classList.remove("un", "new"));
-            const sp = document.createElement("span");
-            sp.className = "ck un new";
-            sp.textContent = CH[i];
-            p.append(sp);
-          }
-          await sleep(900);
-          $$(".ck", p).forEach((k) => k.classList.remove("un"));
-          await sleep(2600);
-        }
-      })();
-    }
-  }
-
-  /* ---------- step cycles (command mode) ---------- */
-  $$("[data-cycle]").forEach((el) => {
-    const steps = el.dataset.cycle.split(",");
-    const ms = el.dataset.cycleMs.split(",").map(Number);
-    if (reduce) { el.dataset.step = steps[steps.length - 1]; return; }
-    watch(el);
-    (async () => {
-      for (let i = 0; ; i = (i + 1) % steps.length) {
-        await whenVisible(el);
-        el.dataset.step = steps[i];
-        await sleep(ms[i] || 1500);
-      }
-    })();
-  });
-
-  /* ---------- per-app rows ---------- */
-  const apps = $("[data-apps]");
-  if (apps && !reduce) {
-    const rows = $$(".app-row", apps);
-    watch(apps);
-    (async () => {
-      for (let i = 0; ; i = (i + 1) % rows.length) {
-        await whenVisible(apps);
-        rows.forEach((r, j) => r.classList.toggle("on", j === i));
-        await sleep(1900);
-      }
-    })();
-  }
-
-  /* ---------- gallery ---------- */
-  const CAPS = [
-    "O atalho principal, os provedores em uso e seu histórico, num lugar só.",
-    "Estilos prontos e os seus, com instruções em português.",
-    "Cadastre várias chaves por provedor e defina a ordem de uso.",
-    "Escolha entre a nuvem e os modelos locais do Whisper, com download dentro do app.",
-  ];
-  const gtabs = $$(".gal-tabs [data-shot]");
-  if (gtabs.length) {
-    const imgs = $$(".gal-frame img"), cap = $("[data-gcap]"), frame = $(".gal-frame");
-    const pick = (b, focus) => {
-      const n = +b.dataset.shot;
-      gtabs.forEach((t) => { const on = t === b; t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1; });
-      imgs.forEach((im, i) => im.classList.toggle("on", i === n));
-      cap.textContent = CAPS[n];
-      if (frame) frame.setAttribute("aria-labelledby", b.id);
-      if (focus) b.focus();
-    };
-    gtabs.forEach((b) => b.addEventListener("click", () => pick(b)));
-    $(".gal-tabs").addEventListener("keydown", (e) => {
-      const i = gtabs.indexOf(document.activeElement);
-      if (i < 0) return;
-      const k = e.key, n = gtabs.length;
-      const j = k === "ArrowRight" ? (i + 1) % n : k === "ArrowLeft" ? (i - 1 + n) % n : k === "Home" ? 0 : k === "End" ? n - 1 : null;
-      if (j !== null) { e.preventDefault(); pick(gtabs[j], true); }
-    });
+    picks.forEach((p) => p.addEventListener("click", () => setStyle(p.dataset.pick)));
+    picks.forEach((p) => p.setAttribute("aria-pressed", String(p.dataset.pick === "professional")));
   }
 })();

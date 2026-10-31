@@ -7,8 +7,8 @@
 <meta name="description" content="Aperte um atalho, fale, e o texto aparece onde está o cursor, reescrito por IA no estilo que você escolher. Grátis e de código aberto, com chaves de API gratuitas ou 100% offline.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#0b0b0c">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#f6f6f4">
+<meta name="color-scheme" content="light">
 <link rel="canonical" href="https://flowvoice.caliberda.com.br/">
 
 <meta property="og:type" content="website">
@@ -32,7 +32,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
 <link rel="stylesheet" href="styles.css">
 <script>document.documentElement.classList.add("js")</script>
 
@@ -61,51 +61,28 @@
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
-    <linearGradient id="lg-tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#232327"/><stop offset="1" stop-color="#0b0b0c"/></linearGradient>
-    <symbol id="logo" viewBox="0 0 1024 1024">
-      <rect width="1024" height="1024" rx="232" fill="url(#lg-tile)"/>
-      <rect x="6" y="6" width="1012" height="1012" rx="226" fill="none" stroke="#fff" stroke-opacity=".1" stroke-width="12"/>
-      <g fill="#EDEDEA"><rect x="168" y="427" width="92" height="170" rx="46"/><rect x="288" y="317" width="92" height="390" rx="46"/><rect x="408" y="382" width="92" height="260" rx="46"/><rect x="520" y="447" width="92" height="130" rx="46"/></g>
-      <g fill="#FF2E00"><rect x="710" y="250" width="84" height="524" rx="42"/><rect x="644" y="208" width="216" height="84" rx="42"/><rect x="644" y="732" width="216" height="84" rx="42"/></g>
-    </symbol>
-    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5 10.4 4.5v7H3zM11.4 4.4 21 3v8.5h-9.6zM3 12.5h7.4v7L3 18.5zM11.4 12.5H21V21l-9.6-1.4z"/></symbol>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
     <symbol id="i-gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.56 9.56 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></symbol>
-    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
-    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
-    <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h3.2v14H7zM13.8 5H17v14h-3.2z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7.5 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L8.7 4.5a.8.8 0 0 0-1.2.7z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0-5.5-5.5M19.5 12l-5.5 5.5"/></symbol>
     <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></symbol>
-    <symbol id="i-send" viewBox="0 0 24 24"><path fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0-6 6m6-6 6 6"/></symbol>
-    <symbol id="i-lang" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M8.5 3v2M6 5c.6 3.2 2.8 5.8 6 7M11 5c-.6 3.5-3 6.4-7 8"/><path d="m12 21 4-9 4 9M13.4 18h5.2"/></g></symbol>
-    <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></g></symbol>
-    <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7.5h6"/></g></symbol>
-    <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g></symbol>
-    <symbol id="i-paste" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V3.8c0-.4.4-.8.8-.8h4.4c.4 0 .8.4.8.8v.7M9 11h6M9 15h4"/></g></symbol>
-    <symbol id="i-hold" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></g></symbol>
-    <symbol id="i-swap" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></g></symbol>
-    <symbol id="i-upd" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/></g></symbol>
-    <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></g></symbol>
-    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20.5s-7.5-4.6-7.5-10.1A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8c0 5.5-7.5 10.1-7.5 10.1z"/></symbol>
   </defs>
 </svg>
 
-<header class="top wide" id="top">
+<header class="top" id="top" data-hero-cta>
   <div class="wrap">
-    <a class="brand" href="#top" aria-label="FlowVoice, início">
-      <svg aria-hidden="true"><use href="#logo"/></svg>
-      <span>FlowVoice</span>
-      <span class="ver">2.0</span>
-    </a>
-    <nav class="nav" id="nav" aria-label="Seções">
-      <a href="#como">Como funciona</a>
+    <a class="brand" href="./" aria-label="FlowVoice, página inicial"><img src="assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="Principal">
       <a href="#estilos">Estilos</a>
-      <a href="#recursos">Recursos</a>
-      <a href="#chaves">Grátis e offline</a>
-      <a href="#privacidade">Privacidade</a>
-      <a href="#faq">Dúvidas</a>
+      <a href="#gratis">Grátis e offline</a>
       <a href="guia.html">Guia de chaves</a>
+      <a href="novidades.html">Novidades</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a>
     </nav>
     <div class="top-cta">
-      <a class="btn btn-ghost btn-sm gh" href="https://github.com/cesarkali/Flow-Voice" rel="noopener"><svg aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
       <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar</a>
       <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menu"><span></span></button>
     </div>
@@ -114,441 +91,192 @@
 
 <main id="main">
 
-<!-- ============ HERO ============ -->
 <section class="hero" aria-labelledby="hero-t">
   <div class="wrap hero-grid">
-    <div class="hero-copy">
-      <div class="eyebrow">
-        <span class="tag"><span class="dot"></span>Grátis e código aberto</span>
-        <span class="tag">Windows · Linux</span>
-      </div>
-      <h1 id="hero-t">Fale. O texto aparece onde está o <span class="caret-word">cursor<span class="ibeam" aria-hidden="true"></span></span></h1>
-      <p class="lede">Aperte <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Espaço</kbd> em qualquer app e fale normalmente. O FlowVoice transcreve, <strong>tira os “né” e “tipo”</strong>, reescreve no estilo certo e cola o texto pronto. Com <strong>chaves gratuitas</strong> ou <strong>100% offline</strong>.</p>
+    <h1 id="hero-t">Fale. O texto aparece onde está o&nbsp;<span class="nowrap">cursor.<span class="caret" aria-hidden="true"></span></span></h1>
+
+    <div class="hero-side">
+      <p class="lede">Ditado por voz com IA, em qualquer app do Windows. Limpo, pontuado e no tom certo. Grátis, de código aberto e, se você quiser, 100% offline.</p>
       <div class="cta-row">
-        <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>
-          <svg aria-hidden="true"><use href="#i-win"/></svg>Baixar para Windows
-        </a>
-        <a class="btn btn-ghost btn-lg" href="https://github.com/cesarkali/Flow-Voice" rel="noopener">
-          <svg aria-hidden="true"><use href="#i-gh"/></svg>Ver no GitHub
-        </a>
+        <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>Baixar para Windows</a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/cesarkali/Flow-Voice" rel="noopener"><svg aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
       </div>
-      <p class="hero-meta"><span>Windows 10 e 11</span><span>instalador de ~3 MB</span><span>também para <a class="link" href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">Linux (.deb)</a></span></p>
+      <p class="hero-meta">Windows 10 e 11 · ~3 MB · também em <a href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">Linux (.deb)</a></p>
     </div>
 
-    <div class="demo" role="img" aria-label="Demonstração: num e-mail do Outlook, a pessoa aperta o atalho e fala. O texto aparece ao vivo no overlay do FlowVoice, é reescrito no estilo Profissional e colado no e-mail. Depois, no chat de uma IA, a fala vira um prompt enxuto.">
-      <div class="keys" aria-hidden="true"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Espaço</kbd></div>
-      <div class="win" aria-hidden="true">
-        <div class="win-bar">
-          <span class="win-ico" data-ico style="background:#0f6cbd">O</span>
-          <span class="win-title" data-title>Nova mensagem · Outlook</span>
-          <span class="win-ctl"><i>–</i><i>▢</i><i>✕</i></span>
+    <figure class="demo" aria-labelledby="demo-cap">
+      <figcaption id="demo-cap" class="sr">Demonstração: em cada app, a pessoa aperta Ctrl+Shift+Espaço e fala. O texto aparece ao vivo no overlay do FlowVoice e é colado no lugar do cursor, já reescrito: formal no Outlook, natural no Slack, como prompt no ChatGPT.</figcaption>
+      <div class="demo-bar">
+        <div class="demo-apps" role="group" aria-label="Escolher app da demonstração">
+          <button type="button" class="demo-app" data-go="0" aria-pressed="true"><img src="assets/apps/outlook.svg" alt="" width="18" height="18">Outlook</button>
+          <button type="button" class="demo-app" data-go="1" aria-pressed="false"><img src="assets/apps/slack.svg" alt="" width="18" height="18">Slack</button>
+          <button type="button" class="demo-app" data-go="2" aria-pressed="false"><img src="assets/apps/chatgpt.svg" alt="" width="18" height="18">ChatGPT</button>
         </div>
-        <div class="win-pane">
-          <div class="scene on" data-scene="mail">
-            <div class="field"><b>Para</b><span>equipe@empresa.com.br</span></div>
-            <div class="field"><b>Assunto</b><span>Reunião de amanhã</span></div>
-            <p class="win-body"><span class="typed"></span><i class="caret-i"></i></p>
-          </div>
-          <div class="scene" data-scene="chat">
-            <div class="chat-box">
-              <p class="win-body"><span class="typed"></span><i class="caret-i"></i><span class="ph">Pergunte qualquer coisa</span></p>
-              <div class="chat-row"><span>+ ferramentas</span><span class="chat-send"><svg><use href="#i-send"/></svg></span></div>
-            </div>
-          </div>
+        <button type="button" class="demo-pause" aria-pressed="false" aria-label="Pausar demonstração"><svg class="ic-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="ic-play" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </div>
+
+      <div class="sheet" aria-hidden="true">
+        <div class="pane on" data-pane="0">
+          <div class="pane-head"><img src="assets/apps/outlook.svg" alt="" width="20" height="20"><b>Nova mensagem</b><span>Outlook</span></div>
+          <dl class="mail">
+            <div><dt>Para</dt><dd>equipe@empresa.com.br</dd></div>
+            <div><dt>Assunto</dt><dd>Reunião de quinta</dd></div>
+          </dl>
+          <p class="field"><span class="out"></span><i class="ibeam"></i></p>
+        </div>
+        <div class="pane" data-pane="1">
+          <div class="pane-head"><img src="assets/apps/slack.svg" alt="" width="20" height="20"><b># produto</b><span>Slack</span></div>
+          <div class="msg"><span class="av">A</span><div><b>Ana Lima</b> <time>14:02</time><p>Alguém já testou a versão nova?</p></div></div>
+          <p class="field boxed"><span class="out"></span><i class="ibeam"></i></p>
+        </div>
+        <div class="pane" data-pane="2">
+          <div class="pane-head"><img src="assets/apps/chatgpt.svg" alt="" width="20" height="20"><b>Nova conversa</b><span>ChatGPT</span></div>
+          <p class="chat-q">Como posso ajudar?</p>
+          <p class="field boxed round"><span class="out"></span><i class="ibeam"></i></p>
         </div>
 
-        <div class="ov">
-          <div class="panel p-listen">
-            <div class="row">
-              <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
-              <span class="meta"><span class="mode">Ditado</span><span class="sty" data-sty>Profissional<span class="app-n"> · Outlook</span></span></span>
-              <span class="time" data-time>0:00</span>
-              <span class="stopb"><i></i></span>
-            </div>
-            <div class="live"><p data-live></p></div>
-          </div>
-          <div class="panel p-proc">
-            <div class="row"><span class="spin"></span><span class="plabel shimmer">Reescrevendo com Groq…</span></div>
-          </div>
-          <div class="panel p-card">
-            <div class="card-h">
-              <span class="badge"><svg><use href="#i-check"/></svg></span>
-              <b data-cstyle>Profissional</b><span class="muted" data-cmeta>· Outlook · Groq</span>
-              <span class="x"><svg width="14" height="14"><use href="#i-x"/></svg></span>
-            </div>
-            <p class="card-t" data-ctext></p>
-            <div class="chips" data-chips></div>
-            <div class="acts">
-              <span class="esc">esc</span>
-              <span class="b"><svg><use href="#i-copy"/></svg>Copiar</span>
-              <span class="b pri"><svg><use href="#i-check"/></svg>Colado</span>
+        <div class="keys" data-keys><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Espaço</kbd></div>
+
+        <div class="ov show listening" data-ov>
+          <div class="ov-live">
+            <p class="ov-text" data-live>é, tipo, pessoal, <span class="tail">a reunião de</span></p>
+            <div class="ov-row">
+              <span class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="ov-meta"><span class="ov-mode">Ditado</span><span><b data-style>Profissional</b><span class="ov-app"> · <span data-app>Outlook</span></span></span></span>
+              <span class="ov-time" data-time>00:01</span>
+              <span class="ov-stop"><i></i></span>
+              <span class="ov-x"><svg><use href="#i-x"/></svg></span>
             </div>
           </div>
+        </div>
+        <div class="pill" data-pill>
+          <span data-p="proc"><span class="spin"></span></span><span data-p="proc">Reescrevendo com Groq…</span>
+          <span data-p="done"><span class="ok"><svg><use href="#i-check"/></svg></span><b>Colado</b><span><span data-style2>Profissional</span> · <span data-app2>Outlook</span></span></span>
         </div>
       </div>
-    </div>
+    </figure>
   </div>
 </section>
 
-<section class="strip" aria-label="Em números">
-  <div class="wrap">
-    <ul>
-      <li data-reveal><div class="n">R$ <em>0</em></div><div class="d">sem assinatura, sem conta, sem limite do app</div></li>
-      <li data-reveal style="--d:80ms"><div class="n">~1,5 s</div><div class="d">para o texto ao vivo atualizar enquanto você fala</div></li>
-      <li data-reveal style="--d:160ms"><div class="n">34</div><div class="d">idiomas para traduzir enquanto dita</div></li>
-      <li data-reveal style="--d:240ms"><div class="n">~3 MB</div><div class="d">de instalador; roda quieto na bandeja</div></li>
-    </ul>
-  </div>
-</section>
-
-<!-- ============ COMO FUNCIONA ============ -->
-<section class="sec" id="como" aria-labelledby="como-t">
-  <div class="wrap">
-    <div class="sec-head" data-reveal>
-      <div class="idx"><span class="label"><b>01</b> · Como funciona</span></div>
-      <h2 id="como-t">Três passos. Nenhuma janela no caminho.</h2>
-      <p>O FlowVoice fica na bandeja do sistema. Não importa se você está no e-mail, no WhatsApp Web, no Word ou no editor de código: o atalho funciona igual.</p>
-    </div>
-    <ol class="steps">
-      <li class="step" data-reveal>
-        <span class="num">01</span>
-        <div class="vis"><kbd>Ctrl</kbd><span class="plus">+</span><kbd>Shift</kbd><span class="plus">+</span><kbd>Espaço</kbd></div>
-        <h3>Aperte o atalho</h3>
-        <p>Em qualquer campo de texto. Prefere segurar enquanto fala? Ative o modo <em>push-to-talk</em>.</p>
-      </li>
-      <li class="step" data-reveal style="--d:100ms">
-        <span class="num">02</span>
-        <div class="vis"><span class="mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
-        <h3>Fale do seu jeito</h3>
-        <p>Pode hesitar, repetir, voltar atrás. Você acompanha o texto ao vivo num overlay discreto.</p>
-      </li>
-      <li class="step" data-reveal style="--d:200ms">
-        <span class="num">03</span>
-        <div class="vis"><div class="mini-doc">Reunião confirmada para quinta, às 10h.<i class="caret-i"></i></div></div>
-        <h3>O texto aparece pronto</h3>
-        <p>Pontuado, limpo e no estilo escolhido, colado onde o cursor estava. Aperte de novo para terminar.</p>
-      </li>
-    </ol>
-  </div>
-</section>
-
-<!-- ============ ESTILOS ============ -->
 <section class="sec" id="estilos" aria-labelledby="est-t">
   <div class="wrap">
-    <div class="sec-head" data-reveal>
-      <div class="idx"><span class="label"><b>02</b> · Estilos</span></div>
-      <h2 id="est-t">A mesma fala, do jeito que cada lugar pede.</h2>
-      <p>Escolha um estilo e veja a frase abaixo ser reescrita. Mudou de ideia depois de colar? Um clique no próprio overlay refaz em outro estilo ou traduz.</p>
+    <div class="sec-head">
+      <h2 id="est-t">Uma fala. O tom certo para cada lugar.</h2>
+      <p>Escolha o estilo, ou deixe o app em foco escolher por você.</p>
     </div>
 
-    <div class="styler" data-reveal>
-      <div class="tabs" role="tablist" aria-label="Estilos de escrita">
-        <button class="tab" role="tab" id="t-natural" aria-controls="sty-panel" aria-selected="true" data-style="natural">Natural <span class="k ia">IA</span></button>
-        <button class="tab" role="tab" id="t-professional" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="professional">Profissional <span class="k ia">IA</span></button>
-        <button class="tab" role="tab" id="t-prompt" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="prompt">Prompt <span class="k ia">IA</span></button>
-        <button class="tab" role="tab" id="t-raw" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="raw">Cru <span class="k">sem IA</span></button>
-        <button class="tab" role="tab" id="t-verbatim" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="verbatim">Só transcrição <span class="k">sem IA</span></button>
-        <span class="label sep" aria-hidden="true">Seus estilos</span>
-        <button class="tab" role="tab" id="t-topics" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="topics">Tópicos <span class="k">criado por você</span></button>
+    <div class="styles">
+      <div class="styler">
+        <p class="said"><span class="said-l">Você falou</span>“<s>é, tipo,</s> pessoal, a reunião de quinta vai ser às dez, <s>né,</s> e quem não puder me avisa”</p>
+        <div class="tabs" role="tablist" aria-label="Estilos de escrita">
+          <button class="tab" role="tab" id="t-natural" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="natural">Natural</button>
+          <button class="tab" role="tab" id="t-professional" aria-controls="sty-panel" aria-selected="true" data-style="professional">Profissional</button>
+          <button class="tab" role="tab" id="t-prompt" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="prompt">Prompt</button>
+          <button class="tab" role="tab" id="t-raw" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="raw">Cru</button>
+          <button class="tab" role="tab" id="t-verbatim" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="verbatim">Só transcrição</button>
+        </div>
+        <div class="result" id="sty-panel" role="tabpanel" aria-labelledby="t-professional" aria-live="polite">
+          <p class="result-t" data-out>Olá a todos, a reunião de quinta-feira será às 10h. Quem não puder participar, por favor me avise.</p>
+          <p class="result-d" data-desc>Formal e organizado, pronto para e-mail.</p>
+        </div>
       </div>
 
-      <div class="io">
-        <div class="box">
-          <div class="box-h"><span class="label">Você falou</span><span class="meta-pill">0:09 · 39 palavras</span></div>
-          <p class="said">“<span class="f">É, tipo assim,</span> eu preciso de um script em Python que lê uma planilha do Excel, <span class="f">né,</span> e aí manda um e-mail pra cada cliente que tá com a fatura atrasada, mas só se passou de dez dias, <span class="f">sabe?</span>”</p>
-        </div>
-        <div class="box out" id="sty-panel" role="tabpanel" aria-labelledby="t-natural" aria-live="polite">
-          <div class="box-h">
-            <span class="label">Resultado · <span data-sname class="acc">Natural</span><span data-sxl hidden> → inglês</span></span>
-            <div class="box-acts">
-              <div class="seg" role="group" aria-label="Intensidade do Prompt" data-seg hidden>
-              <button type="button" data-int="light" aria-pressed="false">Leve</button>
-              <button type="button" data-int="medium" aria-pressed="true">Média</button>
-              <button type="button" data-int="strong" aria-pressed="false">Forte</button>
-            </div>
-            <button type="button" class="xlate" data-xlate aria-pressed="false"><svg aria-hidden="true"><use href="#i-lang"/></svg>Traduzir para inglês</button>
-            </div>
-          </div>
-          <p class="out-text" data-out>Eu preciso de um script em Python que leia uma planilha do Excel e mande um e-mail para cada cliente com a fatura atrasada, mas só se o atraso passar de dez dias.</p>
-          <p class="out-desc" data-desc>Corrige e limpa a fala mantendo seu jeito de falar.</p>
-        </div>
+      <div class="per-app">
+        <h3>Estilo por app</h3>
+        <p>O FlowVoice reconhece o app em foco, inclusive no navegador, e usa o estilo que você definiu para ele.</p>
+        <ul class="map">
+          <li><button type="button" data-pick="professional" aria-controls="sty-panel"><span class="icons"><img src="assets/apps/outlook.svg" alt="Outlook" width="28" height="28"><img src="assets/apps/gmail.svg" alt="Gmail" width="28" height="28"><img src="assets/apps/word.svg" alt="Word" width="28" height="28"><img src="assets/apps/notion.svg" alt="Notion" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>Profissional</b></button></li>
+          <li><button type="button" data-pick="natural" aria-controls="sty-panel"><span class="icons"><img src="assets/apps/slack.svg" alt="Slack" width="28" height="28"><img src="assets/apps/whatsapp.svg" alt="WhatsApp" width="28" height="28"><img src="assets/apps/teams.svg" alt="Teams" width="28" height="28"><img src="assets/apps/discord.svg" alt="Discord" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>Natural</b></button></li>
+          <li><button type="button" data-pick="prompt" aria-controls="sty-panel"><span class="icons"><img src="assets/apps/vscode.svg" alt="VS Code" width="28" height="28"><img src="assets/apps/chatgpt.svg" alt="ChatGPT" width="28" height="28"><img src="assets/apps/claude.svg" alt="Claude" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>Prompt</b></button></li>
+        </ul>
+        <p class="note"><img src="assets/apps/chrome.svg" alt="" width="16" height="16">Gmail, WhatsApp Web, ChatGPT e outros também são reconhecidos dentro do Chrome e do Edge.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ RECURSOS ============ -->
-<section class="sec" id="recursos" aria-labelledby="rec-t">
-  <div class="wrap">
-    <div class="sec-head" data-reveal>
-      <div class="idx"><span class="label"><b>03</b> · Recursos</span></div>
-      <h2 id="rec-t">Feito para quem escreve o dia inteiro.</h2>
+<section class="sec" id="comando" aria-labelledby="cmd-t">
+  <div class="wrap cmd">
+    <div class="sec-head">
+      <h2 id="cmd-t">Selecione um texto. Diga o que mudar.</h2>
+      <p>No modo Comando, <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>K</kbd> reescreve a seleção no próprio lugar, em qualquer app.</p>
     </div>
+    <ol class="cmd-steps">
+      <li><span class="cmd-l">Selecionado</span><p class="cmd-before"><mark>oi ana, não vou conseguir ir na reunião amanhã não, deu um problema aqui, foi mal</mark></p></li>
+      <li><span class="cmd-l">Você diz</span><p class="cmd-say"><span class="wave sm" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>“deixa mais formal”</p></li>
+      <li><span class="cmd-l">Fica assim</span><p class="cmd-after">Oi, Ana. Infelizmente não poderei participar da reunião de amanhã por causa de um imprevisto. Peço desculpas.</p></li>
+    </ol>
+    <p class="cmd-more">Também vale “traduz pro inglês”, “resume em tópicos”, “corrige a gramática”.</p>
+  </div>
+</section>
 
-    <article class="feat" id="ao-vivo">
-      <div class="feat-txt" data-reveal>
-        <span class="label">Prévia ao vivo</span>
-        <h3 style="margin-top:12px">Veja o texto nascer enquanto você fala.</h3>
-        <p>Nada de falar no escuro e torcer. O overlay mostra a transcrição em tempo real, atualizada a cada ~1,5 s pela nuvem (ou por um Whisper local leve). As palavras ainda incertas aparecem mais claras e se firmam conforme você continua.</p>
-        <ul class="ticks">
-          <li><span><b>Overlay que não rouba o foco:</b> o cursor continua no seu app.</span></li>
-          <li><span><b>Cancelar ou parar</b> a qualquer momento, com o mouse ou o atalho.</span></li>
-          <li><span><b>Silencia o PC</b> enquanto grava, se você quiser.</span></li>
-        </ul>
-      </div>
-      <div class="stage" data-reveal style="--d:120ms" data-live-demo aria-hidden="true">
-        <div class="capsule">
-          <div class="row">
-            <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
-            <span class="meta"><span class="mode">Ditado</span><span class="sty">Natural · Slack</span></span>
-            <span class="time" data-time2>0:00</span>
-            <span class="stopb" style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.07)"><i style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></i></span>
-          </div>
-          <div class="live"><p data-live2>gente, subi a versão nova no servidor de teste</p></div>
+<section class="sec" id="gratis" aria-labelledby="gr-t">
+  <div class="wrap free">
+    <div class="free-txt">
+      <h2 id="gr-t">Grátis de verdade. Até sem internet.</h2>
+      <dl class="facts">
+        <div>
+          <dt>Com uma chave grátis</dt>
+          <dd>Groq (o recomendado), Gemini, Mistral ou OpenRouter. Sem cartão, em poucos minutos. <a href="guia.html">Ver o guia das chaves</a></dd>
         </div>
-        <div class="tl" data-tl><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="tl-cap"><span>atualização ao vivo</span><span>~1,5 s</span></div>
-      </div>
-    </article>
+        <div>
+          <dt>Ou 100% no seu PC</dt>
+          <dd>Modelos Whisper locais, inclusive um ajustado para o português do Brasil. Nada sai da máquina.</dd>
+        </div>
+        <div>
+          <dt>Sem conta, sem servidor nosso</dt>
+          <dd>As chaves ficam no cofre de credenciais do Windows. Código aberto, licença GPL-3.0. <a href="privacidade.html">Privacidade</a></dd>
+        </div>
+      </dl>
+    </div>
+    <figure class="shot">
+      <img src="assets/shot-providers.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de provedores do FlowVoice: Groq recomendado e grátis, Google Gemini, OpenRouter e Mistral grátis, OpenAI pago e Ollama local.">
+    </figure>
+  </div>
+</section>
 
-    <article class="feat rev" id="comando">
-      <div class="feat-txt" data-reveal>
-        <span class="label">Modo Comando · <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>K</kbd></span>
-        <h3 style="margin-top:12px">Selecione um texto. Diga o que fazer com ele.</h3>
-        <p>Marque qualquer trecho, em qualquer app, aperte o atalho e fale a instrução. O FlowVoice lê a seleção, aplica o pedido e coloca o resultado no lugar.</p>
-        <ul class="ticks">
-          <li><span>“<b>deixa mais formal</b>”, “<b>traduz pro inglês</b>”, “<b>resume em tópicos</b>”</span></li>
-          <li><span>Não gostou? <b>Refazer</b> aplica o comando de novo, e o texto original fica a um clique.</span></li>
-        </ul>
-      </div>
-      <div class="stage cmd" data-reveal data-cycle="0,1,2,3" data-cycle-ms="1400,1300,1900,3600" data-step="0" aria-hidden="true">
-        <div class="doc">
-          <div class="dh">Teams · conversa com Ana</div>
-          <span class="swap"><span class="before"><span class="sel">oi ana, não vou conseguir ir na reunião amanhã não, deu um problema aqui, foi mal</span></span><span class="after"><span class="sel">Oi, Ana. Infelizmente não poderei participar da reunião de amanhã por causa de um imprevisto. Peço desculpas.</span></span></span>
-        </div>
-        <div class="capsule">
-          <div class="row">
-            <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
-            <span class="meta"><span class="mode">Comando</span><span class="sty say"><span class="say-l"><q>deixa mais formal</q></span><span class="done-l">Aplicado</span></span></span>
-          </div>
-        </div>
-      </div>
-    </article>
-
-    <article class="feat" id="por-app">
-      <div class="feat-txt" data-reveal>
-        <span class="label">Estilo por aplicativo</span>
-        <h3 style="margin-top:12px">Formal no Outlook. Leve no Slack. Enxuto no editor.</h3>
-        <p>Diga uma vez qual estilo cada programa usa e esqueça. O FlowVoice reconhece o app em foco e ajusta sozinho. Os chips do resultado continuam trocando o estilo quando você precisar.</p>
-        <ul class="ticks">
-          <li><span><b>Sugestões prontas</b> para os apps que você mais usa.</span></li>
-          <li><span>Crie <b>seus próprios estilos</b> com instruções em português.</span></li>
-        </ul>
-      </div>
-      <div class="stage" data-reveal style="--d:120ms" aria-hidden="true">
-        <div class="apps" data-apps>
-          <div class="app-row on"><span class="ai" style="background:#0f6cbd">O</span><span><span class="an">Outlook</span><br><span class="ax">outlook.exe</span></span><span class="arrow">→</span><span class="as">Profissional</span></div>
-          <div class="app-row"><span class="ai" style="background:#4a154b">S</span><span><span class="an">Slack</span><br><span class="ax">slack.exe</span></span><span class="arrow">→</span><span class="as">Natural</span></div>
-          <div class="app-row"><span class="ai" style="background:#1f8ad2">VS</span><span><span class="an">VS Code</span><br><span class="ax">code.exe</span></span><span class="arrow">→</span><span class="as">Prompt</span></div>
-          <div class="app-row"><span class="ai" style="background:#128c4a">W</span><span><span class="an">WhatsApp</span><br><span class="ax">whatsapp.exe</span></span><span class="arrow">→</span><span class="as">Natural</span></div>
-          <div class="app-row"><span class="ai" style="background:#2b2b30">C</span><span><span class="an">Cursor</span><br><span class="ax">cursor.exe</span></span><span class="arrow">→</span><span class="as">Prompt</span></div>
-        </div>
-      </div>
-    </article>
-
-    <ul class="more" data-reveal>
-      <li><span class="ic"><svg aria-hidden="true"><use href="#i-lang"/></svg></span><h4>Tradução por voz</h4><p>Fale em português, cole em inglês, espanhol ou outro dos 34 idiomas.<span class="hk"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Y</kbd></span></p></li>
-      <li><span class="ic"><svg aria-hidden="true"><use href="#i-search"/></svg></span><h4>Assistente com busca</h4><p>Pergunte em voz alta e receba a resposta num chat, com busca na web e fontes citadas (Tavily).<span class="hk"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>U</kbd></span></p></li>
-      <li><span class="ic"><svg aria-hidden="true"><use href="#i-book"/></svg></span><h4>Vocabulário próprio</h4><p>Nomes, marcas e termos técnicos sempre escritos do jeito certo.</p></li>
-      <li><span class="ic"><svg aria-hidden="true"><use href="#i-clock"/></svg></span><h4>Histórico pesquisável</h4><p>Tudo o que você ditou fica salvo no seu PC, com busca.</p></li>
-      <li><span class="ic"><svg aria-hidden="true"><use href="#i-paste"/></svg></span><h4>Colar de novo</h4><p>Cola o último ditado em outro app sem repetir nada.<span class="hk"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd></span></p></li>
-      <li><span class="ic"><svg aria-hidden="true"><use href="#i-hold"/></svg></span><h4>Segurar para falar</h4><p>Modo <em>push-to-talk</em>: grava só enquanto o atalho estiver pressionado.</p></li>
-      <li><span class="ic"><svg aria-hidden="true"><use href="#i-swap"/></svg></span><h4>Failover automático</h4><p>Se um provedor falhar ou bater o limite, tenta o próximo. Se a internet cair, usa o modelo local.</p></li>
-      <li><span class="ic"><svg aria-hidden="true"><use href="#i-upd"/></svg></span><h4>Atualiza sozinho</h4><p>Novas versões chegam pelo próprio app. Interface em português, inglês e espanhol.</p></li>
+<section class="sec" id="detalhes" aria-labelledby="det-t">
+  <div class="wrap">
+    <h2 id="det-t" class="h-small">E os detalhes que fazem falta.</h2>
+    <ul class="specs">
+      <li><b>Tradução enquanto dita</b><span>Fale em português, cole em um de 34 idiomas. <span class="nowrap"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Y</kbd></span></span></li>
+      <li><b>Vocabulário próprio</b><span>Nomes, marcas e termos técnicos sempre escritos do jeito certo.</span></li>
+      <li><b>Histórico com busca</b><span>Tudo o que você ditou fica salvo no seu PC.</span></li>
+      <li><b>Segurar para falar</b><span>Grava só enquanto o atalho estiver pressionado.</span></li>
+      <li><b>Assistente por voz</b><span>Pergunte em voz alta, com busca na web. <span class="nowrap"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>U</kbd></span></span></li>
+      <li><b>Atualiza sozinho</b><span>Instalador de ~3 MB, sem pedir administrador.</span></li>
     </ul>
   </div>
 </section>
 
-<!-- ============ GALERIA ============ -->
-<section class="sec" id="app" aria-labelledby="app-t">
-  <div class="wrap">
-    <div class="sec-head" data-reveal>
-      <div class="idx"><span class="label"><b>04</b> · O aplicativo</span></div>
-      <h2 id="app-t">Configurações claras, sem manual.</h2>
-      <p>Cada provedor tem um passo a passo e um botão Testar. O resto já vem pronto para usar.</p>
-    </div>
-    <div data-reveal>
-      <div class="gal-tabs" role="tablist" aria-label="Telas do aplicativo">
-        <button role="tab" id="g-home" aria-controls="gal-panel" aria-selected="true" data-shot="0">Início</button>
-        <button role="tab" id="g-styles" aria-controls="gal-panel" aria-selected="false" tabindex="-1" data-shot="1">Estilos</button>
-        <button role="tab" id="g-providers" aria-controls="gal-panel" aria-selected="false" tabindex="-1" data-shot="2">Provedores</button>
-        <button role="tab" id="g-transcription" aria-controls="gal-panel" aria-selected="false" tabindex="-1" data-shot="3">Transcrição</button>
-      </div>
-      <div class="gal-frame" id="gal-panel" role="tabpanel" aria-labelledby="g-home">
-        <img class="on" src="assets/shot-home.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela inicial do FlowVoice com o atalho principal, os provedores ativos, contadores do dia e o histórico de ditados.">
-        <img src="assets/shot-styles.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de estilos do FlowVoice com os estilos prontos e a opção de criar estilos próprios.">
-        <img src="assets/shot-providers.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de provedores do FlowVoice, onde se cadastram as chaves de Groq, Gemini, OpenRouter e Mistral.">
-        <img src="assets/shot-transcricao.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Tela de transcrição do FlowVoice com a escolha entre nuvem e modelos locais do Whisper.">
-      </div>
-      <p class="gal-cap" data-gcap>O atalho principal, os provedores em uso e seu histórico, num lugar só.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============ CHAVES / OFFLINE ============ -->
-<section class="sec" id="chaves" aria-labelledby="ch-t">
-  <div class="wrap">
-    <div class="sec-head" data-reveal>
-      <div class="idx"><span class="label"><b>05</b> · Grátis de verdade</span></div>
-      <h2 id="ch-t">Use chaves gratuitas. Ou nem use internet.</h2>
-      <p>O FlowVoice não cobra nada e não tem servidor próprio. Você conecta o provedor que preferir, quase todos com plano gratuito generoso, ou roda tudo no seu computador.</p>
-    </div>
-    <div class="duo">
-      <div class="panel-c" data-reveal>
-        <span class="label">Na nuvem · chaves grátis</span>
-        <h3>Chaves grátis em poucos minutos.</h3>
-        <table class="tbl">
-          <thead><tr><th scope="col">Provedor</th><th scope="col">Usa para</th></tr></thead>
-          <tbody>
-            <tr><td><span class="pn">Groq</span><span class="rec">recomendado</span><span class="sub">o mais rápido; sem cartão; horas de áudio por dia</span></td><td>voz + texto</td></tr>
-            <tr><td><span class="pn">Google Gemini</span><span class="sub">plano grátis, sem cartão</span></td><td>voz + texto</td></tr>
-            <tr><td><span class="pn">Mistral</span><span class="sub">plano gratuito com limites</span></td><td>voz + texto</td></tr>
-            <tr><td><span class="pn">OpenRouter</span><span class="sub">modelos <code class="mono">:free</code></span></td><td>texto</td></tr>
-          </tbody>
-        </table>
-        <ul class="ticks">
-          <li><span><b>Várias chaves, rotação automática:</b> quando uma bate no limite, a próxima assume.</span></li>
-          <li><span><b>Se conserta sozinho:</b> se um provedor aposenta um modelo, o app troca pelo atual.</span></li>
-        </ul>
-        <p class="foot"><a class="link" href="guia.html">Guia passo a passo para pegar as chaves →</a></p>
-      </div>
-      <div class="panel-c" data-reveal style="--d:100ms">
-        <span class="label">No seu PC · 100% offline</span>
-        <h3>Whisper local. Nada sai da máquina.</h3>
-        <table class="tbl">
-          <thead><tr><th scope="col">Modelo</th><th scope="col">Download</th></tr></thead>
-          <tbody>
-            <tr><td><span class="pn">Tiny</span><span class="sub">para PCs bem modestos</span></td><td>31 MB</td></tr>
-            <tr><td><span class="pn">Base</span><span class="sub">rápido; também move a prévia ao vivo</span></td><td>57 MB</td></tr>
-            <tr><td><span class="pn">Small</span><span class="sub">equilíbrio entre velocidade e precisão</span></td><td>181 MB</td></tr>
-            <tr><td><span class="pn">Distil-Whisper pt-BR</span><span class="rec">pt-BR</span><span class="sub">ajustado para português do Brasil</span></td><td>513 MB</td></tr>
-            <tr><td><span class="pn">Large v3 Turbo</span><span class="sub">máxima precisão, para PCs mais fortes</span></td><td>547 MB</td></tr>
-          </tbody>
-        </table>
-        <ul class="ticks">
-          <li><span>Os modelos <b>só são baixados se você quiser</b>; o instalador continua pequeno.</span></li>
-          <li><span>Para reescrever sem internet também, conecte o <b>Ollama</b>.</span></li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ PRIVACIDADE ============ -->
-<section class="sec" id="privacidade" aria-labelledby="pv-t">
-  <div class="wrap">
-    <div class="sec-head" data-reveal>
-      <div class="idx"><span class="label"><b>06</b> · Privacidade</span></div>
-      <h2 id="pv-t">Sua voz não passa por nenhum servidor nosso.</h2>
-      <p>Porque não existe servidor nosso. O FlowVoice é um programa no seu computador que conversa direto com o provedor que você escolheu, e com nenhum, no modo offline.</p>
-    </div>
-    <ul class="priv">
-      <li data-reveal><h3>Chaves no cofre do sistema</h3><p>Guardadas no Gerenciador de Credenciais do Windows (ou no Secret Service do Linux). Só em casos raros, com o cofre indisponível, ficam num arquivo local na sua pasta de usuário.</p></li>
-      <li data-reveal style="--d:60ms"><h3>Sem conta, sem nuvem própria</h3><p>Não há cadastro nem sincronização. Histórico e configurações ficam só no seu PC.</p></li>
-      <li data-reveal style="--d:120ms"><h3>Você escolhe o caminho</h3><p>O áudio vai só para o provedor que você configurou. No modo offline, não sai da máquina.</p></li>
-      <li data-reveal style="--d:180ms"><h3>Código aberto (GPL-3.0)</h3><p>Qualquer pessoa pode ler, auditar e compilar o código no GitHub.</p></li>
-    </ul>
-    <p class="note" data-reveal><svg aria-hidden="true"><use href="#i-info"/></svg><span>No plano gratuito do <b>Gemini</b>, o Google pode usar os dados para melhorar os produtos dele. Para conteúdo sensível, prefira o Groq ou o modo offline. <a class="link" href="privacidade.html">Política de privacidade</a></span></p>
-  </div>
-</section>
-
-<!-- ============ COMPARAÇÃO ============ -->
-<section class="sec" id="comparar" aria-labelledby="cp-t">
-  <div class="wrap">
-    <div class="sec-head" data-reveal>
-      <div class="idx"><span class="label"><b>07</b> · Comparação</span></div>
-      <h2 id="cp-t">O que muda em relação aos apps pagos.</h2>
-      <p>Wispr Flow e Typeless são bons produtos, com planos pagos por assinatura. O FlowVoice segue outro caminho: gratuito, aberto e com o provedor de IA nas suas mãos.</p>
-    </div>
-    <div class="cmp-wrap" data-reveal>
-      <table class="cmp">
-        <thead><tr><th scope="col"><span class="sr">Item</span></th><th scope="col">FlowVoice</th><th scope="col">Apps de ditado por assinatura</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Preço</th><td class="yes" data-l="FlowVoice">Grátis, sem limite do app</td><td data-l="Por assinatura">Assinatura mensal para uso completo</td></tr>
-          <tr><th scope="row">Código-fonte</th><td class="yes" data-l="FlowVoice">Aberto (licença GPL-3.0)</td><td class="no" data-l="Por assinatura">Fechado</td></tr>
-          <tr><th scope="row">Provedor de IA</th><td class="yes" data-l="FlowVoice">Você escolhe: Groq, Gemini, Mistral, OpenRouter, OpenAI ou Ollama</td><td data-l="Por assinatura">Definido pela empresa</td></tr>
-          <tr><th scope="row">Modo 100% offline</th><td class="yes" data-l="FlowVoice">Sim, com Whisper local</td><td data-l="Por assinatura">Varia por produto</td></tr>
-                    <tr><th scope="row">Plataformas</th><td data-l="FlowVoice">Windows e Linux</td><td class="yes" data-l="Por assinatura">Variam; em geral incluem Mac</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="cmp-note">Comparação geral e simplificada, com base nas informações públicas desses produtos. Planos e recursos mudam; confira os sites oficiais. As marcas citadas pertencem aos seus donos.</p>
-  </div>
-</section>
-
-<!-- ============ FAQ ============ -->
-<section class="sec" id="faq" aria-labelledby="faq-t">
-  <div class="wrap faq">
-    <div class="sec-head" data-reveal>
-      <div class="idx"><span class="label"><b>08</b> · Dúvidas</span></div>
-      <h2 id="faq-t">Perguntas frequentes</h2>
-      <p>Não achou sua resposta? Abra uma <a class="link" href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">issue no GitHub</a>.</p>
-    </div>
-    <div class="qa" data-reveal>
+<section class="sec faq" id="duvidas" aria-labelledby="faq-t">
+  <div class="wrap faq-grid">
+    <h2 id="faq-t" class="h-small">Dúvidas rápidas</h2>
+    <div class="qa">
       <details>
-        <summary>É grátis mesmo? Onde está a pegadinha?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>É grátis e de código aberto. O FlowVoice não tem servidor para pagar, porque usa a sua chave direto no provedor ou roda no seu PC. Os planos gratuitos do Groq, do Gemini e do Mistral dão conta de um uso diário normal. Se quiser apoiar o projeto, há Pix e GitHub Sponsors, mas é opcional.</p></div>
+        <summary>É grátis mesmo?</summary>
+        <p>Sim. O FlowVoice não tem servidor: usa a sua chave direto no provedor, ou roda no seu PC. Os planos gratuitos do Groq e do Gemini dão conta de um uso diário normal, sem cartão.</p>
       </details>
       <details>
-        <summary>Preciso de cartão de crédito para as chaves?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>Não para o Groq (o recomendado) nem para o Gemini: os planos gratuitos deles não pedem cartão. O <a class="link" href="guia.html">guia de chaves</a> mostra o passo a passo, e o app tem um botão Testar para cada chave.</p></div>
+        <summary>O Windows mostrou um aviso ao instalar. É seguro?</summary>
+        <p>É esperado: o instalador ainda não tem assinatura paga. Clique em “Mais informações” e “Executar assim mesmo”. O instalador é gerado pelo GitHub Actions a partir do código aberto.</p>
       </details>
       <details>
-        <summary>Funciona sem internet?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>Sim. Em Configurações → Transcrição, escolha “100% local” e baixe um modelo do Whisper. Para reescrever o texto offline também, conecte o Ollama. Com internet, você pode deixar o modo local como reserva, caso a nuvem falhe.</p></div>
-      </details>
-      <details>
-        <summary>Em quais programas ele funciona?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>Em qualquer lugar onde dá para digitar: navegador, Office, WhatsApp, Slack, Teams, editores de código, chats de IA. O texto é colado onde o cursor estava quando você começou a falar.</p></div>
-      </details>
-      <details>
-        <summary>Quais idiomas ele entende?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>O ditado funciona nos idiomas que o Whisper reconhece, com atenção especial ao português do Brasil (há até um modelo local ajustado para pt-BR). A tradução enquanto dita cobre 34 idiomas. A interface está em português, inglês e espanhol.</p></div>
-      </details>
-      <details>
-        <summary>O Windows mostrou um aviso ao instalar. É seguro?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>É esperado. O instalador ainda não tem assinatura digital paga (Authenticode), e o SmartScreen do Windows avisa sobre programas sem assinatura ou pouco baixados. Se aparecer “O Windows protegeu o computador”, clique em “Mais informações” e depois em “Executar assim mesmo”.</p><p>Todo o código está aberto no GitHub, e o instalador é gerado lá mesmo, pelo GitHub Actions, a partir desse código. A instalação não pede permissão de administrador.</p></div>
-      </details>
-      <details>
-        <summary>Tem versão para Linux? E para Mac?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>Linux sim: baixe o <code>.deb</code> na <a class="link" href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">página de versões</a> e rode <code>sudo apt install ./FlowVoice_*.deb</code>. No Wayland, instale também o <code>wtype</code> para colar automaticamente. Mac ainda não.</p></div>
-      </details>
-      <details>
-        <summary>Eu usava a versão 1.x. O que muda?<span class="pm" aria-hidden="true"></span></summary>
-        <div class="a"><p>A 2.0 foi reescrita do zero: mais leve, mais rápida e com prévia ao vivo, modo Comando e estilo por app. Na primeira execução, ela importa suas chaves da 1.x automaticamente. Veja tudo em <a class="link" href="novidades.html">Novidades</a>.</p></div>
+        <summary>Tem para Linux? E Mac?</summary>
+        <p>Linux sim, em <code>.deb</code> na <a href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">página de versões</a>. Mac ainda não.</p>
       </details>
     </div>
   </div>
 </section>
 
-<!-- ============ CTA FINAL ============ -->
 <section class="final" aria-labelledby="fin-t">
   <div class="wrap">
-    <svg class="logo-big" aria-hidden="true" data-reveal><use href="#logo"/></svg>
-    <h2 id="fin-t" data-reveal>Pare de digitar o que você pode falar.</h2>
-    <p data-reveal>Baixe, cole uma chave grátis do Groq e faça o primeiro ditado em menos de cinco minutos.</p>
-    <div class="cta-row" data-reveal>
-      <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>
-        <svg aria-hidden="true"><use href="#i-down"/></svg>Baixar para Windows
-      </a>
-      <a class="btn btn-ghost btn-lg" href="guia.html">Pegar chaves grátis</a>
-    </div>
-    <div class="support" data-reveal>
-      <p><svg class="heart" width="15" height="15" aria-hidden="true" style="display:inline;vertical-align:-2px"><use href="#i-heart"/></svg> <b>O FlowVoice te ajuda?</b> Ele é feito por uma pessoa só. Qualquer apoio mantém o projeto vivo.</p>
-      <div class="btns">
-        <a class="btn btn-ghost btn-sm" href="https://livepix.gg/caliberda" rel="noopener">Pix</a>
-        <a class="btn btn-ghost btn-sm" href="https://github.com/sponsors/cesarkali" rel="noopener"><svg aria-hidden="true"><use href="#i-gh"/></svg>Sponsors</a>
-      </div>
+    <img class="final-logo" src="assets/logo.svg" alt="" width="72" height="72">
+    <h2 id="fin-t">Pare de digitar o&nbsp;que você pode falar.</h2>
+    <p>Baixe, cole uma chave grátis do Groq e faça o primeiro ditado em cinco minutos.</p>
+    <div class="cta-row">
+      <a class="btn btn-light btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-down"/></svg>Baixar para Windows</a>
+      <a class="btn btn-ghost-dark btn-lg" href="guia.html">Pegar chaves grátis</a>
     </div>
   </div>
 </section>
@@ -557,39 +285,22 @@
 
 <footer class="foot-site">
   <div class="wrap">
-    <div class="foot-grid">
-      <div class="foot-about">
-        <a class="brand" href="#top"><svg aria-hidden="true"><use href="#logo"/></svg><span>FlowVoice</span></a>
-        <p>Ditado por voz com IA, gratuito e de código aberto. Feito no Brasil por <a href="https://caliberda.com.br" rel="noopener">Júlio Caliberda</a> (<a href="https://github.com/cesarkali" rel="noopener">@cesarkali</a>).</p>
-      </div>
-      <div>
-        <h2>Produto</h2>
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.0 · feito no Brasil por <a href="https://caliberda.com.br" rel="noopener">Júlio Caliberda</a></p>
+      <nav aria-label="Rodapé">
         <ul>
-          <li><a href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar para Windows</a></li>
-          <li><a href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">Linux (.deb)</a></li>
+          <li><a href="guia.html">Guia de chaves</a></li>
           <li><a href="novidades.html">Novidades</a></li>
-          <li><a href="guia.html">Guia de chaves grátis</a></li>
-        </ul>
-      </div>
-      <div>
-        <h2>Projeto</h2>
-        <ul>
-          <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">Código no GitHub</a></li>
-          <li><a href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">Reportar um problema</a></li>
           <li><a href="privacidade.html">Privacidade</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a></li>
           <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" rel="noopener">Licença GPL-3.0</a></li>
         </ul>
-      </div>
-      <div>
-        <h2>Apoie</h2>
-        <ul>
-          <li><a href="https://livepix.gg/caliberda" rel="noopener">Pix (LivePix)</a></li>
-          <li><a href="https://github.com/sponsors/cesarkali" rel="noopener">GitHub Sponsors</a></li>
-          <li><a href="https://caliberda.com.br" rel="noopener">caliberda.com.br</a></li>
-        </ul>
-      </div>
+      </nav>
     </div>
-    <div class="foot-bottom"><span>© 2026 Júlio Caliberda · GPL-3.0</span><span>Feito com voz, no Brasil.</span></div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>Apoie o projeto: <a href="https://livepix.gg/caliberda" rel="noopener">Pix</a> · <a href="https://github.com/sponsors/cesarkali" rel="noopener">GitHub Sponsors</a></span>
+    </div>
   </div>
 </footer>
 

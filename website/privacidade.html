@@ -1,63 +1,86 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Privacidade · FlowVoice</title>
-  <meta name="description" content="Política de privacidade do FlowVoice em linguagem simples: o áudio fica na memória, vai só para o provedor que você escolheu (ou para lugar nenhum, offline), as chaves ficam no cofre do sistema e o app não tem telemetria.">
-  <link rel="canonical" href="https://flowvoice.caliberda.com.br/privacidade">
-  <meta name="theme-color" content="#0b0b0c">
-  <meta name="color-scheme" content="dark">
-  <meta property="og:type" content="article">
-  <meta property="og:site_name" content="FlowVoice">
-  <meta property="og:locale" content="pt_BR">
-  <meta property="og:url" content="https://flowvoice.caliberda.com.br/privacidade">
-  <meta property="og:title" content="Privacidade · FlowVoice">
-  <meta property="og:description" content="O que o FlowVoice faz com a sua voz, suas chaves e seu histórico. Em linguagem simples.">
-  <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="pages.css">
-  <script>document.documentElement.classList.add("js")</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacidade · FlowVoice</title>
+<meta name="description" content="Política de privacidade do FlowVoice em linguagem simples: o áudio fica na memória, vai só para o provedor que você escolheu (ou para lugar nenhum, offline), as chaves ficam no cofre do sistema e o app não tem telemetria.">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/privacidade">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/privacidade">
+<meta property="og:title" content="Privacidade · FlowVoice">
+<meta property="og:description" content="O que o FlowVoice faz com a sua voz, suas chaves e seu histórico. Em linguagem simples.">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Privacidade · FlowVoice">
+<meta name="twitter:description" content="O que o FlowVoice faz com a sua voz, suas chaves e seu histórico. Em linguagem simples.">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="pages.css">
+<script>document.documentElement.classList.add("js")</script>
 </head>
 <body class="pg">
-  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+<a class="skip" href="#main">Pular para o conteúdo</a>
 
-  <header class="top" id="top">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice, página inicial"><img src="assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="Principal">
+      <a href="./#estilos">Estilos</a>
+      <a href="./#gratis">Grátis e offline</a>
+      <a href="guia.html">Guia de chaves</a>
+      <a href="novidades.html">Novidades</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a>
+    </nav>
+    <div class="top-cta">
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menu"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
     <div class="wrap">
-      <a class="brand" href="./" aria-label="FlowVoice, página inicial"><img src="assets/logo.svg" alt="" width="30" height="30"><span>FlowVoice</span><span class="ver">2.0</span></a>
-      <nav class="nav" id="nav" aria-label="Principal">
-        <a href="./">Início</a>
-        <a href="guia.html">Guia</a>
-        <a href="novidades.html">Novidades</a>
-        <a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a>
-      </nav>
-      <div class="top-cta">
-        <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar</a>
-        <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menu"><span></span></button>
+      <div class="pg-head-in">
+        <h1>Sua voz é <span class="nowrap">sua.<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">O FlowVoice não tem servidor, não pede conta e não coleta nada sobre você. Esta página explica, sem juridiquês, para onde vai cada coisa.</p>
+        <p class="pg-meta"><span>Atualizada em <b>30/10/2026</b></span><span>Vale para a versão 2.0</span></p>
       </div>
     </div>
   </header>
 
-  <main id="conteudo">
-    <div class="pg-hero">
-      <div class="wrap">
-        <div class="idx"><span class="label"><b>Privacidade</b> · em linguagem simples</span></div>
-        <h1>Sua voz é <span class="acc">sua.</span></h1>
-        <p class="pg-lede">O FlowVoice não tem servidor, não pede conta e não coleta nada sobre você. Esta página explica, sem juridiquês, para onde vai cada coisa.</p>
-        <div class="pg-meta"><span>Atualizada em <b>30/10/2026</b></span><span>Vale para a <b>versão 2.0</b></span></div>
-      </div>
-    </div>
-
-    <div class="wrap pg-doc">
-      <nav class="pg-toc" aria-label="Nesta página">
-        <span class="label">Nesta página</span>
+  <div class="wrap pg-doc">
+    <nav class="pg-toc" aria-label="Nesta página">
+      <details open>
+        <summary>Nesta página</summary>
         <ol>
           <li><a href="#resumo">Resumo</a></li>
           <li><a href="#voz">Sua voz e seu texto</a></li>
@@ -68,139 +91,148 @@
           <li><a href="#site">Este site</a></li>
           <li><a href="#contato">Contato</a></li>
         </ol>
+      </details>
+    </nav>
+
+    <div class="pg-prose">
+      <section id="resumo">
+        <h2>Resumo</h2>
+        <dl class="pg-facts">
+          <div><dt>O áudio fica na memória</dt><dd>Nenhuma gravação é salva em disco. O áudio vai só para o provedor que você escolheu, ou para lugar nenhum no modo offline.</dd></div>
+          <div><dt>Chaves no cofre do sistema</dt><dd>Guardadas no Gerenciador de Credenciais do Windows; só em casos raros ficam num arquivo local (veja abaixo).</dd></div>
+          <div><dt>Histórico só no seu PC</dt><dd>Pode ser desligado ou apagado quando você quiser.</dd></div>
+          <div><dt>Zero telemetria</dt><dd>O app não tem analytics, rastreamento nem relatório de uso.</dd></div>
+        </dl>
+      </section>
+
+      <section id="voz">
+        <h2>Sua voz e seu texto</h2>
+        <p>Enquanto você dita, o áudio do microfone fica <strong>apenas na memória do programa</strong>. Ele nunca é gravado em arquivo e é descartado quando o ditado termina.</p>
+        <h3>Na nuvem</h3>
+        <p>Se você usa um provedor na nuvem (Groq, Google Gemini, Mistral, OpenAI, OpenRouter ou um endereço próprio), o FlowVoice envia <strong>direto para ele</strong>, com a sua chave:</p>
+        <ul class="pg-list">
+          <li>o áudio, para virar texto;</li>
+          <li>o texto transcrito, junto com as instruções do estilo escolhido, o seu vocabulário e o nome do aplicativo em que você está ditando (para o texto sair no tom certo);</li>
+          <li>no modo <strong>Comando</strong>, o texto que você selecionou;</li>
+          <li>no <strong>assistente por voz</strong>, a pergunta e a conversa. Com uma chave Tavily, a pergunta também vai para o Tavily, para buscar na web.</li>
+        </ul>
+        <p class="pg-gap">Não existe servidor do FlowVoice no meio do caminho. O que cada provedor faz com esses dados segue a política dele.</p>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-warn"/></svg>
+          <p><b>Vale saber</b>No plano grátis do Google Gemini, o Google pode usar o que você envia para melhorar os produtos dele. Se isso incomoda, prefira outro provedor ou o modo offline.</p>
+        </div>
+        <h3>Offline</h3>
+        <p>No modo <strong>100% local</strong>, a transcrição roda no seu processador. Com o Ollama refinando o texto, nada do que você fala sai do seu computador.</p>
+      </section>
+
+      <section id="chaves">
+        <h2>Chaves de API</h2>
+        <p>As chaves ficam no <strong>Gerenciador de Credenciais do Windows</strong> (no Linux, no chaveiro do sistema). Elas só saem do PC para o próprio provedor, a cada pedido, e aparecem mascaradas na tela.</p>
+        <p>Exceção rara: se o cofre não estiver disponível (por exemplo, num Linux sem chaveiro) ou recusar uma chave longa demais, ela fica num arquivo dentro da pasta de configurações do app, no seu usuário.</p>
+      </section>
+
+      <section id="local">
+        <h2>O que fica salvo no seu PC</h2>
+        <ul class="pg-list">
+          <li><strong>Histórico</strong> dos ditados (texto, estilo e app de destino), até os 300 mais recentes. Desligue em <strong>Configurações → Geral → Guardar histórico</strong>, apague itens um a um ou limpe tudo na tela inicial.</li>
+          <li><strong>Configurações</strong>, estilos e vocabulário.</li>
+          <li><strong>Modelos offline</strong> que você baixou. Apague quando quiser na tela de modelos.</li>
+          <li>Um <strong>log técnico</strong> para diagnosticar problemas. Ele registra só eventos técnicos (horários, erros, tempos de resposta), nunca o que você ditou. Fica limitado a cerca de 1 MB (é recriado quando passa disso) e nunca é enviado a lugar nenhum: só sai do PC se você mesmo anexar a um relato de bug.</li>
+        </ul>
+        <p class="pg-gap">Tudo fica dentro do seu usuário do Windows:</p>
+        <div class="pg-table">
+          <table>
+            <caption class="sr">Pastas onde o FlowVoice guarda dados no Windows</caption>
+            <thead><tr><th scope="col">Pasta</th><th scope="col">O que guarda</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><code>%APPDATA%\<wbr>br.com.caliberda.flowvoice</code></th><td data-l="O que guarda">Configurações, histórico e log</td></tr>
+              <tr><th scope="row"><code>%LOCALAPPDATA%\<wbr>br.com.caliberda.flowvoice</code></th><td data-l="O que guarda">Modelos offline</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="pg-gap">Para apagar tudo de uma vez, basta excluir essas pastas.</p>
+      </section>
+
+      <section id="conexoes">
+        <h2>Outras conexões que o app faz</h2>
+        <p>Além dos provedores que você configurou, o FlowVoice só acessa a internet para:</p>
+        <ul class="pg-list">
+          <li><strong>Procurar atualizações</strong> no GitHub. As atualizações são assinadas digitalmente.</li>
+          <li><strong>Baixar modelos offline</strong> do Hugging Face, só quando você pede.</li>
+          <li><strong>Mostrar a foto do autor</strong> na tela Sobre, buscada no GitHub e guardada para uso offline.</li>
+          <li><strong>Conferir a lista de modelos</strong> dos seus provedores, para trocar sozinho um modelo aposentado.</li>
+        </ul>
+        <p class="pg-gap">Nenhuma dessas conexões leva sua voz, seu texto ou seu histórico.</p>
+      </section>
+
+      <section id="telemetria">
+        <h2>Telemetria: nenhuma</h2>
+        <p>O app <strong>não tem analytics, rastreamento, identificador de usuário nem envio automático de erros</strong>. Não sabemos quantas pessoas usam, nem como. O código é aberto: qualquer pessoa pode conferir no <a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">repositório no GitHub</a>.</p>
+      </section>
+
+      <section id="site">
+        <h2>Este site</h2>
+        <p>Este site é estático e hospedado na <strong>Vercel</strong>. Como qualquer servidor, a Vercel registra dados técnicos das visitas (como endereço IP e navegador) para entregar as páginas e proteger contra abuso, conforme a <a href="https://vercel.com/legal/privacy-policy" rel="noopener">política de privacidade dela</a>.</p>
+        <p>O site <strong>não tem analytics, cookies nem scripts de rastreamento</strong>. A fonte do texto vem do Google Fonts, que recebe o pedido de download dela como qualquer servidor.</p>
+        <p>Não há formulários, login nem anúncios. O instalador é baixado direto do GitHub.</p>
+      </section>
+
+      <section id="contato">
+        <h2>Contato</h2>
+        <p>Dúvidas, pedidos ou algo que parece errado nesta página? Abra uma issue no GitHub. É o canal oficial do projeto.</p>
+        <p class="pg-gap"><a class="btn btn-ghost" href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">Abrir uma issue no GitHub<svg aria-hidden="true"><use href="#i-out"/></svg></a></p>
+        <p class="pg-gap">Se esta política mudar, a data no topo muda junto, e a alteração fica registrada no histórico do repositório.</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.0 · feito no Brasil por <a href="https://caliberda.com.br" rel="noopener">Júlio Caliberda</a></p>
+      <nav aria-label="Rodapé">
+        <ul>
+          <li><a href="guia.html">Guia de chaves</a></li>
+          <li><a href="novidades.html">Novidades</a></li>
+          <li><a href="privacidade.html" aria-current="page">Privacidade</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" rel="noopener">Licença GPL-3.0</a></li>
+        </ul>
       </nav>
-
-      <div class="pg-prose">
-        <section id="resumo" aria-labelledby="resumo-t" data-reveal>
-          <h2 id="resumo-t" class="sr">Resumo</h2>
-          <ul class="pg-facts">
-            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg></span><h3>O áudio fica na memória</h3><p>Nenhuma gravação é salva em disco. O áudio vai só para o provedor que você escolheu, ou para lugar nenhum no modo offline.</p></li>
-            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><h3>Chaves no cofre do sistema</h3><p>Guardadas no Gerenciador de Credenciais do Windows; só em casos raros ficam num arquivo local (veja abaixo).</p></li>
-            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></span><h3>Histórico só no seu PC</h3><p>Pode ser desligado ou apagado quando você quiser.</p></li>
-            <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg></span><h3>Zero telemetria</h3><p>O app não tem analytics, rastreamento nem relatório de uso.</p></li>
-          </ul>
-        </section>
-
-        <section id="voz" data-reveal>
-          <h2>Sua voz e seu texto</h2>
-          <p>Enquanto você dita, o áudio do microfone fica <strong>apenas na memória do programa</strong>. Ele nunca é gravado em arquivo e é descartado quando o ditado termina.</p>
-          <h3>Na nuvem</h3>
-          <p>Se você usa um provedor na nuvem (Groq, Google Gemini, Mistral, OpenAI, OpenRouter ou um endereço próprio), o FlowVoice envia <strong>direto para ele</strong>, com a sua chave:</p>
-          <ul class="pg-list">
-            <li><span>o áudio, para virar texto;</span></li>
-            <li><span>o texto transcrito, junto com as instruções do estilo escolhido, o seu vocabulário e o nome do aplicativo em que você está ditando (para o texto sair no tom certo);</span></li>
-            <li><span>no modo <strong>Comando</strong>, o texto que você selecionou;</span></li>
-            <li><span>no <strong>assistente por voz</strong>, a pergunta e a conversa. Com uma chave Tavily, a pergunta também vai para o Tavily, para buscar na web.</span></li>
-          </ul>
-          <p class="pg-gap">Não existe servidor do FlowVoice no meio do caminho. O que cada provedor faz com esses dados segue a política dele. Vale saber: <strong>no plano grátis do Google Gemini, o Google pode usar o que você envia para melhorar os produtos dele</strong>. Se isso incomoda, prefira outro provedor ou o modo offline.</p>
-          <h3>Offline</h3>
-          <p>No modo <strong>100% local</strong>, a transcrição roda no seu processador. Com o Ollama refinando o texto, nada do que você fala sai do seu computador.</p>
-        </section>
-
-        <section id="chaves" data-reveal>
-          <h2>Chaves de API</h2>
-          <p>As chaves ficam no <strong>Gerenciador de Credenciais do Windows</strong> (no Linux, no chaveiro do sistema). Elas só saem do PC para o próprio provedor, a cada pedido, e aparecem mascaradas na tela.</p>
-          <p>Exceção rara: se o cofre não estiver disponível (por exemplo, num Linux sem chaveiro) ou recusar uma chave longa demais, ela fica num arquivo dentro da pasta de configurações do app, no seu usuário.</p>
-        </section>
-
-        <section id="local" data-reveal>
-          <h2>O que fica salvo no seu PC</h2>
-          <ul class="pg-list">
-            <li><span><strong>Histórico</strong> dos ditados (texto, estilo e app de destino), até os 300 mais recentes. Desligue em <strong>Configurações → Geral → Guardar histórico</strong>, apague itens um a um ou limpe tudo na tela inicial.</span></li>
-            <li><span><strong>Configurações</strong>, estilos e vocabulário.</span></li>
-            <li><span><strong>Modelos offline</strong> que você baixou. Apague quando quiser na tela de modelos.</span></li>
-            <li><span>Um <strong>log técnico</strong> para diagnosticar problemas. Ele registra só eventos técnicos (horários, erros, tempos de resposta), nunca o que você ditou, fica limitado a cerca de 1 MB (é recriado quando passa disso) e nunca é enviado a lugar nenhum: só sai do PC se você mesmo anexar a um relato de bug.</span></li>
-          </ul>
-          <p class="pg-gap">Tudo fica dentro do seu usuário do Windows, em <code>%APPDATA%\br.com.caliberda.flowvoice</code> (configurações, histórico e log) e <code>%LOCALAPPDATA%\br.com.caliberda.flowvoice</code> (modelos). Para apagar tudo de uma vez, basta excluir essas pastas.</p>
-        </section>
-
-        <section id="conexoes" data-reveal>
-          <h2>Outras conexões que o app faz</h2>
-          <p>Além dos provedores que você configurou, o FlowVoice só acessa a internet para:</p>
-          <ul class="pg-list">
-            <li><span><strong>Procurar atualizações</strong> no GitHub. As atualizações são assinadas digitalmente.</span></li>
-            <li><span><strong>Baixar modelos offline</strong> do Hugging Face, só quando você pede.</span></li>
-            <li><span><strong>Mostrar a foto do autor</strong> na tela Sobre, buscada no GitHub e guardada para uso offline.</span></li>
-            <li><span><strong>Conferir a lista de modelos</strong> dos seus provedores, para trocar sozinho um modelo aposentado.</span></li>
-          </ul>
-          <p class="pg-gap">Nenhuma dessas conexões leva sua voz, seu texto ou seu histórico.</p>
-        </section>
-
-        <section id="telemetria" data-reveal>
-          <h2>Telemetria: nenhuma</h2>
-          <p>O app <strong>não tem analytics, rastreamento, identificador de usuário nem envio automático de erros</strong>. Não sabemos quantas pessoas usam, nem como. O código é aberto: qualquer pessoa pode conferir no <a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">repositório no GitHub</a>.</p>
-        </section>
-
-        <section id="site" data-reveal>
-          <h2>Este site</h2>
-          <p>Este site é estático e hospedado na <strong>Vercel</strong>. Como qualquer servidor, a Vercel registra dados técnicos das visitas (como endereço IP e navegador) para entregar as páginas e proteger contra abuso, conforme a <a href="https://vercel.com/legal/privacy-policy" rel="noopener">política de privacidade dela</a>.</p>
-          <p>O site <strong>não tem analytics, cookies nem scripts de rastreamento</strong>. As fontes do texto vêm do Google Fonts, que recebe o pedido de download delas como qualquer servidor.</p>
-          <p>Não há formulários, login nem anúncios. O instalador é baixado direto do GitHub.</p>
-        </section>
-
-        <section id="contato" data-reveal>
-          <h2>Contato</h2>
-          <p>Dúvidas, pedidos ou algo que parece errado nesta página? Abra uma issue no GitHub. É o canal oficial do projeto.</p>
-          <p class="pg-gap"><a class="btn btn-ghost btn-sm" href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">Abrir uma issue no GitHub</a></p>
-          <p class="pg-gap">Se esta política mudar, a data no topo muda junto, e a alteração fica registrada no histórico do repositório.</p>
-        </section>
-      </div>
     </div>
-  </main>
-
-  <footer class="foot-site">
-    <div class="wrap">
-      <div class="foot-grid">
-        <div class="foot-about">
-          <a class="brand" href="./"><img src="assets/logo.svg" alt="" width="30" height="30"><span>FlowVoice</span></a>
-          <p>Ditado por voz com IA em qualquer app. Grátis, de código aberto e sem conta. Feito no Brasil por <a href="https://caliberda.com.br" rel="noopener">Júlio Caliberda</a>.</p>
-        </div>
-        <div>
-          <h2>Produto</h2>
-          <ul>
-            <li><a href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe">Baixar para Windows</a></li>
-            <li><a href="https://github.com/cesarkali/Flow-Voice/releases" rel="noopener">Todas as versões</a></li>
-            <li><a href="novidades.html">Novidades</a></li>
-          </ul>
-        </div>
-        <div>
-          <h2>Ajuda</h2>
-          <ul>
-            <li><a href="guia.html">Chaves grátis</a></li>
-            <li><a href="privacidade.html" aria-current="page">Privacidade</a></li>
-            <li><a href="https://github.com/cesarkali/Flow-Voice/issues" rel="noopener">Relatar um problema</a></li>
-          </ul>
-        </div>
-        <div>
-          <h2>Projeto</h2>
-          <ul>
-            <li><a href="https://github.com/cesarkali/Flow-Voice" rel="noopener">GitHub</a></li>
-            <li><a href="https://github.com/sponsors/cesarkali" rel="noopener">GitHub Sponsors</a></li>
-            <li><a href="https://livepix.gg/caliberda" rel="noopener">Pix</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="foot-bottom"><span>© 2026 Júlio Caliberda · GPL-3.0</span><span>Feito com voz, no Brasil.</span></div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>Apoie o projeto: <a href="https://livepix.gg/caliberda" rel="noopener">Pix</a> · <a href="https://github.com/sponsors/cesarkali" rel="noopener">GitHub Sponsors</a></span>
     </div>
-  </footer>
+  </div>
+</footer>
 
-  <script src="site.js" defer></script>
-  <script>
-    /* Table of contents: highlights the section being read. Header, menu and reveal live in site.js. */
-    addEventListener("DOMContentLoaded", function () {
-      var links = document.querySelectorAll(".pg-toc a");
-      if (!links.length || !("IntersectionObserver" in window)) return;
-      var map = {};
-      links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
-      var spy = new IntersectionObserver(function (es) {
-        es.forEach(function (en) {
-          if (!en.isIntersecting) return;
-          links.forEach(function (a) { a.classList.remove("is-active"); a.removeAttribute("aria-current"); });
-          var a = map[en.target.id]; if (a) { a.classList.add("is-active"); a.setAttribute("aria-current", "location"); }
-        });
-      }, { rootMargin: "-25% 0px -65% 0px" });
-      Object.keys(map).forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
-    });
-  </script>
+<script src="site.js" defer></script>
+<script>
+  /* Contents rail: always open on wide screens, collapsed on phones; marks the section being read.
+     Header and menu live in site.js. */
+  addEventListener("DOMContentLoaded", function () {
+    var toc = document.querySelector(".pg-toc details");
+    if (!toc) return;
+    var wide = matchMedia("(min-width: 901px)");
+    var sync = function () { toc.open = wide.matches; };
+    sync(); wide.addEventListener("change", sync);
+    toc.querySelector("summary").addEventListener("click", function (e) { if (wide.matches) e.preventDefault(); });
+    var links = [].slice.call(toc.querySelectorAll("a"));
+    if (!("IntersectionObserver" in window)) return;
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+    var spy = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var a = map[en.target.id]; if (!a) return;
+        links.forEach(function (l) { l.classList.remove("is-active"); l.removeAttribute("aria-current"); });
+        a.classList.add("is-active"); a.setAttribute("aria-current", "location");
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    Object.keys(map).forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
+  });
+</script>
 </body>
 </html>
