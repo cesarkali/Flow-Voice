@@ -132,29 +132,6 @@
         </button>
       </li>
     </ul>
-    <div class="fb" id="feedback">
-      <p class="rt">{t("fb.title")}</p>
-      <p class="rh">{t("fb.hint")}</p>
-      <label class="fb-log">
-        <input type="checkbox" bind:checked={withLog} />
-        <span>
-          <span class="fl-t">{t("fb.log")}</span>
-          <span class="rh">{t("fb.log_hint")}</span>
-        </span>
-      </label>
-      {#if withLog}
-        <button type="button" class="fl-show" aria-expanded={logPreview !== null} onclick={toggleLog}>
-          {logPreview !== null ? t("fb.log_hide") : t("fb.log_show")}
-        </button>
-        {#if logPreview !== null}
-          <pre class="fl-pre mono">{logPreview || t("fb.log_empty")}</pre>
-        {/if}
-      {/if}
-      <div class="fb-acts">
-        <Button size="sm" icon="alert" onclick={() => api.openFeedback("bug", undefined, withLog)}>{t("fb.bug")}</Button>
-        <Button size="sm" variant="ghost" icon="sparkle" onclick={() => api.openFeedback("idea")}>{t("fb.idea")}</Button>
-      </div>
-    </div>
     <div class="redo">
       <div>
         <p class="rt">{t("obx.redo")}</p>
@@ -165,7 +142,8 @@
     <dl class="facts">
       <div>
         <dt class="label">{t("about.version")}</dt>
-        <dd class="mono">{info?.version ?? "…"}{info ? ` · ${info.os}` : ""}</dd>
+        <!-- just "Windows 11" here; the full version string (edition, build) goes into bug reports -->
+        <dd class="mono" title={info?.os}>{info?.version ?? "…"}{info ? ` · ${info.os.split(" ").slice(0, 2).join(" ")}` : ""}</dd>
       </div>
       <div>
         <dt class="label">{t("sh.about_open_source")}</dt>
@@ -186,6 +164,36 @@
         </dd>
       </div>
     </dl>
+  </section>
+
+  <section class="card blk span-all fbcard" id="feedback">
+    <div class="fb-top">
+      <div class="fb-intro">
+        <h2 class="label">{t("fb.title")}</h2>
+        <p class="rh">{t("fb.hint")}</p>
+      </div>
+      <div class="fb-acts">
+        <Button size="sm" icon="alert" onclick={() => api.openFeedback("bug", undefined, withLog)}>{t("fb.bug")}</Button>
+        <Button size="sm" variant="ghost" icon="sparkle" onclick={() => api.openFeedback("idea")}>{t("fb.idea")}</Button>
+      </div>
+    </div>
+    <div class="fb-logrow">
+      <label class="fb-log">
+        <input type="checkbox" bind:checked={withLog} />
+        <span>
+          <span class="fl-t">{t("fb.log")}</span>
+          <span class="rh">{t("fb.log_hint")}</span>
+        </span>
+      </label>
+      {#if withLog}
+        <button type="button" class="fl-show" aria-expanded={logPreview !== null} onclick={toggleLog}>
+          {logPreview !== null ? t("fb.log_hide") : t("fb.log_show")}
+        </button>
+      {/if}
+    </div>
+    {#if withLog && logPreview !== null}
+      <pre class="fl-pre mono">{logPreview || t("fb.log_empty")}</pre>
+    {/if}
   </section>
 
   <section class="card blk span-all upd" class:avail={upd.info?.available}>
@@ -552,18 +560,39 @@
     gap: 6px 16px;
     font-size: 11.5px;
   }
-  .fb {
+  .fbcard {
+    display: grid;
+    gap: 14px;
+  }
+  .fb-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 24px;
+    flex-wrap: wrap;
+  }
+  .fb-intro {
     display: grid;
     gap: 6px;
-    margin-top: 14px;
-    padding: 14px 0 2px;
-    border-top: 1px solid var(--line);
+    max-width: 520px;
   }
   .fb-acts {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 6px;
+  }
+  .fb-logrow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px 24px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .fb-logrow .fb-log {
+    max-width: 640px;
+    margin-top: 0;
   }
   .fb-log {
     display: flex;
@@ -585,7 +614,8 @@
     color: var(--text);
   }
   .fl-show {
-    justify-self: start;
+    flex: none;
+    margin-top: 2px;
     padding: 0;
     border: 0;
     background: none;
