@@ -37,16 +37,16 @@
   const dur = (ms: number) => (reduce ? 0 : ms);
   const easeOut = (x: number) => 1 - Math.pow(1 - x, 4);
 
-  // Immediately test a newly added key so the user knows it works.
-  function testAfterAdd() {
-    if (info.llm) runTest("llm");
-    else if (id === "tavily") runTest("search");
-    else if (info.stt) runTest("stt");
+  // Immediately test a newly added key (that one, not the first saved) so the user knows it works.
+  function testAfterAdd(key: string) {
+    if (info.llm) runTest("llm", key);
+    else if (id === "tavily") runTest("search", key);
+    else if (info.stt) runTest("stt", key);
   }
-  async function runTest(kind: "llm" | "stt" | "search") {
+  async function runTest(kind: "llm" | "stt" | "search", key?: string) {
     testing = kind;
     try {
-      const r = await api.testProvider(id, kind);
+      const r = await api.testProvider(id, kind, key);
       results = { ...results, [kind]: { ...r, kind } };
     } catch (e) {
       results = { ...results, [kind]: { ok: false, latency_ms: 0, model: "", message: String(e), kind } };

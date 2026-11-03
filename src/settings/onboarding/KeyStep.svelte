@@ -6,7 +6,7 @@
   import type { KeyProviderId, TestResult } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
   import ProvMark from "../pages/ProvMark.svelte";
-  import { addKeys, pname, providerInfo } from "../providers";
+  import { addKeys, pname, providerInfo, splitKeys } from "../providers";
 
   let { provider, ok = $bindable(false) }: { provider: KeyProviderId; ok?: boolean } = $props();
   const info = $derived(providerInfo(provider));
@@ -28,9 +28,10 @@
     busy = true;
     result = null;
     try {
-      // Appends (never replaces) — a pasted comma list becomes several keys.
+      // Appends (never replaces) — a pasted comma list becomes several keys. The pasted key is
+      // the one tested (not the first saved).
       if (draft.trim()) await addKeys(provider, draft);
-      result = await api.testProvider(provider, info.llm ? "llm" : "stt");
+      result = await api.testProvider(provider, info.llm ? "llm" : "stt", splitKeys(draft)[0]);
       ok = result.ok;
       if (ok) draft = "";
     } catch (e) {

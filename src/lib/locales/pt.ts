@@ -217,7 +217,7 @@ export const pt = {
   "sc.ask_hint": "Faz uma pergunta e abre o assistente com a resposta pesquisada na web.",
   "sc.press": "Pressione a combinação…",
   "sc.click_to_change": "Clique para alterar",
-  "sc.need_modifier": "Use Ctrl, Alt, Shift ou Win junto — ou uma tecla F.",
+  "sc.need_modifier": "Use Ctrl, Alt ou Win junto — ou uma tecla F (só com elas o Shift basta).",
   "sc.mode": "Modo",
   "sc.mode_toggle": "Alternar",
   "sc.mode_hold": "Segurar",

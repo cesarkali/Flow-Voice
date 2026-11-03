@@ -83,9 +83,32 @@ export function acceleratorFromEvent(e: KeyboardEvent): { accel: string | null; 
   if (isModifierCode(e.code)) return { accel: null, mods, needsModifier: false };
   const k = keyOf(e.code);
   if (!k) return { accel: null, mods, needsModifier: false };
-  const isF = /^F\d+$/.test(k) || ["Pause", "ScrollLock", "PrintScreen", "Insert"].includes(k);
-  if (!mods.length && !isF) return { accel: null, mods, needsModifier: true };
+  const fKey = /^F\d+$/.test(k);
+  const isF = fKey || ["Pause", "ScrollLock", "PrintScreen", "Insert"].includes(k);
+  // Ctrl, Alt or Win: with Shift alone (only F keys may) that character could no longer be typed
+  // anywhere (Shift+A, Shift+Space).
+  const strong = mods.some((m) => m !== "Shift");
+  if (mods.length ? !strong && !fKey : !isF) return { accel: null, mods, needsModifier: true };
   return { accel: [...mods, k].join("+"), mods, needsModifier: false };
+}
+
+/** Same combination, however it is spelled ("CommandOrControl+Shift+A" = "Shift+Ctrl+A"). */
+export function sameHotkey(a: string, b: string): boolean {
+  const norm = (accel: string) => {
+    const parts = accel.split(/\+(?!$)/).map((p) => p.trim().toLowerCase());
+    const key = parts.pop() ?? "";
+    const mods = parts
+      .map((m) => {
+        if (m === "commandorcontrol" || m === "cmdorctrl") return isMac ? "meta" : "ctrl";
+        if (m === "control") return "ctrl";
+        if (m === "option") return "alt";
+        if (m === "super" || m === "cmd" || m === "command") return "meta";
+        return m;
+      })
+      .sort();
+    return [...mods, key.replace(/^(key|digit)(?=.$)/, "")].join("+");
+  };
+  return !!a && !!b && norm(a) === norm(b);
 }
 
 const LABELS: Record<string, string> = {

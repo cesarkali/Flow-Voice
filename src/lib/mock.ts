@@ -103,6 +103,8 @@ const DEFAULT_SETTINGS: Settings = {
   start_with_os: true,
   history_enabled: true,
   overlay_position: "bottom",
+  overlay_custom: null,
+  overlay_drag: true,
   overlay_width: "normal",
   overlay_follow_mouse: true,
   overlay_glass: "solid",
@@ -316,6 +318,28 @@ history.splice(
     text: "- Orçamento do Q4\n- Novo onboarding\n- Cobertura das férias da Ana",
     duration_ms: 6900,
   }),
+  // A transcription that failed, its recording kept to try again (like Rust's FailedStore).
+  H("hf1", 70, {
+    raw: "",
+    text: "",
+    app: "outlook",
+    app_name: "Outlook",
+    provider: null,
+    stt_provider: "",
+    pasted: false,
+    duration_ms: 41000,
+    failed: true,
+    error: "Falha na transcrição: Groq: limite de uso atingido",
+    retry: "ready",
+  }),
+  // Right-to-left dictation (dir="auto" in the list).
+  H("h-ar", 110, {
+    raw: "مرحبا، سأرسل التقرير غدا صباحا",
+    text: "مرحبًا، سأرسل التقرير غدًا صباحًا.",
+    app: "whatsapp",
+    app_name: "WhatsApp",
+    duration_ms: 2800,
+  }),
   H("h7", 130, {
     mode: "ask",
     raw: "qual a diferença entre tauri e electron em consumo de memória",
@@ -423,6 +447,7 @@ export type SimScenario =
   | "translate"
   | "ask"
   | "error"
+  | "sttfail"
   | "done"
   | "transcribing"
   | "refining"
@@ -444,6 +469,21 @@ export function simulateOverlay(scenario: SimScenario = "live", autoStop = true)
     later(900, () => {
       if (mode === "ask") {
         emit({ phase: "answer", query: "Qual a previsão do tempo pra amanhã?" });
+        return;
+      }
+      if (scenario === "sttfail") {
+        // Like Rust: the recording is kept in memory and offered again.
+        const id = `hf-${Date.now()}`;
+        history.unshift({ ...makeResult("dictate", settings.active_style, null, false), id, raw: "", text: "", failed: true, error: "Falha na transcrição: Groq: limite de uso atingido", retry: "ready" });
+        mockEmit(EVENTS.historyChanged);
+        emit({
+          phase: "error",
+          message: "Falha na transcrição: Groq: limite de uso atingido",
+          detail: "groq: limite de uso atingido — HTTP 429: Rate limit reached for model `whisper-large-v3`",
+          raw: null,
+          retry: id,
+          key: false,
+        });
         return;
       }
       if (scenario === "error") {
@@ -722,7 +762,7 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       return clone(next);
     }
     case "paste_text":
-      return;
+      return true;
     case "take_model_notices":
       return [];
     case "copy_text":
@@ -744,6 +784,14 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       return;
     case "glass_available":
       return true;
+    case "get_overlay_anchor":
+      return null; // the harness has no native window to place
+    case "test_overlay_position":
+      return;
+    case "get_last_overlay_drag":
+      return { x: 0.82, y: 0.3 };
+    case "overlay_drag_arm":
+      return false; // the harness has no native window to drag
     case "dismiss_overlay":
       stopSimulation();
       return;
@@ -756,6 +804,22 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
     case "clear_history":
       history = [];
       return;
+    case "retry_failed": {
+      // Like Rust: transcribing again, then the failed item gives way to the dictation.
+      const i = history.findIndex((h) => h.id === a.id && h.retry === "ready");
+      if (i < 0) return;
+      history[i] = { ...history[i], retry: "running" };
+      mockEmit(EVENTS.historyChanged);
+      mockEmit(EVENTS.overlayState, { phase: "transcribing" } satisfies OverlayEvent);
+      later(1200, () => {
+        history = history.filter((h) => h.id !== a.id);
+        lastResult = makeResult("dictate", settings.active_style, null, !a.onlyCopy);
+        history.unshift(lastResult);
+        mockEmit(EVENTS.historyChanged);
+        mockEmit(EVENTS.overlayState, { phase: "done", result: clone(lastResult) } satisfies OverlayEvent);
+      });
+      return;
+    }
 
     case "get_chat":
       return clone(chat);

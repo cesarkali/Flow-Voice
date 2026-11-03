@@ -1,6 +1,6 @@
 [package]
 name = "flowvoice"
-version = "2.1.0"
+version = "2.2.0"
 description = "FlowVoice — ditado por voz com IA"
 authors = ["Júlio Caliberda (cesarkali)"]
 license = "GPL-3.0-only"
@@ -71,7 +71,9 @@ windows = { version = "0.58", features = [
 codegen-units = 1
 lto = true
 opt-level = "s"
-panic = "abort"
+# Not "abort": a bug in one dictation job must end with an error card (pipeline::guarded), not
+# take the whole app down.
+panic = "unwind"
 strip = true
 
 # whisper.cpp must be compiled for speed, not size (the cmake build inherits this level).

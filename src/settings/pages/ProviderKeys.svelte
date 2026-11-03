@@ -15,7 +15,7 @@
     keyPrefix,
     onadded,
     onremoved,
-  }: { provider: KeyProviderId; keyPrefix?: string; onadded?: () => void; onremoved?: (left: number) => void } = $props();
+  }: { provider: KeyProviderId; keyPrefix?: string; onadded?: (key: string) => void; onremoved?: (left: number) => void } = $props();
 
   const masked = $derived(app.keys?.[provider]?.masked ?? []);
   // Stable ids for keyed rows even when two masks look the same.
@@ -39,13 +39,15 @@
     if (!raw.trim() || busy) return;
     busy = true;
     try {
-      const n = await addKeys(provider, raw);
+      const fresh = await addKeys(provider, raw);
+      const n = fresh.length;
       draft = "";
       if (n === 0) say(t("obx.key_dup"), "warn");
       else {
         if (n > 1) say(t("obx.keys_added", { n }), "ok");
         if (revealed) revealed = await savedKeys(provider);
-        onadded?.();
+        // Test the key just added, not the first saved one.
+        onadded?.(fresh[0]);
       }
     } catch (e) {
       say(String(e), "warn");

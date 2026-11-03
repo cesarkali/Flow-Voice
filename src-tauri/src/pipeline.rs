@@ -12,7 +12,7 @@ use crate::cloud::{self, display_name, ChatMsg, ProviderError};
 use crate::platform;
 use crate::settings::{self, Settings, StyleKind};
 use crate::apps::AppContext;
-use crate::state::{new_id, ActiveSession, AppState, ChatMessage, ChatSource, DictationResult, RecordMode, Selection};
+use crate::state::{new_id, ActiveSession, AppState, ChatMessage, ChatSource, DictationResult, FailedRecording, RecordMode, Selection};
 use crate::text;
 use crate::windows;
 
@@ -42,15 +42,29 @@ pub fn emit_overlay(app: &AppHandle, payload: serde_json::Value) {
 
 pub fn overlay_error(app: &AppHandle, message: &str, detail: Option<String>, raw: Option<String>) {
     windows::show_overlay(app);
-    crate::hotkeys::register_escape(app, true);
     emit_overlay(app, json!({ "phase": "error", "message": message, "detail": detail, "raw": raw }));
 }
 
 /// A user-side problem (nothing selected, nothing to paste): same card, no "settings" button.
 pub fn overlay_hint(app: &AppHandle, message: &str) {
     windows::show_overlay(app);
-    crate::hotkeys::register_escape(app, true);
     emit_overlay(app, json!({ "phase": "error", "message": message, "detail": null, "raw": null, "hint": true }));
+}
+
+/// A failed dictation's card: the error, plus "Tentar de novo" when its recording was kept.
+fn overlay_failure(app: &AppHandle, e: anyhow::Error) {
+    let pe = match e.downcast::<PipelineError>() {
+        Ok(pe) => pe,
+        Err(e) => PipelineError { message: e.to_string(), detail: None, raw: None, retry: None, key_problem: false },
+    };
+    windows::show_overlay(app);
+    emit_overlay(
+        app,
+        json!({
+            "phase": "error", "message": pe.message, "detail": pe.detail, "raw": pe.raw,
+            "retry": pe.retry, "key": pe.key_problem,
+        }),
+    );
 }
 
 const NO_SELECTION: &str = "Selecione um texto antes de usar o Comando.";
@@ -86,9 +100,10 @@ pub enum Ctl {
     /// Push-to-talk press (the shortcut is still held).
     Hold(RecordMode),
     Stop,
+    /// Stop the recording this stop flag belongs to (the length limit), not a newer one.
+    StopSession(Arc<std::sync::atomic::AtomicBool>),
+    /// Also Esc, which is only taken while recording.
     Cancel,
-    /// Esc: cancel the recording, or the processing on screen, or close the card.
-    Escape,
     /// Command card: rewrite the selected text in a style (and/or translate it) instead of a
     /// spoken instruction.
     CommandStyle(String, Option<String>),
@@ -115,8 +130,12 @@ fn run_ctl(app: &AppHandle, c: Ctl) {
         Ctl::Start(m) => start_with(app, m, false),
         Ctl::Hold(m) => start_with(app, m, true),
         Ctl::Stop => stop(app),
+        Ctl::StopSession(flag) => {
+            if state(app).session.lock().as_ref().is_some_and(|s| Arc::ptr_eq(&s.stop_flag, &flag)) {
+                stop(app);
+            }
+        }
         Ctl::Cancel => cancel(app),
-        Ctl::Escape => escape(app),
         Ctl::CommandStyle(style, target) => command_style(app, style, target),
     }
 }
@@ -170,6 +189,9 @@ fn command_style(app: &AppHandle, style_id: String, target: Option<String>) {
                 app: app_ctx.as_ref().map(|c| c.id.clone()),
                 app_name: app_ctx.as_ref().map(|c| c.name.clone()),
                 source: Some(source),
+                failed: false,
+                error: None,
+                retry: None,
             };
             style_selection_into(&app, &mut result, &s, None).await;
             if !is_current(gen) {
@@ -177,7 +199,7 @@ fn command_style(app: &AppHandle, style_id: String, target: Option<String>) {
             }
             finish_dictation(&app, result, target_window, gen, &s).await
         };
-        let res = tokio::time::timeout(PROCESS_DEADLINE, work).await.unwrap_or_else(|_| {
+        let res = tokio::time::timeout(PROCESS_DEADLINE, guarded(work)).await.unwrap_or_else(|_| {
             Err(perr("Demorou demais — os serviços não responderam. Tente de novo.", None, None))
         });
         if let Err(e) = res {
@@ -212,7 +234,8 @@ async fn style_selection_into(app: &AppHandle, result: &mut DictationResult, s: 
 async fn finish_dictation(app: &AppHandle, mut result: DictationResult, target_window: isize, gen: u64, s: &Settings) -> Result<()> {
     if s.auto_paste {
         let text = result.text.clone();
-        let pasted = tauri::async_runtime::spawn_blocking(move || platform::paste(&text, target_window, false))
+        // (Only Command results end here: "Substituir" may undo this paste later.)
+        let pasted = tauri::async_runtime::spawn_blocking(move || platform::paste_replaceable(&text, target_window, false))
             .await
             .map_err(|e| anyhow!(e.to_string()))?;
         match pasted {
@@ -228,9 +251,7 @@ async fn finish_dictation(app: &AppHandle, mut result: DictationResult, target_w
         *state(app).last.lock() = Some((result.clone(), target_window));
     }
     let _ = app.emit("history-changed", ());
-    if emit_owned(app, gen, json!({ "phase": "done", "result": result })) {
-        crate::hotkeys::register_escape(app, true);
-    }
+    emit_owned(app, gen, json!({ "phase": "done", "result": result }));
     Ok(())
 }
 
@@ -240,17 +261,6 @@ pub fn control(app: &AppHandle, c: Ctl) {
             let _ = tx.lock().send(c);
         }
         None => run_ctl(app, c),
-    }
-}
-
-fn escape(app: &AppHandle) {
-    if is_recording(app) {
-        cancel(app);
-    } else if is_busy(app) && matches!(overlay_phase().as_str(), "transcribing" | "refining") {
-        cancel_processing(app);
-    } else {
-        release_overlay();
-        windows::hide_overlay(app);
     }
 }
 
@@ -336,13 +346,21 @@ pub fn start_with(app: &AppHandle, mode: RecordMode, keys_held: bool) {
         spawn_selection_copy(app, target_window, selection, stop_flag.clone());
     }
 
-    // Mic level for the waveform.
+    // Mic level for the waveform; and a recording left running stops (and is transcribed) at
+    // the length limit.
     let app2 = app.clone();
     let flag = stop_flag.clone();
+    let limit = Duration::from_secs(audio::MAX_RECORDING_SECS);
     std::thread::spawn(move || {
+        let started = Instant::now();
         while !flag.load(Ordering::Relaxed) {
             let level = state(&app2).session.lock().as_ref().map(|s| s.rec.level()).unwrap_or(0.0);
             let _ = app2.emit_to("overlay", "overlay-level", level);
+            if started.elapsed() >= limit {
+                log::info!("recording reached {} min: stopping", audio::MAX_RECORDING_SECS / 60);
+                control(&app2, Ctl::StopSession(flag));
+                return;
+            }
             std::thread::sleep(Duration::from_millis(33));
         }
     });
@@ -737,7 +755,10 @@ pub fn cancel(app: &AppHandle) {
     windows::hide_overlay(app);
 }
 
+/// Every way a recording ends goes through here.
 fn after_recording(app: &AppHandle) {
+    // Esc is only taken while recording (processing can last over a minute).
+    crate::hotkeys::register_escape(app, false);
     let prev = state(app).muted_prev.lock().take();
     if let Some(prev) = prev {
         platform::mute_speakers(prev);
@@ -776,12 +797,22 @@ pub fn stop(app: &AppHandle) {
         duration_ms,
         app: session.app.clone(),
         style_id: session.style_id.clone(),
+        target: (session.mode == RecordMode::Translate).then(|| st.settings().translation_target),
         selection: session.selection.clone(),
+        retry_of: None,
+        only_copy: false,
     };
+    spawn_processing(app, samples, job, gen, warnings, busy);
+}
+
+/// Processes a stopped recording (or a failed one tried again) in the background.
+fn spawn_processing(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u64, warnings: Vec<String>, busy: BusyGuard) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let _busy = busy;
-        let work = process_recording(&app, samples, job, gen, warnings);
+        // A retry ends here one way or another: its recording, if still kept, can be tried again.
+        let _retry = job.retry_of.clone().map(|id| RetryEnd(app.clone(), id));
+        let work = guarded(process_recording(&app, samples, job, gen, warnings));
         let result = match tokio::time::timeout(PROCESS_DEADLINE, work).await {
             Ok(r) => r,
             Err(_) => Err(perr(
@@ -796,13 +827,58 @@ pub fn stop(app: &AppHandle) {
             if !owns_overlay(&app, gen) {
                 return;
             }
-            let (message, detail, raw) = match e.downcast::<PipelineError>() {
-                Ok(pe) => (pe.message, pe.detail, pe.raw),
-                Err(e) => (e.to_string(), None, None),
-            };
-            overlay_error(&app, &message, detail, raw);
+            overlay_failure(&app, e);
         }
     });
+}
+
+/// A dictation job that panics (a bug) ends with an error card like any failure, instead of
+/// taking the app down or leaving the bar on "Transcrevendo…".
+async fn guarded(work: impl std::future::Future<Output = Result<()>>) -> Result<()> {
+    use futures_util::FutureExt;
+    std::panic::AssertUnwindSafe(work).catch_unwind().await.unwrap_or_else(|_| {
+        // (Not the panic's message: a string-slicing one quotes the text, and what was dictated
+        // never goes to the log.)
+        log::error!("dictation job panicked");
+        Err(perr("Erro interno ao processar o ditado. Tente de novo.", None, None))
+    })
+}
+
+struct RetryEnd(AppHandle, String);
+
+impl Drop for RetryEnd {
+    fn drop(&mut self) {
+        state(&self.0).failed.lock().end_retry(&self.1);
+        let _ = self.0.emit("history-changed", ());
+    }
+}
+
+/// "Tentar de novo" on a failed transcription: its kept recording processed again as it was
+/// dictated (same app, style and translation; the providers and keys as they are now), as a new
+/// dictation. Pasted into its app, or only copied when asked from the history.
+pub fn retry_failed(app: &AppHandle, id: String, only_copy: bool) {
+    if is_recording(app) {
+        return;
+    }
+    let Some(rec) = state(app).failed.lock().start_retry(&id) else { return };
+    let _ = app.emit("history-changed", ());
+    log::info!("trying a failed recording again");
+    let gen = DICTATION.fetch_add(1, Ordering::SeqCst) + 1;
+    let busy = BusyGuard::new();
+    windows::show_overlay(app);
+    emit_overlay(app, json!({ "phase": "transcribing" }));
+    let job = Job {
+        mode: rec.mode,
+        target_window: rec.target_window,
+        duration_ms: rec.duration_ms,
+        app: rec.app,
+        style_id: rec.style_id,
+        target: rec.target,
+        selection: Arc::new(parking_lot::Mutex::new(Selection::Empty)),
+        retry_of: Some(id),
+        only_copy,
+    };
+    spawn_processing(app, crate::state::from_pcm16(&rec.pcm), job, gen, vec![], busy);
 }
 
 #[derive(Debug)]
@@ -810,6 +886,10 @@ pub struct PipelineError {
     pub message: String,
     pub detail: Option<String>,
     pub raw: Option<String>,
+    /// The recording was kept: id to try it again.
+    pub retry: Option<String>,
+    /// Every provider refused the key (the card leads with "Provedores…").
+    pub key_problem: bool,
 }
 
 impl std::fmt::Display for PipelineError {
@@ -820,7 +900,7 @@ impl std::fmt::Display for PipelineError {
 impl std::error::Error for PipelineError {}
 
 fn perr(message: impl Into<String>, detail: Option<String>, raw: Option<String>) -> anyhow::Error {
-    anyhow::Error::new(PipelineError { message: message.into(), detail, raw })
+    anyhow::Error::new(PipelineError { message: message.into(), detail, raw, retry: None, key_problem: false })
 }
 
 /// What a stopped recording carries into processing.
@@ -830,7 +910,71 @@ struct Job {
     duration_ms: u64,
     app: Option<AppContext>,
     style_id: String,
+    /// Translate mode: the language chosen when it was dictated.
+    target: Option<String>,
     selection: Arc<parking_lot::Mutex<Selection>>,
+    /// A failed recording tried again (its history id): already trimmed of silence.
+    retry_of: Option<String>,
+    /// Copy the result instead of pasting it (a retry from the history).
+    only_copy: bool,
+}
+
+/// Longest wait for the transcription itself; past it the recording is kept to try again
+/// (PROCESS_DEADLINE still bounds the whole dictation).
+const STT_DEADLINE: Duration = Duration::from_secs(60);
+
+/// A transcription that failed: the recording is kept in memory to try again (not a Command's:
+/// its selection may be gone by then; nor a question's), so a long dictation isn't lost. Returns
+/// the error for the card, now carrying the retry id.
+fn keep_failed(app: &AppHandle, e: anyhow::Error, voiced: &[f32], job: &Job) -> anyhow::Error {
+    if matches!(job.mode, RecordMode::Command | RecordMode::Ask) {
+        return e;
+    }
+    let mut pe = match e.downcast::<PipelineError>() {
+        Ok(pe) => pe,
+        Err(e) => PipelineError { message: e.to_string(), detail: None, raw: None, retry: None, key_problem: false },
+    };
+    let st = state(app);
+    // Failed again: the old item goes, a new one comes with the same recording.
+    if let Some(old) = &job.retry_of {
+        st.delete_history(old);
+    }
+    let id = new_id();
+    let item = DictationResult {
+        id: id.clone(),
+        ts: chrono::Local::now().to_rfc3339(),
+        mode: job.mode,
+        raw: String::new(),
+        text: String::new(),
+        style_id: job.style_id.clone(),
+        target: job.target.clone(),
+        provider: None,
+        stt_provider: String::new(),
+        pasted: false,
+        duration_ms: job.duration_ms,
+        warnings: vec![],
+        app: job.app.as_ref().map(|c| c.id.clone()),
+        app_name: job.app.as_ref().map(|c| c.name.clone()),
+        source: None,
+        failed: true,
+        error: Some(pe.message.clone()),
+        retry: None,
+    };
+    let rec = FailedRecording {
+        id: id.clone(),
+        pcm: crate::state::to_pcm16(voiced),
+        mode: job.mode,
+        target_window: job.target_window,
+        app: job.app.clone(),
+        style_id: job.style_id.clone(),
+        target: job.target.clone(),
+        duration_ms: job.duration_ms,
+        retrying: false,
+    };
+    st.keep_failed(rec, &item);
+    let _ = app.emit("history-changed", ());
+    pe.retry = Some(id);
+    anyhow::Error::new(pe)
 }
 
 async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u64, warnings: Vec<String>) -> Result<()> {
@@ -843,17 +987,30 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
     if !is_current(gen) {
         return Ok(());
     }
-    let voiced = audio::trim_silence(&samples).to_vec();
+    let voiced = if job.retry_of.is_some() { samples } else { audio::trim_silence(&samples).to_vec() };
     if voiced.len() < (audio::SAMPLE_RATE as usize) / 4 {
         return Err(perr("Nenhuma fala detectada — verifique o microfone.", None, None));
     }
     let voiced_secs = voiced.len() as f32 / audio::SAMPLE_RATE as f32;
-    let (raw, stt_provider) = transcribe_any(app, &voiced).await?;
-    let raw = text::strip_annotations(&raw);
-    let s = state(app).settings();
+    let transcribed = tokio::time::timeout(STT_DEADLINE, transcribe_any(app, &voiced))
+        .await
+        .unwrap_or_else(|_| Err(perr("Demorou demais para transcrever — os serviços não responderam.", None, None)));
+    let (raw, stt_provider) = match transcribed {
+        Ok(t) => t,
+        Err(e) if !is_current(gen) => return Err(e),
+        Err(e) => return Err(keep_failed(app, e, &voiced, &job)),
+    };
+    // Cancelled meanwhile: a failed recording tried again stays kept.
     if !is_current(gen) {
         return Ok(());
     }
+    // Transcribed at last: the failed one is done with.
+    if let Some(old) = &job.retry_of {
+        state(app).delete_history(old);
+        let _ = app.emit("history-changed", ());
+    }
+    let raw = text::strip_annotations(&raw);
+    let s = state(app).settings();
     // "Ah." alone is a hesitation, not speech: never send an empty text to the LLM.
     if text::is_hallucination_voiced(&raw, voiced_secs) || !text::has_words(&text::remove_fillers(&raw, &s.speech_language)) {
         // Never write what was dictated to the log (privacy): only its length.
@@ -867,7 +1024,7 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
         return Ok(());
     }
 
-    let target = if mode == RecordMode::Translate { Some(s.translation_target.clone()) } else { None };
+    let target = job.target.clone();
     let style = s.style(&job.style_id);
     let mut result = DictationResult {
         id: new_id(),
@@ -885,6 +1042,9 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
         app: job.app.as_ref().map(|c| c.id.clone()),
         app_name: job.app.as_ref().map(|c| c.name.clone()),
         source,
+        failed: false,
+        error: None,
+        retry: None,
     };
     if mode == RecordMode::Command {
         result.style_id = COMMAND_STYLE.into();
@@ -896,11 +1056,15 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
         return Ok(());
     }
 
-    if s.auto_paste {
+    if s.auto_paste && !job.only_copy {
         let text = result.text.clone();
-        let pasted = tauri::async_runtime::spawn_blocking(move || platform::paste(&text, target_window, false))
-            .await
-            .map_err(|e| anyhow!(e.to_string()))?;
+        // A new dictation is spaced from the previous one when it continues it (not a Command).
+        let pasted = tauri::async_runtime::spawn_blocking(move || match mode {
+            RecordMode::Command => platform::paste_replaceable(&text, target_window, false),
+            _ => platform::paste_dictation(&text, target_window),
+        })
+        .await
+        .map_err(|e| anyhow!(e.to_string()))?;
         match pasted {
             Ok(true) => result.pasted = true,
             Ok(false) => result.warnings.push("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.".into()),
@@ -916,9 +1080,7 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
         *state(app).last.lock() = Some((result.clone(), target_window));
     }
     let _ = app.emit("history-changed", ());
-    if emit_owned(app, gen, json!({ "phase": "done", "result": result })) {
-        crate::hotkeys::register_escape(app, true);
-    }
+    emit_owned(app, gen, json!({ "phase": "done", "result": result }));
     Ok(())
 }
 
@@ -960,7 +1122,8 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
         match llm_chain(app, &[ChatMsg::new("system", system), ChatMsg::new("user", user)], 0.2, max_tokens).await {
             Ok((out, provider)) => {
                 let out = text::clean_llm_output(&out);
-                if !out.is_empty() {
+                // The prompt's refusal is Portuguese whatever was spoken: the cleaned transcript goes.
+                if !out.is_empty() && !text::is_prompt_refusal(&out) {
                     text_out = out;
                     result.provider = Some(provider);
                 }
@@ -986,12 +1149,14 @@ async fn command_into(app: &AppHandle, result: &mut DictationResult, s: &Setting
         let provider_hint = first_llm(app, s).map(display_name).unwrap_or("IA");
         emit_owned(app, g, json!({ "phase": "refining", "provider": provider_hint, "mode": "command" }));
     }
-    let system = settings::command_prompt(&s.dictionary, result.app_name.as_deref());
-    let user = settings::command_message(&instruction, &selection, result.target.as_deref());
+    let system = settings::command_prompt(&s.dictionary, result.app_name.as_deref(), result.target.as_deref());
+    let user = settings::command_message(&instruction, &selection);
     let max_tokens = ((selection.len() as u32) + 1024).clamp(1024, 8192);
     result.provider = None;
     match llm_chain(app, &[ChatMsg::new("system", system), ChatMsg::new("user", user)], 0.2, max_tokens).await {
         Ok((out, provider)) => {
+            // Translated: the model sometimes gives back the original too, or a second version.
+            let out = if result.target.is_some() { text::drop_echoed_source(&out, &selection) } else { out };
             let out = text::clean_command_output(&out, &selection);
             if !text::has_words(&out) && text::has_words(&selection) {
                 return Err(perr("A IA devolveu um texto vazio — nada foi alterado.", None, Some(result.raw.clone())));
@@ -1075,6 +1240,9 @@ pub async fn reprocess_history(app: &AppHandle, id: String, style_id: String, ta
     if result.mode == RecordMode::Ask {
         return Err(anyhow!("perguntas não podem ser refeitas"));
     }
+    if result.failed {
+        return Err(anyhow!("a transcrição falhou: use \"Tentar de novo\""));
+    }
     let s = st.settings();
     result.target = target.filter(|t| !t.is_empty());
     result.warnings.clear();
@@ -1116,7 +1284,7 @@ pub fn paste_last(app: &AppHandle, target: isize) {
         st.history
             .lock()
             .iter()
-            .find(|h| h.mode != RecordMode::Ask && !h.text.trim().is_empty())
+            .find(|h| h.mode != RecordMode::Ask && !h.failed && !h.text.trim().is_empty())
             .map(|h| h.text.clone())
     });
     let Some(text) = text.filter(|t| !t.trim().is_empty()) else {
@@ -1125,7 +1293,7 @@ pub fn paste_last(app: &AppHandle, target: isize) {
     };
     log::info!("paste last: {} chars", text.chars().count());
     let app = app.clone();
-    std::thread::spawn(move || match platform::paste(&text, target, false) {
+    std::thread::spawn(move || match platform::paste(&text, target) {
         Ok(true) => {}
         Ok(false) => overlay_hint(&app, "Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V."),
         Err(e) => overlay_error(&app, &e.to_string(), None, None),
@@ -1165,6 +1333,13 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
     let s = st.settings();
     let prompt = stt_prompt(&s);
     let lang = s.speech_language.clone();
+    // Test hook (isolated instance only): while the file FLOWVOICE_TEST_STT_FAIL names exists,
+    // every provider fails like a dropped connection (tools/dev/stress-retry.mjs).
+    if let (Some(flag), Some(_)) = (std::env::var_os("FLOWVOICE_TEST_STT_FAIL"), std::env::var_os("FLOWVOICE_DATA_DIR")) {
+        if std::path::Path::new(&flag).exists() {
+            return Err(perr("Falha na transcrição: Groq: sem conexão com o serviço", Some("groq — teste".into()), None));
+        }
+    }
 
     let local_model = if st.local.installed(&s.stt.local_model) {
         Some(s.stt.local_model.clone())
@@ -1258,7 +1433,14 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
         ));
     }
     let detail = errors.iter().map(|e| format!("{} — {}", e, e.detail)).collect::<Vec<_>>().join("\n");
-    Err(perr(format!("Falha na transcrição: {}", errors[0]), Some(detail), None))
+    Err(anyhow::Error::new(PipelineError {
+        message: format!("Falha na transcrição: {}", errors[0]),
+        detail: Some(detail),
+        raw: None,
+        retry: None,
+        // A key to fix (invalid, no credits), not a passing rate limit: "Provedores…" leads.
+        key_problem: errors.iter().all(|e| e.key_problem && !e.message.starts_with("limite de uso")),
+    }))
 }
 
 // ---------------------------------------------------------------- LLM failover

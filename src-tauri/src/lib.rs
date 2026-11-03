@@ -10,10 +10,12 @@ mod keys;
 #[cfg(test)]
 mod live_tests;
 mod local_stt;
+mod overlay_drag;
 mod pipeline;
 mod platform;
 mod preview;
 mod settings;
+mod startup;
 mod state;
 mod text;
 mod tray;
@@ -58,6 +60,10 @@ fn init_logger(dir: &PathBuf) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Started by the logon task while startup is turned off in Task Manager: respect that.
+    if std::env::args().any(|a| a == startup::TASK_ARG) && startup::disabled_in_task_manager("FlowVoice") {
+        return;
+    }
     // Test hook: FLOWVOICE_DATA_DIR runs an isolated instance (own settings/history, no
     // single-instance lock) next to the user's real one.
     let test_dir = std::env::var_os("FLOWVOICE_DATA_DIR").map(std::path::PathBuf::from);
@@ -138,7 +144,7 @@ pub fn run() {
             if !failed.is_empty() {
                 log::warn!("hotkeys failed: {failed:?}");
             }
-            commands::set_autostart(&handle, s.start_with_os);
+            commands::heal_autostart(&handle, s.start_with_os);
 
             pipeline::ensure_preview_model(&handle);
             heal::start_background(&handle);
@@ -227,6 +233,11 @@ pub fn run() {
             commands::overlay_hold,
             commands::overlay_resize,
             commands::overlay_hitbox,
+            overlay_drag::overlay_drag_arm,
+            overlay_drag::get_last_overlay_drag,
+            overlay_drag::test_drag,
+            windows::get_overlay_anchor,
+            windows::test_overlay_position,
             commands::overlay_glass,
             commands::glass_available,
             commands::dismiss_overlay,
@@ -234,6 +245,7 @@ pub fn run() {
             commands::get_history,
             commands::delete_history_item,
             commands::clear_history,
+            commands::retry_failed,
             commands::get_chat,
             commands::chat_send,
             commands::chat_toggle_recording,

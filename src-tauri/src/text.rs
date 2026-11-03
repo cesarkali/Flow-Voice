@@ -82,9 +82,22 @@ fn capitalize_first(t: &str) -> String {
     }
 }
 
+/// Each match of `re` becomes its group 1 (the punctuation), unless that punctuation starts a word
+/// (".NET", ".env", "5,5"): then it isn't loose and stays as it was.
+fn drop_before_loose_punct<'a>(re: &Regex, t: &'a str) -> std::borrow::Cow<'a, str> {
+    re.replace_all(t, |c: &regex::Captures| {
+        let end = c.get(0).map_or(t.len(), |m| m.end());
+        if t[end..].starts_with(char::is_alphanumeric) {
+            c[0].to_string()
+        } else {
+            c[1].to_string()
+        }
+    })
+}
+
 fn tidy(t: &str) -> String {
-    let t = DOUBLE_COMMA.replace_all(t, "$1");
-    let t = SPACE_BEFORE_PUNCT.replace_all(&t, "$1");
+    let t = drop_before_loose_punct(&DOUBLE_COMMA, t);
+    let t = drop_before_loose_punct(&SPACE_BEFORE_PUNCT, &t);
     let t = MULTI_SPACE.replace_all(&t, " ");
     let t = LEADING_PUNCT.replace(&t, "");
     t.lines().map(str::trim).collect::<Vec<_>>().join("\n").trim().to_string()
@@ -175,6 +188,13 @@ pub fn echoes_prompt(text: &str, prompt: &str) -> bool {
     t.split(' ').count() >= 3 && p.contains(&t)
 }
 
+/// The answer the dictation prompt asks for when the transcript asks for its instructions
+/// (settings::system_prompt, rule 7). It is Portuguese whatever language was spoken, so it is
+/// never pasted: the cleaned transcript goes instead.
+pub fn is_prompt_refusal(text: &str) -> bool {
+    text.trim().trim_end_matches('.').trim_end() == "Não foi possível transcrever"
+}
+
 /// Strips wrappers some models add despite instructions.
 pub fn clean_llm_output(text: &str) -> String {
     let mut t = text.trim().to_string();
@@ -199,6 +219,55 @@ pub fn clean_llm_output(text: &str) -> String {
         }
     }
     t.to_string()
+}
+
+/// A translated "Comando" result that still has the selection as it was before (or after) the
+/// translation, the translation twice ("X", then "Translated: X"), a second labeled version
+/// ("Improved Prompt: …"), or a "---" line and a comment after it: only the translation, once.
+/// Trimmed (`clean_command_output` puts the selection's own spacing back afterwards).
+pub fn drop_echoed_source(output: &str, selection: &str) -> String {
+    let source = selection.trim();
+    let mut all = output.trim().to_string();
+    if let Some(rule) = all.find("\n---") {
+        if !source.contains("---") && has_words(&all[..rule]) {
+            all = all[..rule].trim().to_string();
+        }
+    }
+    // Exactly two paragraphs, the second one ending with the first.
+    if let Some(gap) = all.find("\n\n") {
+        let first = all[..gap].trim();
+        let second = &all[gap + 2..];
+        if !second.contains("\n\n") && first.chars().count() >= 8 && second.trim().ends_with(first) {
+            return first.to_string();
+        }
+    }
+    if source.chars().count() >= 8 && all.len() > source.len() {
+        let rest = all.strip_prefix(source).or_else(|| all.strip_suffix(source)).map(str::trim);
+        if let Some(rest) = rest.filter(|r| has_words(r)) {
+            all = rest.to_string();
+        }
+    }
+    // (One line in: a paragraph after it that opens with a short label is another version. After
+    // the echo is gone, or "selection\n\nPrompt: translation" would keep the selection.)
+    if !source.contains('\n') {
+        let mut from = 0;
+        while let Some(i) = all[from..].find("\n\n") {
+            let gap = from + i;
+            if let Some((label, _)) = all[gap + 2..].trim().split_once(':') {
+                let n = label.chars().count();
+                if n > 0
+                    && n <= 40
+                    && label.matches(' ').count() < 4
+                    && !label.contains(['.', '!', '?', '"', '“'])
+                    && has_words(&all[..gap])
+                {
+                    return all[..gap].trim().to_string();
+                }
+            }
+            from = gap + 2;
+        }
+    }
+    all
 }
 
 /// Output of "Comando". It replaces the selection exactly, so: fences/quotes are only stripped
@@ -232,9 +301,45 @@ pub fn clean_command_output(out: &str, selection: &str) -> String {
             core = inner.trim().to_string();
         }
     }
+    // A note the model added at the end ("(Note: translated for clarity.)"), when the selection
+    // didn't end with one.
+    let is_note = |p: &str| (p.starts_with('(') && p.ends_with(')')) || p.starts_with("Note:") || p.starts_with("Nota:");
+    let sel_last = sel.rfind("\n\n").map_or(sel, |g| &sel[g + 2..]).trim();
+    if let Some(gap) = core.rfind("\n\n") {
+        if has_words(&core[..gap]) && is_note(core[gap + 2..].trim()) && !is_note(sel_last) {
+            core = core[..gap].trim().to_string();
+        }
+    }
     let lead = &selection[..selection.len() - selection.trim_start().len()];
     let trail = &selection[selection.trim_end().len()..];
     format!("{lead}{core}{trail}")
+}
+
+/// Scripts written without spaces between words and sentences.
+fn is_unspaced_script(c: char) -> bool {
+    matches!(c as u32,
+        0x0E00..=0x0EFF // Thai, Lao
+        | 0x1000..=0x109F // Myanmar
+        | 0x1780..=0x17FF // Khmer
+        | 0x2E80..=0x9FFF // CJK, kana
+        | 0xF900..=0xFAFF | 0xFF00..=0xFFEF)
+}
+
+/// A dictation that continues the previous one in the same field gets a space in between
+/// ("…na quinta. A reunião…"), unless the joint already has one, the previous one ends opening
+/// something, the new one starts with punctuation, or the script has no spaces (Japanese,
+/// Chinese, Thai). `previous_last` = last character of the previous dictation.
+pub fn needs_join_space(previous_last: Option<char>, text: &str) -> bool {
+    let (Some(prev), Some(first)) = (previous_last, text.chars().next()) else { return false };
+    if prev.is_whitespace()
+        || first.is_whitespace()
+        || is_unspaced_script(prev)
+        || is_unspaced_script(first)
+        || "([{“‘«¿¡-/".contains(prev)
+    {
+        return false;
+    }
+    first.is_alphanumeric() || "\"“‘«¿¡([".contains(first)
 }
 
 #[cfg(test)]
@@ -251,6 +356,86 @@ mod tests {
         assert_eq!(clean_command_output("\"Bom dia\"", "\"bom dia\""), "\"Bom dia\"");
         // Indented code: the first line's indentation comes from the selection.
         assert_eq!(clean_command_output("foo();\n    bar();\n", "    foo()\n    bar()\n"), "    foo();\n    bar();\n");
+    }
+
+    #[test]
+    fn translated_command_drops_echo_and_second_versions() {
+        let source = "Prompt: VAZOU UMA FOTO DO FLAGRA | 20 Anos";
+        let drop = |out: &str| drop_echoed_source(out, source);
+        assert_eq!(drop(&format!("{source}\n\nPrompt: A PHOTO OF FLAGRA LEAKED | 20 Years")), "Prompt: A PHOTO OF FLAGRA LEAKED | 20 Years");
+        assert_eq!(drop(&format!("Good morning\n{source}")), "Good morning");
+        assert_eq!(drop("A PHOTO LEAKED"), "A PHOTO LEAKED");
+        // The translation twice, a second labeled version (seen with gpt-oss-20b).
+        assert_eq!(drop("Prompt: A photo leaked | Comedy\n\nTranslated Prompt: A photo leaked | Comedy"), "Prompt: A photo leaked | Comedy");
+        assert_eq!(
+            drop("Prompt: A photo leaked | Comedy\n\nImproved Prompt: \"Photo leak, comedic, full HD movie\""),
+            "Prompt: A photo leaked | Comedy"
+        );
+        // The echo goes first, then the labeled version.
+        assert_eq!(drop(&format!("{source}\n\nPrompt: A photo leaked\n\nVersão melhorada: foto")), "Prompt: A photo leaked");
+        // A "---" line and a comment after it.
+        assert_eq!(drop("Prompt: A photo leaked\n\n--- \n\nImproved Prompt (English):  \n\"Photo leaked\""), "Prompt: A photo leaked");
+        // Two different paragraphs stay, and so does a label from a selection of several lines.
+        assert_eq!(drop("First paragraph here.\n\nSecond one, different."), "First paragraph here.\n\nSecond one, different.");
+        assert_eq!(drop_echoed_source("Hi team,\n\nAgenda: budget", "Oi time,\n\nPauta: orçamento"), "Hi team,\n\nAgenda: budget");
+        // Only the source back: kept (the caller decides).
+        assert_eq!(drop(&format!("{source}  ")), source);
+        // A "---" that was in the selection is content.
+        assert_eq!(drop_echoed_source("Title\n---\nBody text", "Título\n---\nCorpo"), "Title\n---\nBody text");
+    }
+
+    #[test]
+    fn command_output_drops_a_trailing_note() {
+        assert_eq!(clean_command_output("Prompt: A photo\n\n(Note: The text is translated.)", "Prompt: uma foto"), "Prompt: A photo");
+        assert_eq!(clean_command_output("Bom dia.\n\nNota: deixei mais formal.", "bom dia"), "Bom dia.");
+        // The selection ended with one: it's content.
+        assert_eq!(clean_command_output("Texto.\n\n(veja o anexo)", "texto\n\n(ver anexo)"), "Texto.\n\n(veja o anexo)");
+        // Nothing but a note: kept.
+        assert_eq!(clean_command_output("(vazio)", "x"), "(vazio)");
+        assert_eq!(clean_command_output("Line", "  line\n"), "  Line\n");
+    }
+
+    #[test]
+    fn command_cleanup_never_panics_on_odd_text() {
+        // Multi-byte text everywhere: every cut must land on a char boundary.
+        let alphabet: Vec<char> = "ab :.-\n\n\"“”()çã明ค مر---Note:Nota:".chars().collect();
+        let mut seed = 0x2545F491u32;
+        let mut text = |len: usize| -> String {
+            (0..len)
+                .map(|_| {
+                    seed ^= seed << 13;
+                    seed ^= seed >> 17;
+                    seed ^= seed << 5;
+                    alphabet[seed as usize % alphabet.len()]
+                })
+                .collect()
+        };
+        for _ in 0..3000 {
+            let (a, b) = (text(120), text(50));
+            let _ = drop_echoed_source(&a, &b);
+            let _ = clean_command_output(&a, &b);
+        }
+    }
+
+    #[test]
+    fn dictations_in_a_row_get_a_space() {
+        assert!(needs_join_space(Some('.'), "Then we go."));
+        assert!(needs_join_space(Some('a'), "amanhã"));
+        assert!(needs_join_space(Some('?'), "“Sim”, disse."));
+        assert!(needs_join_space(Some('.'), "¿Vienes?"));
+        assert!(needs_join_space(Some('.'), "مرحبا"));
+        assert!(!needs_join_space(None, "Bom dia."));
+        assert!(!needs_join_space(Some(' '), "Bom dia."));
+        assert!(!needs_join_space(Some('\n'), "Bom dia."));
+        assert!(!needs_join_space(Some('.'), " Bom dia."));
+        assert!(!needs_join_space(Some('.'), "\nBom dia."));
+        assert!(!needs_join_space(Some('a'), ", e depois"));
+        assert!(!needs_join_space(Some('a'), "."));
+        assert!(!needs_join_space(Some('('), "nota"));
+        assert!(!needs_join_space(Some('.'), ""));
+        assert!(!needs_join_space(Some('。'), "明日は"));
+        assert!(!needs_join_space(Some('.'), "明日は"));
+        assert!(!needs_join_space(Some('ค'), "ครับ"));
     }
 
     #[test]
@@ -296,12 +481,23 @@ mod tests {
         assert_eq!(remove_fillers("ella ha comido", "es"), "Ella ha comido");
         assert_eq!(remove_fillers("não não, eu não vou", "pt"), "Não não, eu não vou");
         assert_eq!(strip_annotations(".NET é rápido"), ".NET é rápido");
+        // Punctuation that starts a word isn't loose.
+        assert_eq!(strip_annotations("feito com .NET e o arquivo .env , pronto ."), "feito com .NET e o arquivo .env, pronto.");
+        assert_eq!(strip_annotations("a, .NET"), "a, .NET");
+        assert_eq!(strip_annotations("sim, . depois"), "sim. depois");
         assert_eq!(strip_annotations(", olá"), "Olá".to_lowercase());
     }
 
     #[test]
     fn annotations() {
         assert_eq!(strip_annotations("[Música] Olá (risos) pessoal [BLANK_AUDIO]"), "Olá pessoal");
+    }
+
+    #[test]
+    fn prompt_refusal() {
+        assert!(is_prompt_refusal("Não foi possível transcrever."));
+        assert!(is_prompt_refusal("  Não foi possível transcrever  "));
+        assert!(!is_prompt_refusal("Não foi possível transcrever o áudio de ontem."));
     }
 
     #[test]

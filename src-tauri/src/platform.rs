@@ -13,7 +13,25 @@ static CLIPBOARD: Lazy<Mutex<Option<arboard::Clipboard>>> = Lazy::new(|| Mutex::
 static INPUT_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
 pub fn set_clipboard(text: &str) -> Result<()> {
+    #[cfg(windows)]
+    let text = &with_crlf(text);
     with_clipboard(|cb| cb.set_text(text.to_string()))
+}
+
+/// Windows' line breaks: classic edit controls (Notepad's older versions, WinForms, many dialogs)
+/// paste a text with bare "\n" on a single line.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn with_crlf(text: &str) -> String {
+    let mut out = String::with_capacity(text.len() + text.matches('\n').count());
+    let mut prev = '\0';
+    for c in text.chars() {
+        if c == '\n' && prev != '\r' {
+            out.push('\r');
+        }
+        out.push(c);
+        prev = c;
+    }
+    out
 }
 
 fn with_clipboard<T>(f: impl FnOnce(&mut arboard::Clipboard) -> Result<T, arboard::Error>) -> Result<T> {
@@ -68,10 +86,107 @@ fn which(bin: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Gives focus back to `target` and pastes `text` with Ctrl+V (after Ctrl+Z when `replace`).
-/// Returns Ok(false) when it could not paste safely; the text is then left on the clipboard for
-/// the user to paste. Either way the dictation is on the clipboard afterwards.
-pub fn paste(text: &str, target: isize, replace: bool) -> Result<bool> {
+/// Where the last dictation was pasted, to tell whether the next one goes right after it.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+struct PasteMark {
+    window: isize,
+    focus: isize,
+    at: Option<std::time::Instant>,
+    last: Option<char>,
+    /// The caret a moment after the paste, when the app uses Windows' caret (browsers and many
+    /// editors don't): window + rect.
+    caret: Option<(isize, [i32; 4])>,
+}
+
+static PASTE_MARK: Lazy<Mutex<PasteMark>> = Lazy::new(|| Mutex::new(PasteMark::default()));
+/// A dictation more than this after the previous one is not its continuation.
+const JOIN_WINDOW: Duration = Duration::from_secs(60);
+
+/// The control with the keyboard focus in `window`'s thread, and the caret there (if any).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+struct FocusNow {
+    focus: isize,
+    caret: Option<(isize, [i32; 4])>,
+}
+
+#[cfg(windows)]
+fn focus_now(window: isize) -> FocusNow {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{GetGUIThreadInfo, GetWindowThreadProcessId, GUITHREADINFO};
+    if window == 0 {
+        return FocusNow::default();
+    }
+    unsafe {
+        let thread = GetWindowThreadProcessId(HWND(window as *mut _), None);
+        let mut info = GUITHREADINFO { cbSize: std::mem::size_of::<GUITHREADINFO>() as u32, ..Default::default() };
+        if thread == 0 || GetGUIThreadInfo(thread, &mut info).is_err() {
+            return FocusNow::default();
+        }
+        let r = info.rcCaret;
+        FocusNow {
+            focus: info.hwndFocus.0 as isize,
+            caret: (!info.hwndCaret.0.is_null()).then_some((info.hwndCaret.0 as isize, [r.left, r.top, r.right, r.bottom])),
+        }
+    }
+}
+
+#[cfg(not(windows))]
+fn focus_now(_window: isize) -> FocusNow {
+    FocusNow::default()
+}
+
+/// Still where the last paste left off: same window and focused control, and the caret where
+/// that paste left it (moved = the user clicked elsewhere, typed or pressed Enter; only known in
+/// apps that use Windows' caret).
+fn same_place(mark: &PasteMark, target: isize, now: &FocusNow) -> bool {
+    target != 0
+        && mark.window == target
+        && mark.focus == now.focus
+        && mark.at.is_some()
+        && match (mark.caret, now.caret) {
+            (Some(before), Some(after)) => before == after,
+            _ => true,
+        }
+}
+
+/// A new dictation into `target` continues the previous one: in the same place, less than a
+/// minute later.
+fn continues_mark(mark: &PasteMark, target: isize, now: &FocusNow) -> bool {
+    same_place(mark, target, now) && mark.at.is_some_and(|at| at.elapsed() < JOIN_WINDOW)
+}
+
+/// What is pasted: a new dictation (spaced from the previous one when it continues it), a text
+/// the card's "Substituir" may undo later (a Command's result, the card's "Colar"), or anything
+/// else ("Colar de novo").
+#[derive(Clone, Copy, PartialEq)]
+enum PasteFor {
+    Other,
+    Dictation,
+    Replaceable,
+}
+
+/// Gives focus back to `target` and pastes `text` with Ctrl+V. Returns Ok(false) when it could
+/// not paste safely; the text is then left on the clipboard for the user to paste. Either way
+/// the dictation is on the clipboard afterwards.
+pub fn paste(text: &str, target: isize) -> Result<bool> {
+    paste_with(text, target, false, PasteFor::Other)
+}
+
+/// `paste` for a new dictation (not a Command, "Colar de novo" or "Substituir"): spaced from the
+/// previous one when it continues it in the same field.
+pub fn paste_dictation(text: &str, target: isize) -> Result<bool> {
+    paste_with(text, target, false, PasteFor::Dictation)
+}
+
+/// `paste` for a text the card's "Substituir" may undo afterwards: a Command's result, or the
+/// card's "Colar" (`replace` false), and "Substituir" itself (`replace` true). Ctrl+Z is only
+/// sent while the field is as that paste left it; otherwise the new version is only copied.
+pub fn paste_replaceable(text: &str, target: isize, replace: bool) -> Result<bool> {
+    paste_with(text, target, replace, PasteFor::Replaceable)
+}
+
+fn paste_with(text: &str, target: isize, replace: bool, what: PasteFor) -> Result<bool> {
+    let dictation = what == PasteFor::Dictation;
     let _input = INPUT_LOCK.lock();
     let manual = |why: &str| -> Result<bool> {
         log::info!("paste skipped: {why}");
@@ -98,12 +213,51 @@ pub fn paste(text: &str, target: isize, replace: bool) -> Result<bool> {
     if !has_focus(target) {
         return manual("could not focus the target window");
     }
+    let now = focus_now(target);
+    let mut mark = PASTE_MARK.lock();
     if replace {
+        // Ctrl+Z would undo what the user did since (typed, moved), not the paste.
+        if !same_place(&mark, target, &now) {
+            return manual("replace: the field changed since the paste");
+        }
         send_ctrl('Z');
         std::thread::sleep(Duration::from_millis(80));
     }
+    // Typed, not on the clipboard: a "Substituir" (Ctrl+Z) undoes only the paste.
+    if dictation && !is_console(target) && continues_mark(&mark, target, &now) && crate::text::needs_join_space(mark.last, text) {
+        send_char(' ');
+    }
     send_ctrl('V');
+    if what != PasteFor::Other {
+        // (A "Substituir" keeps the place: the next dictation continues it.)
+        if !replace {
+            *mark = PasteMark { window: target, focus: now.focus, ..Default::default() };
+        }
+        let at = std::time::Instant::now();
+        mark.at = Some(at);
+        // (After a Command or the card's "Colar", the next dictation isn't spaced from it.)
+        mark.last = if dictation || replace { text.chars().last() } else { None };
+        mark.caret = None;
+        drop(mark);
+        note_caret_after_paste(target, now.focus, at);
+    } else {
+        *mark = PasteMark::default();
+    }
     Ok(true)
+}
+
+/// A moment after a dictation's (or a Command's) paste: where the app put the caret once it
+/// handled the Ctrl+V (moved by the next dictation = the user went elsewhere: no space, and no
+/// Ctrl+Z for "Substituir").
+fn note_caret_after_paste(target: isize, focus: isize, at: std::time::Instant) {
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(250));
+        let now = focus_now(target);
+        let mut mark = PASTE_MARK.lock();
+        if mark.at == Some(at) && now.focus == focus {
+            mark.caret = now.caret;
+        }
+    });
 }
 
 // ---------------------------------------------------------------- selection (Comando)
@@ -519,6 +673,38 @@ fn send_ctrl(letter: char) {
     }
 }
 
+/// Types one character, whatever the keyboard layout.
+#[cfg(windows)]
+fn send_char(c: char) {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, VIRTUAL_KEY,
+    };
+    let mut units = [0u16; 2];
+    let inputs: Vec<INPUT> = c
+        .encode_utf16(&mut units)
+        .iter()
+        .flat_map(|&u| [false, true].map(|up| (u, up)))
+        .map(|(u, up)| INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: VIRTUAL_KEY(0),
+                    wScan: u,
+                    dwFlags: if up { KEYEVENTF_UNICODE | KEYEVENTF_KEYUP } else { KEYEVENTF_UNICODE },
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        })
+        .collect();
+    unsafe {
+        SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
+    }
+}
+
+#[cfg(not(windows))]
+fn send_char(_c: char) {}
+
 #[cfg(target_os = "linux")]
 fn send_ctrl(letter: char) {
     let l = letter.to_ascii_lowercase().to_string();
@@ -652,7 +838,10 @@ pub fn set_bounds_no_activate(window: &tauri::WebviewWindow, x: i32, y: i32, w: 
             let hwnd = HWND(hwnd.0 as *mut _);
             unsafe {
                 let _ = SetWindowPos(hwnd, HWND_TOPMOST, x, y, 0, 0, SWP_NOACTIVATE | SWP_NOSIZE);
-                let _ = SetWindowPos(hwnd, HWND_TOPMOST, x, y, w, h, SWP_NOACTIVATE);
+                // Already the exact size (a drag moves it 60x a second): nothing more to do.
+                if window_rect(window).map(|r| (r.2, r.3)) != Some((w, h)) {
+                    let _ = SetWindowPos(hwnd, HWND_TOPMOST, x, y, w, h, SWP_NOACTIVATE);
+                }
             }
             return;
         }
@@ -710,6 +899,34 @@ pub fn is_window_visible(window: &tauri::WebviewWindow) -> bool {
     window.is_visible().unwrap_or(false)
 }
 
+/// Real cursor position (physical px, virtual-screen coordinates).
+pub fn cursor_pos() -> Option<(i32, i32)> {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::POINT;
+        use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
+        let mut p = POINT::default();
+        return unsafe { GetCursorPos(&mut p) }.ok().map(|_| (p.x, p.y));
+    }
+    #[allow(unreachable_code)]
+    None
+}
+
+/// Whether the PRIMARY mouse button (the one that clicks: the right one when the user swapped the
+/// buttons) is physically down right now, whichever window has the mouse.
+pub fn primary_button_down() -> bool {
+    #[cfg(windows)]
+    {
+        use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON, VK_RBUTTON};
+        use windows::Win32::UI::WindowsAndMessaging::{GetSystemMetrics, SM_SWAPBUTTON};
+        // GetAsyncKeyState reports PHYSICAL buttons, regardless of the swap setting.
+        let vk = if unsafe { GetSystemMetrics(SM_SWAPBUTTON) } != 0 { VK_RBUTTON } else { VK_LBUTTON };
+        return unsafe { GetAsyncKeyState(vk.0 as i32) } as u16 & 0x8000 != 0;
+    }
+    #[allow(unreachable_code)]
+    false
+}
+
 /// Mouse passes through the window (true) or is caught by it (false). Same styles tao uses
 /// (WS_EX_TRANSPARENT | WS_EX_LAYERED), set directly so nothing else about the window changes.
 pub fn set_click_through(window: &tauri::WebviewWindow, on: bool) {
@@ -743,6 +960,20 @@ pub fn set_click_through(window: &tauri::WebviewWindow, on: bool) {
         }
     }
     let _ = window.set_ignore_cursor_events(on);
+}
+
+/// Whether the window currently lets the mouse through (see set_click_through). Test probes.
+pub fn is_click_through(window: &tauri::WebviewWindow) -> Option<bool> {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_TRANSPARENT};
+        let hwnd = window.hwnd().ok()?;
+        let style = unsafe { GetWindowLongPtrW(HWND(hwnd.0 as *mut _), GWL_EXSTYLE) };
+        return Some(style & WS_EX_TRANSPARENT.0 as isize != 0);
+    }
+    #[allow(unreachable_code)]
+    None
 }
 
 /// Lets the overlay be clicked without stealing focus from the app being dictated into.
@@ -801,4 +1032,53 @@ pub fn os_version() -> String {
     }
     #[allow(unreachable_code)]
     std::env::consts::OS.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Instant;
+
+    fn mark(caret: Option<(isize, [i32; 4])>) -> PasteMark {
+        PasteMark { window: 10, focus: 20, at: Some(Instant::now()), last: Some('.'), caret }
+    }
+
+    #[test]
+    fn next_dictation_continues_only_in_place() {
+        let caret = Some((20, [100, 40, 101, 58]));
+        let here = FocusNow { focus: 20, caret };
+        assert!(continues_mark(&mark(caret), 10, &here));
+        // Another window, another control in it, or no window known.
+        assert!(!continues_mark(&mark(caret), 11, &here));
+        assert!(!continues_mark(&mark(caret), 10, &FocusNow { focus: 21, caret }));
+        assert!(!continues_mark(&mark(caret), 0, &here));
+        // The caret moved since (a click elsewhere, Enter).
+        assert!(!continues_mark(&mark(caret), 10, &FocusNow { focus: 20, caret: Some((20, [100, 60, 101, 78])) }));
+        // Apps without Windows' caret: only the time rule.
+        assert!(continues_mark(&mark(None), 10, &FocusNow { focus: 20, caret: None }));
+        assert!(continues_mark(&mark(caret), 10, &FocusNow { focus: 20, caret: None }));
+        // Over a minute later, or nothing pasted yet.
+        let old = PasteMark { at: Instant::now().checked_sub(JOIN_WINDOW + Duration::from_secs(1)), ..mark(caret) };
+        assert!(old.at.is_some());
+        assert!(!continues_mark(&old, 10, &here));
+        assert!(!continues_mark(&PasteMark::default(), 0, &FocusNow::default()));
+    }
+
+    #[test]
+    fn replace_undoes_only_where_the_paste_left_off() {
+        let caret = Some((20, [100, 40, 101, 58]));
+        // Still in place, even minutes later: Ctrl+Z undoes the paste.
+        let old = PasteMark { at: Instant::now().checked_sub(JOIN_WINDOW * 3), ..mark(caret) };
+        assert!(same_place(&old, 10, &FocusNow { focus: 20, caret }));
+        // Typed or clicked since (the caret moved), another control, or nothing pasted there.
+        assert!(!same_place(&mark(caret), 10, &FocusNow { focus: 20, caret: Some((20, [130, 40, 131, 58])) }));
+        assert!(!same_place(&mark(caret), 10, &FocusNow { focus: 21, caret }));
+        assert!(!same_place(&PasteMark::default(), 10, &FocusNow { focus: 0, caret: None }));
+    }
+
+    #[test]
+    fn clipboard_text_gets_windows_line_breaks() {
+        assert_eq!(with_crlf("a\nb\r\nc\n"), "a\r\nb\r\nc\r\n");
+        assert_eq!(with_crlf("sem quebra"), "sem quebra");
+    }
 }

@@ -139,6 +139,30 @@ async fn live_strength() {
     println!("\n== original: {} chars", said.chars().count());
 }
 
+/// Translated Command: one version only, in the target language (the model used to give back the
+/// original too, or a second labeled version). Keys from the OS vault, else FlowVoice 1.x's.
+#[tokio::test]
+#[ignore]
+async fn live_command_translation() {
+    let http = cloud::http();
+    let cfg = default_providers()["groq"].clone();
+    let vault = crate::keys::KeyStore::new(std::env::temp_dir().join("fv-keycount")).get("groq");
+    let key = vault.into_iter().next().or_else(|| legacy_keys("groq").into_iter().next()).expect("no groq key");
+    let selection = "Prompt: VAZOU UMA FOTO DO FLAGRA | 20 Anos";
+    let msgs = [
+        ChatMsg::new("system", crate::settings::command_prompt(&[], None, Some("en"))),
+        ChatMsg::new("user", crate::settings::command_message("melhora esse prompt", selection)),
+    ];
+    for i in 0..6 {
+        let out = cloud::chat(&http, "groq", &cfg, &key, &msgs, 0.2, 1024).await.unwrap();
+        let text = crate::text::clean_command_output(&crate::text::drop_echoed_source(&out, selection), selection);
+        println!("\n== {i}: {text:?}");
+        assert!(!text.contains('\n'), "more than one line: {text:?} (raw {out:?})");
+        let low = text.to_lowercase();
+        assert!(!low.contains("vazou") && !low.contains("filme"), "Portuguese left: {text:?}");
+    }
+}
+
 /// How many keys per provider are stored in the OS vault (no key material printed).
 #[test]
 #[ignore]

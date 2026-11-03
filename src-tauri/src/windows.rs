@@ -51,7 +51,7 @@ fn target_monitor(app: &AppHandle, w: &tauri::WebviewWindow) -> Option<tauri::Mo
         .or_else(under_mouse)
 }
 
-fn monitor_key(m: &tauri::Monitor) -> (i32, i32) {
+pub(crate) fn monitor_key(m: &tauri::Monitor) -> (i32, i32) {
     let p = m.work_area().position;
     (p.x, p.y)
 }
@@ -84,8 +84,33 @@ pub fn test_snapshot(app: &AppHandle) -> serde_json::Value {
         "native_visible": w.as_ref().map(crate::platform::is_window_visible),
         "rect": w.as_ref().and_then(crate::platform::window_rect),
         "wanted": WANTED.load(Ordering::SeqCst),
+        "click_through": w.as_ref().and_then(crate::platform::is_click_through),
         "hitbox": *HITBOX.lock(),
+        "anchor": *ANCHOR.lock(),
+        "target_rect": *TARGET_RECT.lock(),
+        "monitor": *app.state::<AppState>().overlay_monitor.lock(),
+        "drag": crate::overlay_drag::test_snapshot(),
     })
+}
+
+/// The overlay is meant to be up (see WANTED).
+pub(crate) fn is_wanted() -> bool {
+    WANTED.load(Ordering::SeqCst)
+}
+
+/// The card's rectangle as the page last reported it (logical px relative to the window).
+pub(crate) fn hitbox() -> Option<(f64, f64, f64, f64)> {
+    *HITBOX.lock()
+}
+
+/// Where the window was last put by place_card (physical px).
+pub(crate) fn target_rect() -> Option<(i32, i32, i32, i32)> {
+    *TARGET_RECT.lock()
+}
+
+/// Cancels the pending show-time settle loops (a drag moves the window on purpose).
+pub(crate) fn bump_show_gen() {
+    SHOW_GEN.fetch_add(1, Ordering::SeqCst);
 }
 
 /// Card rectangle reported by the UI (logical px relative to the window); None = nothing visible.
@@ -97,32 +122,191 @@ static SHOW_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::ne
 /// animation, so is_visible alone can't tell a new appearance from a phase change).
 static WANTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-/// Places the fixed-size overlay bottom/top-center on its pinned monitor.
-fn place_overlay(app: &AppHandle) {
-    let Some(w) = app.get_webview_window("overlay") else { return };
-    let top = app.state::<AppState>().settings().overlay_position == "top";
-    let Some(m) = pinned_monitor(app, &w) else { return };
+/// Card center, in logical px from the window edge it grows away from, when it sits in its
+/// default spot (horizontally centered; the capsule is 56px tall and 22px from the edge, + the
+/// window margin 28 in screen space): 22 + 28.
+pub(crate) const CARD_EDGE: f64 = 50.0;
+/// Keeps the card clear of the work-area edge (capsule half height 28 + 8).
+const CARD_INSET_Y: f64 = 36.0;
+
+/// What the overlay page needs to lay the card out inside the window: its offset (logical px)
+/// from the default card spot and the direction it grows ("up": anchored near the bottom).
+#[derive(Clone, Copy, Debug, serde::Serialize, PartialEq)]
+pub struct OverlayAnchor {
+    pub dx: f64,
+    pub dy: f64,
+    pub grow: &'static str,
+}
+
+static ANCHOR: parking_lot::Mutex<OverlayAnchor> =
+    parking_lot::Mutex::new(OverlayAnchor { dx: 0.0, dy: 0.0, grow: "up" });
+
+#[tauri::command]
+pub fn get_overlay_anchor() -> OverlayAnchor {
+    *ANCHOR.lock()
+}
+
+/// Card center (fractions of the work area) of the two built-in positions on monitor `m`.
+fn default_center(m: &tauri::Monitor, top: bool) -> (f64, f64) {
     let scale = m.scale_factor();
     let area = m.work_area();
+    let h = area.size.height as f64;
+    let margin = (MARGIN * scale).trunc();
+    let edge = CARD_EDGE * scale;
+    // Bottom: window flush `margin` above the work-area bottom, the card CARD_EDGE above the
+    // window bottom. Top: mirrored.
+    let cy = if top { margin + edge } else { h - margin - edge };
+    (0.5, cy / h)
+}
+
+/// Positions the fixed-size overlay window so the card's center lands on `center` (fractions
+/// 0..1 of monitor `m`'s work area), keeping the WHOLE window inside that work area (a window
+/// spilling onto another monitor makes Windows rescale it). When the window can't move further
+/// the card shifts inside it instead: the page gets `overlay-anchor` {dx, dy, grow}.
+pub fn place_card(app: &AppHandle, m: &tauri::Monitor, center: (f64, f64)) {
+    place_card_geom(app, &MonGeom::from(m), center);
+}
+
+/// What the placement needs to know about a monitor (physical px). Besides the real ones it can
+/// describe the test hook's fake monitor, see `fake_monitor`.
+#[derive(Clone, Debug)]
+pub struct MonGeom {
+    pub name: String,
+    pub size: (u32, u32),
+    pub pos: (i32, i32),
+    /// Work area: x, y, width, height.
+    pub work: (i32, i32, u32, u32),
+    pub scale: f64,
+}
+
+impl From<&tauri::Monitor> for MonGeom {
+    fn from(m: &tauri::Monitor) -> Self {
+        let (p, s, a) = (m.position(), m.size(), m.work_area());
+        MonGeom {
+            name: m.name().cloned().unwrap_or_else(|| "?".into()),
+            size: (s.width, s.height),
+            pos: (p.x, p.y),
+            work: (a.position.x, a.position.y, a.size.width, a.size.height),
+            scale: m.scale_factor(),
+        }
+    }
+}
+
+impl MonGeom {
+    pub fn key(&self) -> (i32, i32) {
+        (self.work.0, self.work.1)
+    }
+}
+
+/// Test hook (isolated instances only, FLOWVOICE_DATA_DIR set): FLOWVOICE_TEST_FAKE_MONITOR=
+/// "x,y,w,h,scale" adds a monitor that doesn't exist, so a dragged card can hop to it on a PC with
+/// a single screen (the window just lands off-screen there; Windows keeps its real DPI).
+pub fn fake_monitor() -> Option<MonGeom> {
+    std::env::var_os("FLOWVOICE_DATA_DIR")?;
+    let v = std::env::var("FLOWVOICE_TEST_FAKE_MONITOR").ok()?;
+    let n: Vec<f64> = v.split(',').filter_map(|i| i.trim().parse().ok()).collect();
+    if n.len() != 5 {
+        return None;
+    }
+    Some(MonGeom {
+        name: "FAKE".into(),
+        size: (n[2] as u32, n[3] as u32),
+        pos: (n[0] as i32, n[1] as i32),
+        work: (n[0] as i32, n[1] as i32, n[2] as u32, n[3] as u32),
+        scale: n[4],
+    })
+}
+
+/// Every monitor (plus the fake one of the test hook).
+pub fn all_monitors(w: &tauri::WebviewWindow) -> Vec<MonGeom> {
+    let mut v: Vec<MonGeom> = w.available_monitors().unwrap_or_default().iter().map(MonGeom::from).collect();
+    v.extend(fake_monitor());
+    v
+}
+
+pub fn place_card_geom(app: &AppHandle, m: &MonGeom, center: (f64, f64)) {
+    let Some(w) = app.get_webview_window("overlay") else { return };
+    let scale = m.scale;
+    let (ax, ay) = (m.work.0, m.work.1);
+    let (aw, ah) = (m.work.2 as f64, m.work.3 as f64);
     let width = (OVERLAY_W * scale).round() as i32;
     let height = (OVERLAY_H * scale).round() as i32;
-    let x = area.position.x + (area.size.width as i32 - width) / 2;
-    let margin = (MARGIN * scale) as i32;
-    let y = if top {
-        area.position.y + margin
-    } else {
-        area.position.y + area.size.height as i32 - height - margin
+    let fx = if center.0.is_finite() { center.0.clamp(0.0, 1.0) } else { 0.5 };
+    let fy = if center.1.is_finite() { center.1.clamp(0.0, 1.0) } else { 0.5 };
+    let inset = CARD_INSET_Y * scale;
+    let cx = fx * aw;
+    let cy = (fy * ah).clamp(inset.min(ah / 2.0), (ah - inset).max(ah / 2.0));
+    // Grows up from the bottom edge when the card is in the lower half, down otherwise.
+    let up = cy >= ah / 2.0;
+    let edge = CARD_EDGE * scale;
+    let def_x = width as f64 / 2.0;
+    let def_y = if up { height as f64 - edge } else { edge };
+    // Ideal window origin (relative to the work area), then clamped inside it.
+    let ideal_x = (cx - def_x + 1e-6).floor();
+    let ideal_y = (cy - def_y).round();
+    let max_x = (aw - width as f64).max(0.0);
+    let max_y = (ah - height as f64).max(0.0);
+    let rx = ideal_x.clamp(0.0, max_x);
+    let ry = ideal_y.clamp(0.0, max_y);
+    let x = ax + rx as i32;
+    let y = ay + ry as i32;
+    let anchor = OverlayAnchor {
+        dx: ((cx - (rx + def_x)) / scale * 100.0).round() / 100.0,
+        dy: ((cy - (ry + def_y)) / scale * 100.0).round() / 100.0,
+        grow: if up { "up" } else { "down" },
     };
-    log::info!(
-        "overlay on {} ({}x{} @{}x{}, scale {scale}) at {x},{y} {width}x{height}",
-        m.name().map(String::as_str).unwrap_or("?"),
-        m.size().width,
-        m.size().height,
-        m.position().x,
-        m.position().y,
-    );
+    if !crate::overlay_drag::is_dragging() {
+        // (not once per frame of a drag)
+        log::info!(
+            "overlay on {} ({}x{} @{}x{}, scale {scale}) at {x},{y} {width}x{height} anchor {anchor:?}",
+            m.name, m.size.0, m.size.1, m.pos.0, m.pos.1,
+        );
+    }
+    *ANCHOR.lock() = anchor;
+    let _ = app.emit_to("overlay", "overlay-anchor", anchor);
     crate::platform::set_bounds_no_activate(&w, x, y, width, height);
     *TARGET_RECT.lock() = Some((x, y, width, height));
+}
+
+static PREVIEW: parking_lot::Mutex<Option<(String, Option<crate::settings::OverlayPoint>)>> =
+    parking_lot::Mutex::new(None);
+
+/// "Testar" (settings > Janela flutuante): shows the capsule for ~2 s at the position being
+/// edited, through the same show/hide paths as a real dictation. Does nothing during one.
+#[tauri::command]
+pub fn test_overlay_position(app: AppHandle, position: String, point: Option<crate::settings::OverlayPoint>) {
+    if crate::pipeline::is_recording(&app) || WANTED.load(Ordering::SeqCst) {
+        return;
+    }
+    std::thread::spawn(move || {
+        *PREVIEW.lock() = Some((position, point));
+        show_overlay_for_recording(&app);
+        let style = app.state::<AppState>().settings().active_style;
+        crate::pipeline::emit_overlay(
+            &app,
+            serde_json::json!({ "phase": "listening", "mode": "dictate", "style_id": style, "target": null, "live": false }),
+        );
+        std::thread::sleep(std::time::Duration::from_millis(2200));
+        *PREVIEW.lock() = None;
+        if !crate::pipeline::is_recording(&app) && crate::pipeline::overlay_phase() == "listening" {
+            hide_overlay(&app);
+        }
+    });
+}
+
+/// Places the fixed-size overlay on its pinned monitor: bottom/top-center or the custom point.
+fn place_overlay(app: &AppHandle) {
+    let Some(w) = app.get_webview_window("overlay") else { return };
+    let Some(m) = pinned_monitor(app, &w) else { return };
+    let st = app.state::<AppState>().settings();
+    // "Testar" in the settings: the position being edited, not the saved one.
+    let (position, custom) = PREVIEW.lock().clone().unwrap_or((st.overlay_position.clone(), st.overlay_custom));
+    let center = match (position.as_str(), custom) {
+        ("custom", Some(p)) => (p.x, p.y),
+        ("top", _) => default_center(&m, true),
+        _ => default_center(&m, false),
+    };
+    place_card(app, &m, center);
 }
 
 /// Where the overlay window must be (physical px), re-applied while it settles.
@@ -132,7 +316,7 @@ static TARGET_RECT: once_cell::sync::Lazy<parking_lot::Mutex<Option<(i32, i32, i
 /// Windows rescales a window that lands on a monitor with another DPI (sometimes only after it
 /// is shown), which would leave the card off-center or below the screen edge. For a moment after
 /// showing, put the window back on its exact rectangle whenever that happens.
-fn settle_overlay(app: &AppHandle) {
+pub(crate) fn settle_overlay(app: &AppHandle) {
     let app = app.clone();
     let gen = SHOW_GEN.load(Ordering::SeqCst);
     std::thread::spawn(move || {
@@ -170,14 +354,18 @@ fn show(app: &AppHandle, new_session: bool) {
     let was_up = WANTED.swap(true, Ordering::SeqCst);
     let visible = crate::platform::is_window_visible(&w);
     if visible && was_up && !new_session {
-        return; // phase change: it stays on its monitor
+        return; // phase change: it stays where it is (also where the user dragged it)
     }
+    // A new appearance: a drag in progress ends here and the card goes back to its default spot.
+    crate::overlay_drag::cancel(app);
+    let moved = crate::overlay_drag::take_moved();
     let Some(target) = target_monitor(app, &w) else { return };
     let key = monitor_key(&target);
     let previous = app.state::<AppState>().overlay_monitor.lock().replace(key);
-    if visible && previous == Some(key) {
+    if visible && previous == Some(key) && !moved {
         // Same screen (a new recording right after the last card, or a show during the exit
-        // animation): the card simply morphs into its new phase.
+        // animation): the card simply morphs into its new phase. Dragged away from its default
+        // spot, it takes the full path below (blank, move back, show) instead.
         return;
     }
     if visible {
@@ -208,6 +396,7 @@ pub fn hide_overlay(app: &AppHandle) {
     st.overlay_gen.fetch_add(1, Ordering::SeqCst);
     WANTED.store(false, Ordering::SeqCst);
     *HITBOX.lock() = None;
+    crate::overlay_drag::cancel(app);
     crate::pipeline::set_overlay_phase("hidden");
     let _ = app.emit_to("overlay", "overlay-state", serde_json::json!({ "phase": "hidden" }));
     // Let the UI play its exit animation before the native window disappears.
@@ -247,7 +436,9 @@ pub fn start_pointer_watcher(app: &AppHandle) {
                 inside_prev = None;
                 continue;
             }
-            let forced = *TEST_POINTER.lock();
+            // While the card is being dragged the window keeps catching the mouse (the card trails
+            // the cursor by a frame).
+            let forced = crate::overlay_drag::is_dragging().then_some(true).or(*TEST_POINTER.lock());
             let inside = forced.or_else(|| {
                 let hb = (*HITBOX.lock())?;
                 let cur = app.cursor_position().ok()?;

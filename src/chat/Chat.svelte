@@ -169,10 +169,11 @@
 
     {#each messages as m, i (i)}
       {#if m.role === "user"}
-        <div class="msg user"><p>{m.content}</p></div>
+        <!-- a dictated question (and its answer) runs in its own direction (Arabic, Hebrew…) -->
+        <div class="msg user"><p dir="auto">{m.content}</p></div>
       {:else}
         <div class="msg bot">
-          <div class="md">{@html renderMarkdown(m.content)}</div>
+          <div class="md" dir="auto">{@html renderMarkdown(m.content)}</div>
           {#if m.sources.length}
             <div class="sources">
               <span class="label">{t("chat.sources")}</span>
@@ -224,6 +225,7 @@
       bind:this={ta}
       bind:value={input}
       rows="1"
+      dir="auto"
       placeholder={recording ? t("chat.listening") : t("chat.placeholder")}
       aria-label={t("chat.placeholder")}
       onkeydown={keydown}

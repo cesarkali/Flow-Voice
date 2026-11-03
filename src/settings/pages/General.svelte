@@ -4,7 +4,7 @@
   import { t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
   import { app, restartOnboarding } from "../../lib/stores.svelte";
-  import { EVENTS, type AppInfo, type SettingsPage, type UpdateInfo } from "../../lib/types";
+  import { EVENTS, type AppInfo, type OverlayPoint, type SettingsPage, type UpdateInfo } from "../../lib/types";
   import Button from "../../lib/ui/Button.svelte";
   import Progress from "../../lib/ui/Progress.svelte";
   import ReleaseNotes from "../../lib/ui/ReleaseNotes.svelte";
@@ -31,6 +31,65 @@
   $effect(() => {
     if (s.overlay_glass !== "solid") api.glassAvailable().then((v) => (glassOk = v)).catch(() => (glassOk = null));
   });
+
+  // ---- free position ("Personalizada"): the card's center as a fraction of the screen's work area
+  const SNAP_X = [0.12, 0.5, 0.88];
+  const SNAP_Y = [0.075, 0.5, 0.925]; // the built-in Embaixo / Em cima spots
+  const SNAP_AT = 0.045;
+  const snap = (v: number, to: number[]) => to.find((p) => Math.abs(v - p) <= SNAP_AT) ?? v;
+  const custom = $derived<OverlayPoint>(s.overlay_custom ?? { x: 0.5, y: 0.924 });
+  let pickEl = $state<HTMLDivElement>();
+  let dragging = $state(false);
+  let lastDrag = $state<OverlayPoint | null>(null);
+  let testing = $state(false);
+
+  $effect(() => {
+    if (s.overlay_position === "custom" && !s.overlay_custom) s.overlay_custom = { x: 0.5, y: 0.924 };
+  });
+  $effect(() => {
+    if (s.overlay_position === "custom") api.getLastOverlayDrag().then((p) => (lastDrag = p)).catch(() => (lastDrag = null));
+  });
+
+  function setFrom(e: PointerEvent) {
+    const r = pickEl?.getBoundingClientRect();
+    if (!r || !r.width || !r.height) return;
+    const fx = Math.min(0.95, Math.max(0.05, (e.clientX - r.left) / r.width));
+    const fy = Math.min(0.96, Math.max(0.04, (e.clientY - r.top) / r.height));
+    s.overlay_custom = e.shiftKey ? { x: fx, y: fy } : { x: snap(fx, SNAP_X), y: snap(fy, SNAP_Y) };
+  }
+  function pickDown(e: PointerEvent) {
+    if (e.button !== 0) return;
+    dragging = true;
+    pickEl?.setPointerCapture(e.pointerId);
+    setFrom(e);
+  }
+  function pickMove(e: PointerEvent) {
+    if (dragging) setFrom(e);
+  }
+  function pickUp() {
+    dragging = false;
+  }
+  function pickKey(e: KeyboardEvent) {
+    const step = e.shiftKey ? 0.01 : 0.05;
+    const d: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    const v = d[e.key];
+    if (!v) return;
+    e.preventDefault();
+    s.overlay_custom = {
+      x: Math.min(0.95, Math.max(0.05, custom.x + v[0])),
+      y: Math.min(0.96, Math.max(0.04, custom.y + v[1])),
+    };
+  }
+  const isSnap = (v: number, to: number[]) => to.some((p) => Math.abs(v - p) < 0.002);
+  async function testPos() {
+    testing = true;
+    try {
+      await api.testOverlayPosition(s.overlay_position, s.overlay_position === "custom" ? custom : null);
+    } catch {
+      /* the overlay may be busy with a real dictation */
+    }
+    setTimeout(() => (testing = false), 2400);
+  }
 
   onMount(() => {
     api.appInfo().then((i) => (info = i));
@@ -108,6 +167,8 @@
     class="mini"
     aria-hidden="true"
     class:top={s.overlay_position === "top"}
+    class:custom={s.overlay_position === "custom"}
+    style="--cx:{custom.x};--cy:{custom.y}"
     class:follow={s.overlay_follow_mouse}
     data-w={s.overlay_width}
   >
@@ -138,8 +199,47 @@
       options={[
         { value: "bottom", label: t("gen.pos_bottom"), icon: "arrowDown" },
         { value: "top", label: t("gen.pos_top"), icon: "arrowUp" },
+        { value: "custom", label: t("ctl.pos_custom"), icon: "grip" },
       ]}
     />
+  </Row>
+  {#if s.overlay_position === "custom"}
+    <Row label={t("ctl.pos_custom")} hint={t("ctl.ov_pick_hint")} stack>
+      <div class="pickwrap">
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_noninteractive_tabindex -->
+        <div
+          class="pick"
+          class:dragging
+          bind:this={pickEl}
+          role="application"
+          aria-label={t("ctl.ov_pick_aria")}
+          tabindex="0"
+          onpointerdown={pickDown}
+          onpointermove={pickMove}
+          onpointerup={pickUp}
+          onpointercancel={pickUp}
+          onkeydown={pickKey}
+        >
+          {#each SNAP_Y as sy}
+            {#each SNAP_X as sx}
+              <i class="spot" class:on={isSnap(custom.x, [sx]) && isSnap(custom.y, [sy])} style="left:{sx * 100}%;top:{sy * 100}%"></i>
+            {/each}
+          {/each}
+          <span class="pcap" style="left:{custom.x * 100}%;top:{custom.y * 100}%"><i></i><i></i><i></i></span>
+        </div>
+        <div class="pickbtns">
+          {#if lastDrag}
+            <Button size="sm" icon="refresh" onclick={() => (s.overlay_custom = { ...lastDrag! })}>{t("ctl.ov_last")}</Button>
+          {/if}
+        </div>
+      </div>
+    </Row>
+  {/if}
+  <Row label={t("ctl.ov_test")} hint={t("ctl.ov_test_hint")}>
+    <Button size="sm" icon="play" loading={testing} onclick={testPos}>{t("ctl.ov_test")}</Button>
+  </Row>
+  <Row label={t("ctl.ov_drag")} hint={t("ctl.ov_drag_hint")}>
+    <Toggle label={t("ctl.ov_drag")} bind:checked={s.overlay_drag} />
   </Row>
   <Row label={t("ctl.ov_width")} hint={t("ctl.ov_width_hint")}>
     <Segmented
@@ -389,6 +489,16 @@
   .top .cap {
     bottom: calc(100% - 19px);
   }
+  .custom .cap {
+    left: calc(var(--cx) * 100%);
+    top: calc(var(--cy) * 100%);
+    bottom: auto;
+    translate: -50% -50%;
+    transition:
+      left 420ms var(--spr),
+      top 420ms var(--spr),
+      width 420ms var(--spr);
+  }
   [data-w="compact"] .cap {
     width: 32%;
   }
@@ -528,6 +638,79 @@
     outline: none;
     border-color: var(--accent-line);
     box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  /* free-position picker: a 16:9 screen, drag the capsule; the dots are the 9 snap spots */
+  .pickwrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+  .pick {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    border: 1.5px solid var(--line-strong);
+    background:
+      radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0) 0 0 / 12px 12px,
+      var(--bg);
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    overflow: hidden;
+  }
+  .pick:focus-visible {
+    outline: none;
+    border-color: var(--accent-line);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .spot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: var(--line-strong);
+    transition: background-color var(--t-fast) var(--ease), transform var(--t-fast) var(--spring);
+    pointer-events: none;
+  }
+  .spot.on {
+    background: var(--accent-fg);
+    transform: scale(1.5);
+  }
+  .pcap {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 22%;
+    height: 12px;
+    border-radius: 7px;
+    background: var(--accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    translate: -50% -50%;
+    cursor: grab;
+    pointer-events: none;
+  }
+  .dragging .pcap {
+    cursor: grabbing;
+    scale: 1.06;
+  }
+  .pcap i {
+    width: 2px;
+    height: 5px;
+    border-radius: 1px;
+    background: var(--on-accent);
+  }
+  .pcap i:nth-child(2) {
+    height: 7px;
+  }
+  .pickbtns:empty {
+    display: none;
   }
   .gnote {
     margin: -4px 0 12px;

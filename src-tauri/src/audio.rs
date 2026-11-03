@@ -8,6 +8,17 @@ use std::sync::mpsc;
 use std::sync::Arc;
 
 pub const SAMPLE_RATE: u32 = 16_000;
+/// Longest recording: a toggle recording left running stops by itself here (and providers refuse
+/// uploads over ~25 MB, ~13 min of 16 kHz 16-bit mono). Nothing past it is kept.
+pub const MAX_RECORDING_SECS: u64 = 12 * 60;
+const MAX_SAMPLES: usize = SAMPLE_RATE as usize * MAX_RECORDING_SECS as usize;
+
+/// Appends captured audio, never past MAX_SAMPLES.
+fn keep(samples: &Mutex<Vec<f32>>, block: &[f32]) {
+    let mut all = samples.lock();
+    let room = MAX_SAMPLES.saturating_sub(all.len());
+    all.extend_from_slice(&block[..block.len().min(room)]);
+}
 
 pub fn list_input_devices() -> Vec<String> {
     let host = cpal::default_host();
@@ -138,7 +149,7 @@ fn fake_mic(path: &str, samples: Arc<Mutex<Vec<f32>>>, level: Arc<AtomicU32>, st
         pos = end;
         let lvl = (rms(&block) * 28.0).sqrt().min(1.0);
         level.store(lvl.to_bits(), Ordering::Relaxed);
-        samples.lock().extend_from_slice(&block);
+        keep(&samples, &block);
     }
 }
 
@@ -202,7 +213,7 @@ fn build_stream(
             let lvl = (rms * 28.0).sqrt().min(1.0);
             level.store(lvl.to_bits(), Ordering::Relaxed);
         }
-        samples.lock().extend_from_slice(&out);
+        keep(&samples, &out);
     };
 
     macro_rules! stream_for {
@@ -306,5 +317,14 @@ mod tests {
         assert_eq!(super::device_key("2- USB Audio Device"), "usb audio device");
         assert_eq!(super::device_key("USB Audio Device"), "usb audio device");
         assert_eq!(super::device_key("3D Mic"), "3d mic");
+    }
+
+    #[test]
+    fn recording_stops_growing_at_the_limit() {
+        let samples = super::Mutex::new(vec![0.0f32; super::MAX_SAMPLES - 10]);
+        super::keep(&samples, &[1.0; 25]);
+        assert_eq!(samples.lock().len(), super::MAX_SAMPLES);
+        super::keep(&samples, &[1.0; 5]);
+        assert_eq!(samples.lock().len(), super::MAX_SAMPLES);
     }
 }

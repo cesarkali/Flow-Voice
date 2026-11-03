@@ -105,8 +105,8 @@ fn owns_autostart() -> bool {
     !exe.is_empty() && !exe.contains("\\target\\") && !exe.contains("/target/")
 }
 
-/// Called on every launch too, so the entry heals itself (re-created and pointed at the current
-/// exe) if something removed it or the app moved.
+/// The setting changed: the Run entry (also marked approved again in Task Manager) and the logon
+/// task follow it (see startup.rs).
 pub fn set_autostart(app: &AppHandle, on: bool) {
     if !owns_autostart() {
         return;
@@ -118,6 +118,27 @@ pub fn set_autostart(app: &AppHandle, on: bool) {
         Ok(()) => log::info!("autostart {}", if on { "on" } else { "off" }),
         Err(e) => log::warn!("autostart: {e}"),
     }
+    set_logon_task(on);
+}
+
+/// On every launch, so both heal themselves (re-created and pointed at the current exe) if
+/// something removed them or the app moved. Startup turned off in Task Manager stays off: enable()
+/// would mark it approved again, and the logon task would start the app anyway.
+pub fn heal_autostart(app: &AppHandle, on: bool) {
+    if on && owns_autostart() && crate::startup::disabled_in_task_manager(&app.package_info().name) {
+        log::info!("autostart off in Task Manager: left off");
+        set_logon_task(false);
+        return;
+    }
+    set_autostart(app, on);
+}
+
+fn set_logon_task(on: bool) {
+    let Ok(exe) = std::env::current_exe() else { return };
+    std::thread::spawn(move || match crate::startup::set_logon_task(&exe, on) {
+        Ok(()) => log::info!("logon task {}", if on { "on" } else { "off" }),
+        Err(e) => log::warn!("logon task: {e}"),
+    });
 }
 
 #[tauri::command]
@@ -168,10 +189,15 @@ pub struct TestResult {
     message: String,
 }
 
+/// `key`: the one just pasted ("Salvar e testar", a key added in Providers); without it, the first
+/// saved key.
 #[tauri::command]
-pub async fn test_provider(state: State<'_, AppState>, provider: String, kind: String) -> CmdResult<TestResult> {
+pub async fn test_provider(state: State<'_, AppState>, provider: String, kind: String, key: Option<String>) -> CmdResult<TestResult> {
     let s = state.settings();
-    let key = state.keys.get(&provider).into_iter().next().unwrap_or_default();
+    let key = key
+        .map(|k| k.trim().to_string())
+        .filter(|k| !k.is_empty())
+        .unwrap_or_else(|| state.keys.get(&provider).into_iter().next().unwrap_or_default());
     let needs_key = !matches!(provider.as_str(), "ollama" | "custom");
     if key.is_empty() && needs_key {
         return Ok(TestResult { ok: false, latency_ms: 0, model: String::new(), message: "nenhuma chave salva".into() });
@@ -273,18 +299,30 @@ pub async fn reprocess(app: AppHandle, style_id: String, target: Option<String>)
     pipeline::reprocess(&app, style_id, target).await.map_err(err)
 }
 
+/// The card's "Colar" / "Substituir". Returns whether it was pasted; if not, the text is only
+/// copied and a card says so (the result card is already gone).
 #[tauri::command]
-pub async fn paste_text(app: AppHandle, text: String, replace: bool) -> CmdResult<()> {
+pub async fn paste_text(app: AppHandle, text: String, replace: bool) -> CmdResult<bool> {
     let target = pipeline::last_target_window(&app);
     windows::hide_overlay(&app);
-    tauri::async_runtime::spawn_blocking(move || {
+    let pasted = tauri::async_runtime::spawn_blocking(move || {
         std::thread::sleep(std::time::Duration::from_millis(120));
-        crate::platform::paste(&text, target, replace)
+        crate::platform::paste_replaceable(&text, target, replace)
     })
     .await
     .map_err(err)?
-    .map(|_| ())
-    .map_err(err)
+    .map_err(err)?;
+    if !pasted {
+        pipeline::overlay_hint(
+            &app,
+            if replace {
+                "Não deu para substituir: o texto mudou depois da colagem ou a janela não aceita. A nova versão está copiada, cole com Ctrl+V."
+            } else {
+                "Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V."
+            },
+        );
+    }
+    Ok(pasted)
 }
 
 #[tauri::command]
@@ -350,23 +388,30 @@ pub fn dismiss_overlay(app: AppHandle) {
 
 #[tauri::command]
 pub fn get_history(state: State<AppState>) -> Vec<DictationResult> {
-    state.history.lock().clone()
+    state.history_for_ui()
 }
 
 #[tauri::command]
 pub fn delete_history_item(app: AppHandle, state: State<AppState>, id: String) {
-    let mut h = state.history.lock();
-    h.retain(|x| x.id != id);
-    state.persist_history(&h);
+    state.delete_history(&id);
     let _ = app.emit("history-changed", ());
 }
 
 #[tauri::command]
 pub fn clear_history(app: AppHandle, state: State<AppState>) {
+    // The kept recordings of failed transcriptions go too.
+    state.failed.lock().clear();
     let mut h = state.history.lock();
     h.clear();
     state.persist_history(&h);
     let _ = app.emit("history-changed", ());
+}
+
+/// "Tentar de novo" on a failed transcription (error card or history). `only_copy`: from the
+/// history, where the user is in the settings: the result is only copied, not pasted.
+#[tauri::command]
+pub fn retry_failed(app: AppHandle, id: String, only_copy: bool) {
+    pipeline::retry_failed(&app, id, only_copy);
 }
 
 // ---------------------------------------------------------------- chat
@@ -422,7 +467,8 @@ pub fn app_info(app: AppHandle, state: State<AppState>) -> AppInfo {
     }
 }
 
-/// Exactly what a bug report would carry from flowvoice.log (shown before sending).
+/// What a bug report would carry from flowvoice.log (shown before sending; its oldest lines may
+/// be left out so the form's URL isn't cut short, see feedback::issue_url).
 #[tauri::command]
 pub fn feedback_log(state: State<AppState>) -> String {
     crate::feedback::log_excerpt(&state.config_dir)
@@ -440,23 +486,21 @@ pub fn open_feedback(
 ) -> CmdResult<()> {
     let version = app.package_info().version.to_string();
     let mut params: Vec<(&str, String)> = vec![("version", version)];
+    let mut what = None;
+    let mut log = String::new();
     let template = if kind == "idea" {
         "feature_request.yml"
     } else {
         params.push(("os", crate::platform::os_version()));
-        if let Some(c) = context.map(|c| c.trim().chars().take(600).collect::<String>()).filter(|c| !c.is_empty()) {
-            params.push(("what", format!("Apareceu este erro:\n\n> {c}\n\n")));
-        }
+        what = context.map(|c| c.trim().chars().take(600).collect::<String>()).filter(|c| !c.is_empty());
         if include_log.unwrap_or(true) {
-            let log = crate::feedback::log_excerpt(&state.config_dir);
-            if !log.is_empty() {
-                params.push(("logs", log));
-            }
+            log = crate::feedback::log_excerpt(&state.config_dir);
         }
         "bug_report.yml"
     };
     params.insert(0, ("template", template.to_string()));
-    let url = reqwest::Url::parse_with_params("https://github.com/cesarkali/Flow-Voice/issues/new", &params).map_err(err)?;
+    let url = crate::feedback::issue_url("https://github.com/cesarkali/Flow-Voice/issues/new", &params, what.as_deref(), &log)
+        .map_err(err)?;
     app.opener().open_url(url.as_str(), None::<&str>).map_err(err)
 }
 

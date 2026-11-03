@@ -3,7 +3,7 @@
   import { t } from "../i18n.svelte";
   import Icon from "../icons/Icon.svelte";
   import Keys from "./Keys.svelte";
-  import { acceleratorFromEvent, keycapsOf } from "./hotkeys";
+  import { acceleratorFromEvent, keycapsOf, sameHotkey } from "./hotkeys";
 
   let {
     value = $bindable(""),
@@ -11,6 +11,7 @@
     onchange,
     size = "md",
     clearable = false,
+    taken = [],
   }: {
     value: string;
     label: string;
@@ -18,6 +19,8 @@
     size?: "md" | "lg";
     /** Shows a remove button; an empty value means "no shortcut". */
     clearable?: boolean;
+    /** The other actions' shortcuts: the same combination can't go to two of them. */
+    taken?: { accel: string; label: string }[];
   } = $props();
 
   let capturing = $state(false);
@@ -74,6 +77,11 @@
     }
     const accel = r.accel;
     stop();
+    const clash = taken.find((o) => sameHotkey(o.accel, accel));
+    if (clash) {
+      error = t("sc.taken", { action: clash.label });
+      return;
+    }
     try {
       const problem = await api.validateHotkey(accel);
       if (problem) {

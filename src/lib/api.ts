@@ -10,6 +10,7 @@ import type {
   LlmProviderId,
   LocalModel,
   ModelNotice,
+  OverlayPoint,
   RecordMode,
   Settings,
   SettingsPage,
@@ -46,8 +47,9 @@ export const api = {
   getKeyStatus: () => call<KeyStatusMap>("get_key_status"),
   setKeys: (provider: KeyProviderId, keys: string) => call<KeyStatusMap>("set_keys", { provider, keys }),
   revealKeys: (provider: KeyProviderId) => call<string>("reveal_keys", { provider }),
-  testProvider: (provider: string, kind: "llm" | "stt" | "search") =>
-    call<TestResult>("test_provider", { provider, kind }),
+  /** `key`: test this key (the one just pasted) instead of the first saved one. */
+  testProvider: (provider: string, kind: "llm" | "stt" | "search", key?: string) =>
+    call<TestResult>("test_provider", { provider, kind, key: key ?? null }),
   listProviderModels: (provider: LlmProviderId) => call<string[]>("list_provider_models", { provider }),
 
   // local whisper models
@@ -70,8 +72,9 @@ export const api = {
   commandStyle: (styleId: string, target: string | null) => call<void>("command_style", { styleId, target }),
   reprocessHistory: (id: string, styleId: string, target: string | null) =>
     call<DictationResult>("reprocess_history", { id, styleId, target }),
-  /** Paste into the app that was focused when recording started. replace = undo the previous paste first. */
-  pasteText: (text: string, replace: boolean) => call<void>("paste_text", { text, replace }),
+  /** Paste into the app that was focused when recording started. replace = undo the previous paste
+   *  first (only while the field is as that paste left it). False: only copied (Rust shows a card). */
+  pasteText: (text: string, replace: boolean) => call<boolean>("paste_text", { text, replace }),
   copyText: (text: string) => call<void>("copy_text", { text }),
   /** Keep the overlay open while the pointer is over it. */
   overlayHold: (hold: boolean) => call<void>("overlay_hold", { hold }),
@@ -88,12 +91,23 @@ export const api = {
   overlayGlass: (rect: { x: number; y: number; width: number; height: number; radius: number; opacity: number } | null) =>
     call<void>("overlay_glass", { rect }),
   glassAvailable: () => call<boolean>("glass_available"),
+  /** Card offset inside the fixed overlay window (see the `overlay-anchor` event). */
+  getOverlayAnchor: () => call<{ dx: number; dy: number; grow: "up" | "down" } | null>("get_overlay_anchor"),
+  /** Shows the capsule ~2 s at the position being edited ("Testar"). */
+  testOverlayPosition: (position: string, point: OverlayPoint | null) => call<void>("test_overlay_position", { position, point }),
+  /** Where the user last dropped the overlay while recording (card center fraction), if ever. */
+  getLastOverlayDrag: () => call<OverlayPoint | null>("get_last_overlay_drag"),
+  /** A press landed on the card's body while recording: Rust follows the real cursor from here
+   *  (emits `overlay-drag` { active } when it becomes / stops being a drag). False = not allowed now. */
+  overlayDragArm: () => call<boolean>("overlay_drag_arm"),
   dismissOverlay: () => call<void>("dismiss_overlay"),
 
   // history
   getHistory: () => call<DictationResult[]>("get_history"),
   deleteHistoryItem: (id: string) => call<void>("delete_history_item", { id }),
   clearHistory: () => call<void>("clear_history"),
+  /** "Tentar de novo" on a failed transcription. onlyCopy: from the history (copy, don't paste). */
+  retryFailed: (id: string, onlyCopy: boolean) => call<void>("retry_failed", { id, onlyCopy }),
 
   // chat (voice search assistant)
   getChat: () => call<ChatMessage[]>("get_chat"),

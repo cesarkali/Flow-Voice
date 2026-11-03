@@ -86,7 +86,16 @@
   /** Command while listening (toggle mode): the styles can be applied to the selection without
    *  speaking. Not in push-to-talk, where the keys are still held. */
   const cmdChips = $derived(ev.phase === "listening" && ev.mode === "command" && ev.selection !== "at_stop");
-  const position = $derived(settings?.overlay_position ?? "bottom");
+  /** Where Rust put the card inside the window (windows::place_card): offset from the default
+   *  spot and which way it grows. null = not told yet (browser harness): follow the setting. */
+  let anchor = $state<{ dx: number; dy: number; grow: "up" | "down" } | null>(null);
+  const position = $derived(anchor ? (anchor.grow === "down" ? "top" : "bottom") : settings?.overlay_position === "top" ? "top" : "bottom");
+  const anchorDy = $derived(anchor?.dy ?? 0);
+  $effect(() => {
+    void anchorDx;
+    void anchorDy;
+    if (untrack(() => visible)) untrack(() => track(520));
+  });
   const sz = $derived(SIZES[settings?.overlay_width ?? "normal"] ?? SIZES.normal);
   const fit = $derived(view === "processing" || view === "answer");
   const layerKey = $derived(view === "done" ? `done:${result?.id ?? ""}` : view === "error" ? `error:${errSeq}` : view);
@@ -96,6 +105,10 @@
     view === "listening" ? (hasText || cmdChips ? sz.live : sz.cap) : view === "done" ? sz.card : view === "error" ? sz.err : 300,
   );
   const targetW = $derived(Math.min(MAX_W - M * 2, fit && measured.key === layerKey ? measured.w : fixedW));
+  /** The horizontal offset never pushes the (wider) card out of the window. */
+  const anchorDx = $derived(
+    anchor ? Math.max(-(MAX_W / 2 - targetW / 2 - 4), Math.min(MAX_W / 2 - targetW / 2 - 4, anchor.dx)) : 0,
+  );
   const targetR = $derived(view === "done" || view === "error" ? 18 : view === "listening" && (hasText || cmdChips) ? 22 : ROW_H / 2 + 1);
   const waveMode = $derived(!visible ? "off" : view === "listening" ? "listen" : fit ? "proc" : "off");
 
@@ -137,8 +150,10 @@
   }
 
   function onState(e: OverlayEvent) {
-    // While a reprocess runs the card stays put; stray pipeline phases are ignored.
-    if (pending && (e.phase === "refining" || e.phase === "transcribing")) return;
+    // While a reprocess runs the result card stays put; stray pipeline phases are ignored.
+    if (pending && ev.phase === "done" && (e.phase === "refining" || e.phase === "transcribing")) return;
+    // A chip pending belonged to the result card that's gone (it would keep the next card busy).
+    if (e.phase !== "done") pending = null;
     if (e.phase === "done" && result && e.result.id === result.id && ev.phase === "done") {
       applyUpdate(e.result);
       ev = e;
@@ -210,6 +225,7 @@
     if (e.phase === "error") {
       lastError = e;
       errSeq++;
+      retrySent = false;
       detailOpen = false;
       copied = false;
       pending = null;
@@ -243,8 +259,13 @@
       on<{ phase: "out" | "in" }>(EVENTS.overlayMove, (p) => moveCard(p?.phase)),
       // Cursor entered/left the hitbox (polled by Rust; DOM hover misses it on a click-through window).
       on<{ inside: boolean }>(EVENTS.overlayPointer, (p) => (pointerIn = !!p?.inside)),
+      on<{ active: boolean }>(EVENTS.overlayDrag, (p) => setDragging(!!p?.active)),
+      // The blur could not be made (Windows 10, say): solid card, never see-through without blur.
+      on<void>(EVENTS.overlayGlassOff, () => (glassAvail = false)),
       on<Settings>(EVENTS.settingsChanged, applySettings),
+      on<{ dx: number; dy: number; grow: "up" | "down" }>(EVENTS.overlayAnchor, (a) => (anchor = a)),
     ];
+    api.getOverlayAnchor().then((a) => (anchor ??= a)).catch(() => {});
     // The window never resizes in Rust; this only re-anchors the hitbox if it ever does.
     const ro = new ResizeObserver(() => visible && hbUpdate());
     if (stageEl) ro.observe(stageEl);
@@ -485,6 +506,40 @@
       holdSent = v;
       api.overlayHold(v);
     });
+  });
+
+  // ---- drag: while recording, a press on the card's body (not its buttons) lets Rust follow the
+  // real cursor and move the whole window (it also hops monitors); the page only arms it, shows
+  // the grab cursor and keeps the hitbox/glass following. Rust sends overlay-drag {active}.
+  let dragging = $state(false);
+  let swallowClickUntil = 0;
+  const dragOn = $derived(settings?.overlay_drag !== false && view === "listening" && ev.phase === "listening");
+  function onShellDown(e: PointerEvent) {
+    hideTip();
+    if (!dragOn || e.button !== 0 || e.pointerType !== "mouse") return;
+    if ((e.target as HTMLElement | null)?.closest("button, a, input, textarea, select, [data-nodrag]")) return;
+    api.overlayDragArm().catch(() => {});
+  }
+  function setDragging(on: boolean) {
+    if (on === dragging) return;
+    dragging = on;
+    hideTip();
+    if (on) track(3_600_000);
+    else {
+      swallowClickUntil = performance.now() + 250;
+      trackUntil = performance.now() + 300;
+    }
+  }
+  /** A click that ends a drag must not press whatever is under the cursor. */
+  function swallowClick(e: MouseEvent) {
+    if (performance.now() < swallowClickUntil || dragging) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }
+  // The dictation ended / moved on mid-drag: Rust sends the end, this is only a safety net.
+  $effect(() => {
+    if (!visible) untrack(() => setDragging(false));
   });
 
   // In-card FLIP: when a block inside the card changes height (expand text, language picker,
@@ -731,7 +786,7 @@
   // never per-word boxes, so nothing can look shuffled.
   function normLive(s: string) {
     let x = s.replace(/\s+/g, " ").trim();
-    x = x.replace(/\s+([,.;:!?…%)\]])/gu, "$1"); // no space before punctuation
+    x = x.replace(/\s+([,.;:!?…%)\]])(?![\p{L}\p{N}])/gu, "$1"); // no space before punctuation (".NET" starts a word)
     x = x.replace(/([(\[])\s+/gu, "$1");
     x = x.replace(/([,;])(?=\p{L})/gu, "$1 "); // "a,b" → "a, b"
     x = x.replace(/([.!?…])(?=\p{Lu})/gu, "$1 "); // "fim.Outra" → "fim. Outra"
@@ -1021,12 +1076,22 @@
   async function paste(replace: boolean) {
     const text = targetText;
     try {
-      await api.pasteText(text, replace);
-      pastedText = text;
+      if (await api.pasteText(text, replace)) pastedText = text;
     } catch (e) {
       actionError = String(e);
     }
     cycle++;
+  }
+  /** "Tentar de novo" clicked: one click only (the card turns into "transcrevendo" right away). */
+  let retrySent = $state(false);
+  async function retry(id: string) {
+    if (retrySent) return;
+    retrySent = true;
+    try {
+      await api.retryFailed(id, false);
+    } catch {
+      retrySent = false;
+    }
   }
   let copiedTimer = 0;
   async function copy(text: string) {
@@ -1050,7 +1115,7 @@
 <svelte:window onkeydown={key} />
 
 <div class="stage {position}" style="--m:{M}px" bind:this={stageEl}>
-  <div class="mover" bind:this={moverEl}>
+  <div class="mover" class:glide={visible && !dragging} style="translate:{anchorDx}px {anchorDy}px" bind:this={moverEl}>
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       bind:this={shellEl}
@@ -1062,7 +1127,11 @@
       role="region"
       aria-label="FlowVoice"
       aria-live="polite"
+      class:draggable={dragOn}
+      class:dragging
       onpointerleave={hideTip}
+      onpointerdown={onShellDown}
+      onclickcapture={swallowClick}
     >
       <!-- Persistent waveform: listening bars → processing wave, one set of elements. -->
       <div
@@ -1095,7 +1164,7 @@
                   </span>
                   {#if listenInfo.style}
                     {#key listenInfo.style}
-                      <span class="sty" class:q={listenInfo.quote} in:rise={{ y: 4 * dir, duration: 220 }}
+                      <span class="sty" class:q={listenInfo.quote} dir={listenInfo.quote ? "auto" : null} in:rise={{ y: 4 * dir, duration: 220 }}
                         >{listenInfo.style}{#if listenInfo.app}<span class="app">· {listenInfo.app}</span>{/if}</span
                       >
                     {/key}
@@ -1140,19 +1209,25 @@
               {#if hasText}
                 <div class="live" in:rise={{ delay: 120, y: 10 * dir }} out:fadeOut>
                   <div class="lwin" style="--llh:{LIVE_LH}px;--llines:{LIVE_LINES}">
-                    <p use:lineFlip>{#each chunks as c (c.id)}<span class="ck {c.kind}" class:un={!c.st}>{c.text}</span>{/each}</p>
+                    <p dir="auto" use:lineFlip>{#each chunks as c (c.id)}<span class="ck {c.kind}" class:un={!c.st}>{c.text}</span>{/each}</p>
                   </div>
                 </div>
               {/if}
             </div>
           {:else if fit}
-            <div class="row proc" style="padding-left:{PAD_L}px">
+            <div class="row proc" class:cancelable={view === "processing"} style="padding-left:{PAD_L}px">
               <span class="wslot" style="width:{WAVE_W}px"></span>
               <span class="plabel">
                 {#key procLabel}
                   <span class="pl" in:rise={{ delay: 90, y: 7 * dir }} out:sink={{ y: -6 * dir }}>{procLabel}</span>
                 {/key}
               </span>
+              {#if view === "processing"}
+                <!-- Esc is only taken while recording: this cancels the processing. -->
+                <button type="button" class="x" aria-label={t("ov.cancel")} onclick={dismiss}>
+                  <Icon name="x" size={16} />
+                </button>
+              {/if}
             </div>
           {:else if view === "done" && result}
             <!-- svelte-ignore a11y_mouse_events_have_key_events, a11y_no_static_element_interactions -->
@@ -1181,8 +1256,10 @@
               </header>
 
               <div class="tbox" class:busy data-flip>
+                <!-- dictated text runs in its own direction (Arabic, Hebrew…), like the web's dir=auto -->
                 <div
                   class="text"
+                  dir="auto"
                   class:orig={showOriginal}
                   class:wheel={wheelScroll}
                   style="--lines:{textLines}"
@@ -1310,7 +1387,6 @@
               </div>
 
               <div class="acts" data-flip>
-                <span class="esc mono" aria-label={t("ovx.esc_tip")}>esc</span>
                 <button type="button" class="btn" disabled={busy} onclick={() => copy(targetText)}>
                   <span class="ico">
                     {#key copied}<span class="ic" in:rise={{ y: 4, duration: 220 }}><Icon name={copied ? "check" : "copy"} size={15} /></span>{/key}
@@ -1342,6 +1418,9 @@
                 </button>
               </header>
               <p class="emsg" data-flip>{lastError.message}</p>
+              {#if lastError.retry}
+                <p class="ekept" data-flip>{t("ovx.retry_kept")}</p>
+              {/if}
               {#if lastError.detail}
                 <button type="button" class="dtoggle" data-flip aria-expanded={detailOpen} onclick={() => (detailOpen = !detailOpen)}>
                   <span class="chev" class:open={detailOpen}><Icon name="chevronRight" size={14} /></span>
@@ -1354,9 +1433,12 @@
               {#if !lastError.hint || lastError.raw}
                 <div class="acts" data-flip>
                   {#if !lastError.hint}
+                    <!-- a key problem leads with the providers; otherwise "Tentar de novo" does -->
                     <button
                       type="button"
                       class="btn"
+                      class:primary={lastError.key && !!lastError.retry}
+                      style:order={lastError.key && lastError.retry ? 1 : null}
                       onclick={() => {
                         api.openSettings("providers");
                         dismiss();
@@ -1375,10 +1457,23 @@
                       <Icon name={copied ? "check" : "copy"} size={15} />{copied ? t("c.copied") : t("ov.copy_raw")}
                     </button>
                   {/if}
+                  {#if lastError.retry}
+                    <button
+                      type="button"
+                      class="btn"
+                      class:primary={!lastError.key}
+                      disabled={retrySent}
+                      data-tip={t("ovx.retry_tip")}
+                      onclick={() => retry(lastError!.retry!)}
+                    >
+                      <Icon name="refresh" size={15} />{retrySent ? t("ovx.retrying") : t("ovx.retry")}
+                    </button>
+                  {/if}
                 </div>
               {/if}
               {@render tipBox()}
-              {@render life(lastError.hint ? 5000 : 12000)}
+              <!-- a kept recording stays on offer longer -->
+              {@render life(lastError.hint ? 5000 : lastError.retry ? 30000 : 12000)}
             </div>
           {/if}
         </div>
@@ -1446,8 +1541,21 @@
     display: flex;
     transform-origin: 50% 100%;
   }
+  /* placed by Rust (anchor): glides only while the card is up, never when it appears */
+  .mover.glide {
+    transition: translate 460ms var(--morph);
+  }
   .top .mover {
     transform-origin: 50% 0;
+  }
+  /* Recording: the card can be dragged by its body (buttons keep their own cursor). */
+  .shell.draggable {
+    cursor: grab;
+    user-select: none;
+  }
+  .shell.dragging,
+  .shell.dragging :global(*) {
+    cursor: grabbing !important;
   }
 
   /* ---------------------------------------------------------------- shell */
@@ -1815,6 +1923,9 @@
   /* ---------------------------------------------------------------- processing */
   .proc {
     padding-right: 24px;
+  }
+  .proc.cancelable {
+    padding-right: 12px;
   }
   .plabel {
     display: grid;
@@ -2223,17 +2334,6 @@
     justify-content: flex-end;
     gap: 6px;
   }
-  .esc {
-    margin-right: auto;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    color: var(--cap-text-2);
-    opacity: 0.7;
-    border: 1px solid var(--cap-line);
-    border-radius: 4px;
-    padding: 1px 5px;
-    cursor: default;
-  }
   .btn {
     display: inline-flex;
     align-items: center;
@@ -2287,6 +2387,12 @@
     max-height: calc(13.5px * 1.45 * 6);
     overflow: hidden;
     overflow-wrap: anywhere;
+  }
+  .ekept {
+    margin: -4px 0 0;
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--cap-text-2);
   }
   .dtoggle {
     display: inline-flex;

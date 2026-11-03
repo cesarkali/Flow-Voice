@@ -90,7 +90,11 @@ export interface Settings {
   sounds: boolean;
   start_with_os: boolean;
   history_enabled: boolean;
-  overlay_position: "bottom" | "top";
+  overlay_position: "bottom" | "top" | "custom";
+  /** Card center as a fraction (0..1) of the monitor's work area, used when overlay_position = "custom". */
+  overlay_custom: OverlayPoint | null;
+  /** Drag the overlay during a recording. */
+  overlay_drag: boolean;
   /** Result card width; compact also shrinks text a little. */
   overlay_width: "compact" | "normal" | "wide";
   /** true = overlay appears on the monitor under the mouse; false = always on the primary monitor. */
@@ -188,6 +192,11 @@ export interface DictationResult {
   app_name?: string | null;
   /** Command mode: the selected text the instruction (`raw`) was applied to. */
   source?: string | null;
+  /** The transcription failed (`error` says why): no text, the recording kept in memory to try again. */
+  failed?: boolean;
+  error?: string | null;
+  /** Failed items: "ready" = the recording is still kept, "running" = being tried again, absent = gone. */
+  retry?: "ready" | "running" | null;
 }
 
 export type OverlayEvent =
@@ -207,7 +216,8 @@ export type OverlayEvent =
   | { phase: "done"; result: DictationResult }
   | { phase: "answer"; query: string } // ask mode finished, chat window opened
   /** hint = the user can fix it (nothing selected…): no "open settings" action. */
-  | { phase: "error"; message: string; detail: string | null; raw: string | null; hint?: boolean }
+  /** retry = id of the kept recording ("Tentar de novo"); key = every provider refused the key. */
+  | { phase: "error"; message: string; detail: string | null; raw: string | null; hint?: boolean; retry?: string | null; key?: boolean }
   | { phase: "hidden" };
 
 export interface ChatSource {
@@ -237,6 +247,12 @@ export interface UpdateInfo {
   notes: string | null;
 }
 
+/** A spot on a screen as fractions 0..1 of its work area. */
+export interface OverlayPoint {
+  x: number;
+  y: number;
+}
+
 export type SettingsPage = "home" | "styles" | "providers" | "speech" | "shortcuts" | "general" | "about";
 
 /** Event names emitted by the Rust core. */
@@ -244,9 +260,12 @@ export const EVENTS = {
   overlayState: "overlay-state", // OverlayEvent
   overlayLevel: "overlay-level", // number 0..1 (~30/s while listening)
   overlayPointer: "overlay-pointer", // { inside: boolean } cursor over the overlay hitbox (use instead of DOM hover)
+  overlayAnchor: "overlay-anchor", // { dx, dy, grow: "up" | "down" } where the card sits inside the (fixed) window
   overlayMove: "overlay-move", // { phase: "out" | "in" } changing monitors
+  overlayDrag: "overlay-drag", // { active: boolean } the card is being dragged (Rust follows the real cursor)
   overlayPartial: "overlay-partial", // { text: string; stable: number } live transcript (stable = confirmed chars)
   overlaySelection: "overlay-selection", // { text: string } Command mode: preview of the copied selection
+  overlayGlassOff: "overlay-glass-off", // void: Windows' blur could not be shown, draw the card solid
   modelProgress: "model-progress", // ModelProgress
   updateProgress: "update-progress", // { downloaded: number; total: number | null }
   navigate: "navigate", // { page: SettingsPage }

@@ -8,6 +8,36 @@ use std::path::Path;
 
 /// Kept small: the excerpt travels inside the GitHub URL (which has a length limit).
 const MAX_CHARS: usize = 2500;
+/// Longest URL every Windows/browser path passes on whole (INTERNET_MAX_URL_LENGTH).
+const MAX_URL: usize = 2083;
+
+/// The issue form's URL with `params`, then the error message (`what`) and the log excerpt. Both
+/// are cut (the log's oldest lines first, then the message's end) until the whole URL, once
+/// percent-encoded, fits in MAX_URL: a longer one gets cut short on its way to the browser.
+pub fn issue_url(base: &str, params: &[(&str, String)], what: Option<&str>, log: &str) -> anyhow::Result<reqwest::Url> {
+    let mut what: Vec<char> = what.unwrap_or_default().chars().collect();
+    let mut lines: Vec<&str> = if log.is_empty() { vec![] } else { log.lines().collect() };
+    loop {
+        let mut all = params.to_vec();
+        if !what.is_empty() {
+            all.push(("what", format!("Apareceu este erro:\n\n> {}\n\n", what.iter().collect::<String>())));
+        }
+        if !lines.is_empty() {
+            all.push(("logs", lines.join("\n")));
+        }
+        let url = reqwest::Url::parse_with_params(base, &all)?;
+        if url.as_str().len() <= MAX_URL {
+            return Ok(url);
+        }
+        if !lines.is_empty() {
+            lines.remove(0);
+        } else if !what.is_empty() {
+            what.truncate(what.len().saturating_sub(20));
+        } else {
+            return Ok(url);
+        }
+    }
+}
 
 static SECRETS: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"(gsk_[A-Za-z0-9]{8,}|AIza[0-9A-Za-z_\-]{16,}|sk-[A-Za-z0-9_\-]{12,}|tvly-[A-Za-z0-9_\-]{8,}|(?i:bearer)\s+[A-Za-z0-9._\-]{12,})").unwrap()
@@ -62,6 +92,22 @@ mod tests {
         assert!(!out.contains("julio"));
         assert!(out.contains("%USERPROFILE%"));
         assert!(out.starts_with("2026 INFO start"));
+    }
+
+    #[test]
+    fn issue_url_fits_the_url_limit() {
+        let base = "https://github.com/cesarkali/Flow-Voice/issues/new";
+        let params = [("template", "bug_report.yml".to_string()), ("version", "2.1.0".to_string())];
+        // Accented text triples in size once percent-encoded.
+        let log = (0..200).map(|i| format!("2026 WARN linha {i}: transcrição ação não")).collect::<Vec<_>>().join("\n");
+        let url = super::issue_url(base, &params, Some("Falha na transcrição: Groq: sem conexão"), &log).unwrap();
+        assert!(url.as_str().len() <= super::MAX_URL, "{}", url.as_str().len());
+        let logs = url.query_pairs().find(|(k, _)| k == "logs").map(|(_, v)| v.into_owned()).unwrap();
+        assert!(logs.ends_with("linha 199: transcrição ação não"), "the newest lines stay");
+        assert!(url.query_pairs().any(|(k, v)| k == "what" && v.contains("sem conexão")));
+        // A message too long even without a log is shortened too.
+        let url = super::issue_url(base, &params, Some(&"ç".repeat(600)), "").unwrap();
+        assert!(url.as_str().len() <= super::MAX_URL);
     }
 
     #[test]

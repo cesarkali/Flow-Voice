@@ -72,7 +72,8 @@
     let w = 0;
     let saved = 0;
     for (const h of history) {
-      if (h.mode === "ask") continue;
+      // a failed transcription has no text: not a dictation for the numbers
+      if (h.mode === "ask" || h.failed) continue;
       const c = words(h.text);
       w += c;
       saved += Math.max(0, (c / 40) * 60 - h.duration_ms / 1000);
@@ -154,6 +155,15 @@
       clearTimeout(redoTimer);
       redoTimer = window.setTimeout(() => (redoMsg = null), 2600);
     }
+  }
+
+  // ---------------------------------------------------------------- failed transcription
+  /** "Tentar de novo" from the history: the same recording, only copied (the user is in the settings). */
+  async function retryFailed(h: DictationResult) {
+    if (h.retry !== "ready") return;
+    // Shown at once; the next history-changed brings the real state.
+    history = history.map((x) => (x.id === h.id ? { ...x, retry: "running" } : x));
+    await api.retryFailed(h.id, true);
   }
 
   async function remove(h: DictationResult) {
@@ -316,32 +326,44 @@
         {@const isOpen = open === h.id}
         <li class:open={isOpen} in:fly={{ y: 8, duration: 240, delay: enterDelay(i), easing: cubicOut }} out:collapse>
           <div class="row">
-            <button type="button" class="main" aria-expanded={isOpen} onclick={() => (open = isOpen ? null : h.id)}>
-              <span class="meta">
-                <span class="time" title={new Date(h.ts).toLocaleString(locale())}>{relTime(h.ts)}</span>
-                {#if h.mode === "translate"}
-                  <span class="tag"><Icon name="translate" size={12} />{langName(h.target)}</span>
-                {:else if h.mode === "ask"}
-                  <span class="tag"><Icon name="question" size={12} />{t("mode.ask")}</span>
-                {:else if h.mode === "command"}
-                  <span class="tag"><Icon name="sparkle" size={12} />{t("mode.command")}</span>
-                {:else}
-                  <span class="tag">{styleName(h.style_id)}</span>
-                {/if}
-                {#if h.app_name}<span class="app">{h.app_name}</span>{/if}
-                {#if !h.pasted && h.mode !== "ask"}<span class="faint">{t("home.not_pasted")}</span>{/if}
-              </span>
-              <span class="text" class:clamp={!isOpen}>
-                {#each parts(h.text) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}
-              </span>
-              {#if term && !isOpen && !h.text.toLowerCase().includes(term)}
-                <span class="raw-hit">
-                  <span class="label">{t("home.raw")}</span>
-                  {#each parts(h.raw) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}
+            {#if h.failed}
+              <!-- a failed transcription: no text, why it failed, and its kept recording to try again -->
+              <div class="main failed">
+                <span class="meta">
+                  {@render itemMeta(h)}
+                  <span class="tag bad"><Icon name="alert" size={12} />{t("hx.failed")}</span>
                 </span>
-              {/if}
-            </button>
+                <span class="ferr">{h.error}</span>
+                {#if h.retry}
+                  <span class="fretry">
+                    <Button size="sm" icon="refresh" loading={h.retry === "running"} disabled={h.retry === "running"} title={t("hx.retry_tip")} onclick={() => retryFailed(h)}>
+                      {h.retry === "running" ? t("ovx.retrying") : t("ovx.retry")}
+                    </Button>
+                  </span>
+                {:else}
+                  <span class="fgone">{t("hx.failed_gone")}</span>
+                {/if}
+              </div>
+            {:else}
+              <button type="button" class="main" aria-expanded={isOpen} onclick={() => (open = isOpen ? null : h.id)}>
+                <span class="meta">
+                  {@render itemMeta(h)}
+                  {#if !h.pasted && h.mode !== "ask"}<span class="faint">{t("home.not_pasted")}</span>{/if}
+                </span>
+                <!-- dictated text runs in its own direction (Arabic, Hebrew…) -->
+                <span class="text" class:clamp={!isOpen} dir="auto">
+                  {#each parts(h.text) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}
+                </span>
+                {#if term && !isOpen && !h.text.toLowerCase().includes(term)}
+                  <span class="raw-hit">
+                    <span class="label">{t("home.raw")}</span>
+                    <span dir="auto">{#each parts(h.raw) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}</span>
+                  </span>
+                {/if}
+              </button>
+            {/if}
             <div class="acts">
+              {#if !h.failed}
               <span class="copy-wrap" class:done={copied === h.id}>
                 <Button
                   size="sm"
@@ -355,22 +377,23 @@
                   <span class="toast mono" role="status" in:fly={{ y: 4, duration: 160 }} out:fly={{ y: -4, duration: 160 }}>{t("c.copied")}</span>
                 {/if}
               </span>
+              {/if}
               <Button size="sm" variant="ghost" icon="trash" aria-label={t("c.delete")} title={t("c.delete")} onclick={() => remove(h)} />
             </div>
           </div>
-          {#if isOpen}
+          {#if isOpen && !h.failed}
             <div class="detail" transition:slide={{ duration: prefersReducedMotion.current ? 0 : 220, easing: cubicOut }}>
               <div class="detail-in">
                 {#if h.mode === "command" && h.source}
                   <div class="raw">
                     <span class="label">{t("home.f_source")}</span>
-                    <p>{h.source}</p>
+                    <p dir="auto">{h.source}</p>
                   </div>
                 {/if}
                 {#if h.raw && h.raw !== h.text}
                   <div class="raw">
                     <span class="label">{h.mode === "command" ? t("home.f_instruction") : t("home.raw")}</span>
-                    <p>{#each parts(h.raw) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}</p>
+                    <p dir="auto">{#each parts(h.raw) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}</p>
                   </div>
                 {/if}
                 <dl class="facts">
@@ -444,6 +467,20 @@
     </ul>
   {/if}
 </section>
+
+{#snippet itemMeta(h: DictationResult)}
+  <span class="time" title={new Date(h.ts).toLocaleString(locale())}>{relTime(h.ts)}</span>
+  {#if h.mode === "translate"}
+    <span class="tag"><Icon name="translate" size={12} />{langName(h.target)}</span>
+  {:else if h.mode === "ask"}
+    <span class="tag"><Icon name="question" size={12} />{t("mode.ask")}</span>
+  {:else if h.mode === "command"}
+    <span class="tag"><Icon name="sparkle" size={12} />{t("mode.command")}</span>
+  {:else}
+    <span class="tag">{styleName(h.style_id)}</span>
+  {/if}
+  {#if h.app_name}<span class="app">{h.app_name}</span>{/if}
+{/snippet}
 
 <Modal bind:open={clearOpen} title={t("home.clear_title")} width="400px">
   <p class="modal-p">{t("home.clear_body", { n: history.length })}</p>
@@ -946,6 +983,8 @@
   }
   .text {
     display: block;
+    /* .main is left-aligned; dictated text follows its own direction */
+    text-align: start;
     font-size: 13.5px;
     line-height: 1.55;
     color: var(--text);
@@ -960,6 +999,25 @@
     overflow: hidden;
     /* room for descenders/highlights so nothing looks cropped */
     padding-bottom: 1px;
+  }
+  .main.failed {
+    align-items: flex-start;
+  }
+  .tag.bad {
+    color: var(--danger, #ff5a4e);
+  }
+  .ferr {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--danger, #ff5a4e);
+    overflow-wrap: anywhere;
+  }
+  .fretry {
+    margin-top: 2px;
+  }
+  .fgone {
+    font-size: 12px;
+    color: var(--text-3);
   }
   .raw-hit {
     display: -webkit-box;

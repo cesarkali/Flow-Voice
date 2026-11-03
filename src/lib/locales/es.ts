@@ -211,7 +211,7 @@ export const es: Dict = {
   "sc.ask_hint": "Haz una pregunta y abre el asistente con la respuesta buscada en la web.",
   "sc.press": "Pulsa la combinación…",
   "sc.click_to_change": "Haz clic para cambiar",
-  "sc.need_modifier": "Usa Ctrl, Alt, Shift o Win junto — o una tecla F.",
+  "sc.need_modifier": "Usa Ctrl, Alt o Win junto — o una tecla F (solo con ellas basta Shift).",
   "sc.mode": "Modo",
   "sc.mode_toggle": "Alternar",
   "sc.mode_hold": "Mantener",

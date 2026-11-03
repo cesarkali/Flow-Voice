@@ -197,12 +197,12 @@ export async function savedKeys(provider: KeyProviderId): Promise<string[]> {
   return splitKeys(await api.revealKeys(provider));
 }
 
-/** Appends keys (deduplicated) after the saved ones. Returns how many were new. */
-export async function addKeys(provider: KeyProviderId, raw: string): Promise<number> {
+/** Appends keys (deduplicated) after the saved ones. Returns the new ones. */
+export async function addKeys(provider: KeyProviderId, raw: string): Promise<string[]> {
   const current = await savedKeys(provider);
   const fresh = splitKeys(raw).filter((k, i, all) => !current.includes(k) && all.indexOf(k) === i);
   if (fresh.length) await setKeys(provider, [...current, ...fresh].join(","));
-  return fresh.length;
+  return fresh;
 }
 
 /** Removes the key at `index` (same order as KeyStatus.masked). */

@@ -2,8 +2,24 @@
 
 Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases antigos](https://github.com/cesarkali/Flow-Voice/releases?q=v1&expanded=true) e no histórico do Git.
 
-## Não lançado
+## 2.2.0
 
+### Mova a cápsula
+
+- **Arrastar durante a gravação**: clique na cápsula e arraste enquanto grava, para qualquer canto da tela e até para outro monitor. Ela fica onde você largou até o fim daquele ditado; no próximo, volta para a posição padrão. Dá para desligar em **Geral → Janela flutuante**.
+- **Posição personalizada**: além de Embaixo e Em cima, escolha o lugar arrastando a cápsula numa miniatura da tela (com encaixe nos cantos, nas bordas e no centro). **Testar** mostra onde ela aparece, e **Usar onde arrastei por último** aproveita o ponto em que você a largou.
+
+### Tentar de novo e ditados seguidos
+
+- **Tentar de novo** quando a transcrição falha (rede, limite, chave): a gravação fica guardada só na memória (as 3 últimas falhas, nunca em disco). O cartão de erro ganha o botão e fica 30 s na tela; o histórico mostra a falha com o motivo e o mesmo botão (lá o texto só é copiado). Refaz como foi ditado: mesmo app, estilo e tradução, com os provedores e chaves de agora. Não vale para o Comando.
+- Dois ditados seguidos no mesmo campo ganham um espaço entre eles ("…na quinta. A reunião…"), quando o cursor ficou onde o anterior terminou e faz menos de um minuto. Não em terminais, nem em escritas sem espaço (japonês, chinês, tailandês).
+
+### Correções
+
+- **Iniciar com o Windows** mais confiável: em alguns PCs o Windows pulava a entrada de inicialização do FlowVoice mesmo marcada como habilitada no Gerenciador de Tarefas. Agora o app também cria uma tarefa de logon no Agendador de Tarefas (por usuário, sem pedir administrador).
+- Desligar a inicialização no Gerenciador de Tarefas agora vale de verdade: o app não se liga de novo sozinho ao abrir.
+- Comando ou "Outra versão" com tradução não devolve mais duas versões (o original e a tradução, a tradução repetida, um "---" com comentário ou uma "versão melhorada" com rótulo); uma nota no fim, como "(Note: …)", também sai.
+- Texto ditado em árabe, hebraico, persa e urdu aparece na direção certa no overlay, no histórico e no chat.
 - As novidades de uma atualização aparecem formatadas no app (seções, lista, negrito e código), sem o aviso de download do GitHub.
 - A tela Sobre mostra a versão instalada no título (era fixo "2.0").
 

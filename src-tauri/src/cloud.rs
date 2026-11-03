@@ -106,11 +106,13 @@ fn friendly(provider: &str, status: u16, body: &str) -> ProviderError {
     }
 }
 
-/// True when the error says the model id itself is gone (retired, renamed, unknown).
+/// True when the error says the model id itself is gone (retired, renamed, unknown). Only phrases
+/// about the model: "temperature is not supported with this model" is about a parameter, and
+/// switching the user's model over it would be wrong.
 pub fn model_gone(status: u16, lower_msg: &str) -> bool {
-    const GONE: [&str; 12] = [
-        "not found", "does not exist", "decommissioned", "deprecated", "not supported", "invalid model",
-        "no longer", "unknown model", "not available", "retired", "model_not_found", "unsupported model",
+    const GONE: [&str; 11] = [
+        "not found", "does not exist", "decommissioned", "invalid model", "unknown model", "unsupported model",
+        "not a valid model", "no longer supported", "no longer available", "retired", "model_not_found",
     ];
     if lower_msg.contains("model_not_found") || lower_msg.contains("no endpoints found") {
         return true;
@@ -573,6 +575,12 @@ mod tests {
         assert!(g(400, "models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent."));
         assert!(g(404, "No endpoints found for meta-llama/llama-3-8b-instruct:free."));
         assert!(!g(400, "response_format is not supported"));
+        // About a parameter, not the model itself.
+        assert!(!g(400, "Unsupported parameter: 'temperature' is not supported with this model."));
+        assert!(!g(422, "reasoning_effort is not available for this model"));
+        assert!(!g(400, "The model is deprecated; please migrate soon."));
+        assert!(g(400, "gpt-x is not a valid model ID"));
+        assert!(g(400, "The model `old` is no longer available."));
         assert!(!g(401, "Invalid API Key"));
         assert!(!g(429, "Rate limit reached for model whisper-large-v3"));
         let e = friendly("groq", 400, r#"{"error":{"message":"The model x has been decommissioned"}}"#);

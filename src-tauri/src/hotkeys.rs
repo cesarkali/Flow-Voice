@@ -4,7 +4,7 @@ use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use tauri::{AppHandle, Manager};
-use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutEvent, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Modifiers, Shortcut, ShortcutEvent, ShortcutState};
 
 use crate::pipeline;
 use crate::state::{AppState, RecordMode};
@@ -30,7 +30,7 @@ pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     log::info!("hotkey {} {:?}", shortcut.into_string(), event.state());
     let hold = app.state::<AppState>().settings.read().hotkey_mode == "hold";
     match (action, event.state()) {
-        (Action::Cancel, ShortcutState::Pressed) => pipeline::control(app, pipeline::Ctl::Escape),
+        (Action::Cancel, ShortcutState::Pressed) => pipeline::control(app, pipeline::Ctl::Cancel),
         (Action::PasteLast, ShortcutState::Pressed) => {
             // Into whatever has focus now (not where the dictation originally went); off the
             // main thread (paste waits for modifier keys to be released).
@@ -104,7 +104,8 @@ pub fn unregister_all(app: &AppHandle) {
     }
 }
 
-/// Esc should be grabbed (only while the overlay is up, so it keeps working in other apps).
+/// Esc should be grabbed: only while recording, so it keeps working in other apps the rest of
+/// the time (the processing bar and the cards have their own close button).
 static ESC_WANTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Callable from any thread without blocking: records the wish and lets the main thread
@@ -136,9 +137,33 @@ fn sync_escape(app: &AppHandle) {
 pub fn validate(accelerator: &str) -> Option<String> {
     match parse(accelerator) {
         Err(e) => Some(e.to_string()),
-        Ok(s) if s.mods.is_empty() && !accelerator.to_uppercase().starts_with('F') => {
-            Some("use pelo menos um modificador (Ctrl, Alt, Shift ou Win) ou uma tecla F".into())
+        // Ctrl, Alt or Win: with Shift alone (only F keys may) that character could no longer be
+        // typed anywhere (Shift+A, Shift+Space).
+        Ok(s) if !s.mods.intersects(Modifiers::CONTROL | Modifiers::ALT | Modifiers::SUPER | Modifiers::META) && !is_f_key(accelerator) => {
+            Some("use Ctrl, Alt ou Win junto (Shift sozinho só com tecla F) ou uma tecla F".into())
         }
         Ok(_) => None,
+    }
+}
+
+/// The key of `accelerator` is F1…F24.
+fn is_f_key(accelerator: &str) -> bool {
+    let key = accelerator.rsplit('+').next().unwrap_or("").trim();
+    key.len() > 1 && key.starts_with(['F', 'f']) && key[1..].chars().all(|c| c.is_ascii_digit())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate;
+
+    #[test]
+    fn shortcuts_need_ctrl_alt_or_win() {
+        for ok in ["CommandOrControl+Shift+Space", "Alt+F9", "Super+H", "F9", "Shift+F9"] {
+            assert!(validate(ok).is_none(), "{ok}");
+        }
+        // Shift alone would take that character from typing everywhere.
+        for bad in ["Shift+A", "Shift+Space", "A", "F", "Space"] {
+            assert!(validate(bad).is_some(), "{bad}");
+        }
     }
 }

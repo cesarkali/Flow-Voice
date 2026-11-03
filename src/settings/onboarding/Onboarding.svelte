@@ -379,7 +379,17 @@
           <h1>{t("ob.hotkey_title")}</h1>
           <p class="lead">{t("ob.hotkey_body")}</p>
           <div class="hk">
-            <HotkeyInput size="lg" label={t("sc.dictate")} bind:value={s.hotkeys.dictate} />
+            <HotkeyInput
+              size="lg"
+              label={t("sc.dictate")}
+              bind:value={s.hotkeys.dictate}
+              taken={[
+                { accel: s.hotkeys.translate, label: t("sc.translate") },
+                { accel: s.hotkeys.ask, label: t("sc.ask") },
+                { accel: s.hotkeys.command, label: t("sc.command") },
+                { accel: s.hotkeys.paste_last, label: t("sc.paste_last") },
+              ]}
+            />
           </div>
           <div class="sty">
             <h2 class="label">{t("ob.style")}</h2>

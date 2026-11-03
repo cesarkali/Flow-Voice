@@ -32,6 +32,14 @@ pub fn available() -> bool {
     }
 }
 
+/// The overlay window moved by itself (dragged): put the glass window back right under it.
+pub fn follow(app: &AppHandle) {
+    #[cfg(windows)]
+    imp::follow(app);
+    #[cfg(not(windows))]
+    let _ = app;
+}
+
 /// Puts the glass under the card (None: fades it out).
 pub fn update(app: &AppHandle, rect: Option<GlassRect>) {
     #[cfg(windows)]
@@ -45,7 +53,7 @@ mod imp {
     use super::GlassRect;
     use std::cell::RefCell;
     use std::sync::atomic::{AtomicBool, Ordering};
-    use tauri::{AppHandle, Manager};
+    use tauri::{AppHandle, Emitter, Manager};
     use windows::core::{Interface, HSTRING};
     use windows::Foundation::Numerics::{Vector2, Vector3};
     use windows::Foundation::TimeSpan;
@@ -252,6 +260,32 @@ mod imp {
         Ok(())
     }
 
+    pub fn follow(app: &AppHandle) {
+        if FAILED.load(Ordering::Relaxed) {
+            return;
+        }
+        let app2 = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            let Some(w) = app2.get_webview_window("overlay") else { return };
+            let Ok(hwnd) = w.hwnd() else { return };
+            let owner = hwnd.0 as isize;
+            GLASS.with(|cell| {
+                let mut cell = cell.borrow_mut();
+                let Some(g) = cell.as_mut().filter(|g| g.owner == owner && g.last.is_some()) else { return };
+                let mut wr = RECT::default();
+                if unsafe { GetWindowRect(HWND(owner as *mut _), &mut wr) }.is_ok() {
+                    let place = (wr.left, wr.top, wr.right - wr.left, wr.bottom - wr.top);
+                    if g.placed != Some(place) {
+                        g.placed = Some(place);
+                        let _ = unsafe {
+                            SetWindowPos(HWND(g.hwnd as *mut _), HWND(owner as *mut _), place.0, place.1, place.2, place.3, SWP_NOACTIVATE)
+                        };
+                    }
+                }
+            });
+        });
+    }
+
     pub fn update(app: &AppHandle, rect: Option<GlassRect>) {
         if FAILED.load(Ordering::Relaxed) {
             return;
@@ -275,6 +309,9 @@ mod imp {
                         Err(e) => {
                             FAILED.store(true, Ordering::Relaxed);
                             log::warn!("overlay glass unavailable: {e}");
+                            // No blur under it (Windows 10, say): the card must be drawn solid now,
+                            // not see-through without blur.
+                            let _ = app2.emit_to("overlay", "overlay-glass-off", ());
                             return;
                         }
                     }

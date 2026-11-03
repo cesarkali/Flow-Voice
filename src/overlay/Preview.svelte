@@ -30,6 +30,7 @@
     { id: "done", label: "Resultado" },
     { id: "reprocess", label: "Reprocessar" },
     { id: "error", label: "Erro" },
+    { id: "sttfail", label: "Falha na transcrição (tentar de novo)" },
     { id: "listen", label: "Só ouvindo" },
     { id: "long", label: "Resultado longo" },
     { id: "errnow", label: "Erro (direto)" },

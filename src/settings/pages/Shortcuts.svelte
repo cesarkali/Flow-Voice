@@ -13,6 +13,18 @@
   let { onnavigate: _ }: { onnavigate?: (p: SettingsPage) => void } = $props();
   const s = $derived(app.settings!);
   let replay = $state(0);
+
+  type Action = "dictate" | "translate" | "ask" | "command" | "paste_last";
+  const LABELS: Record<Action, "sc.dictate" | "sc.translate" | "sc.ask" | "sc.command" | "sc.paste_last"> = {
+    dictate: "sc.dictate",
+    translate: "sc.translate",
+    ask: "sc.ask",
+    command: "sc.command",
+    paste_last: "sc.paste_last",
+  };
+  /** The other actions' shortcuts (one combination, one action). */
+  const others = (me: Action) =>
+    (Object.keys(LABELS) as Action[]).filter((a) => a !== me).map((a) => ({ accel: s.hotkeys[a], label: t(LABELS[a]) }));
 </script>
 
 <header class="ph">
@@ -22,22 +34,22 @@
 
 <Section label={t("sc.title")}>
   <Row id="set-sc-dictate" label={t("sc.dictate")} hint={t("sc.dictate_hint")}>
-    <HotkeyInput label={t("sc.dictate")} bind:value={s.hotkeys.dictate} />
+    <HotkeyInput label={t("sc.dictate")} bind:value={s.hotkeys.dictate} taken={others("dictate")} />
   </Row>
   <Row id="set-sc-translate" label={t("sc.translate")} hint={t("sc.translate_hint", { lang: i18n.lang === "en" ? langName(s.translation_target) : langName(s.translation_target).toLocaleLowerCase() })}>
-    <HotkeyInput label={t("sc.translate")} bind:value={s.hotkeys.translate} />
+    <HotkeyInput label={t("sc.translate")} bind:value={s.hotkeys.translate} taken={others("translate")} />
   </Row>
   <Row id="set-sc-ask" label={t("sc.ask")} hint={t("sc.ask_hint")}>
-    <HotkeyInput label={t("sc.ask")} bind:value={s.hotkeys.ask} />
+    <HotkeyInput label={t("sc.ask")} bind:value={s.hotkeys.ask} taken={others("ask")} />
   </Row>
 </Section>
 
 <Section label={t("sc.sec_more")}>
   <Row id="set-sc-command" label={t("sc.command")} hint={t("sc.command_hint")}>
-    <HotkeyInput label={t("sc.command")} bind:value={s.hotkeys.command} clearable />
+    <HotkeyInput label={t("sc.command")} bind:value={s.hotkeys.command} clearable taken={others("command")} />
   </Row>
   <Row id="set-sc-paste-last" label={t("sc.paste_last")} hint={t("sc.paste_last_hint")}>
-    <HotkeyInput label={t("sc.paste_last")} bind:value={s.hotkeys.paste_last} clearable />
+    <HotkeyInput label={t("sc.paste_last")} bind:value={s.hotkeys.paste_last} clearable taken={others("paste_last")} />
   </Row>
 </Section>
 

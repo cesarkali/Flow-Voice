@@ -58,7 +58,7 @@ O [guia completo](https://flowvoice.caliberda.com.br/guia) explica cada provedor
 
 ## Privacidade
 
-Sem conta, sem servidor próprio e sem telemetria. No modo nuvem, o áudio e o texto vão direto do seu PC para o provedor que **você** configurou, com a sua chave; no modo local, nada sai do computador. As chaves ficam no cofre de credenciais do sistema. Detalhes em [flowvoice.caliberda.com.br/privacidade](https://flowvoice.caliberda.com.br/privacidade).
+Sem conta, sem servidor próprio e sem telemetria. No modo nuvem, o áudio e o texto vão direto do seu PC para o provedor que **você** configurou, com a sua chave; no modo local, nada sai do computador. As chaves ficam no cofre de credenciais do sistema. Nenhum áudio é gravado em disco: se a transcrição falhar, a gravação fica só na memória (as 3 últimas) para você tentar de novo, e some ao fechar o app. Detalhes em [flowvoice.caliberda.com.br/privacidade](https://flowvoice.caliberda.com.br/privacidade).
 
 ## Desenvolvimento
 
