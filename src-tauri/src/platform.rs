@@ -39,8 +39,11 @@ fn with_clipboard<T>(f: impl FnOnce(&mut arboard::Clipboard) -> Result<T, arboar
     if guard.is_none() {
         *guard = arboard::Clipboard::new().ok();
     }
-    let cb = guard.as_mut().ok_or_else(|| anyhow!("área de transferência indisponível"))?;
-    f(cb).map_err(|e| anyhow!("não foi possível copiar: {e}"))
+    let cb = guard.as_mut().ok_or_else(|| anyhow!(crate::i18n::tr("área de transferência indisponível")))?;
+    f(cb).map_err(|e| match e {
+        arboard::Error::ClipboardOccupied => anyhow!(crate::i18n::tr("O app que está usando a área de transferência não responde. Tente de novo em instantes.")),
+        e => anyhow!(crate::i18n::trf("não foi possível copiar: {}", &[&e])),
+    })
 }
 
 fn clipboard_text() -> Option<String> {
@@ -270,14 +273,14 @@ pub const SELECTION_MAX_CHARS: usize = 12_000;
 pub fn copy_selection(target: isize) -> Result<Option<String>> {
     let _input = INPUT_LOCK.lock();
     if !can_paste() {
-        return Err(anyhow!("Este sistema não permite ler o texto selecionado (instale o xdotool ou o wtype)."));
+        return Err(anyhow!(crate::i18n::tr("Este sistema não permite ler o texto selecionado (instale o xdotool ou o wtype).")));
     }
     if is_elevated(target) {
-        return Err(anyhow!("Esse app roda como administrador — o Windows não deixa o FlowVoice ler a seleção dele."));
+        return Err(anyhow!(crate::i18n::tr("Esse app roda como administrador — o Windows não deixa o FlowVoice ler a seleção dele.")));
     }
     if is_console(target) {
         // Ctrl+C would interrupt the running program.
-        return Err(anyhow!("O Comando não funciona em terminais (lá o Ctrl+C interrompe o programa). Use num editor ou campo de texto."));
+        return Err(anyhow!(crate::i18n::tr("O Comando não funciona em terminais (lá o Ctrl+C interrompe o programa). Use num editor ou campo de texto.")));
     }
     let previous = clipboard_text();
     // Windows: the clipboard sequence number tells whether the app copied anything, so the
@@ -289,7 +292,7 @@ pub fn copy_selection(target: isize) -> Result<Option<String>> {
     wait_modifiers_released();
     focus(target);
     if !has_focus(target) {
-        return Err(anyhow!("A janela com o texto selecionado perdeu o foco."));
+        return Err(anyhow!(crate::i18n::tr("A janela com o texto selecionado perdeu o foco.")));
     }
     send_ctrl('C');
     let t0 = std::time::Instant::now();
@@ -910,6 +913,33 @@ pub fn cursor_pos() -> Option<(i32, i32)> {
     }
     #[allow(unreachable_code)]
     None
+}
+
+/// On one of the installed keyboard layouts, AltGr (which is Ctrl+Alt to Windows) plus this key
+/// types a character or starts a dead key: a Ctrl+Alt shortcut with it would stop that typing.
+#[cfg(windows)]
+pub fn altgr_types(vk: u32) -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        GetKeyboardLayoutList, MapVirtualKeyExW, ToUnicodeEx, MAPVK_VK_TO_VSC, VK_CONTROL, VK_LCONTROL, VK_MENU, VK_RMENU,
+    };
+    let mut layouts = [Default::default(); 32];
+    let count = unsafe { GetKeyboardLayoutList(Some(&mut layouts)) }.max(0) as usize;
+    let mut state = [0u8; 256];
+    for k in [VK_CONTROL, VK_LCONTROL, VK_MENU, VK_RMENU] {
+        state[k.0 as usize] = 0x80;
+    }
+    layouts[..count].iter().any(|layout| {
+        let mut typed = [0u16; 8];
+        let scan = unsafe { MapVirtualKeyExW(vk, MAPVK_VK_TO_VSC, *layout) };
+        // 4: without changing the keyboard's state (dead keys).
+        let n = unsafe { ToUnicodeEx(vk, scan, &state, &mut typed, 4, *layout) };
+        n < 0 || (n > 0 && typed[0] >= 0x20)
+    })
+}
+
+#[cfg(not(windows))]
+pub fn altgr_types(_vk: u32) -> bool {
+    false
 }
 
 /// Whether the PRIMARY mouse button (the one that clicks: the right one when the user swapped the

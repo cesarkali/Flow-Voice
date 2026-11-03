@@ -6,6 +6,7 @@ mod feedback;
 mod glass;
 mod heal;
 mod hotkeys;
+mod i18n;
 mod keys;
 #[cfg(test)]
 mod live_tests;
@@ -115,16 +116,23 @@ pub fn run() {
             log::info!("FlowVoice {} starting", app.package_info().version);
 
             let first_run = !settings::settings_path(&config_dir).exists();
+            pipeline::restore_mute_after_crash(&config_dir);
             let state = AppState::new(config_dir.clone(), models_dir);
             if first_run {
                 let n = state.keys.import_legacy();
                 if n > 0 {
                     log::info!("imported {n} key(s) from FlowVoice 1.x");
                 }
-                let s = state.settings();
-                let _ = settings::save(&config_dir, &s);
+                let mut s = state.settings();
+                // Ctrl+Alt is AltGr: where AltGr+K types a character, the shortcut would stop it.
+                if platform::altgr_types('K' as u32) {
+                    log::info!("AltGr+K types on this keyboard: Command starts without a shortcut");
+                    s.hotkeys.command.clear();
+                }
+                let _ = state.save_settings(s);
             }
             let s = state.settings();
+            i18n::set_language(&s.ui_language);
             app.manage(state);
             // The windows are created only now ("create": false in tauri.conf.json): made by Tauri
             // before setup, their pages could call a command before the state above existed (a
@@ -211,6 +219,7 @@ pub fn run() {
             commands::save_settings,
             commands::reset_styles,
             commands::validate_hotkey,
+            commands::altgr_blocks_command,
             commands::list_input_devices,
             commands::suspend_hotkeys,
             commands::get_key_status,

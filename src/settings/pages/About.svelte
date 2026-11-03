@@ -30,6 +30,7 @@
   }
 
   const REPO = "https://github.com/cesarkali/Flow-Voice";
+  const PRIVACY = "https://flowvoice.caliberda.com.br/privacidade.html";
   type Link = { icon: IconName; key: TKey; url: string };
   const AUTHOR: Link[] = [
     { icon: "github", key: "about.profile", url: "https://github.com/cesarkali" },
@@ -165,6 +166,26 @@
         </dd>
       </div>
     </dl>
+  </section>
+
+  <section class="card blk span-all" id="privacy">
+    <h2 class="label">{t("sh.about_privacy")}</h2>
+    <ul class="priv">
+      <li>{t("sh.privacy_audio")}</li>
+      <li>{t("sh.privacy_text")}</li>
+      <li>{t("sh.privacy_keys")}</li>
+      <li>{t("sh.privacy_history")}</li>
+      <li>{t("sh.privacy_none")}</li>
+    </ul>
+    <ul class="links">
+      <li>
+        <button type="button" onclick={() => api.openUrl(PRIVACY)}>
+          <Icon name="external" size={16} />
+          <span class="ln">{t("sh.privacy_full")}</span>
+          <span class="go"><Icon name="external" size={13} /></span>
+        </button>
+      </li>
+    </ul>
   </section>
 
   <section class="card blk span-all fbcard" id="feedback">
@@ -640,5 +661,15 @@
     white-space: pre-wrap;
     word-break: break-word;
     color: var(--text-2);
+  }
+  .priv {
+    display: grid;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 0;
+    list-style: none;
+    color: var(--text-2);
+    font-size: 13px;
+    line-height: 1.5;
   }
 </style>

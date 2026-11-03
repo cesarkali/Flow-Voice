@@ -1,6 +1,7 @@
 //! Microphone capture: any device format → 16 kHz mono f32 kept in memory.
 
 use anyhow::{anyhow, Result};
+use crate::i18n::{tr, trf};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use parking_lot::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
@@ -94,7 +95,7 @@ impl Recording {
                 }
             };
             if let Err(e) = stream.play() {
-                let _ = ready_tx.send(Err(anyhow!("não foi possível iniciar o microfone: {e}")));
+                let _ = ready_tx.send(Err(mic_error("não foi possível iniciar o microfone: {}", &e)));
                 return;
             }
             let _ = ready_tx.send(Ok(()));
@@ -107,7 +108,7 @@ impl Recording {
                 Ok(Self { samples, used_fallback, failed, level, stop_tx, thread: Some(thread) })
             }
             Ok(Err(e)) => Err(e),
-            Err(_) => Err(anyhow!("o microfone não respondeu")),
+            Err(_) => Err(anyhow!(tr("o microfone não respondeu"))),
         }
     }
 
@@ -173,9 +174,57 @@ fn pick_device(name: Option<&str>) -> Result<(cpal::Device, bool)> {
             return Ok((devices.into_iter().nth(i).unwrap(), false));
         }
         log::warn!("input device {name} not found, using default");
-        return host.default_input_device().map(|d| (d, true)).ok_or_else(|| anyhow!("nenhum microfone encontrado"));
+        return host.default_input_device().map(|d| (d, true)).ok_or_else(|| anyhow!(tr("Nenhum microfone encontrado.")));
     }
-    host.default_input_device().map(|d| (d, false)).ok_or_else(|| anyhow!("nenhum microfone encontrado"))
+    host.default_input_device().map(|d| (d, false)).ok_or_else(|| anyhow!(tr("Nenhum microfone encontrado.")))
+}
+
+/// What a microphone failure means for the user (None: nothing more specific than the error).
+fn mic_problem(error: &str) -> Option<&'static str> {
+    let e = error.to_lowercase();
+    if e.contains("0x80070005") || e.contains("access is denied") || e.contains("acesso negado") {
+        Some("O Windows bloqueou o microfone. Permita que apps da área de trabalho o usem em Configurações > Privacidade e segurança > Microfone.")
+    } else if e.contains("0x8889000a") || e.contains("device_in_use") {
+        Some("Outro app está usando o microfone com exclusividade.")
+    } else {
+        None
+    }
+}
+
+fn mic_error(pt: &str, e: &dyn std::fmt::Display) -> anyhow::Error {
+    let text = e.to_string();
+    log::warn!("microphone: {text}");
+    if mic_blocked_by_windows() {
+        return anyhow!(tr("O Windows bloqueou o microfone. Permita que apps da área de trabalho o usem em Configurações > Privacidade e segurança > Microfone."));
+    }
+    match mic_problem(&text) {
+        Some(problem) => anyhow!(tr(problem)),
+        None => anyhow!(trf(pt, &[&text])),
+    }
+}
+
+/// Settings > Privacy & security > Microphone is off for this account or for desktop apps.
+#[cfg(windows)]
+fn mic_blocked_by_windows() -> bool {
+    use windows::core::HSTRING;
+    use windows::Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY, RRF_RT_REG_SZ};
+    const STORE: &str = r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone";
+    let denied = |root: HKEY, path: String| {
+        let mut buf = [0u16; 16];
+        let mut len = (buf.len() * 2) as u32;
+        let ok = unsafe {
+            RegGetValueW(root, &HSTRING::from(path), &HSTRING::from("Value"), RRF_RT_REG_SZ, None, Some(buf.as_mut_ptr() as *mut _), Some(&mut len))
+        };
+        ok.is_ok() && String::from_utf16_lossy(&buf[..(len as usize / 2).saturating_sub(1)]) == "Deny"
+    };
+    denied(HKEY_LOCAL_MACHINE, STORE.to_string())
+        || denied(HKEY_CURRENT_USER, STORE.to_string())
+        || denied(HKEY_CURRENT_USER, format!(r"{STORE}\NonPackaged"))
+}
+
+#[cfg(not(windows))]
+fn mic_blocked_by_windows() -> bool {
+    false
 }
 
 fn build_stream(
@@ -187,7 +236,7 @@ fn build_stream(
 ) -> Result<cpal::Stream> {
     let (device, fallback) = pick_device(name)?;
     let _ = fallback_tx.send(fallback);
-    let config = device.default_input_config().map_err(|e| anyhow!("microfone indisponível: {e}"))?;
+    let config = device.default_input_config().map_err(|e| mic_error("microfone indisponível: {}", &e))?;
     let channels = config.channels() as usize;
     let rate = config.sample_rate().0;
     let format = config.sample_format();
@@ -237,9 +286,9 @@ fn build_stream(
         cpal::SampleFormat::I16 => stream_for!(i16, |s: i16| s as f32 / 32768.0),
         cpal::SampleFormat::U16 => stream_for!(u16, |s: u16| (s as f32 - 32768.0) / 32768.0),
         cpal::SampleFormat::I32 => stream_for!(i32, |s: i32| s as f32 / 2_147_483_648.0),
-        other => return Err(anyhow!("formato de áudio não suportado: {other:?}")),
+        other => return Err(anyhow!(trf("formato de áudio não suportado: {}", &[&format!("{other:?}")]))),
     }
-    .map_err(|e| anyhow!("não foi possível abrir o microfone: {e}"))?;
+    .map_err(|e| mic_error("não foi possível abrir o microfone: {}", &e))?;
     Ok(stream)
 }
 
@@ -326,5 +375,18 @@ mod tests {
         assert_eq!(samples.lock().len(), super::MAX_SAMPLES);
         super::keep(&samples, &[1.0; 5]);
         assert_eq!(samples.lock().len(), super::MAX_SAMPLES);
+    }
+}
+
+#[cfg(test)]
+mod mic_tests {
+    use super::mic_problem;
+
+    #[test]
+    fn windows_errors_become_clear_messages() {
+        assert!(mic_problem("Acesso negado. (0x80070005)").unwrap().contains("bloqueou"));
+        assert!(mic_problem("Access is denied.").unwrap().contains("bloqueou"));
+        assert!(mic_problem("Device in use (0x8889000A)").unwrap().contains("exclusividade"));
+        assert!(mic_problem("some other failure").is_none());
     }
 }

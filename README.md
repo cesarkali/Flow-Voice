@@ -27,7 +27,8 @@ Aperte um atalho, fale, e o texto aparece onde está o cursor: limpo, pontuado e
 - **Modelos que se corrigem sozinhos**: quando um provedor aposenta um modelo, o FlowVoice encontra, testa e salva o substituto.
 - **100% offline** com whisper.cpp: modelos de 31 MB a 547 MB baixados sob demanda, incluindo um *Distil Large v3* ajustado para português do Brasil. Para refinar sem internet, use o Ollama.
 - **Chaves no cofre do sistema** (Gerenciador de Credenciais do Windows), nunca em texto puro.
-- Vocabulário próprio, remoção de vícios de linguagem ("né", "tipo", "hã"), histórico pesquisável, colar de novo a última transcrição, interface em PT/EN/ES, tema claro e escuro.
+- Vocabulário próprio, remoção de vícios de linguagem ("né", "tipo", "hã"), histórico pesquisável, colar de novo a última transcrição, tema claro e escuro.
+- **Interface em 10 idiomas** (português, inglês, espanhol, francês, alemão, japonês, chinês, russo, hindi e bengali), seguindo o idioma do Windows por padrão; o menu da bandeja e as mensagens de erro também.
 - **Leve**: instalador de ~3 MB, sem pedir administrador, com **atualização automática** assinada.
 
 ## Download
@@ -42,10 +43,10 @@ Aperte um atalho, fale, e o texto aparece onde está o cursor: limpo, pontuado e
 | Ditar já traduzindo | `Ctrl + Shift + Y` |
 | Assistente por voz | `Ctrl + Shift + U` |
 | Comando sobre o texto selecionado | `Ctrl + Alt + K` |
-| Colar de novo a última transcrição | `Ctrl + Alt + V` |
+| Colar de novo a última transcrição | sem atalho (fica no menu da bandeja) |
 | Cancelar a gravação | `Esc` |
 
-Todos podem ser trocados em **Configurações**. Para Stream Deck, AutoHotkey ou scripts, a linha de comando controla o app já aberto: `FlowVoice.exe --toggle` (também `--translate`, `--ask`, `--command`, `--paste-last`, `--cancel`).
+Todos podem ser trocados em **Configurações**. Colar de novo vem sem atalho porque `Ctrl + Alt + V` é o Colar Especial do Office; escolha um em **Atalhos** se quiser. Em teclados onde `AltGr + K` digita um caractere (`Ctrl + Alt` é o `AltGr`), o Comando também começa sem atalho. Para Stream Deck, AutoHotkey ou scripts, a linha de comando controla o app já aberto: `FlowVoice.exe --toggle` (também `--translate`, `--ask`, `--command`, `--paste-last`, `--cancel`).
 
 ## Começo rápido
 
@@ -58,7 +59,7 @@ O [guia completo](https://flowvoice.caliberda.com.br/guia) explica cada provedor
 
 ## Privacidade
 
-Sem conta, sem servidor próprio e sem telemetria. No modo nuvem, o áudio e o texto vão direto do seu PC para o provedor que **você** configurou, com a sua chave; no modo local, nada sai do computador. As chaves ficam no cofre de credenciais do sistema. Nenhum áudio é gravado em disco: se a transcrição falhar, a gravação fica só na memória (as 3 últimas) para você tentar de novo, e some ao fechar o app. Detalhes em [flowvoice.caliberda.com.br/privacidade](https://flowvoice.caliberda.com.br/privacidade).
+Sem conta, sem servidor próprio e sem telemetria. No modo nuvem, o áudio e o texto vão direto do seu PC para o provedor que **você** configurou, com a sua chave; no modo local, nada sai do computador. As chaves ficam no cofre de credenciais do sistema. Nenhum áudio é gravado em disco: se a transcrição falhar, a gravação fica só na memória (as 3 últimas) para você tentar de novo, e some ao fechar o app. Um resumo do que vai para onde também está no próprio app, em **Sobre → Privacidade**. Detalhes em [flowvoice.caliberda.com.br/privacidade](https://flowvoice.caliberda.com.br/privacidade).
 
 ## Desenvolvimento
 

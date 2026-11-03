@@ -1,31 +1,48 @@
 // Tiny i18n: t(key, params) reads a rune, so any template using it re-renders
 // when the language changes (live switch, no reload).
-import type { UiLanguage } from "./types";
+import type { UiLanguage, UiLanguagePref } from "./types";
 import { pt } from "./locales/pt";
 import { en } from "./locales/en";
 import { es } from "./locales/es";
 import { EXTRA, type ExtraKey } from "./locales/x";
+import { fr } from "./locales/more/fr";
+import { de } from "./locales/more/de";
+import { ja } from "./locales/more/ja";
+import { zh } from "./locales/more/zh";
+import { ru } from "./locales/more/ru";
+import { hi } from "./locales/more/hi";
+import { bn } from "./locales/more/bn";
 
 export type TKey = keyof typeof pt | ExtraKey;
 
-const DICTS: Record<UiLanguage, Record<string, string>> = { pt: { ...pt }, en: { ...en }, es: { ...es } };
+const DICTS: Record<UiLanguage, Record<string, string>> = { pt: { ...pt }, en: { ...en }, es: { ...es }, fr, de, ja, zh, ru, hi, bn };
 for (const ext of EXTRA) {
   for (const lang of ["pt", "en", "es"] as const) Object.assign(DICTS[lang], ext[lang]);
 }
 const PT: Record<string, string> = DICTS.pt;
-const LOCALE: Record<UiLanguage, string> = { pt: "pt-BR", en: "en-US", es: "es" };
+const LOCALE: Record<UiLanguage, string> = { pt: "pt-BR", en: "en-US", es: "es", fr: "fr", de: "de", ja: "ja", zh: "zh-CN", ru: "ru", hi: "hi", bn: "bn" };
 
 export const i18n = $state({ lang: "pt" as UiLanguage });
 
-export function setLanguage(lang: UiLanguage) {
-  if (!DICTS[lang]) lang = "pt";
+/** The language Windows is in, when the app has it; English otherwise (same rule as i18n.rs). */
+function systemLanguage(): UiLanguage {
+  const base = (navigator.language ?? "").split("-")[0].toLowerCase() as UiLanguage;
+  return DICTS[base] ? base : "en";
+}
+
+export function setLanguage(pref: UiLanguagePref) {
+  const lang = pref === "auto" || !DICTS[pref] ? systemLanguage() : pref;
   i18n.lang = lang;
   document.documentElement.lang = LOCALE[lang];
 }
 
 export function t(key: TKey, params?: Record<string, string | number>): string {
   let s = DICTS[i18n.lang]?.[key] ?? PT[key] ?? key;
-  if (params) for (const k in params) s = s.replaceAll(`{${k}}`, String(params[k]));
+  // numbers in the language's own digits and grouping (Bengali digits, "1.234" in pt…), like toLocaleString elsewhere
+  if (params) for (const k in params) {
+    const v = params[k];
+    s = s.replaceAll(`{${k}}`, typeof v === "number" ? v.toLocaleString(LOCALE[i18n.lang]) : String(v));
+  }
   return s;
 }
 

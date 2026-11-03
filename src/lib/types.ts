@@ -1,7 +1,9 @@
 // Shared contract between the Svelte UI and the Rust core (src-tauri/src/*).
 // Field names are snake_case because they mirror the serde structs 1:1.
 
-export type UiLanguage = "pt" | "en" | "es";
+export type UiLanguage = "pt" | "en" | "es" | "fr" | "de" | "ja" | "zh" | "ru" | "hi" | "bn";
+/** The setting: a language, or "auto" (the one Windows is in). */
+export type UiLanguagePref = UiLanguage | "auto";
 export type Theme = "system" | "dark" | "light";
 
 export type SttProviderId = "groq" | "openai" | "gemini" | "mistral";
@@ -48,7 +50,7 @@ export interface AppStyle {
 }
 
 export interface Settings {
-  ui_language: UiLanguage;
+  ui_language: UiLanguagePref;
   theme: Theme;
   /** Hex accent color, e.g. "#D7FF3F" (default phosphor lime). */
   accent_color: string;

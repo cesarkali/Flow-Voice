@@ -92,6 +92,8 @@ export default defineExt({
     "gen.name": "Seu nome",
     "gen.name_hint": "Opcional. O FlowVoice usa para te cumprimentar; nunca entra nos seus ditados.",
     "gen.name_ph": "Como podemos te chamar?",
+    "gen.ui_language_auto": "Automático (Windows)",
+    "sc.command_altgr": "Ficou sem atalho: Ctrl+Alt é o AltGr, e no seu teclado AltGr+K digita um caractere. Escolha outro.",
   },
   en: {
     "ctl.search": "Search…",
@@ -183,6 +185,8 @@ export default defineExt({
     "gen.name": "Your name",
     "gen.name_hint": "Optional. FlowVoice uses it to greet you; it never goes into your dictations.",
     "gen.name_ph": "What should we call you?",
+    "gen.ui_language_auto": "Automatic (Windows)",
+    "sc.command_altgr": "It has no shortcut: Ctrl+Alt is AltGr, and on your keyboard AltGr+K types a character. Choose another one.",
   },
   es: {
     "ctl.search": "Buscar…",
@@ -274,5 +278,7 @@ export default defineExt({
     "gen.name": "Tu nombre",
     "gen.name_hint": "Opcional. FlowVoice lo usa para saludarte; nunca entra en tus dictados.",
     "gen.name_ph": "¿Cómo te llamamos?",
+    "gen.ui_language_auto": "Automático (Windows)",
+    "sc.command_altgr": "Se quedó sin atajo: Ctrl+Alt es AltGr, y en tu teclado AltGr+K escribe un carácter. Elige otro.",
   },
 });

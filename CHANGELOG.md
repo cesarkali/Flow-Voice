@@ -14,8 +14,26 @@ Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases
 - **Tentar de novo** quando a transcrição falha (rede, limite, chave): a gravação fica guardada só na memória (as 3 últimas falhas, nunca em disco). O cartão de erro ganha o botão e fica 30 s na tela; o histórico mostra a falha com o motivo e o mesmo botão (lá o texto só é copiado). Refaz como foi ditado: mesmo app, estilo e tradução, com os provedores e chaves de agora. Não vale para o Comando.
 - Dois ditados seguidos no mesmo campo ganham um espaço entre eles ("…na quinta. A reunião…"), quando o cursor ficou onde o anterior terminou e faz menos de um minuto. Não em terminais, nem em escritas sem espaço (japonês, chinês, tailandês).
 
+### 10 idiomas
+
+- A interface agora também está em **francês, alemão, japonês, chinês, russo, hindi e bengali**, além de português, inglês e espanhol, com as fontes certas do Windows para japonês, chinês, hindi e bengali.
+- **Automático (Windows)**, o novo padrão: o app segue o idioma do Windows (e inglês, se for um idioma que ele ainda não tem). Instalações novas também começam com o idioma da fala em automático. Quem já usa mantém o que escolheu.
+- O menu da bandeja, as mensagens de erro e os nomes dos estilos prontos seguem o idioma da interface (antes ficavam sempre em português).
+
+### Atalhos sem conflito
+
+- **Colar de novo** vem sem atalho em instalações novas: `Ctrl + Alt + V` é o Colar Especial do Office. Continua no menu da bandeja, e dá para escolher um atalho em **Atalhos**. Quem já usa mantém o atalho.
+- **AltGr**: em teclados onde `AltGr + K` digita um caractere (`Ctrl + Alt` é o `AltGr`), o Comando começa sem atalho na primeira execução, para não roubar a tecla, e a tela **Atalhos** explica por quê.
+
+### Privacidade e microfone
+
+- Nova seção **Privacidade** em **Sobre**: o que fica no PC, o que vai para cada provedor (áudio, transcrição, vocabulário, nome do app, texto selecionado no Comando) e onde ficam as chaves. Sem telemetria.
+- Erros de microfone mais claros: quando o Windows bloqueia o microfone (diz onde liberar, em Privacidade e segurança → Microfone) e quando outro app o usa com exclusividade.
+- Mensagem própria quando outro app está segurando a área de transferência.
+
 ### Correções
 
+- **Som que ficava mudo**: se o app fechasse no meio de uma gravação com "Silenciar o som do PC durante a gravação" ligado, o som do PC continuava mudo. Agora ele volta na próxima abertura.
 - **Iniciar com o Windows** mais confiável: em alguns PCs o Windows pulava a entrada de inicialização do FlowVoice mesmo marcada como habilitada no Gerenciador de Tarefas. Agora o app também cria uma tarefa de logon no Agendador de Tarefas (por usuário, sem pedir administrador).
 - Desligar a inicialização no Gerenciador de Tarefas agora vale de verdade: o app não se liga de novo sozinho ao abrir.
 - Comando ou "Outra versão" com tradução não devolve mais duas versões (o original e a tradução, a tradução repetida, um "---" com comentário ou uma "versão melhorada" com rótulo); uma nota no fim, como "(Note: …)", também sai.

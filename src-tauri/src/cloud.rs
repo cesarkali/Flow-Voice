@@ -5,6 +5,7 @@ use base64::Engine;
 use serde_json::{json, Value};
 use std::time::Duration;
 
+use crate::i18n::{tr, trf};
 use crate::settings::ProviderSettings;
 
 pub fn http() -> reqwest::Client {
@@ -64,6 +65,9 @@ impl std::fmt::Display for ProviderError {
     }
 }
 
+/// A passing rate limit (not a key to fix).
+pub const RATE_LIMITED: &str = "limite de uso atingido (tente de novo em instantes ou adicione outra chave)";
+
 fn friendly(provider: &str, status: u16, body: &str) -> ProviderError {
     let api_msg = serde_json::from_str::<Value>(body)
         .ok()
@@ -77,22 +81,22 @@ fn friendly(provider: &str, status: u16, body: &str) -> ProviderError {
         .unwrap_or_else(|| body.chars().take(300).collect());
     let lower = api_msg.to_lowercase();
     let (message, key_problem) = match status {
-        401 | 403 => ("chave inválida, expirada ou sem permissão".to_string(), true),
+        401 | 403 => (tr("chave inválida, expirada ou sem permissão"), true),
         429 if lower.contains("credit") || lower.contains("billing") || lower.contains("quota") => {
-            ("sem créditos ou cota esgotada nesta conta".to_string(), true)
+            (tr("sem créditos ou cota esgotada nesta conta"), true)
         }
-        429 => ("limite de uso atingido (tente de novo em instantes ou adicione outra chave)".to_string(), true),
-        402 => ("sem créditos na conta".to_string(), true),
-        404 => ("modelo não encontrado — confira o nome do modelo nas configurações".to_string(), false),
-        400 if lower.contains("api key") || lower.contains("api_key") => ("chave inválida".to_string(), true),
-        400 if lower.contains("model") => (format!("modelo recusado: {api_msg}"), false),
-        413 => ("áudio grande demais para este provedor".to_string(), false),
-        500..=599 => ("o serviço está instável agora".to_string(), false),
+        429 => (tr(RATE_LIMITED), true),
+        402 => (tr("sem créditos na conta"), true),
+        404 => (tr("modelo não encontrado — confira o nome do modelo nas configurações"), false),
+        400 if lower.contains("api key") || lower.contains("api_key") => (tr("chave inválida"), true),
+        400 if lower.contains("model") => (trf("modelo recusado: {}", &[&api_msg]), false),
+        413 => (tr("áudio grande demais para este provedor"), false),
+        500..=599 => (tr("o serviço está instável agora"), false),
         _ => (api_msg.clone(), false),
     };
     let gone = model_gone(status, &lower);
     let (message, key_problem) = if gone {
-        ("modelo descontinuado ou indisponível".to_string(), false)
+        (tr("modelo descontinuado ou indisponível"), false)
     } else {
         (message, key_problem)
     };
@@ -126,15 +130,15 @@ pub fn model_gone(status: u16, lower_msg: &str) -> bool {
 
 fn net_error(provider: &str, e: reqwest::Error) -> ProviderError {
     let message = if e.is_timeout() {
-        "tempo esgotado".to_string()
+        tr("tempo esgotado")
     } else if e.is_connect() {
         if provider == "ollama" {
-            "o Ollama não está rodando neste computador".to_string()
+            tr("o Ollama não está rodando neste computador")
         } else {
-            "sem conexão com a internet".to_string()
+            tr("sem conexão com a internet")
         }
     } else {
-        "falha de rede".to_string()
+        tr("falha de rede")
     };
     ProviderError { provider: provider.into(), message, detail: e.to_string(), key_problem: false, model_gone: false, retry_after: None }
 }
@@ -167,7 +171,7 @@ async fn read_rated(provider: &str, resp: reqwest::Response) -> Result<(Value, R
     }
     let v = serde_json::from_str(&body).map_err(|_| ProviderError {
         provider: provider.into(),
-        message: "resposta inesperada do serviço".into(),
+        message: tr("resposta inesperada do serviço"),
         detail: body.chars().take(300).collect(),
         key_problem: false,
         model_gone: false,
@@ -435,7 +439,7 @@ pub async fn chat_with_effort(
     if model.is_empty() {
         return Err(ProviderError {
             provider: provider.into(),
-            message: "nenhum modelo configurado".into(),
+            message: tr("nenhum modelo configurado"),
             detail: String::new(),
             key_problem: false,
             model_gone: false,
@@ -493,7 +497,7 @@ pub async fn chat_with_effort(
     if text.is_empty() {
         return Err(ProviderError {
             provider: provider.into(),
-            message: "a IA devolveu uma resposta vazia".into(),
+            message: tr("a IA devolveu uma resposta vazia"),
             detail: v["choices"][0]["finish_reason"].to_string(),
             key_problem: false,
             model_gone: false,

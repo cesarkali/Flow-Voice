@@ -38,6 +38,7 @@ export const api = {
   getSettings: () => call<Settings>("get_settings"),
   saveSettings: (settings: Settings) => call<Settings>("save_settings", { settings }),
   resetStyles: () => call<Settings>("reset_styles"),
+  altgrBlocksCommand: () => call<boolean>("altgr_blocks_command"),
   validateHotkey: (accelerator: string) => call<string | null>("validate_hotkey", { accelerator }),
   listInputDevices: () => call<string[]>("list_input_devices"),
   /** Pause global shortcuts while the user records a new one. */

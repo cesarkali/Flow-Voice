@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { api } from "../../lib/api";
   import { i18n, langName, t } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
   import { app } from "../../lib/stores.svelte";
@@ -13,6 +14,9 @@
   let { onnavigate: _ }: { onnavigate?: (p: SettingsPage) => void } = $props();
   const s = $derived(app.settings!);
   let replay = $state(0);
+
+  let altgrK = $state(false);
+  api.altgrBlocksCommand().then((v) => (altgrK = v)).catch(() => {});
 
   type Action = "dictate" | "translate" | "ask" | "command" | "paste_last";
   const LABELS: Record<Action, "sc.dictate" | "sc.translate" | "sc.ask" | "sc.command" | "sc.paste_last"> = {
@@ -45,7 +49,7 @@
 </Section>
 
 <Section label={t("sc.sec_more")}>
-  <Row id="set-sc-command" label={t("sc.command")} hint={t("sc.command_hint")}>
+  <Row id="set-sc-command" label={t("sc.command")} hint={!s.hotkeys.command && altgrK ? `${t("sc.command_hint")} ${t("sc.command_altgr")}` : t("sc.command_hint")}>
     <HotkeyInput label={t("sc.command")} bind:value={s.hotkeys.command} clearable taken={others("command")} />
   </Row>
   <Row id="set-sc-paste-last" label={t("sc.paste_last")} hint={t("sc.paste_last_hint")}>

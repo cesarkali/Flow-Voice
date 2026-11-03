@@ -118,6 +118,7 @@ const params = typeof location !== "undefined" ? new URLSearchParams(location.se
 
 let settings: Settings = clone(DEFAULT_SETTINGS);
 if (params.has("onboarding")) settings.onboarded = false;
+if (params.get("lang")) settings.ui_language = params.get("lang") as Settings["ui_language"];
 if (params.get("theme") === "light" || params.get("theme") === "dark") settings.theme = params.get("theme") as Settings["theme"];
 // ?accent=FF2E00: preview with a custom accent color · ?style=<id>: active style
 if (params.get("accent")) settings.accent_color = "#" + params.get("accent")!.replace(/^#/, "");
@@ -605,6 +606,8 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       return clone(settings);
     case "suspend_hotkeys":
       return;
+    case "altgr_blocks_command":
+      return params.has("altgr") as never;
     case "validate_hotkey": {
       const acc = String(a.accelerator);
       const others = Object.values(settings.hotkeys);

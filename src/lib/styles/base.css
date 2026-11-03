@@ -177,6 +177,29 @@
   background: transparent;
 }
 
+/* Scripts Segoe UI doesn't cover get their Windows font by name, after Segoe so Latin text keeps it
+   (and Japanese vs Chinese glyph forms come out right); Noto for Linux. Letter-spacing is tuned for
+   Latin caps: it spreads CJK apart and breaks Devanagari/Bengali joins, so those languages drop it. */
+:root:lang(ja) {
+  --font: "Segoe UI Variable Text", "Segoe UI", "Yu Gothic UI", "Meiryo UI", "Noto Sans CJK JP", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", "Yu Gothic UI", "Noto Sans CJK JP", system-ui, sans-serif;
+  --mono: "Cascadia Code", "Cascadia Mono", Consolas, "Yu Gothic UI", "Noto Sans CJK JP", monospace;
+}
+:root:lang(zh) {
+  --font: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Noto Sans CJK SC", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Noto Sans CJK SC", system-ui, sans-serif;
+  --mono: "Cascadia Code", "Cascadia Mono", Consolas, "Microsoft YaHei UI", "Noto Sans CJK SC", monospace;
+}
+:root:lang(hi),
+:root:lang(bn) {
+  --font: "Segoe UI Variable Text", "Segoe UI", "Nirmala UI", "Noto Sans Devanagari", "Noto Sans Bengali", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", "Nirmala UI", "Noto Sans Devanagari", "Noto Sans Bengali", system-ui, sans-serif;
+  --mono: "Cascadia Code", "Cascadia Mono", Consolas, "Nirmala UI", "Noto Sans Devanagari", "Noto Sans Bengali", monospace;
+}
+:root:is(:lang(ja), :lang(zh), :lang(hi), :lang(bn)) * {
+  letter-spacing: normal !important;
+}
+
 html,
 body {
   margin: 0;

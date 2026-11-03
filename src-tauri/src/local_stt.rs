@@ -316,7 +316,7 @@ impl LocalStt {
                 *loaded = None;
             }
         }
-        let p = self.path(id).ok_or_else(|| anyhow!("modelo desconhecido"))?;
+        let p = self.path(id).ok_or_else(|| anyhow!(crate::i18n::tr("modelo desconhecido")))?;
         if p.exists() {
             std::fs::remove_file(p)?;
         }
@@ -332,14 +332,14 @@ impl LocalStt {
             }
         }
         if !cpu_supported() {
-            return Err(anyhow!("este processador não tem AVX2, necessário para o modo local — use a transcrição na nuvem"));
+            return Err(anyhow!(crate::i18n::tr("este processador não tem AVX2, necessário para o modo local — use a transcrição na nuvem")));
         }
-        let path = self.path(id).ok_or_else(|| anyhow!("modelo local desconhecido: {id}"))?;
+        let path = self.path(id).ok_or_else(|| anyhow!(crate::i18n::trf("modelo local desconhecido: {}", &[&id])))?;
         if !path.exists() {
-            return Err(anyhow!("o modelo local \"{id}\" não foi baixado"));
+            return Err(anyhow!(crate::i18n::trf("o modelo local \"{}\" não foi baixado", &[&id])));
         }
         let ctx = WhisperContext::new_with_params(&path, WhisperContextParameters::default())
-            .map_err(|e| anyhow!("falha ao carregar o modelo {id}: {e:?}"))?;
+            .map_err(|e| anyhow!(crate::i18n::trf("falha ao carregar o modelo {}: {}", &[&id, &format!("{e:?}")])))?;
         let ctx = Arc::new(ctx);
         log::info!("local model {id} loaded");
         *loaded = Some((id.to_string(), ctx.clone()));
@@ -436,7 +436,7 @@ impl LocalStt {
     /// Downloads a model, emitting `model-progress`. Resolves Ok when cancelled too (the cancel
     /// command already emitted the final `cancelled` progress).
     pub async fn download(self: Arc<Self>, app: AppHandle, id: String) -> Result<()> {
-        let spec = spec(&id).ok_or_else(|| anyhow!("modelo desconhecido"))?;
+        let spec = spec(&id).ok_or_else(|| anyhow!(crate::i18n::tr("modelo desconhecido")))?;
         let Some(flag) = self.downloads.begin(&id) else { return Ok(()) };
         let result = self.download_inner(&app, spec, &flag).await;
         self.downloads.finish(&id, &flag);

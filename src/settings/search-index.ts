@@ -83,7 +83,8 @@ const STATIC: SearchEntry[] = [
   // General
   { page: "general", key: "gen.name", hint: "gen.name_hint", kw: "nome name nombre saudacao" },
   { page: "general", key: "gen.accent", hint: "gen.accent_hint", kw: "cor color destaque acento accent paleta" },
-  { page: "general", key: "gen.ui_language", kw: "idioma language interface lingua" },
+  { page: "general", key: "gen.ui_language", kw: "idioma language interface lingua automatico windows francais deutsch" },
+  { page: "about", key: "sh.about_privacy", kw: "privacidade privacy dados data telemetria" },
   { page: "general", key: "gen.theme", hint: "ctl.theme_hint", kw: "tema theme escuro claro dark light modo" },
   { page: "general", key: "ctl.sec_overlay", kw: "overlay janela flutuante floating capsula" },
   { page: "general", key: "gen.overlay_position", hint: "ctl.ov_pos_hint", kw: "overlay posicao position personalizada custom livre free arrastar mover onde canto corner" },

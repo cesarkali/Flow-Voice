@@ -70,7 +70,11 @@ pub fn broadcast_settings(app: &AppHandle, s: &Settings, except: Option<&str>) {
 
 /// Side effects of a settings change (hotkeys, autostart, tray, model warm-up).
 pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings, from_window: Option<&str>) -> CmdResult<()> {
-    if before.styles.len() != after.styles.len()
+    if before.ui_language != after.ui_language {
+        crate::i18n::set_language(&after.ui_language);
+    }
+    if before.ui_language != after.ui_language
+        || before.styles.len() != after.styles.len()
         || before.active_style != after.active_style
         || before.styles.iter().zip(&after.styles).any(|(a, b)| a.name != b.name || a.id != b.id)
     {
@@ -88,7 +92,7 @@ pub fn apply_settings(app: &AppHandle, before: &Settings, after: &Settings, from
     if hk_changed {
         let failed = hotkeys::register_all(app);
         if !failed.is_empty() {
-            return Err(format!("Não foi possível ativar: {}", failed.join(", ")));
+            return Err(crate::i18n::trf("Não foi possível ativar: {}", &[&failed.join(", ")]));
         }
     }
     Ok(())
@@ -139,6 +143,13 @@ fn set_logon_task(on: bool) {
         Ok(()) => log::info!("logon task {}", if on { "on" } else { "off" }),
         Err(e) => log::warn!("logon task: {e}"),
     });
+}
+
+/// Ctrl+Alt+K would stop AltGr+K from typing on this keyboard (the Shortcuts page explains why
+/// Command has no shortcut).
+#[tauri::command]
+pub fn altgr_blocks_command() -> bool {
+    crate::platform::altgr_types('K' as u32)
 }
 
 #[tauri::command]
@@ -200,7 +211,7 @@ pub async fn test_provider(state: State<'_, AppState>, provider: String, kind: S
         .unwrap_or_else(|| state.keys.get(&provider).into_iter().next().unwrap_or_default());
     let needs_key = !matches!(provider.as_str(), "ollama" | "custom");
     if key.is_empty() && needs_key {
-        return Ok(TestResult { ok: false, latency_ms: 0, model: String::new(), message: "nenhuma chave salva".into() });
+        return Ok(TestResult { ok: false, latency_ms: 0, model: String::new(), message: crate::i18n::tr("nenhuma chave salva") });
     }
     let cfg = s.providers.get(&provider).cloned().unwrap_or_default();
     let t0 = Instant::now();
@@ -315,10 +326,10 @@ pub async fn paste_text(app: AppHandle, text: String, replace: bool) -> CmdResul
     if !pasted {
         pipeline::overlay_hint(
             &app,
-            if replace {
-                "Não deu para substituir: o texto mudou depois da colagem ou a janela não aceita. A nova versão está copiada, cole com Ctrl+V."
+            &if replace {
+                crate::i18n::tr("Não deu para substituir: o texto mudou depois da colagem ou a janela não aceita. A nova versão está copiada, cole com Ctrl+V.")
             } else {
-                "Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V."
+                crate::i18n::tr("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.")
             },
         );
     }
@@ -517,7 +528,7 @@ pub async fn check_update(app: AppHandle) -> CmdResult<UpdateInfo> {
         Ok(u) => u,
         // No manifest published for the latest release (e.g. it is still a draft): nothing new.
         Err(e) if ["successful status code", "valid release JSON"].iter().any(|m| e.to_string().contains(m)) => None,
-        Err(e) => return Err(format!("não foi possível verificar: {e}")),
+        Err(e) => return Err(crate::i18n::trf("não foi possível verificar: {}", &[&e])),
     };
     Ok(match update {
         Some(u) => UpdateInfo { available: true, version: Some(u.version.clone()), notes: u.body.clone() },
@@ -546,7 +557,7 @@ pub async fn install_update(app: AppHandle) -> CmdResult<()> {
 #[tauri::command]
 pub fn open_url(app: AppHandle, url: String) -> CmdResult<()> {
     if !(url.starts_with("https://") || url.starts_with("http://")) {
-        return Err("endereço inválido".into());
+        return Err(crate::i18n::tr("endereço inválido"));
     }
     app.opener().open_url(url, None::<&str>).map_err(err)
 }

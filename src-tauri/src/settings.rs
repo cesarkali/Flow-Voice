@@ -30,6 +30,17 @@ pub struct Style {
     pub builtin: bool,
 }
 
+impl Style {
+    /// The name to show: built-in styles follow the interface's language.
+    pub fn display_name(&self) -> String {
+        if self.builtin {
+            crate::i18n::tr(&self.name)
+        } else {
+            self.name.clone()
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SttSettings {
@@ -71,8 +82,9 @@ impl Default for Hotkeys {
             translate: "CommandOrControl+Shift+Y".into(),
             ask: "CommandOrControl+Shift+U".into(),
             command: "CommandOrControl+Alt+K".into(),
-            // Not Ctrl+Shift+V: that is "paste as plain text" in browsers, Office and Slack.
-            paste_last: "CommandOrControl+Alt+V".into(),
+            // Off: Ctrl+Alt+V is Office's Paste Special, Ctrl+Shift+V is "paste as plain text" in
+            // browsers, Office and Slack. It's in the tray menu.
+            paste_last: String::new(),
         }
     }
 }
@@ -142,11 +154,11 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            ui_language: "pt".into(),
+            ui_language: "auto".into(),
             theme: "system".into(),
             accent_color: "#D7FF3F".into(),
             user_name: String::new(),
-            speech_language: "pt".into(),
+            speech_language: "auto".into(),
             input_device: None,
             stt: SttSettings::default(),
             llm_order: ["groq", "gemini", "openrouter", "mistral", "openai", "ollama", "custom"]
@@ -439,6 +451,9 @@ impl Settings {
         let mut s = self.clone();
         for st in s.styles.iter_mut().filter(|st| st.builtin) {
             st.prompt.clear();
+            // In the interface's language; what the UI saves back is ignored (see normalize).
+            st.name = crate::i18n::tr(&st.name);
+            st.description = crate::i18n::tr(&st.description);
         }
         s
     }
@@ -454,6 +469,9 @@ impl Settings {
 
     /// Fills gaps left by older/partial files so the rest of the app can rely on every key existing.
     pub fn normalize(&mut self) {
+        if self.ui_language != "auto" && !crate::i18n::LANGS.contains(&self.ui_language.as_str()) {
+            self.ui_language = "auto".into();
+        }
         if self.schema < 1 {
             // 2.0.x: Groq's full large-v3 recognizes names/places much better than turbo, same free tier.
             if let Some(g) = self.providers.get_mut("groq") {
@@ -577,7 +595,7 @@ mod tests {
         assert_eq!(s.hotkeys.dictate, "Alt+F9");
         assert_eq!(s.hotkeys.translate, "");
         assert_eq!(s.hotkeys.command, "CommandOrControl+Alt+K");
-        assert_eq!(s.hotkeys.paste_last, "CommandOrControl+Alt+V");
+        assert_eq!(s.hotkeys.paste_last, "");
         assert_eq!(s.active_style, "professional");
     }
 

@@ -9,6 +9,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::audio::{self, Recording};
 use crate::cloud::{self, display_name, ChatMsg, ProviderError};
+use crate::i18n::{tr, trf};
 use crate::platform;
 use crate::settings::{self, Settings, StyleKind};
 use crate::apps::AppContext;
@@ -200,7 +201,7 @@ fn command_style(app: &AppHandle, style_id: String, target: Option<String>) {
             finish_dictation(&app, result, target_window, gen, &s).await
         };
         let res = tokio::time::timeout(PROCESS_DEADLINE, guarded(work)).await.unwrap_or_else(|_| {
-            Err(perr("Demorou demais — os serviços não responderam. Tente de novo.", None, None))
+            Err(perr(tr("Demorou demais — os serviços não responderam. Tente de novo."), None, None))
         });
         if let Err(e) = res {
             log::warn!("command style failed: {e}");
@@ -240,7 +241,7 @@ async fn finish_dictation(app: &AppHandle, mut result: DictationResult, target_w
             .map_err(|e| anyhow!(e.to_string()))?;
         match pasted {
             Ok(true) => result.pasted = true,
-            Ok(false) => result.warnings.push("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.".into()),
+            Ok(false) => result.warnings.push(tr("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.")),
             Err(e) => result.warnings.push(e.to_string()),
         }
     } else if let Err(e) = platform::set_clipboard(&result.text) {
@@ -283,7 +284,7 @@ pub fn start_with(app: &AppHandle, mode: RecordMode, keys_held: bool) {
         .to_string();
     log::info!("recording start ({mode:?}, app {:?}, style {style_id})", app_ctx.as_ref().map(|c| &c.id));
     if mode == RecordMode::Command && app_ctx.as_ref().is_some_and(|c| crate::apps::is_terminal(&c.id)) {
-        overlay_hint(app, NO_TERMINAL);
+        overlay_hint(app, &tr(NO_TERMINAL));
         return;
     }
     let rec = match Recording::start(s.input_device.as_deref()) {
@@ -295,7 +296,14 @@ pub fn start_with(app: &AppHandle, mode: RecordMode, keys_held: bool) {
         }
     };
     if s.mute_on_record {
-        *st.muted_prev.lock() = platform::mute_speakers(true);
+        // Marked before muting: a process that dies now still gets it unmuted at the next start.
+        let mark = st.config_dir.join(MUTED_MARK);
+        let _ = std::fs::write(&mark, "");
+        let prev = platform::mute_speakers(true);
+        if prev != Some(false) {
+            let _ = std::fs::remove_file(&mark); // it was muted already, or couldn't be muted
+        }
+        *st.muted_prev.lock() = prev;
     }
     let stop_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let samples = rec.samples.clone();
@@ -388,9 +396,9 @@ pub(crate) fn selection_preview(t: &str) -> String {
 
 fn selection_from(r: Result<Option<String>>) -> Selection {
     match r {
-        Ok(Some(t)) if t.chars().count() > platform::SELECTION_MAX_CHARS => Selection::Failed(format!(
+        Ok(Some(t)) if t.chars().count() > platform::SELECTION_MAX_CHARS => Selection::Failed(trf(
             "A seleção é grande demais para o Comando (máximo de {} mil caracteres).",
-            platform::SELECTION_MAX_CHARS / 1000
+            &[&(platform::SELECTION_MAX_CHARS / 1000)],
         )),
         Ok(Some(t)) => Selection::Got(t),
         Ok(None) => Selection::Empty,
@@ -430,7 +438,7 @@ fn spawn_selection_copy(
                 after_recording(&app);
                 let msg = match sel {
                     Selection::Failed(m) => m,
-                    _ => NO_SELECTION.to_string(),
+                    _ => tr(NO_SELECTION),
                 };
                 overlay_hint(&app, &msg);
             }
@@ -447,7 +455,7 @@ async fn resolve_selection(selection: &Arc<parking_lot::Mutex<Selection>>, targe
         let current = selection.lock().clone();
         match current {
             Selection::Got(t) => return Ok(t),
-            Selection::Empty => return Err(perr(NO_SELECTION, None, None)),
+            Selection::Empty => return Err(perr(tr(NO_SELECTION), None, None)),
             Selection::Failed(m) => return Err(perr(m, None, None)),
             Selection::AtStop => {
                 let r = tauri::async_runtime::spawn_blocking(move || platform::copy_selection(target))
@@ -455,7 +463,7 @@ async fn resolve_selection(selection: &Arc<parking_lot::Mutex<Selection>>, targe
                     .map_err(|e| anyhow!(e.to_string()))?;
                 *selection.lock() = selection_from(r);
             }
-            Selection::Pending if Instant::now() > deadline => return Err(perr(NO_SELECTION, None, None)),
+            Selection::Pending if Instant::now() > deadline => return Err(perr(tr(NO_SELECTION), None, None)),
             Selection::Pending => tokio::time::sleep(Duration::from_millis(40)).await,
         }
     }
@@ -762,6 +770,19 @@ fn after_recording(app: &AppHandle) {
     let prev = state(app).muted_prev.lock().take();
     if let Some(prev) = prev {
         platform::mute_speakers(prev);
+        let _ = std::fs::remove_file(state(app).config_dir.join(MUTED_MARK));
+    }
+}
+
+const MUTED_MARK: &str = "muted-by-recording";
+
+/// A recording the process didn't live to finish left the speakers muted: unmuted now.
+pub fn restore_mute_after_crash(config_dir: &std::path::Path) {
+    let mark = config_dir.join(MUTED_MARK);
+    if mark.exists() {
+        log::warn!("the last recording ended without unmuting the speakers: unmuting");
+        platform::mute_speakers(false);
+        let _ = std::fs::remove_file(mark);
     }
 }
 
@@ -779,12 +800,12 @@ pub fn stop(app: &AppHandle) {
     let duration_ms = session.started.elapsed().as_millis() as u64;
     let mut warnings = vec![];
     if session.rec.used_fallback {
-        warnings.push("O microfone escolhido não foi encontrado — gravado com o microfone padrão do sistema.".to_string());
+        warnings.push(tr("O microfone escolhido não foi encontrado — gravado com o microfone padrão do sistema."));
     }
     let mic_failed = session.rec.failed.clone();
     let samples = session.rec.finish();
     if mic_failed.load(Ordering::SeqCst) {
-        warnings.push("O microfone falhou ou foi desconectado durante a gravação — o áudio pode estar incompleto.".to_string());
+        warnings.push(tr("O microfone falhou ou foi desconectado durante a gravação — o áudio pode estar incompleto."));
     }
     log::info!("recording stop: {duration_ms} ms, {} samples", samples.len());
     after_recording(app);
@@ -816,7 +837,7 @@ fn spawn_processing(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u64, warn
         let result = match tokio::time::timeout(PROCESS_DEADLINE, work).await {
             Ok(r) => r,
             Err(_) => Err(perr(
-                "Demorou demais para transcrever — os serviços não responderam. Tente de novo.",
+                tr("Demorou demais para transcrever — os serviços não responderam. Tente de novo."),
                 None,
                 None,
             )),
@@ -840,7 +861,7 @@ async fn guarded(work: impl std::future::Future<Output = Result<()>>) -> Result<
         // (Not the panic's message: a string-slicing one quotes the text, and what was dictated
         // never goes to the log.)
         log::error!("dictation job panicked");
-        Err(perr("Erro interno ao processar o ditado. Tente de novo.", None, None))
+        Err(perr(tr("Erro interno ao processar o ditado. Tente de novo."), None, None))
     })
 }
 
@@ -989,12 +1010,12 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
     }
     let voiced = if job.retry_of.is_some() { samples } else { audio::trim_silence(&samples).to_vec() };
     if voiced.len() < (audio::SAMPLE_RATE as usize) / 4 {
-        return Err(perr("Nenhuma fala detectada — verifique o microfone.", None, None));
+        return Err(perr(tr("Nenhuma fala detectada — verifique o microfone."), None, None));
     }
     let voiced_secs = voiced.len() as f32 / audio::SAMPLE_RATE as f32;
     let transcribed = tokio::time::timeout(STT_DEADLINE, transcribe_any(app, &voiced))
         .await
-        .unwrap_or_else(|_| Err(perr("Demorou demais para transcrever — os serviços não responderam.", None, None)));
+        .unwrap_or_else(|_| Err(perr(tr("Demorou demais para transcrever — os serviços não responderam."), None, None)));
     let (raw, stt_provider) = match transcribed {
         Ok(t) => t,
         Err(e) if !is_current(gen) => return Err(e),
@@ -1015,7 +1036,7 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
     if text::is_hallucination_voiced(&raw, voiced_secs) || !text::has_words(&text::remove_fillers(&raw, &s.speech_language)) {
         // Never write what was dictated to the log (privacy): only its length.
         log::info!("no speech in transcript ({} chars)", raw.chars().count());
-        return Err(perr("Nenhuma fala detectada.", None, None));
+        return Err(perr(tr("Nenhuma fala detectada."), None, None));
     }
 
     if mode == RecordMode::Ask {
@@ -1067,7 +1088,7 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
         .map_err(|e| anyhow!(e.to_string()))?;
         match pasted {
             Ok(true) => result.pasted = true,
-            Ok(false) => result.warnings.push("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.".into()),
+            Ok(false) => result.warnings.push(tr("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.")),
             Err(e) => result.warnings.push(e.to_string()),
         }
     } else if let Err(e) = platform::set_clipboard(&result.text) {
@@ -1129,8 +1150,8 @@ async fn refine_into(app: &AppHandle, result: &mut DictationResult, s: &Settings
                 }
             }
             Err(errors) => {
-                let reason = errors.first().map(|e| e.to_string()).unwrap_or_else(|| "nenhuma IA configurada".into());
-                result.warnings.push(format!("Sem refinamento por IA ({reason}). Texto entregue limpo, sem IA."));
+                let reason = errors.first().map(|e| e.to_string()).unwrap_or_else(|| tr("nenhuma IA configurada"));
+                result.warnings.push(trf("Sem refinamento por IA ({}). Texto entregue limpo, sem IA.", &[&reason]));
             }
         }
     }
@@ -1166,13 +1187,13 @@ async fn command_into(app: &AppHandle, result: &mut DictationResult, s: &Setting
             Ok(())
         }
         Err(errors) if errors.is_empty() => Err(perr(
-            "O Comando precisa de uma IA. Adicione uma chave grátis (Groq ou Gemini) em Configurações → Provedores.",
+            tr("O Comando precisa de uma IA. Adicione uma chave grátis (Groq ou Gemini) em Configurações → Provedores."),
             None,
             Some(result.raw.clone()),
         )),
         Err(errors) => {
             let detail = errors.iter().map(|e| format!("{} — {}", e, e.detail)).collect::<Vec<_>>().join("\n");
-            Err(perr(format!("Não foi possível aplicar o comando: {}", errors[0]), Some(detail), Some(result.raw.clone())))
+            Err(perr(trf("Não foi possível aplicar o comando: {}", &[&errors[0]]), Some(detail), Some(result.raw.clone())))
         }
     }
 }
@@ -1193,7 +1214,7 @@ async fn command_restyle(app: &AppHandle, result: &mut DictationResult, s: &Sett
 
 /// Re-runs the last transcript with another style/target (overlay chips).
 pub async fn reprocess(app: &AppHandle, style_id: String, target: Option<String>) -> Result<DictationResult> {
-    let (mut result, window) = state(app).last.lock().clone().ok_or_else(|| anyhow!("nada para refazer"))?;
+    let (mut result, window) = state(app).last.lock().clone().ok_or_else(|| anyhow!(tr("nada para refazer")))?;
     let s = state(app).settings();
     result.target = target.filter(|t| !t.is_empty());
     result.warnings.clear();
@@ -1236,12 +1257,12 @@ pub async fn reprocess_history(app: &AppHandle, id: String, style_id: String, ta
         .iter()
         .find(|r| r.id == id)
         .cloned()
-        .ok_or_else(|| anyhow!("esse ditado não está mais no histórico"))?;
+        .ok_or_else(|| anyhow!(tr("esse ditado não está mais no histórico")))?;
     if result.mode == RecordMode::Ask {
-        return Err(anyhow!("perguntas não podem ser refeitas"));
+        return Err(anyhow!(tr("perguntas não podem ser refeitas")));
     }
     if result.failed {
-        return Err(anyhow!("a transcrição falhou: use \"Tentar de novo\""));
+        return Err(anyhow!(tr("a transcrição falhou: use \"Tentar de novo\"")));
     }
     let s = st.settings();
     result.target = target.filter(|t| !t.is_empty());
@@ -1288,14 +1309,14 @@ pub fn paste_last(app: &AppHandle, target: isize) {
             .map(|h| h.text.clone())
     });
     let Some(text) = text.filter(|t| !t.trim().is_empty()) else {
-        overlay_hint(app, "Nenhum ditado para colar ainda.");
+        overlay_hint(app, &tr("Nenhum ditado para colar ainda."));
         return;
     };
     log::info!("paste last: {} chars", text.chars().count());
     let app = app.clone();
     std::thread::spawn(move || match platform::paste(&text, target) {
         Ok(true) => {}
-        Ok(false) => overlay_hint(&app, "Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V."),
+        Ok(false) => overlay_hint(&app, &tr("Não deu para colar nessa janela — o texto está copiado, cole com Ctrl+V.")),
         Err(e) => overlay_error(&app, &e.to_string(), None, None),
     });
 }
@@ -1360,7 +1381,7 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
 
     if s.stt.engine == "local" {
         let model = local_model.ok_or_else(|| {
-            perr("Nenhum modelo local baixado. Baixe um em Configurações → Transcrição.", None, None)
+            perr(tr("Nenhum modelo local baixado. Baixe um em Configurações → Transcrição."), None, None)
         })?;
         let text = run_local(model).await.map_err(|e| perr(e.to_string(), None, None))?;
         return Ok((text, "local".into()));
@@ -1427,19 +1448,19 @@ async fn transcribe_any(app: &AppHandle, samples: &[f32]) -> Result<(String, Str
     }
     if errors.is_empty() {
         return Err(perr(
-            "Configure uma chave (Groq é grátis) ou baixe um modelo local para transcrever.",
+            tr("Configure uma chave (Groq é grátis) ou baixe um modelo local para transcrever."),
             None,
             None,
         ));
     }
     let detail = errors.iter().map(|e| format!("{} — {}", e, e.detail)).collect::<Vec<_>>().join("\n");
     Err(anyhow::Error::new(PipelineError {
-        message: format!("Falha na transcrição: {}", errors[0]),
+        message: trf("Falha na transcrição: {}", &[&errors[0]]),
         detail: Some(detail),
         raw: None,
         retry: None,
         // A key to fix (invalid, no credits), not a passing rate limit: "Provedores…" leads.
-        key_problem: errors.iter().all(|e| e.key_problem && !e.message.starts_with("limite de uso")),
+        key_problem: errors.iter().all(|e| e.key_problem && e.message != tr(cloud::RATE_LIMITED)),
     }))
 }
 
@@ -1576,9 +1597,9 @@ async fn answer(app: &AppHandle, history: &[ChatMessage]) -> ChatMessage {
     let content = match llm_chain_with(app, &msgs, 0.3, 4096, true).await {
         Ok((text, _)) => text::clean_llm_output(&text),
         Err(errors) if errors.is_empty() => {
-            "Nenhuma IA configurada. Adicione uma chave grátis (Groq ou Gemini) em Configurações → Provedores.".into()
+            tr("Nenhuma IA configurada. Adicione uma chave grátis (Groq ou Gemini) em Configurações → Provedores.")
         }
-        Err(errors) => format!("Não consegui responder agora: {}", errors[0]),
+        Err(errors) => trf("Não consegui responder agora: {}", &[&errors[0]]),
     };
     ChatMessage { role: "assistant".into(), content, sources }
 }

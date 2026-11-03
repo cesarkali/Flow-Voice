@@ -21,7 +21,7 @@ static BINDINGS: Lazy<Mutex<Vec<(Shortcut, Action)>>> = Lazy::new(|| Mutex::new(
 pub fn parse(accelerator: &str) -> Result<Shortcut> {
     accelerator
         .parse::<Shortcut>()
-        .map_err(|e| anyhow!("atalho inválido \"{accelerator}\": {e}"))
+        .map_err(|e| anyhow!(crate::i18n::trf("atalho inválido \"{}\": {}", &[&accelerator, &e])))
 }
 
 pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
@@ -140,7 +140,7 @@ pub fn validate(accelerator: &str) -> Option<String> {
         // Ctrl, Alt or Win: with Shift alone (only F keys may) that character could no longer be
         // typed anywhere (Shift+A, Shift+Space).
         Ok(s) if !s.mods.intersects(Modifiers::CONTROL | Modifiers::ALT | Modifiers::SUPER | Modifiers::META) && !is_f_key(accelerator) => {
-            Some("use Ctrl, Alt ou Win junto (Shift sozinho só com tecla F) ou uma tecla F".into())
+            Some(crate::i18n::tr("use Ctrl, Alt ou Win junto (Shift sozinho só com tecla F) ou uma tecla F"))
         }
         Ok(_) => None,
     }
