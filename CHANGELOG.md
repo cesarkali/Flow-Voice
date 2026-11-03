@@ -31,6 +31,10 @@ Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases
 - Erros de microfone mais claros: quando o Windows bloqueia o microfone (diz onde liberar, em Privacidade e segurança → Microfone) e quando outro app o usa com exclusividade.
 - Mensagem própria quando outro app está segurando a área de transferência.
 
+### Licença
+
+- O FlowVoice passa a ser distribuído sob a **GPL-3.0**: continua gratuito e de código aberto, e qualquer versão modificada que for distribuída precisa vir com o código-fonte, sob a mesma licença.
+
 ### Correções
 
 - **Som que ficava mudo**: se o app fechasse no meio de uma gravação com "Silenciar o som do PC durante a gravação" ligado, o som do PC continuava mudo. Agora ele volta na próxima abertura.
