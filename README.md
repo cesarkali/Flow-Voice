@@ -112,4 +112,6 @@ O FlowVoice é gratuito. Se ele te ajuda, considere apoiar: **Pix** em [livepix.
 
 Feito por **Júlio Caliberda** · [github.com/cesarkali](https://github.com/cesarkali) · [caliberda.com.br](https://caliberda.com.br)
 
-Licença [GPL-3.0](LICENSE).
+Licença [GPL-3.0](LICENSE): você pode usar, estudar, modificar e redistribuir o FlowVoice, desde que qualquer versão distribuída vá junto com o código-fonte completo, sob a mesma licença e com os créditos.
+
+O projeto não aceita pull requests; problemas e ideias vão pelas [issues](https://github.com/cesarkali/Flow-Voice/issues) (veja [como contribuir](CONTRIBUTING.md)). Falhas de segurança: [SECURITY.md](SECURITY.md).

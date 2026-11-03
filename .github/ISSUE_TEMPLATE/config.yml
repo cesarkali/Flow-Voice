@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Falha de segurança
+    url: https://github.com/cesarkali/Flow-Voice/security/advisories/new
+    about: Reporte em privado, não numa issue pública (veja SECURITY.md).
   - name: Guia de chaves grátis
     url: https://flowvoice.caliberda.com.br/guia
     about: Passo a passo para conseguir e colar as chaves (Groq, Gemini…). Vale conferir antes de abrir um problema de chave.
