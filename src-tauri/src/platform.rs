@@ -152,10 +152,24 @@ fn same_place(mark: &PasteMark, target: isize, now: &FocusNow) -> bool {
         }
 }
 
-/// A new dictation into `target` continues the previous one: in the same place, less than a
-/// minute later.
-fn continues_mark(mark: &PasteMark, target: isize, now: &FocusNow) -> bool {
-    same_place(mark, target, now) && mark.at.is_some_and(|at| at.elapsed() < JOIN_WINDOW)
+/// Without Windows' caret (browsers, Electron apps) a click in another field of the same page, or
+/// an Enter, can't be seen: there only a dictation started this soon after the previous paste
+/// continues it (a wrong leading space in a new field is worse than a missing one).
+const BLIND_JOIN_WINDOW: Duration = Duration::from_secs(10);
+
+/// A new dictation into `target`, recorded from `started` (None = unknown, a retry), continues
+/// the previous one: in the same place, less than a minute later; where the caret isn't known,
+/// started right after it.
+fn continues_mark(mark: &PasteMark, target: isize, now: &FocusNow, started: Option<std::time::Instant>) -> bool {
+    let Some(at) = mark.at else { return false };
+    if !same_place(mark, target, now) || at.elapsed() >= JOIN_WINDOW {
+        return false;
+    }
+    match (mark.caret, now.caret) {
+        // (same_place already compared them.)
+        (Some(_), Some(_)) => true,
+        _ => started.is_some_and(|s| s.saturating_duration_since(at) < BLIND_JOIN_WINDOW),
+    }
 }
 
 /// What is pasted: a new dictation (spaced from the previous one when it continues it), a text
@@ -164,7 +178,8 @@ fn continues_mark(mark: &PasteMark, target: isize, now: &FocusNow) -> bool {
 #[derive(Clone, Copy, PartialEq)]
 enum PasteFor {
     Other,
-    Dictation,
+    /// When its recording started (None = unknown).
+    Dictation(Option<std::time::Instant>),
     Replaceable,
 }
 
@@ -176,9 +191,9 @@ pub fn paste(text: &str, target: isize) -> Result<bool> {
 }
 
 /// `paste` for a new dictation (not a Command, "Colar de novo" or "Substituir"): spaced from the
-/// previous one when it continues it in the same field.
-pub fn paste_dictation(text: &str, target: isize) -> Result<bool> {
-    paste_with(text, target, false, PasteFor::Dictation)
+/// previous one when it continues it in the same field. `started` = when its recording started.
+pub fn paste_dictation(text: &str, target: isize, started: Option<std::time::Instant>) -> Result<bool> {
+    paste_with(text, target, false, PasteFor::Dictation(started))
 }
 
 /// `paste` for a text the card's "Substituir" may undo afterwards: a Command's result, or the
@@ -189,7 +204,10 @@ pub fn paste_replaceable(text: &str, target: isize, replace: bool) -> Result<boo
 }
 
 fn paste_with(text: &str, target: isize, replace: bool, what: PasteFor) -> Result<bool> {
-    let dictation = what == PasteFor::Dictation;
+    let (dictation, started) = match what {
+        PasteFor::Dictation(started) => (true, started),
+        _ => (false, None),
+    };
     let _input = INPUT_LOCK.lock();
     let manual = |why: &str| -> Result<bool> {
         log::info!("paste skipped: {why}");
@@ -227,7 +245,7 @@ fn paste_with(text: &str, target: isize, replace: bool, what: PasteFor) -> Resul
         std::thread::sleep(Duration::from_millis(80));
     }
     // Typed, not on the clipboard: a "Substituir" (Ctrl+Z) undoes only the paste.
-    if dictation && !is_console(target) && continues_mark(&mark, target, &now) && crate::text::needs_join_space(mark.last, text) {
+    if dictation && !is_console(target) && continues_mark(&mark, target, &now, started) && crate::text::needs_join_space(mark.last, text) {
         send_char(' ');
     }
     send_ctrl('V');
@@ -318,7 +336,8 @@ pub fn copy_selection(target: isize) -> Result<Option<String>> {
     if touched {
         match &previous {
             Some(p) => {
-                let _ = set_clipboard(p);
+                // The user's own text, as it was ("\n" stays "\n": no `with_crlf`).
+                let _ = with_clipboard(|cb| cb.set_text(p.clone()));
             }
             None => {
                 let _ = with_clipboard(|cb| cb.clear());
@@ -727,7 +746,15 @@ fn send_ctrl(_letter: char) {}
 pub fn mute_speakers(mute: bool) -> Option<bool> {
     #[cfg(windows)]
     {
-        return win_mute(mute).map_err(|e| log::warn!("mute failed: {e}")).ok();
+        // On a thread of its own: win_mute puts its thread in COM's multithreaded apartment, and
+        // on the main thread before the windows exist (the restore after a crash) that made
+        // tao's OleInitialize fail and the app panic at startup.
+        return std::thread::spawn(move || win_mute(mute))
+            .join()
+            .map_err(|_| log::warn!("mute failed: thread panicked"))
+            .ok()?
+            .map_err(|e| log::warn!("mute failed: {e}"))
+            .ok();
     }
     #[cfg(target_os = "linux")]
     {
@@ -1077,21 +1104,42 @@ mod tests {
     fn next_dictation_continues_only_in_place() {
         let caret = Some((20, [100, 40, 101, 58]));
         let here = FocusNow { focus: 20, caret };
-        assert!(continues_mark(&mark(caret), 10, &here));
+        let now = Some(Instant::now());
+        assert!(continues_mark(&mark(caret), 10, &here, now));
+        // With the caret known, the recording's start doesn't matter (nor a retry's, unknown).
+        assert!(continues_mark(&mark(caret), 10, &here, None));
         // Another window, another control in it, or no window known.
-        assert!(!continues_mark(&mark(caret), 11, &here));
-        assert!(!continues_mark(&mark(caret), 10, &FocusNow { focus: 21, caret }));
-        assert!(!continues_mark(&mark(caret), 0, &here));
+        assert!(!continues_mark(&mark(caret), 11, &here, now));
+        assert!(!continues_mark(&mark(caret), 10, &FocusNow { focus: 21, caret }, now));
+        assert!(!continues_mark(&mark(caret), 0, &here, now));
         // The caret moved since (a click elsewhere, Enter).
-        assert!(!continues_mark(&mark(caret), 10, &FocusNow { focus: 20, caret: Some((20, [100, 60, 101, 78])) }));
-        // Apps without Windows' caret: only the time rule.
-        assert!(continues_mark(&mark(None), 10, &FocusNow { focus: 20, caret: None }));
-        assert!(continues_mark(&mark(caret), 10, &FocusNow { focus: 20, caret: None }));
+        assert!(!continues_mark(&mark(caret), 10, &FocusNow { focus: 20, caret: Some((20, [100, 60, 101, 78])) }, now));
         // Over a minute later, or nothing pasted yet.
         let old = PasteMark { at: Instant::now().checked_sub(JOIN_WINDOW + Duration::from_secs(1)), ..mark(caret) };
         assert!(old.at.is_some());
-        assert!(!continues_mark(&old, 10, &here));
-        assert!(!continues_mark(&PasteMark::default(), 0, &FocusNow::default()));
+        assert!(!continues_mark(&old, 10, &here, now));
+        assert!(!continues_mark(&PasteMark::default(), 0, &FocusNow::default(), now));
+    }
+
+    // Browsers and Electron apps: one focus window for the whole page and no Windows caret, so
+    // a click in another field (or an Enter) looks like the same place.
+    #[test]
+    fn without_a_caret_only_a_quick_next_dictation_continues() {
+        let blind = FocusNow { focus: 20, caret: None };
+        let pasted = Instant::now().checked_sub(Duration::from_secs(30)).unwrap();
+        let mark = PasteMark { at: Some(pasted), ..mark(None) };
+        // Started speaking right after the previous paste (even if it took 20 s to say).
+        assert!(continues_mark(&mark, 10, &blind, Some(pasted + Duration::from_secs(3))));
+        // Started 15 s later: maybe in another field, no space.
+        assert!(!continues_mark(&mark, 10, &blind, Some(pasted + Duration::from_secs(15))));
+        // Started while the previous one was still being processed.
+        assert!(continues_mark(&mark, 10, &blind, pasted.checked_sub(Duration::from_secs(2))));
+        // A retry from the history (start unknown): no space.
+        assert!(!continues_mark(&mark, 10, &blind, None));
+        // The caret was known at the paste but isn't now (or the other way round): same rule.
+        let with_caret = PasteMark { caret: Some((20, [1, 2, 3, 4])), ..mark };
+        assert!(!continues_mark(&with_caret, 10, &blind, Some(pasted + Duration::from_secs(15))));
+        assert!(continues_mark(&with_caret, 10, &blind, Some(pasted + Duration::from_secs(1))));
     }
 
     #[test]

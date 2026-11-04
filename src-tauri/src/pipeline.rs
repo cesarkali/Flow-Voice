@@ -169,7 +169,13 @@ fn proofread(app: &AppHandle) {
         overlay_hint(app, &tr(NO_TERMINAL));
         return;
     }
+    if proofread_running() {
+        log::info!("proofread: one is already running, press ignored");
+        return;
+    }
     let gen = DICTATION.fetch_add(1, Ordering::SeqCst) + 1;
+    PROOFREAD_RUNNING.store(gen, Ordering::SeqCst);
+    let running = ProofreadGuard(gen);
     let busy = BusyGuard::new();
     let s = st.settings();
     let provider_hint = first_llm(app, &s).map(display_name).unwrap_or("IA");
@@ -179,6 +185,7 @@ fn proofread(app: &AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let _busy = busy;
+        let _running = running;
         let work = async {
             // Waits for the shortcut's keys to be released (Ctrl+C with Alt still down is another combo).
             let copied = tauri::async_runtime::spawn_blocking(move || platform::copy_selection(target_window))
@@ -347,7 +354,7 @@ async fn style_selection_into(app: &AppHandle, result: &mut DictationResult, s: 
 async fn finish_dictation(app: &AppHandle, mut result: DictationResult, target_window: isize, gen: u64, s: &Settings) -> Result<()> {
     // A proofread with nothing to fix leaves the selection alone: pasting plain text over it
     // would only drop its formatting (bold, links) in apps like Word.
-    let untouched = result.style_id == PROOFREAD_STYLE && result.source.as_deref().map(str::trim) == Some(result.text.trim());
+    let untouched = result.style_id == PROOFREAD_STYLE && result.source.as_deref().is_some_and(|s| text::proofread_untouched(s, &result.text));
     if untouched {
         result.warnings.push(tr("Nada para corrigir: o texto já estava certo."));
     } else if s.auto_paste {
@@ -512,7 +519,8 @@ pub(crate) fn selection_preview(t: &str) -> String {
 }
 
 fn selection_from(r: Result<Option<String>>) -> Selection {
-    match r {
+    // Windows apps copy "\r\n"; the model answers with "\n" (see `text::lf_newlines`).
+    match r.map(|t| t.map(|t| text::lf_newlines(&t))) {
         Ok(Some(t)) if t.chars().count() > platform::SELECTION_MAX_CHARS => Selection::Failed(trf(
             "A seleção é grande demais para o Comando (máximo de {} mil caracteres).",
             &[&(platform::SELECTION_MAX_CHARS / 1000)],
@@ -807,6 +815,25 @@ static OVERLAY_RELEASED_UPTO: std::sync::atomic::AtomicU64 = std::sync::atomic::
 static LAST_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 /// Dictations being processed right now.
 static IN_FLIGHT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// Number of the shortcut "Revisar" being processed (0 = none). A second press meanwhile would
+/// copy the same selection, which is still selected, and paste the fix twice.
+static PROOFREAD_RUNNING: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Holds `PROOFREAD_RUNNING` for one proofread until it ends (also on a timeout).
+struct ProofreadGuard(u64);
+
+impl Drop for ProofreadGuard {
+    fn drop(&mut self) {
+        let _ = PROOFREAD_RUNNING.compare_exchange(self.0, 0, Ordering::SeqCst, Ordering::SeqCst);
+    }
+}
+
+/// A proofread that is still running and was not cancelled with Esc (a cancelled one finishes
+/// quietly, so it doesn't block the next press).
+fn proofread_running() -> bool {
+    let gen = PROOFREAD_RUNNING.load(Ordering::SeqCst);
+    gen != 0 && is_current(gen)
+}
 /// Upper bound for transcription + refinement; past it the user gets an error instead of a
 /// card stuck on "Transcrevendo…".
 const PROCESS_DEADLINE: Duration = Duration::from_secs(75);
@@ -939,6 +966,7 @@ pub fn stop(app: &AppHandle) {
         selection: session.selection.clone(),
         retry_of: None,
         only_copy: false,
+        started: Some(session.started),
     };
     spawn_processing(app, samples, job, gen, warnings, busy);
 }
@@ -995,10 +1023,14 @@ impl Drop for RetryEnd {
 /// dictated (same app, style and translation; the providers and keys as they are now), as a new
 /// dictation. Pasted into its app, or only copied when asked from the history.
 pub fn retry_failed(app: &AppHandle, id: String, only_copy: bool) {
+    // (Not now: the history, which already shows it as running, gets its real state back.)
+    let not_now = || {
+        let _ = app.emit("history-changed", ());
+    };
     if is_recording(app) {
-        return;
+        return not_now();
     }
-    let Some(rec) = state(app).failed.lock().start_retry(&id) else { return };
+    let Some(rec) = state(app).failed.lock().start_retry(&id) else { return not_now() };
     let _ = app.emit("history-changed", ());
     log::info!("trying a failed recording again");
     let gen = DICTATION.fetch_add(1, Ordering::SeqCst) + 1;
@@ -1015,6 +1047,7 @@ pub fn retry_failed(app: &AppHandle, id: String, only_copy: bool) {
         selection: Arc::new(parking_lot::Mutex::new(Selection::Empty)),
         retry_of: Some(id),
         only_copy,
+        started: None,
     };
     spawn_processing(app, crate::state::from_pcm16(&rec.pcm), job, gen, vec![], busy);
 }
@@ -1055,6 +1088,8 @@ struct Job {
     retry_of: Option<String>,
     /// Copy the result instead of pasting it (a retry from the history).
     only_copy: bool,
+    /// When the recording started (None for a retry): see `platform::paste_dictation`.
+    started: Option<Instant>,
 }
 
 /// Longest wait for the transcription itself; past it the recording is kept to try again
@@ -1196,10 +1231,11 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
 
     if s.auto_paste && !job.only_copy {
         let text = result.text.clone();
+        let started = job.started;
         // A new dictation is spaced from the previous one when it continues it (not a Command).
         let pasted = tauri::async_runtime::spawn_blocking(move || match mode {
             RecordMode::Command => platform::paste_replaceable(&text, target_window, false),
-            _ => platform::paste_dictation(&text, target_window),
+            _ => platform::paste_dictation(&text, target_window, started),
         })
         .await
         .map_err(|e| anyhow!(e.to_string()))?;
@@ -1824,6 +1860,34 @@ pub async fn chat_toggle_recording(app: &AppHandle) -> Result<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // A second "Revisar" while one runs would copy the same (still selected) text and paste the
+    // fix twice; one cancelled with Esc doesn't block the next press.
+    #[test]
+    fn one_proofread_at_a_time() {
+        // (Numbers far from any real dictation's.)
+        let gen = u64::MAX - 7;
+        PROOFREAD_RUNNING.store(gen, Ordering::SeqCst);
+        let running = ProofreadGuard(gen);
+        assert!(proofread_running());
+        CANCELLED.lock().insert(gen);
+        assert!(!proofread_running());
+        CANCELLED.lock().remove(&gen);
+        assert!(proofread_running());
+        drop(running);
+        assert!(!proofread_running());
+        // An older guard ending late doesn't release a newer proofread.
+        PROOFREAD_RUNNING.store(gen + 1, Ordering::SeqCst);
+        drop(ProofreadGuard(gen));
+        assert!(proofread_running());
+        drop(ProofreadGuard(gen + 1));
+        assert!(!proofread_running());
+        // Selections are read with "\n" line breaks.
+        match selection_from(Ok(Some("a\r\n\r\nb".into()))) {
+            Selection::Got(t) => assert_eq!(t, "a\n\nb"),
+            _ => panic!("selection lost"),
+        }
+    }
 
     #[test]
     fn selection_preview_is_one_short_line() {

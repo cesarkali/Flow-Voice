@@ -80,9 +80,14 @@ fn friendly(provider: &str, status: u16, body: &str) -> ProviderError {
         })
         .unwrap_or_else(|| body.chars().take(300).collect());
     let lower = api_msg.to_lowercase();
+    // A per-minute limit is not an empty account, even when its message ends with a link to the
+    // billing page (Groq, OpenAI) or speaks of a per-minute "quota" (Gemini).
+    let rate_limit = body.to_lowercase().contains("rate_limit_exceeded")
+        || ["rate limit", "try again in", "retry in", "per minute"].iter().any(|w| lower.contains(w));
+    let out_of_credit = !rate_limit && (lower.contains("credit") || lower.contains("quota"));
     let (message, key_problem) = match status {
         401 | 403 => (tr("chave inválida, expirada ou sem permissão"), true),
-        429 if lower.contains("credit") || lower.contains("billing") || lower.contains("quota") => {
+        429 if out_of_credit => {
             (tr("sem créditos ou cota esgotada nesta conta"), true)
         }
         429 => (tr(RATE_LIMITED), true),
@@ -591,6 +596,22 @@ mod tests {
         assert!(!e.key_problem);
         let e = friendly("gemini", 403, r#"{"error":{"message":"Permission denied on API key"}}"#);
         assert!(e.key_problem && !e.model_gone);
+    }
+
+    // Per-minute limits whose messages link to the billing page are rate limits, not empty accounts.
+    #[test]
+    fn rate_limit_is_not_out_of_credit() {
+        let msg = |body: &str| friendly("groq", 429, body).message;
+        let groq = r#"{"error":{"message":"Rate limit reached for model `whisper-large-v3-turbo` in organization `org_x` service tier `on_demand` on seconds of audio per hour (ASPH): Limit 7200, Used 7150, Requested 60. Please try again in 4s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"seconds","code":"rate_limit_exceeded"}}"#;
+        assert_eq!(msg(groq), tr(RATE_LIMITED));
+        let openai = r#"{"error":{"message":"Rate limit reached for gpt-4o-mini in organization org-x on requests per min (RPM): Limit 3, Used 3, Requested 1. Please try again in 20s. Visit https://platform.openai.com/account/rate-limits to learn more. You can increase your rate limit by adding a payment method to your account at https://platform.openai.com/account/billing.","type":"requests","code":"rate_limit_exceeded"}}"#;
+        assert_eq!(msg(openai), tr(RATE_LIMITED));
+        let gemini = r#"[{"error":{"code":429,"message":"Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15. Please retry in 21s.","status":"RESOURCE_EXHAUSTED"}}]"#;
+        assert_eq!(msg(gemini), tr(RATE_LIMITED));
+        // The account itself has nothing left.
+        let empty = r#"{"error":{"message":"You exceeded your current quota, please check your plan and billing details.","type":"insufficient_quota","code":"insufficient_quota"}}"#;
+        assert_eq!(msg(empty), tr("sem créditos ou cota esgotada nesta conta"));
+        assert_eq!(msg(r#"{"error":{"message":"Insufficient credits. Add more using https://openrouter.ai/settings/credits"}}"#), tr("sem créditos ou cota esgotada nesta conta"));
     }
 
     #[test]

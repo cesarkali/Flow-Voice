@@ -139,11 +139,25 @@ pub fn heal_autostart(app: &AppHandle, on: bool) {
     set_autostart(app, on);
 }
 
+/// Number of the newest logon-task change, and one change at a time: "on" then quickly "off"
+/// must end with no task, whatever order their threads run in.
+static LOGON_TASK_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static LOGON_TASK_LOCK: parking_lot::Mutex<()> = parking_lot::Mutex::new(());
+
 fn set_logon_task(on: bool) {
+    use std::sync::atomic::Ordering;
     let Ok(exe) = std::env::current_exe() else { return };
-    std::thread::spawn(move || match crate::startup::set_logon_task(&exe, on) {
-        Ok(()) => log::info!("logon task {}", if on { "on" } else { "off" }),
-        Err(e) => log::warn!("logon task: {e}"),
+    let seq = LOGON_TASK_SEQ.fetch_add(1, Ordering::SeqCst) + 1;
+    std::thread::spawn(move || {
+        let _one = LOGON_TASK_LOCK.lock();
+        if LOGON_TASK_SEQ.load(Ordering::SeqCst) != seq {
+            // A newer change follows and applies the latest choice.
+            return;
+        }
+        match crate::startup::set_logon_task(&exe, on) {
+            Ok(()) => log::info!("logon task {}", if on { "on" } else { "off" }),
+            Err(e) => log::warn!("logon task: {e}"),
+        }
     });
 }
 

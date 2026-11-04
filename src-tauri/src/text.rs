@@ -221,11 +221,27 @@ pub fn clean_llm_output(text: &str) -> String {
     t.to_string()
 }
 
+/// Line breaks as "\n". Windows apps copy a selection with "\r\n" and models answer with "\n";
+/// paragraphs are compared and cut by "\n\n", so both sides must agree. (The paste turns them
+/// back into "\r\n" on Windows.)
+pub fn lf_newlines(text: &str) -> String {
+    if !text.contains('\r') {
+        return text.to_string();
+    }
+    text.replace("\r\n", "\n").replace('\r', "\n")
+}
+
+/// A proofread that changed nothing: the model's answer is the selection, line breaks aside.
+pub fn proofread_untouched(selection: &str, result: &str) -> bool {
+    lf_newlines(selection).trim() == lf_newlines(result).trim()
+}
+
 /// A translated "Comando" result that still has the selection as it was before (or after) the
 /// translation, the translation twice ("X", then "Translated: X"), a second labeled version
 /// ("Improved Prompt: …"), or a "---" line and a comment after it: only the translation, once.
 /// Trimmed (`clean_command_output` puts the selection's own spacing back afterwards).
 pub fn drop_echoed_source(output: &str, selection: &str) -> String {
+    let selection = lf_newlines(selection);
     let source = selection.trim();
     let mut all = output.trim().to_string();
     if let Some(rule) = all.find("\n---") {
@@ -274,7 +290,8 @@ pub fn drop_echoed_source(output: &str, selection: &str) -> String {
 /// when the selection didn't have them, and the selection's own leading/trailing whitespace
 /// (a trailing space, the first line's indentation, a final newline) is kept.
 pub fn clean_command_output(out: &str, selection: &str) -> String {
-    let mut t = out.to_string();
+    let selection = &lf_newlines(selection);
+    let mut t = lf_newlines(out);
     if let (Some(a), Some(b)) = (t.find("<think>"), t.find("</think>")) {
         if b > a {
             t.replace_range(a..b + "</think>".len(), "");
@@ -581,5 +598,29 @@ mod tests {
     fn llm_cleanup() {
         assert_eq!(clean_llm_output("\"Olá mundo\""), "Olá mundo");
         assert_eq!(clean_llm_output("<think>x</think>Oi"), "Oi");
+    }
+
+    // Windows apps copy the selection with "\r\n"; models answer with "\n".
+    #[test]
+    fn crlf_selection_matches_lf_output() {
+        assert_eq!(lf_newlines("a\r\n\r\nb\rc"), "a\n\nb\nc");
+        assert_eq!(lf_newlines("sem quebra"), "sem quebra");
+        // The selection's own final note or parenthetical paragraph stays.
+        let sel = "texto revisado\r\n\r\n(veja o anexo)";
+        assert_eq!(clean_command_output("Texto revisado.\n\n(veja o anexo)", sel), "Texto revisado.\n\n(veja o anexo)");
+        let sel = "Bom dia equipe, segue o relatorio.\r\n\r\nNota: amanha nao teremos reuniao.";
+        let out = clean_command_output("Bom dia, equipe, segue o relatório.\n\nNota: amanhã não teremos reunião.", sel);
+        assert!(out.ends_with("Nota: amanhã não teremos reunião."), "{out:?}");
+        // Its trailing line break comes back (as "\n": the paste turns it into "\r\n").
+        assert_eq!(clean_command_output("Oi.", "oi\r\n"), "Oi.\n");
+        // A note the model added is still dropped.
+        assert_eq!(clean_command_output("Oi, tudo bem?\n\n(Nota: traduzido.)", "oi tudo bem\r\n"), "Oi, tudo bem?\n");
+        // An echoed CRLF selection is still recognized.
+        assert_eq!(drop_echoed_source("Primeira linha.\nSegunda.\n\nFirst line.\nSecond.", "Primeira linha.\r\nSegunda."), "First line.\nSecond.");
+        // A correct multi-paragraph selection: nothing to fix, nothing pasted.
+        let sel = "Bom dia.\r\n\r\nTudo certo por aqui.";
+        let out = clean_command_output("Bom dia.\n\nTudo certo por aqui.", sel);
+        assert!(proofread_untouched(sel, &out));
+        assert!(!proofread_untouched(sel, "Bom dia!\n\nTudo certo por aqui."));
     }
 }
