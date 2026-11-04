@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>更新内容 · FlowVoice 2.2：可拖动的胶囊、重试和 10 种语言</title>
+<meta name="description" content="FlowVoice 有哪些变化：2.2 带来可拖动的胶囊、转写失败时的“重试”和 10 种界面语言；2.1 带来不会倒退的实时预览和玻璃胶囊；2.0 用 Rust 从零重写，新增提示词风格、命令模式、自动替换下线模型，以及带巴西葡萄牙语模型的离线模式。">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/zh/novidades">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/novidades">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/novidades">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/novidades">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/novidades">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/novidades">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/novidades">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/novidades">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/novidades">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/novidades">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/novidades">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/novidades">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/zh/novidades">
+<meta property="og:title" content="FlowVoice 2.2：可拖动的胶囊、重试和 10 种语言">
+<meta property="og:description" content="把胶囊拖到任意位置，重做失败的听写，用 10 种语言使用应用。看看 2.2、2.1 和 2.0 有哪些变化。">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlowVoice 2.2：可拖动的胶囊、重试和 10 种语言">
+<meta name="twitter:description" content="把胶囊拖到任意位置，重做失败的听写，用 10 种语言使用应用。看看 2.2、2.1 和 2.0 有哪些变化。">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../pages.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="pg">
+<a class="skip" href="#main">跳到正文</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice 首页"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="主导航">
+      <a href="./#estilos">风格</a>
+      <a href="./#gratis">免费与离线</a>
+      <a href="guia.html">密钥指南</a>
+      <a href="novidades.html" aria-current="page">更新内容</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="语言">
+        <a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="../ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh" aria-current="true">简体中文</a>
+        <a href="../ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="../hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="语言" aria-label="语言: 简体中文"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>ZH</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="../ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh" aria-current="true">简体中文</a></li>
+          <li><a href="../ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="../hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="深色主题" title="深色主题"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>下载</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="打开菜单"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
+    <div class="wrap">
+      <div class="pg-head-in">
+        <h1>2.2：胶囊想放哪就<span class="nowrap">放哪。<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">录音时拖动胶囊，或选一个专属位置。听写失败时会出现“重试”按钮，应用现在支持 10 种语言。</p>
+        <p class="pg-meta"><span>版本 <b>2.2</b></span><span>Windows 10 和 11</span><span>自动更新</span></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v22">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2</p>
+        <span class="pg-rel-date">2026年11月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v22">可拖动的胶囊、重试和 10 种语言</h2>
+        <p>胶囊不再固定在一个位置：录音时可以拖动，也可以选一个专属位置。失败的听写不会再丢失，应用也开始跟随 Windows 的语言。</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>移动胶囊</h3>
+            <ul>
+              <li><b>录音时可拖动</b>：点击胶囊，拖到屏幕任意角落，甚至另一台显示器上。在这次听写结束前，它会停在你放下的位置；下一次会回到默认位置。</li>
+              <li><b>自定义位置</b>：除了底部和顶部，还可以在屏幕缩略图上拖动胶囊来选择位置，会吸附到角落、边缘和中央。点击<b>测试</b>查看它出现的位置。</li>
+              <li><b>使用上次拖动到的位置</b>会沿用你上次放下胶囊的地方。这些都在<b>常规 → 浮动窗口</b>中，也可以在那里关闭拖动。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>重试与连续听写</h3>
+            <ul>
+              <li>转写失败时（网络、额度、密钥），错误卡片会出现<b>重试</b>按钮，并在屏幕上停留 30 秒。历史记录中也会显示这次失败、原因和同样的按钮。</li>
+              <li>按原样重做：同一应用、风格和翻译，使用当前的服务商和密钥。录音只保存在内存中（最近 3 次失败），绝不写入磁盘。</li>
+              <li>在同一个输入框连续听写两次时，如果光标还停在上一次结束的位置，两段之间会加一个空格。在终端中以及日语、中文等不用空格的文字中不会添加。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>10 种语言</h3>
+            <ul>
+              <li>除了葡萄牙语、英语和西班牙语，界面现在还支持法语、德语、日语、中文、俄语、印地语和孟加拉语，并为每种文字使用合适的 Windows 字体。</li>
+              <li>新的默认选项<b>自动（Windows）</b>会跟随 Windows 的语言。已经在用的人会保留原来的选择。</li>
+              <li>托盘菜单、错误信息和内置风格的名称都会跟随界面语言。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>不冲突的快捷键</h3>
+            <ul>
+              <li>由于 <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd> 是 Office 的“选择性粘贴”，新安装时<b>再次粘贴</b>不设快捷键。它仍在托盘菜单中，也可以自己选一个快捷键。</li>
+              <li>在 <kbd>AltGr</kbd> <kbd>K</kbd> 会输入字符的键盘上，命令一开始不设快捷键，以免占用这个键，<b>快捷键</b>页面会解释原因。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>隐私与麦克风</h3>
+            <ul>
+              <li><b>关于</b>页面新增<b>隐私</b>部分：哪些内容留在电脑上，哪些发送给各服务商，密钥存放在哪里。<a href="privacidade.html">完整政策在这里</a>。</li>
+              <li>麦克风错误更清楚了：Windows 阻止麦克风时，应用会告诉你去哪里开启；其他应用独占麦克风时，也会提示。</li>
+              <li>其他应用占用剪贴板时，会显示专门的提示。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>修复</h3>
+            <ul>
+              <li>如果应用在电脑静音录音的过程中关闭，声音会一直保持静音。现在下次启动时会恢复。</li>
+              <li><b>开机自动启动</b>更可靠：应用还会在任务计划程序中创建一个登录任务，无需管理员权限。在任务管理器中禁用启动项现在也真正有效。</li>
+              <li>带翻译的命令或“换个版本”不会再返回两个版本，也不会在末尾附加说明。</li>
+              <li>阿拉伯语、希伯来语、波斯语和乌尔都语文字在浮窗、历史记录和聊天中会以正确的方向显示。</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>现采用 GPL-3.0</b>FlowVoice 依然免费、开源。任何分发的修改版本都必须以同一许可证附带源代码。<a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">阅读许可证</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v21">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.1</p>
+        <span class="pg-rel-date">2026年10月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v21">更稳定的预览和玻璃胶囊</h2>
+        <p>一个词只有在连续两次结果都一致时才会确定。在此之前，它显示得更浅，还可能改变。确定之后不会再倒退。</p>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-live.png" width="1120" height="348" loading="lazy" decoding="async" alt="正在聆听的 FlowVoice 浮窗：句子开头已经确定，显示为白色；最后几个尚未确认的词显示为较浅的灰色。">
+          <figcaption>在应用中：“周四下午”已经确定；结尾部分仍然较浅。</figcaption>
+        </figure>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>实时预览</h3>
+            <ul>
+              <li>文字<b>不再倒退</b>：每个模型一次只处理一个请求，迟到的响应会被丢弃。</li>
+              <li>预览不再把之前的文字作为上下文发送（有时会导致内容重复出现）。</li>
+              <li>节奏遵循 Groq 自己告知的限额，并始终为最终转写留出余量，预览之后不会再紧接着出现“已达上限”。</li>
+              <li>长句最多 15 秒就会断开：响应更快，免费套餐的秒数也用得更少。</li>
+              <li>移除了预览中额外的 Gemini 通道（写法与 Whisper 不同，而且更慢）。</li>
+              <li>用同样的 4 段音频测量：显示为已确定、之后又被替换的文字，从每次听写 2.5–7.5 次降到零，更新约每 1.2–1.5 秒到达一次（之前约 1.7–2.0 秒）。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>玻璃胶囊</h3>
+            <ul>
+              <li>在<b>常规 → 浮动窗口</b>中：<b>玻璃</b>（透明且模糊，边缘发亮）或<b>半透明</b>（色调更淡），使用 Windows 自带的模糊，由显卡渲染。</li>
+              <li><b>像 macOS 27 那样的光影</b>：光泽、斜面边缘、底部的光线和柔和的阴影（创意来自 Thiago Silva）。</li>
+              <li>需要开启 Windows 的透明效果；关闭透明效果或开启节能模式时，胶囊会显示为实色。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>修复</h3>
+            <ul>
+              <li>在繁忙的电脑上随 Windows 启动时，窗口有时会显示错误，而不是设置。</li>
+              <li>更新后，FlowVoice 会自动重新打开并显示窗口。</li>
+            </ul>
+          </li>
+        </ul>
+        <figure class="pg-fig">
+          <img src="../assets/shot-glass-setting.webp" width="1700" height="388" loading="lazy" decoding="async" alt="FlowVoice 设置，常规：胶囊外观有实色、玻璃和半透明三个选项，已选中玻璃，并开启了“像 macOS 27 那样的光影”。">
+          <figcaption>常规 → 浮动窗口 中的选项。<a href="./#overlay">在首页查看玻璃效果</a>。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v2">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.0</p>
+        <span class="pg-rel-date">2026年10月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v2">为什么要重写</h2>
+        <p>2026 年，1.x 对很多人来说已经无法使用：它推荐的 GitHub Models 停止服务；Groq 上原本免费的模型移出了免费套餐；旧版 Gemini 被关闭。而且 1.x 会隐藏真实错误，看起来就像应用“就是不能用”。</p>
+        <p>2.0 就是为了不再重蹈覆辙：它会显示服务商返回的真实信息，并<strong>自动替换已下线的模型</strong>。</p>
+
+        <h2>有哪些变化</h2>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-result.png" width="1320" height="492" loading="lazy" decoding="async" alt="FlowVoice 浮窗中的结果：已粘贴，Outlook 中的“专业”风格，改写后的文字，以及自然、专业、提示词、原始、仅转写、翻译和原文等选项，还有复制按钮。">
+          <figcaption>浮窗中的结果：一键换成另一种风格或翻译。</figcaption>
+        </figure>
+        <ul class="pg-changes">
+          <li>
+            <h3>听写</h3>
+            <ul>
+              <li><b>实时预览</b>：边说边出现文字。</li>
+              <li>新的<b>提示词</b>风格，把口语精简后发给 AI，强度可调。</li>
+              <li>自然、专业、原始、仅转写，以及你自己的风格。</li>
+              <li><b>按应用设置风格</b>：<img class="pg-app" src="../assets/apps/outlook.svg" alt="" width="18" height="18">Outlook 总用“专业”，<img class="pg-app" src="../assets/apps/vscode.svg" alt="" width="18" height="18">VS Code 总用“提示词”。</li>
+              <li>去掉口头语（“嗯”“那个”、结巴），并遵循你的词汇。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>全新浮窗</h3>
+            <ul>
+              <li>得到结果后，一键<b>换成另一种风格</b>或<b>翻译</b>成数十种语言。</li>
+              <li><b>替换</b>会撤销上一次粘贴，并粘贴新版本。</li>
+              <li>跟随鼠标或当前聚焦的窗口，显示在你正在使用的显示器上。</li>
+              <li><kbd>Esc</kbd> 随时取消。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>新快捷键</h3>
+            <ul>
+              <li><b>对选中内容执行命令</b>：在任何应用中选中文字，说出要做什么（“更正式一点”“总结成要点”）。</li>
+              <li><b>再次粘贴</b>上一次听写到当前聚焦的应用。</li>
+              <li>语音翻译，以及带网页搜索和来源的语音助手。</li>
+              <li>按住说话模式（push-to-talk）。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>更可靠</h3>
+            <ul>
+              <li>在服务商之间、多个密钥之间<b>自动切换</b>；云端出故障时改用本地模型。</li>
+              <li>已下线的模型会<b>自动替换</b>，每天检查一次。</li>
+              <li>安全粘贴：确认目标窗口，并恢复剪贴板中原有的内容。</li>
+              <li>麦克风断开时会提示，并改用其他麦克风。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>更好的离线体验</h3>
+            <ul>
+              <li>按语言分类的模型目录，并为你的语言给出推荐。</li>
+              <li><b>针对巴西葡萄牙语优化</b>的模型（Distil-Whisper pt-BR）。</li>
+              <li>本地转写速度提升数倍。</li>
+              <li>停止听写后模型会从内存中释放；可随时删除模型。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>界面</h3>
+            <ul>
+              <li>重新设计的设置界面，带<b>搜索</b>（<kbd>Ctrl</kbd> <kbd>K</kbd>）。</li>
+              <li>首次运行向导，附带教程和每个密钥的测试。</li>
+              <li>浅色和深色主题，自选强调色，PT/EN/ES。</li>
+              <li>新图标和可搜索的历史记录。</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h2>1.x × 2.0</h2>
+        <div class="pg-table cmp-ver">
+          <table>
+            <caption class="sr">1.x 与 2.0 版本对比</caption>
+            <thead><tr><th scope="col"><span class="sr">方面</span></th><th scope="col">1.x</th><th scope="col">2.0</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Base</th><td data-l="1.x">Python + PySide6</td><td data-l="2.0">Rust (Tauri 2) + Svelte</td></tr>
+              <tr><th scope="row">安装程序</th><td data-l="1.x">体积大，内置 Python</td><td data-l="2.0">几 MB；模型按需下载</td></tr>
+              <tr><th scope="row">说话时</th><td data-l="1.x">屏幕上没有文字</td><td data-l="2.0">文字实时预览</td></tr>
+              <tr><th scope="row">得到结果后</th><td data-l="1.x">粘贴即结束</td><td data-l="2.0">换风格、翻译、替换</td></tr>
+              <tr><th scope="row">服务商出错时</th><td data-l="1.x">笼统的错误</td><td data-l="2.0">换下一个密钥或服务商，并显示真实信息</td></tr>
+              <tr><th scope="row">模型下线</th><td data-l="1.x">停止工作</td><td data-l="2.0">自动替换</td></tr>
+              <tr><th scope="row">密钥</th><td data-l="1.x">配置文件</td><td data-l="2.0">系统凭据库</td></tr>
+              <tr><th scope="row">更新</th><td data-l="1.x">自动</td><td data-l="2.0">自动且有数字签名</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>从 1.x 升级？</b>直接覆盖安装即可。首次运行时，2.0 会自动把你的旧密钥导入系统凭据库。如果你之前用的是 GitHub Models，请在 Groq 创建一个免费密钥：<a href="guia.html#groq">只需几分钟</a>。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v1">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">1.x</p>
+        <span class="pg-rel-date">截至2026年6月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v1">第一代</h2>
+        <p>最初的 Python 版本。主要更新，从新到旧：</p>
+        <ul class="pg-old">
+          <li><span>1.9</span>搜索模式中通过 Tavily 进行网页搜索，查看密钥需输入密码，界面支持葡萄牙语、英语和西班牙语。</li>
+          <li><span>1.8</span>重新设计的浮窗，以及防止转写“幻觉”的过滤器。</li>
+          <li><span>1.5–1.7</span>应用内自动更新。</li>
+        </ul>
+        <p class="pg-gap">每个版本的完整说明见 <a href="https://github.com/cesarkali/Flow-Voice/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>。</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="pg-next" aria-labelledby="next-t">
+    <div class="wrap">
+      <div class="pg-next-in">
+        <div>
+          <h2 id="next-t">准备好用 2.2 了吗？</h2>
+          <p>免费、开源、无需账号。</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>下载 Windows 版</a>
+          <a class="btn btn-ghost btn-lg" href="guia.html">获取免费密钥</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · 由 <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a> 在巴西制作</p>
+      <nav aria-label="页脚">
+        <ul>
+          <li><a href="guia.html">密钥指南</a></li>
+          <li><a href="novidades.html" aria-current="page">更新内容</a></li>
+          <li><a href="privacidade.html">隐私</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 许可证</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">报告问题</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">提出建议</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>支持本项目：<a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/zh.js" defer></script>
+<script src="../site.js" defer></script>
+</body>
+</html>

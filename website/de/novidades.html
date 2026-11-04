@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neuigkeiten · FlowVoice 2.2: verschiebbare Kapsel, Erneut versuchen und 10 Sprachen</title>
+<meta name="description" content="Was sich in FlowVoice geändert hat: in 2.2 verschiebbare Kapsel, Erneut versuchen bei fehlgeschlagener Transkription und Oberfläche in 10 Sprachen; in 2.1 Live-Vorschau ohne Zurückspringen und Glas-Kapsel; in 2.0 komplett neu in Rust geschrieben, Stil Prompt, Modus Befehl, automatischer Ersatz eingestellter Modelle und Offline-Modus mit einem Modell für brasilianisches Portugiesisch.">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/de/novidades">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/novidades">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/novidades">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/novidades">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/novidades">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/novidades">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/novidades">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/novidades">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/novidades">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/novidades">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/novidades">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/novidades">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="de_DE">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/de/novidades">
+<meta property="og:title" content="FlowVoice 2.2: verschiebbare Kapsel, Erneut versuchen und 10 Sprachen">
+<meta property="og:description" content="Zieh die Kapsel, wohin du willst, wiederhole ein fehlgeschlagenes Diktat und nutze die App in 10 Sprachen. Sieh dir an, was sich in 2.2, 2.1 und 2.0 geändert hat.">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlowVoice 2.2: verschiebbare Kapsel, Erneut versuchen und 10 Sprachen">
+<meta name="twitter:description" content="Zieh die Kapsel, wohin du willst, wiederhole ein fehlgeschlagenes Diktat und nutze die App in 10 Sprachen. Sieh dir an, was sich in 2.2, 2.1 und 2.0 geändert hat.">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../pages.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="pg">
+<a class="skip" href="#main">Zum Inhalt springen</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice, Startseite"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="Hauptmenü">
+      <a href="./#estilos">Stile</a>
+      <a href="./#gratis">Kostenlos und offline</a>
+      <a href="guia.html">Schlüssel-Guide</a>
+      <a href="novidades.html" aria-current="page">Neuigkeiten</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="Sprache">
+        <a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="novidades.html" hreflang="de" lang="de" data-lang="de" aria-current="true">Deutsch</a>
+        <a href="../ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="../zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a>
+        <a href="../ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="../hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="Sprache" aria-label="Sprache: Deutsch"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>DE</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="novidades.html" hreflang="de" lang="de" data-lang="de" aria-current="true">Deutsch</a></li>
+          <li><a href="../ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="../zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a></li>
+          <li><a href="../ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="../hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="Dunkles Design" title="Dunkles Design"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Download</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Menü öffnen"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
+    <div class="wrap">
+      <div class="pg-head-in">
+        <h1>2.2: Die Kapsel geht, wohin du <span class="nowrap">willst.<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">Zieh die Kapsel während der Aufnahme oder wähle eine eigene Position. Ein fehlgeschlagenes Diktat bekommt die Schaltfläche Erneut versuchen, und die App spricht jetzt 10 Sprachen.</p>
+        <p class="pg-meta"><span>Version <b>2.2</b></span><span>Windows 10 und 11</span><span>Aktualisiert sich selbst</span></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v22">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2</p>
+        <span class="pg-rel-date">November 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v22">Verschiebbare Kapsel, Erneut versuchen und 10 Sprachen</h2>
+        <p>Die Kapsel hat keinen festen Platz mehr: Zieh sie während der Aufnahme oder wähle eine eigene Position. Ein fehlgeschlagenes Diktat geht nicht mehr verloren, und die App folgt jetzt der Sprache von Windows.</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Kapsel verschieben</h3>
+            <ul>
+              <li><b>Während der Aufnahme verschieben</b>: Klicke auf die Kapsel und ziehe sie in jede Ecke des Bildschirms, sogar auf einen anderen Monitor. Sie bleibt bis zum Ende dieses Diktats dort, wo du sie losgelassen hast; beim nächsten kehrt sie zur Standardposition zurück.</li>
+              <li><b>Eigene Position</b>: Neben Unten und Oben kannst du den Platz wählen, indem du die Kapsel auf einer Miniatur des Bildschirms ziehst, mit Einrasten an Ecken, Rändern und in der Mitte. <b>Testen</b> zeigt, wo sie erscheint.</li>
+              <li><b>Letzte Ablagestelle verwenden</b> übernimmt die Stelle, an der du die Kapsel losgelassen hast. Alles unter <b>Allgemein → Schwebendes Fenster</b>, wo sich das Verschieben auch ausschalten lässt.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Erneut versuchen und Diktate hintereinander</h3>
+            <ul>
+              <li>Wenn die Transkription fehlschlägt (Netz, Limit, Schlüssel), bekommt die Fehlerkarte die Schaltfläche <b>Erneut versuchen</b> und bleibt 30 s sichtbar. Der Verlauf zeigt den Fehler mit Grund und derselben Schaltfläche.</li>
+              <li>Wiederholt das Diktat so, wie es war: gleiche App, gleicher Stil, gleiche Übersetzung, mit den aktuellen Anbietern und Schlüsseln. Die Aufnahme bleibt nur im Arbeitsspeicher (die letzten 3 Fehlschläge), nie auf der Festplatte.</li>
+              <li>Zwei Diktate hintereinander im selben Feld bekommen ein Leerzeichen dazwischen, wenn der Cursor dort geblieben ist, wo das vorige endete. Nicht in Terminals und nicht in Schriften ohne Leerzeichen wie Japanisch und Chinesisch.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>10 Sprachen</h3>
+            <ul>
+              <li>Die Oberfläche gibt es jetzt auch auf Französisch, Deutsch, Japanisch, Chinesisch, Russisch, Hindi und Bengalisch, zusätzlich zu Portugiesisch, Englisch und Spanisch, mit den passenden Windows-Schriftarten für jedes Schriftsystem.</li>
+              <li><b>Automatisch (Windows)</b>, der neue Standard, folgt der Sprache von Windows. Wer die App schon nutzt, behält die gewählte Sprache.</li>
+              <li>Das Menü im Infobereich, die Fehlermeldungen und die Namen der integrierten Stile folgen der Sprache der Oberfläche.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Tastenkürzel ohne Konflikte</h3>
+            <ul>
+              <li><b>Erneut einfügen</b> hat bei Neuinstallationen kein Tastenkürzel mehr, weil <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd> in Office „Inhalte einfügen“ ist. Es bleibt im Menü des Infobereichs, und du kannst ein Tastenkürzel festlegen.</li>
+              <li>Auf Tastaturen, bei denen <kbd>AltGr</kbd> <kbd>K</kbd> ein Zeichen tippt, startet Befehl ohne Tastenkürzel, damit die Taste frei bleibt, und der Bildschirm <b>Tastenkürzel</b> erklärt, warum.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Datenschutz und Mikrofon</h3>
+            <ul>
+              <li>Neuer Abschnitt <b>Datenschutz</b> auf dem Bildschirm <b>Info</b>: was auf dem PC bleibt, was an welchen Anbieter geht und wo die Schlüssel liegen. <a href="privacidade.html">Die vollständige Richtlinie steht hier</a>.</li>
+              <li>Klarere Mikrofonfehler: Wenn Windows das Mikrofon blockiert, sagt die App, wo du es freigibst; wenn eine andere App es exklusiv nutzt, weist sie ebenfalls darauf hin.</li>
+              <li>Eigene Meldung, wenn eine andere App die Zwischenablage blockiert.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Fehlerbehebungen</h3>
+            <ul>
+              <li>Wurde die App mitten in einer Aufnahme mit stummgeschaltetem PC-Ton beendet, blieb der Ton stumm. Jetzt kommt er beim nächsten Start zurück.</li>
+              <li><b>Mit Windows starten</b> zuverlässiger: Die App legt zusätzlich eine Anmeldeaufgabe in der Aufgabenplanung an, ohne Administratorrechte. Und das Deaktivieren des Autostarts im Task-Manager wirkt jetzt wirklich.</li>
+              <li>Befehl oder „Andere Version“ mit Übersetzung liefern keine zwei Versionen mehr und auch keine Anmerkung am Ende.</li>
+              <li>Text auf Arabisch, Hebräisch, Persisch und Urdu erscheint im Overlay, im Verlauf und im Chat in der richtigen Richtung.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>Jetzt unter der GPL-3.0</b>FlowVoice bleibt kostenlos und Open Source. Jede veränderte Version, die weitergegeben wird, muss den Quellcode unter derselben Lizenz mitliefern. <a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Lizenz lesen</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v21">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.1</p>
+        <span class="pg-rel-date">Oktober 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v21">Stabilere Vorschau und Glas-Kapsel</h2>
+        <p>Ein Wort wird erst fest, wenn zwei aufeinanderfolgende Antworten darin übereinstimmen. Bis dahin erscheint es heller und kann sich noch ändern. Danach springt es nicht mehr zurück.</p>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-live.png" width="1120" height="348" loading="lazy" decoding="async" alt="FlowVoice-Overlay beim Zuhören: der Satzanfang schon fest, in Weiß, und die letzten, noch nicht bestätigten Wörter in hellerem Grau.">
+          <figcaption>In der App: „Donnerstagnachmittag“ ist schon fest; das Ende ist noch heller.</figcaption>
+        </figure>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Live-Vorschau</h3>
+            <ul>
+              <li>Der Text <b>springt nicht mehr zurück</b>: Jedes Modell hat immer nur eine Anfrage offen, und eine verspätete Antwort wird verworfen.</li>
+              <li>Die Vorschau schickt den vorherigen Text nicht mehr als Kontext mit (manchmal kam er doppelt zurück).</li>
+              <li>Das Tempo folgt den Limits, die Groq selbst meldet, und hält immer Platz für die endgültige Transkription frei, die direkt nach der Vorschau kein „Limit erreicht“ mehr bekommt.</li>
+              <li>Lange Sätze werden nach spätestens 15 s abgeschlossen: schnellere Antworten und weniger verbrauchte Sekunden im Gratis-Tarif.</li>
+              <li>Die zusätzliche Gemini-Spur in der Vorschau ist weg (sie schrieb anders als Whisper und war langsamer).</li>
+              <li>Gemessen mit denselben 4 Aufnahmen: Text, der als fest angezeigt und dann ersetzt wurde, sank von 2,5–7,5-mal pro Diktat auf null, und Aktualisierungen kommen alle ~1,2–1,5 s (vorher ~1,7–2,0 s).</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Glas für die Kapsel</h3>
+            <ul>
+              <li>Unter <b>Allgemein → Schwebendes Fenster</b>: <b>Glas</b> (durchsichtig und unscharf, mit hellem Rand) oder <b>Transluzent</b> (leichterer Farbton), mit der Unschärfe von Windows selbst, berechnet von der Grafikkarte.</li>
+              <li><b>Licht und Schatten wie bei macOS 27</b>: Glanz, abgeschrägter Rand, Licht an der Unterkante und weicher Schatten (Idee von Thiago Silva).</li>
+              <li>Braucht die Transparenzeffekte von Windows; sind sie aus oder ist der Energiesparmodus an, bleibt die Kapsel deckend.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Fehlerbehebungen</h3>
+            <ul>
+              <li>Auf einem ausgelasteten PC zeigte das Fenster beim Start mit Windows manchmal einen Fehler statt der Einstellungen.</li>
+              <li>Nach einem Update öffnet sich FlowVoice von selbst wieder, mit offenem Fenster.</li>
+            </ul>
+          </li>
+        </ul>
+        <figure class="pg-fig">
+          <img src="../assets/shot-glass-setting.webp" width="1700" height="388" loading="lazy" decoding="async" alt="FlowVoice-Einstellungen, Allgemein: Aussehen der Kapsel mit den Optionen Deckend, Glas und Transluzent, Glas ausgewählt, und die Option Licht und Schatten wie bei macOS 27 eingeschaltet.">
+          <figcaption>Die Option unter Allgemein → Schwebendes Fenster. <a href="./#overlay">Sieh dir das Glas auf der Startseite an</a>.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v2">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.0</p>
+        <span class="pg-rel-date">Oktober 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v2">Warum ein Neuanfang</h2>
+        <p>2026 funktionierte die 1.x für viele nicht mehr: GitHub Models, das sie empfahl, wurde eingestellt; Modelle, die bei Groq kostenlos waren, flogen aus dem Gratis-Tarif; alte Gemini-Versionen wurden abgeschaltet. Und die 1.x verbarg den echten Fehler, also sah es so aus, als würde die App einfach „nicht funktionieren“.</p>
+        <p>Die 2.0 entstand, damit das nicht wieder passiert: Sie zeigt die echte Meldung des Anbieters und <strong>ersetzt ein eingestelltes Modell von selbst</strong>.</p>
+
+        <h2>Was sich geändert hat</h2>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-result.png" width="1320" height="492" loading="lazy" decoding="async" alt="Ergebnis im FlowVoice-Overlay: Eingefügt, Stil Professionell in Outlook, der umgeschriebene Text und die Chips Natürlich, Professionell, Prompt, Roh, Nur Transkript, Übersetzen und Original, mit der Schaltfläche Kopieren.">
+          <figcaption>Das Ergebnis im Overlay: Ein Klick schreibt es in einem anderen Stil neu oder übersetzt es.</figcaption>
+        </figure>
+        <ul class="pg-changes">
+          <li>
+            <h3>Diktat</h3>
+            <ul>
+              <li><b>Live-Vorschau</b>: Der Text erscheint, während du sprichst.</li>
+              <li>Neuer Stil <b>Prompt</b>, der das Gesprochene für eine KI strafft, mit einstellbarer Intensität.</li>
+              <li>Natürlich, Professionell, Roh, Nur Transkript und eigene Stile.</li>
+              <li><b>Stil pro App</b>: <img class="pg-app" src="../assets/apps/outlook.svg" alt="" width="18" height="18">Outlook immer Professionell, <img class="pg-app" src="../assets/apps/vscode.svg" alt="" width="18" height="18">VS Code immer Prompt.</li>
+              <li>Entfernt Füllwörter („äh“, „halt“, Stottern) und respektiert dein Vokabular.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Neues Overlay</h3>
+            <ul>
+              <li>Nach dem Ergebnis <b>schreibt ein Klick es in einem anderen Stil neu</b> oder <b>übersetzt es</b> in Dutzende Sprachen.</li>
+              <li><b>Ersetzen</b> macht das vorige Einfügen rückgängig und fügt die neue Version ein.</li>
+              <li>Folgt der Maus oder dem aktiven Fenster, auf dem Bildschirm, an dem du gerade arbeitest.</li>
+              <li><kbd>Esc</kbd> bricht jederzeit ab.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Neue Tastenkürzel</h3>
+            <ul>
+              <li><b>Befehl auf die Auswahl</b>: Markiere in einer beliebigen App einen Text und sag, was passieren soll („förmlicher“, „in Stichpunkten zusammenfassen“).</li>
+              <li><b>Erneut einfügen</b>: das letzte Diktat in die aktive App.</li>
+              <li>Übersetzung per Sprache und Sprachassistent mit Websuche und Quellen.</li>
+              <li>Modus Halten und sprechen (Push-to-Talk).</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Zuverlässig</h3>
+            <ul>
+              <li><b>Failover</b> zwischen Anbietern und mehreren Schlüsseln; fällt die Cloud aus, springt das lokale Modell ein.</li>
+              <li>Eingestellte Modelle werden <b>automatisch ersetzt</b>, mit täglicher Prüfung.</li>
+              <li>Sicheres Einfügen: prüft das Zielfenster und stellt den vorherigen Inhalt deiner Zwischenablage wieder her.</li>
+              <li>Meldet, wenn das Mikrofon getrennt wird, und nutzt ein anderes.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Besser offline</h3>
+            <ul>
+              <li>Modellkatalog nach Sprache, mit Empfehlung für deine.</li>
+              <li>Ein Modell <b>speziell für brasilianisches Portugiesisch</b> (Distil-Whisper pt-BR).</li>
+              <li>Lokale Transkription um ein Vielfaches schneller.</li>
+              <li>Das Modell verlässt den Speicher, wenn du aufhörst zu diktieren; lösche Modelle, wann du willst.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Oberfläche</h3>
+            <ul>
+              <li>Neu gestaltete Einstellungen mit <b>Suche</b> (<kbd>Ctrl</kbd> <kbd>K</kbd>).</li>
+              <li>Einrichtungsassistent beim ersten Start, mit Tutorial und Test für jeden Schlüssel.</li>
+              <li>Helles und dunkles Design, Akzentfarbe nach Wahl, PT/EN/ES.</li>
+              <li>Neues Symbol und durchsuchbarer Verlauf.</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h2>1.x × 2.0</h2>
+        <div class="pg-table cmp-ver">
+          <table>
+            <caption class="sr">Vergleich zwischen Version 1.x und 2.0</caption>
+            <thead><tr><th scope="col"><span class="sr">Aspekt</span></th><th scope="col">1.x</th><th scope="col">2.0</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Base</th><td data-l="1.x">Python + PySide6</td><td data-l="2.0">Rust (Tauri 2) + Svelte</td></tr>
+              <tr><th scope="row">Installer</th><td data-l="1.x">Groß, mit eingebettetem Python</td><td data-l="2.0">Wenige MB; Modelle nur, wenn du willst</td></tr>
+              <tr><th scope="row">Während du sprichst</th><td data-l="1.x">Kein Text auf dem Bildschirm</td><td data-l="2.0">Live-Vorschau des Textes</td></tr>
+              <tr><th scope="row">Nach dem Ergebnis</th><td data-l="1.x">Einfügen, fertig</td><td data-l="2.0">Stil wechseln, übersetzen, ersetzen</td></tr>
+              <tr><th scope="row">Wenn der Anbieter ausfällt</th><td data-l="1.x">Allgemeiner Fehler</td><td data-l="2.0">Nächster Schlüssel oder Anbieter, mit der echten Meldung</td></tr>
+              <tr><th scope="row">Eingestelltes Modell</th><td data-l="1.x">Funktionierte nicht mehr</td><td data-l="2.0">Automatisch ersetzt</td></tr>
+              <tr><th scope="row">Schlüssel</th><td data-l="1.x">Konfigurationsdatei</td><td data-l="2.0">Anmeldeinformationsspeicher des Systems</td></tr>
+              <tr><th scope="row">Updates</th><td data-l="1.x">Automatisch</td><td data-l="2.0">Automatisch und digital signiert</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>Du kommst von der 1.x?</b>Installiere einfach darüber. Beim ersten Start übernimmt die 2.0 deine alten Schlüssel automatisch in den Tresor des Systems. Wenn du GitHub Models genutzt hast, erstelle einen kostenlosen Schlüssel bei Groq: <a href="guia.html#groq">Das dauert nur wenige Minuten</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v1">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">1.x</p>
+        <span class="pg-rel-date">Bis Juni 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v1">Die erste Generation</h2>
+        <p>Die ursprüngliche Version, in Python. Die Höhepunkte, von der neuesten zur ältesten:</p>
+        <ul class="pg-old">
+          <li><span>1.9</span>Websuche über Tavily im Recherchemodus, Passwort zum Anzeigen der Schlüssel und Oberfläche auf Portugiesisch, Englisch und Spanisch.</li>
+          <li><span>1.8</span>Neu gestaltetes Overlay und Filter gegen „Halluzinationen“ der Transkription.</li>
+          <li><span>1.5–1.7</span>Automatische Updates in der App.</li>
+        </ul>
+        <p class="pg-gap">Vollständige Versionshinweise auf <a href="https://github.com/cesarkali/Flow-Voice/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="pg-next" aria-labelledby="next-t">
+    <div class="wrap">
+      <div class="pg-next-in">
+        <div>
+          <h2 id="next-t">Bereit für 2.2?</h2>
+          <p>Kostenlos, Open Source und ohne Konto.</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>Für Windows herunterladen</a>
+          <a class="btn btn-ghost btn-lg" href="guia.html">Kostenlosen Schlüssel holen</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · entwickelt in Brasilien von <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
+      <nav aria-label="Fußzeile">
+        <ul>
+          <li><a href="guia.html">Schlüssel-Guide</a></li>
+          <li><a href="novidades.html" aria-current="page">Neuigkeiten</a></li>
+          <li><a href="privacidade.html">Datenschutz</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Lizenz GPL-3.0</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">Problem melden</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">Verbesserung vorschlagen</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>Unterstütze das Projekt: <a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/de.js" defer></script>
+<script src="../site.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>नया क्या है · FlowVoice 2.2: खिसकाने लायक कैप्सूल, फिर कोशिश करें और 10 भाषाएं</title>
+<meta name="description" content="FlowVoice में क्या बदला: 2.2 में खिसकाने लायक कैप्सूल, ट्रांसक्रिप्शन विफल होने पर फिर कोशिश करें और 10 भाषाओं में इंटरफ़ेस; 2.1 में पीछे न लौटने वाला लाइव प्रीव्यू और कांच का कैप्सूल; 2.0 में Rust में शुरू से दोबारा लिखा गया ऐप, प्रॉम्प्ट शैली, कमांड मोड, रिटायर हुए मॉडलों का अपने-आप बदलना और ब्राज़ीलियाई पुर्तगाली मॉडल वाला ऑफ़लाइन मोड।">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/hi/novidades">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/novidades">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/novidades">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/novidades">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/novidades">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/novidades">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/novidades">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/novidades">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/novidades">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/novidades">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/novidades">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/novidades">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="hi_IN">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/hi/novidades">
+<meta property="og:title" content="FlowVoice 2.2: खिसकाने लायक कैप्सूल, फिर कोशिश करें और 10 भाषाएं">
+<meta property="og:description" content="कैप्सूल को जहां चाहें खींचें, विफल डिक्टेशन दोबारा करें और ऐप को 10 भाषाओं में इस्तेमाल करें। देखें 2.2, 2.1 और 2.0 में क्या बदला।">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlowVoice 2.2: खिसकाने लायक कैप्सूल, फिर कोशिश करें और 10 भाषाएं">
+<meta name="twitter:description" content="कैप्सूल को जहां चाहें खींचें, विफल डिक्टेशन दोबारा करें और ऐप को 10 भाषाओं में इस्तेमाल करें। देखें 2.2, 2.1 और 2.0 में क्या बदला।">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../pages.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="pg">
+<a class="skip" href="#main">सामग्री पर जाएं</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice, होम पेज"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="मुख्य">
+      <a href="./#estilos">शैलियां</a>
+      <a href="./#gratis">मुफ़्त और ऑफ़लाइन</a>
+      <a href="guia.html">कुंजी गाइड</a>
+      <a href="novidades.html" aria-current="page">नया क्या है</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="भाषा">
+        <a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="../ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="../zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a>
+        <a href="../ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="novidades.html" hreflang="hi" lang="hi" data-lang="hi" aria-current="true">हिन्दी</a>
+        <a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="भाषा" aria-label="भाषा: हिन्दी"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>HI</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="../ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="../zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a></li>
+          <li><a href="../ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="novidades.html" hreflang="hi" lang="hi" data-lang="hi" aria-current="true">हिन्दी</a></li>
+          <li><a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="डार्क थीम" title="डार्क थीम"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>डाउनलोड</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="मेन्यू खोलें"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
+    <div class="wrap">
+      <div class="pg-head-in">
+        <h1>2.2: कैप्सूल वहां जाता है जहां आप <span class="nowrap">चाहें।<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">रिकॉर्डिंग के दौरान कैप्सूल खींचें या अपनी पसंद की जगह चुनें। विफल डिक्टेशन को फिर कोशिश करें बटन मिलता है, और ऐप अब 10 भाषाएं बोलता है।</p>
+        <p class="pg-meta"><span>वर्ज़न <b>2.2</b></span><span>Windows 10 और 11</span><span>अपने-आप अपडेट होता है</span></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v22">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2</p>
+        <span class="pg-rel-date">नवंबर 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v22">खिसकाने लायक कैप्सूल, फिर कोशिश करें और 10 भाषाएं</h2>
+        <p>कैप्सूल की अब कोई तय जगह नहीं: रिकॉर्डिंग के दौरान उसे खींचें या अपनी पसंद की जगह चुनें। विफल डिक्टेशन अब खोता नहीं, और ऐप अब Windows की भाषा के अनुसार चलता है।</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>कैप्सूल को खिसकाएं</h3>
+            <ul>
+              <li><b>रिकॉर्डिंग के दौरान खींचें</b>: कैप्सूल पर क्लिक करके उसे स्क्रीन के किसी भी कोने में खींचें, दूसरे मॉनिटर तक भी। उस डिक्टेशन के ख़त्म होने तक यह वहीं रहता है जहां आपने छोड़ा; अगली बार डिफ़ॉल्ट जगह पर लौट आता है।</li>
+              <li><b>कस्टम जगह</b>: नीचे और ऊपर के अलावा, स्क्रीन की एक छोटी तस्वीर पर कैप्सूल खींचकर जगह चुनें; यह कोनों, किनारों और बीच में अपने-आप टिक जाता है। <b>जांचें</b> दिखाता है कि यह कहां दिखेगा।</li>
+              <li><b>आख़िरी बार खींची गई जगह इस्तेमाल करें</b> वही जगह लेता है जहां आपने कैप्सूल छोड़ा था। सब कुछ <b>सामान्य → तैरती विंडो</b> में, जहां खींचना बंद भी किया जा सकता है।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>फिर कोशिश करें और लगातार डिक्टेशन</h3>
+            <ul>
+              <li>जब ट्रांसक्रिप्शन विफल होता है (नेटवर्क, सीमा, कुंजी), तो त्रुटि कार्ड पर <b>फिर कोशिश करें</b> बटन आता है और कार्ड 30 सेकंड स्क्रीन पर रहता है। इतिहास में भी विफलता, उसके कारण और उसी बटन के साथ दिखती है।</li>
+              <li>डिक्टेशन को वैसे ही दोबारा करता है जैसे वह हुआ था: वही ऐप, शैली और अनुवाद, अभी के प्रदाताओं और कुंजियों के साथ। रिकॉर्डिंग सिर्फ़ मेमोरी में रहती है (आख़िरी 3 विफलताएं), डिस्क पर कभी नहीं।</li>
+              <li>एक ही फ़ील्ड में लगातार दो डिक्टेशन के बीच एक स्पेस आ जाता है, अगर कर्सर वहीं रहा जहां पिछला ख़त्म हुआ था। टर्मिनल में नहीं, और बिना स्पेस वाली लिपियों, जैसे जापानी और चीनी, में भी नहीं।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>10 भाषाएं</h3>
+            <ul>
+              <li>इंटरफ़ेस अब पुर्तगाली, अंग्रेज़ी और स्पैनिश के अलावा फ़्रेंच, जर्मन, जापानी, चीनी, रूसी, हिन्दी और बांग्ला में भी है, हर लिपि के लिए Windows के सही फ़ॉन्ट के साथ।</li>
+              <li><b>स्वचालित (Windows)</b>, नया डिफ़ॉल्ट, Windows की भाषा के अनुसार चलता है। जो पहले से ऐप इस्तेमाल कर रहे हैं, उनकी चुनी भाषा वही रहती है।</li>
+              <li>ट्रे मेन्यू, त्रुटि संदेश और अंतर्निहित शैलियों के नाम इंटरफ़ेस की भाषा में दिखते हैं।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>बिना टकराव वाले शॉर्टकट</h3>
+            <ul>
+              <li>नए इंस्टॉलेशन में <b>फिर से पेस्ट करें</b> का कोई शॉर्टकट नहीं होता, क्योंकि <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd> Office में पेस्ट स्पेशल है। यह ट्रे मेन्यू में बना रहता है, और इसके लिए शॉर्टकट चुना जा सकता है।</li>
+              <li>जिन कीबोर्ड पर <kbd>AltGr</kbd> <kbd>K</kbd> कोई अक्षर टाइप करता है, वहां कमांड बिना शॉर्टकट के शुरू होता है, ताकि वह की-कॉम्बिनेशन ख़ाली रहे, और <b>शॉर्टकट</b> स्क्रीन इसकी वजह बताती है।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>गोपनीयता और माइक्रोफ़ोन</h3>
+            <ul>
+              <li><b>परिचय</b> स्क्रीन में नया <b>गोपनीयता</b> सेक्शन: क्या PC पर रहता है, हर प्रदाता को क्या जाता है और कुंजियां कहां रहती हैं। <a href="privacidade.html">पूरी नीति यहां है</a>।</li>
+              <li>माइक्रोफ़ोन की त्रुटियां अब ज़्यादा साफ़: जब Windows माइक्रोफ़ोन ब्लॉक करता है, तो ऐप बताता है कि उसे कहां से चालू करें; जब कोई दूसरा ऐप उसे अकेले इस्तेमाल कर रहा हो, तब भी बताता है।</li>
+              <li>जब कोई दूसरा ऐप क्लिपबोर्ड को पकड़े हुए हो, तो उसके लिए अलग संदेश।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>सुधार</h3>
+            <ul>
+              <li>अगर PC की आवाज़ बंद रहते हुए रिकॉर्डिंग के बीच ऐप बंद हो जाता, तो आवाज़ बंद ही रह जाती थी। अब अगली बार खुलने पर लौट आती है।</li>
+              <li><b>Windows के साथ शुरू करें</b> अब ज़्यादा भरोसेमंद: ऐप टास्क शेड्यूलर में एक लॉगऑन टास्क भी बनाता है, एडमिनिस्ट्रेटर अनुमति के बिना। और टास्क मैनेजर में स्टार्टअप बंद करना अब सच में काम करता है।</li>
+              <li>अनुवाद के साथ कमांड या “दूसरा संस्करण” अब दो संस्करण नहीं लौटाते, न ही आख़िर में कोई नोट।</li>
+              <li>अरबी, हिब्रू, फ़ारसी और उर्दू का टेक्स्ट ओवरले, इतिहास और चैट में सही दिशा में दिखता है।</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>अब GPL-3.0 के तहत</b>FlowVoice मुफ़्त और ओपन सोर्स बना रहेगा। कोई भी बदला हुआ संस्करण बांटा जाए, तो उसके साथ उसी लाइसेंस के तहत सोर्स कोड देना होगा। <a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">लाइसेंस पढ़ें</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v21">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.1</p>
+        <span class="pg-rel-date">अक्टूबर 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v21">ज़्यादा स्थिर प्रीव्यू और कांच का कैप्सूल</h2>
+        <p>कोई शब्द तभी पक्का होता है जब लगातार दो जवाब उस पर सहमत हों। तब तक वह हल्का दिखता है और बदल सकता है। उसके बाद वह पीछे नहीं लौटता।</p>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-live.png" width="1120" height="348" loading="lazy" decoding="async" alt="सुनता हुआ FlowVoice ओवरले: वाक्य की शुरुआत पक्की, सफ़ेद में, और आख़िरी, अभी पुष्टि न हुए शब्द हल्के स्लेटी रंग में।">
+          <figcaption>ऐप में: “गुरुवार दोपहर” पक्का हो चुका है; आख़िरी हिस्सा अभी हल्का है।</figcaption>
+        </figure>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>लाइव प्रीव्यू</h3>
+            <ul>
+              <li>टेक्स्ट <b>अब पीछे नहीं लौटता</b>: हर मॉडल का एक समय में एक ही अनुरोध चलता है, और देर से आया जवाब छोड़ दिया जाता है।</li>
+              <li>प्रीव्यू अब पिछला टेक्स्ट संदर्भ के तौर पर नहीं भेजता (कभी-कभी वह दोहराकर लौट आता था)।</li>
+              <li>रफ़्तार उन सीमाओं के हिसाब से चलती है जो Groq ख़ुद बताता है, और अंतिम ट्रांसक्रिप्शन के लिए हमेशा जगह बचाकर रखती है, जिसे अब प्रीव्यू के ठीक बाद “सीमा पूरी हुई” नहीं मिलता।</li>
+              <li>लंबे वाक्य ज़्यादा से ज़्यादा 15 सेकंड में बंद कर दिए जाते हैं: जवाब जल्दी आते हैं और मुफ़्त प्लान के कम सेकंड ख़र्च होते हैं।</li>
+              <li>प्रीव्यू से Gemini की अतिरिक्त लेन हटा दी गई (वह Whisper से अलग लिखती थी और धीमी थी)।</li>
+              <li>उन्हीं 4 ऑडियो से मापा गया: पक्का दिखाकर बाद में बदला गया टेक्स्ट हर डिक्टेशन में 2.5–7.5 बार से घटकर शून्य हो गया, और अपडेट हर ~1.2–1.5 सेकंड में आते हैं (पहले ~1.7–2.0 सेकंड)।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>कैप्सूल पर कांच</h3>
+            <ul>
+              <li><b>सामान्य → तैरती विंडो</b> में: <b>कांच</b> (पारदर्शी और धुंधला, चमकदार किनारे के साथ) या <b>पारभासी</b> (हल्का रंग), Windows के अपने धुंधलेपन के साथ, जिसे ग्राफ़िक्स कार्ड बनाता है।</li>
+              <li><b>macOS 27 जैसी रोशनी और छाया</b>: चमक, ढलवां किनारा, नीचे की तरफ़ रोशनी और हल्की छाया (Thiago Silva का आइडिया)।</li>
+              <li>इसके लिए Windows के पारदर्शिता प्रभाव चाहिए; वे बंद हों या ऊर्जा बचत चालू हो, तो कैप्सूल ठोस रहता है।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>सुधार</h3>
+            <ul>
+              <li>व्यस्त PC पर, Windows के साथ शुरू होते समय, विंडो कभी-कभी सेटिंग्स की जगह त्रुटि दिखाती थी।</li>
+              <li>अपडेट के बाद FlowVoice अपने-आप फिर खुलता है, विंडो खुली हुई।</li>
+            </ul>
+          </li>
+        </ul>
+        <figure class="pg-fig">
+          <img src="../assets/shot-glass-setting.webp" width="1700" height="388" loading="lazy" decoding="async" alt="FlowVoice सेटिंग्स, सामान्य: कैप्सूल का रूप, ठोस, कांच और पारभासी विकल्पों के साथ, कांच चुना हुआ, और macOS 27 जैसी रोशनी और छाया विकल्प चालू।">
+          <figcaption>यह विकल्प सामान्य → तैरती विंडो में है। <a href="./#overlay">होम पेज पर कांच देखें</a>।</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v2">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.0</p>
+        <span class="pg-rel-date">अक्टूबर 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v2">दोबारा क्यों लिखा</h2>
+        <p>2026 में 1.x बहुत लोगों के लिए काम करना बंद कर गई: GitHub Models, जिसकी वह सलाह देती थी, बंद हो गया; Groq पर जो मॉडल मुफ़्त थे, वे मुफ़्त प्लान से हट गए; Gemini के पुराने वर्ज़न बंद कर दिए गए। और 1.x असली त्रुटि छिपा लेती थी, इसलिए लगता था कि ऐप बस “काम नहीं करता”।</p>
+        <p>2.0 इसलिए बनी कि ऐसा फिर न हो: यह प्रदाता का असली संदेश दिखाती है और <strong>रिटायर हुए मॉडल को अपने-आप बदल देती है</strong>।</p>
+
+        <h2>क्या बदला</h2>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-result.png" width="1320" height="492" loading="lazy" decoding="async" alt="FlowVoice ओवरले में नतीजा: पेस्ट हो गया, Outlook में पेशेवर शैली, दोबारा लिखा टेक्स्ट और स्वाभाविक, पेशेवर, प्रॉम्प्ट, कच्चा, केवल ट्रांसक्रिप्ट, अनुवाद करें और मूल चिप्स, साथ में कॉपी करें बटन।">
+          <figcaption>ओवरले में नतीजा: एक क्लिक से दूसरी शैली में दोबारा लिखें या अनुवाद करें।</figcaption>
+        </figure>
+        <ul class="pg-changes">
+          <li>
+            <h3>डिक्टेशन</h3>
+            <ul>
+              <li><b>लाइव प्रीव्यू</b>: बोलते समय ही टेक्स्ट दिखता है।</li>
+              <li>नई <b>प्रॉम्प्ट</b> शैली, जो बोली को AI को भेजने लायक छोटा करती है; इसकी तीव्रता बदली जा सकती है।</li>
+              <li>स्वाभाविक, पेशेवर, कच्चा, केवल ट्रांसक्रिप्ट और आपकी अपनी शैलियां।</li>
+              <li><b>हर ऐप की अपनी शैली</b>: <img class="pg-app" src="../assets/apps/outlook.svg" alt="" width="18" height="18">Outlook में हमेशा पेशेवर, <img class="pg-app" src="../assets/apps/vscode.svg" alt="" width="18" height="18">VS Code में हमेशा प्रॉम्प्ट।</li>
+              <li>भराव वाले शब्द (“मतलब”, “यार”, अटकना) हटाता है और आपकी शब्दावली का ध्यान रखता है।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>नया ओवरले</h3>
+            <ul>
+              <li>नतीजे के बाद एक क्लिक <b>दूसरी शैली में दोबारा लिखता है</b> या दर्जनों भाषाओं में <b>अनुवाद करता है</b>।</li>
+              <li><b>बदलें</b> पिछला पेस्ट हटाकर नया संस्करण पेस्ट करता है।</li>
+              <li>माउस या फ़ोकस वाली विंडो के साथ चलता है, उसी मॉनिटर पर जिस पर अभी काम चल रहा है।</li>
+              <li><kbd>Esc</kbd> से कभी भी रद्द करें।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>नए शॉर्टकट</h3>
+            <ul>
+              <li><b>चुने हुए टेक्स्ट पर कमांड</b>: किसी भी ऐप में टेक्स्ट चुनें और बताएं क्या करना है (“ज़्यादा औपचारिक”, “बुलेट में सारांश”)।</li>
+              <li><b>फिर से पेस्ट करें</b>: पिछला डिक्टेशन फ़ोकस वाले ऐप में।</li>
+              <li>आवाज़ से अनुवाद, और वेब खोज व स्रोतों वाला वॉइस असिस्टेंट।</li>
+              <li>दबाकर बोलने का मोड (push-to-talk)।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>भरोसेमंद</h3>
+            <ul>
+              <li>प्रदाताओं और कई कुंजियों के बीच <b>फ़ेलओवर</b>; क्लाउड बंद हो, तो लोकल मॉडल काम संभालता है।</li>
+              <li>रिटायर हुए मॉडल <b>अपने-आप बदले जाते हैं</b>, रोज़ की जांच के साथ।</li>
+              <li>सुरक्षित पेस्ट: लक्ष्य विंडो की जांच करता है और आपके क्लिपबोर्ड में जो था, उसे वापस रख देता है।</li>
+              <li>माइक्रोफ़ोन डिस्कनेक्ट हो, तो बताता है और दूसरा इस्तेमाल करता है।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>बेहतर ऑफ़लाइन</h3>
+            <ul>
+              <li>भाषा के हिसाब से मॉडल कैटलॉग, आपकी भाषा के लिए सुझाव के साथ।</li>
+              <li><b>ब्राज़ीलियाई पुर्तगाली के लिए ट्यून किया गया</b> मॉडल (Distil-Whisper pt-BR)।</li>
+              <li>लोकल ट्रांसक्रिप्शन कई गुना तेज़।</li>
+              <li>डिक्टेशन रुकते ही मॉडल मेमोरी से हट जाता है; मॉडल जब चाहें हटाएं।</li>
+            </ul>
+          </li>
+          <li>
+            <h3>इंटरफ़ेस</h3>
+            <ul>
+              <li>नए सिरे से डिज़ाइन की गई सेटिंग्स, <b>खोज</b> (<kbd>Ctrl</kbd> <kbd>K</kbd>) के साथ।</li>
+              <li>पहली बार चलाने पर सेटअप विज़र्ड, ट्यूटोरियल और हर कुंजी की जांच के साथ।</li>
+              <li>लाइट और डार्क थीम, अपनी पसंद का एक्सेंट रंग, PT/EN/ES।</li>
+              <li>नया आइकन और खोजने लायक इतिहास।</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h2>1.x × 2.0</h2>
+        <div class="pg-table cmp-ver">
+          <table>
+            <caption class="sr">वर्ज़न 1.x और 2.0 की तुलना</caption>
+            <thead><tr><th scope="col"><span class="sr">पहलू</span></th><th scope="col">1.x</th><th scope="col">2.0</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Base</th><td data-l="1.x">Python + PySide6</td><td data-l="2.0">Rust (Tauri 2) + Svelte</td></tr>
+              <tr><th scope="row">इंस्टॉलर</th><td data-l="1.x">बड़ा, Python समेत</td><td data-l="2.0">कुछ MB; मॉडल सिर्फ़ अगर आप चाहें</td></tr>
+              <tr><th scope="row">बोलते समय</th><td data-l="1.x">स्क्रीन पर कोई टेक्स्ट नहीं</td><td data-l="2.0">टेक्स्ट का लाइव प्रीव्यू</td></tr>
+              <tr><th scope="row">नतीजे के बाद</th><td data-l="1.x">पेस्ट, बस</td><td data-l="2.0">शैली बदलें, अनुवाद करें, पेस्ट बदलें</td></tr>
+              <tr><th scope="row">जब प्रदाता विफल हो</th><td data-l="1.x">सामान्य त्रुटि</td><td data-l="2.0">अगली कुंजी या प्रदाता, असली संदेश के साथ</td></tr>
+              <tr><th scope="row">रिटायर हुआ मॉडल</th><td data-l="1.x">काम करना बंद</td><td data-l="2.0">अपने-आप बदला जाता है</td></tr>
+              <tr><th scope="row">कुंजियां</th><td data-l="1.x">कॉन्फ़िगरेशन फ़ाइल</td><td data-l="2.0">सिस्टम का क्रेडेंशियल स्टोर</td></tr>
+              <tr><th scope="row">अपडेट</th><td data-l="1.x">स्वचालित</td><td data-l="2.0">स्वचालित और डिजिटल रूप से साइन किया हुआ</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>1.x से अपग्रेड?</b>ऊपर से ही इंस्टॉल करें। पहली बार चलने पर 2.0 आपकी पुरानी कुंजियां अपने-आप सिस्टम की तिजोरी में ले आती है। अगर GitHub Models इस्तेमाल होता था, तो Groq पर एक मुफ़्त कुंजी बनाएं: <a href="guia.html#groq">कुछ ही मिनट लगते हैं</a>।</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v1">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">1.x</p>
+        <span class="pg-rel-date">जून 2026 तक</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v1">पहली पीढ़ी</h2>
+        <p>मूल संस्करण, Python में। मुख्य बातें, सबसे नई से सबसे पुरानी तक:</p>
+        <ul class="pg-old">
+          <li><span>1.9</span>रिसर्च मोड में Tavily से वेब खोज, कुंजियां दिखाने के लिए पासवर्ड और पुर्तगाली, अंग्रेज़ी व स्पैनिश में इंटरफ़ेस।</li>
+          <li><span>1.8</span>नए सिरे से डिज़ाइन किया गया ओवरले और ट्रांसक्रिप्शन की “कल्पनाओं” (hallucinations) के ख़िलाफ़ फ़िल्टर।</li>
+          <li><span>1.5–1.7</span>ऐप के अंदर अपने-आप अपडेट।</li>
+        </ul>
+        <p class="pg-gap">हर वर्ज़न के पूरे नोट्स <a href="https://github.com/cesarkali/Flow-Voice/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a> पर।</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="pg-next" aria-labelledby="next-t">
+    <div class="wrap">
+      <div class="pg-next-in">
+        <div>
+          <h2 id="next-t">2.2 के लिए तैयार?</h2>
+          <p>मुफ़्त, ओपन सोर्स और बिना खाते के।</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>Windows के लिए डाउनलोड करें</a>
+          <a class="btn btn-ghost btn-lg" href="guia.html">मुफ़्त कुंजी पाएं</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · ब्राज़ील में <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a> द्वारा बनाया गया</p>
+      <nav aria-label="फ़ुटर">
+        <ul>
+          <li><a href="guia.html">कुंजी गाइड</a></li>
+          <li><a href="novidades.html" aria-current="page">नया क्या है</a></li>
+          <li><a href="privacidade.html">गोपनीयता</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 लाइसेंस</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">समस्या बताएं</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">सुधार सुझाएं</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>प्रोजेक्ट का साथ दें: <a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/hi.js" defer></script>
+<script src="../site.js" defer></script>
+</body>
+</html>

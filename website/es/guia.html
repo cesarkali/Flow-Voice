@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claves gratis en pocos minutos · Guía de FlowVoice</title>
+<meta name="description" content="Paso a paso para conseguir claves de API gratuitas (Groq, Google Gemini, OpenRouter, Mistral y Tavily) y usarlas en FlowVoice. O úsalo 100% sin conexión, sin ninguna clave.">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/es/guia">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/guia">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/guia">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/guia">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/guia">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/guia">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/guia">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/guia">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/guia">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/guia">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/guia">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/guia">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="es_ES">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/es/guia">
+<meta property="og:title" content="Claves gratis en pocos minutos · FlowVoice">
+<meta property="og:description" content="Groq, Gemini, OpenRouter, Mistral y Tavily: dónde hacer clic, qué pegar y cuáles son los límites del plan gratis.">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Claves gratis en pocos minutos · FlowVoice">
+<meta name="twitter:description" content="Groq, Gemini, OpenRouter, Mistral y Tavily: dónde hacer clic, qué pegar y cuáles son los límites del plan gratis.">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../pages.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="pg">
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice, página de inicio"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="Principal">
+      <a href="./#estilos">Estilos</a>
+      <a href="./#gratis">Gratis y sin conexión</a>
+      <a href="guia.html" aria-current="page">Guía de claves</a>
+      <a href="novidades.html">Novedades</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="Idioma">
+        <a href="../guia.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/guia.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="guia.html" hreflang="es" lang="es" data-lang="es" aria-current="true">Español</a>
+        <a href="../fr/guia.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/guia.html" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="../ja/guia.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="../zh/guia.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a>
+        <a href="../ru/guia.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="../hi/guia.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="../bn/guia.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="Idioma" aria-label="Idioma: Español"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>ES</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../guia.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/guia.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="guia.html" hreflang="es" lang="es" data-lang="es" aria-current="true">Español</a></li>
+          <li><a href="../fr/guia.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/guia.html" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="../ja/guia.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="../zh/guia.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a></li>
+          <li><a href="../ru/guia.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="../hi/guia.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="../bn/guia.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="Tema oscuro" title="Tema oscuro"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Descargar</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menú"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
+    <div class="wrap">
+      <div class="pg-head-in">
+        <h1>Claves gratis en pocos <span class="nowrap">minutos<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">FlowVoice no cobra nada y no tiene servidor propio: habla directamente con el proveedor de IA que elijas. Para eso basta una clave de API gratuita. O ninguna, si prefieres usarlo sin conexión.</p>
+        <p class="pg-meta"><span><b>Sin tarjeta</b> en los planes gratis</span><span>Claves en el almacén de Windows</span><span>También funciona sin conexión</span></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap pg-doc">
+    <nav class="pg-toc" aria-label="En esta página">
+      <details open>
+        <summary>En esta página</summary>
+        <ol>
+          <li><a href="#rapido">El camino más rápido</a></li>
+          <li><a href="#provedores">Proveedores, paso a paso</a>
+            <ol>
+              <li><a href="#groq">Groq</a></li>
+              <li><a href="#gemini">Google Gemini</a></li>
+              <li><a href="#openrouter">OpenRouter</a></li>
+              <li><a href="#mistral">Mistral</a></li>
+              <li><a href="#tavily">Tavily (búsqueda en la web)</a></li>
+            </ol>
+          </li>
+          <li><a href="#colar">Pegar la clave en la app</a></li>
+          <li><a href="#limites">Límites del plan gratis</a></li>
+          <li><a href="#offline">Sin internet</a></li>
+        </ol>
+      </details>
+    </nav>
+
+    <div class="pg-prose">
+      <section id="rapido">
+        <h2>El camino más rápido</h2>
+        <p>Si solo quieres dictar hoy: crea una clave en <strong>Groq</strong> y listo. Transcribe la voz y pule el texto, es muy rápida, y el plan gratis alcanza para un día entero de uso normal.</p>
+        <p>Las demás claves son opcionales. Tener más de un proveedor sirve de respaldo: si uno falla o llega a su límite, FlowVoice pasa al siguiente por sí solo.</p>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-bulb"/></svg>
+          <p><b>No hace falta memorizar nada</b>Dentro de la app, cada proveedor trae este mismo paso a paso, un botón que abre la página correcta y un botón <strong>Probar</strong> que confirma si la clave funciona.</p>
+        </div>
+      </section>
+
+      <section id="provedores">
+        <h2>Proveedores, paso a paso</h2>
+        <p>Cada uno lleva pocos minutos. Empieza por Groq; los otros sirven de respaldo o añaden funciones.</p>
+
+        <div class="pg-provs">
+          <article id="groq" class="pg-prov" aria-labelledby="groq-t">
+            <div class="pg-prov-h"><h3 id="groq-t">Groq</h3><span class="pg-tag rec">Recomendado</span><span class="pg-tag">Gratis</span></div>
+            <p class="uses">Voz y texto. Transcripción y pulido muy rápidos.</p>
+            <ol class="pg-steps">
+              <li><span>Abre la <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">consola de Groq</a> e inicia sesión con Google, GitHub o correo.</span></li>
+              <li><span>En <strong>API Keys</strong>, haz clic en <strong>Create API Key</strong> y ponle el nombre que quieras, como “FlowVoice”.</span></li>
+              <li><span>Copia la clave (empieza con <code>gsk_</code>). Solo se muestra una vez.</span></li>
+              <li><span>Pégala en FlowVoice y haz clic en <strong>Probar</strong>.</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Abrir console.groq.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <span class="lim">Plan gratis: <b>horas de audio por día</b>, sin tarjeta.</span>
+            </div>
+          </article>
+
+          <article id="gemini" class="pg-prov" aria-labelledby="gemini-t">
+            <div class="pg-prov-h"><h3 id="gemini-t">Google Gemini</h3><span class="pg-tag">Gratis</span></div>
+            <p class="uses">Voz y texto. La IA de Google, con un plan gratuito generoso.</p>
+            <ol class="pg-steps">
+              <li><span>Abre <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a> e inicia sesión con tu cuenta de Google.</span></li>
+              <li><span>Haz clic en <strong>Create API key</strong>.</span></li>
+              <li><span>Elige un proyecto existente o crea uno nuevo.</span></li>
+              <li><span>Copia la clave (empieza con <code>AIza</code>) y pégala en la app.</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Abrir aistudio.google.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <span class="lim">En el plan gratis, Google <b>puede usar lo que envías</b> para mejorar sus productos.</span>
+            </div>
+          </article>
+
+          <article id="openrouter" class="pg-prov" aria-labelledby="openrouter-t">
+            <div class="pg-prov-h"><h3 id="openrouter-t">OpenRouter</h3><span class="pg-tag">Modelos :free</span></div>
+            <p class="uses">Solo texto: pulido, traducción y preguntas. Da acceso a decenas de modelos, y los que terminan en <code>:free</code> no cuestan nada.</p>
+            <ol class="pg-steps">
+              <li><span>Abre <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener noreferrer">OpenRouter</a> e inicia sesión con Google, GitHub o correo.</span></li>
+              <li><span>Haz clic en <strong>Create Key</strong> y ponle un nombre. El límite de crédito es opcional.</span></li>
+              <li><span>Copia la clave (empieza con <code>sk-or-</code>) y pégala en la app.</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener noreferrer">Abrir openrouter.ai<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <span class="lim">Sin créditos en la cuenta: <b>unos 50 pedidos por día</b> en los modelos gratis.</span>
+            </div>
+          </article>
+
+          <article id="mistral" class="pg-prov" aria-labelledby="mistral-t">
+            <div class="pg-prov-h"><h3 id="mistral-t">Mistral</h3><span class="pg-tag">Sin tarjeta</span></div>
+            <p class="uses">Voz y texto. IA europea, con un modelo de transcripción muy bueno.</p>
+            <ol class="pg-steps">
+              <li><span>Abre la <a href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">consola de Mistral</a> y crea tu cuenta.</span></li>
+              <li><span>Elige el plan gratuito (<strong>Experiment</strong>). No pide tarjeta.</span></li>
+              <li><span>En <strong>API Keys</strong>, crea una clave nueva.</span></li>
+              <li><span>Copia la clave y pégala en la app.</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">Abrir console.mistral.ai<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+            </div>
+          </article>
+
+          <article id="tavily" class="pg-prov" aria-labelledby="tavily-t">
+            <div class="pg-prov-h"><h3 id="tavily-t">Tavily</h3><span class="pg-tag">Búsqueda web</span></div>
+            <p class="uses">Opcional. Da al asistente por voz (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>U</kbd>) acceso a internet: busca y responde citando las fuentes.</p>
+            <ol class="pg-steps">
+              <li><span>Abre <a href="https://app.tavily.com" target="_blank" rel="noopener noreferrer">Tavily</a> y crea tu cuenta.</span></li>
+              <li><span>La clave (empieza con <code>tvly-</code>) ya aparece en el panel.</span></li>
+              <li><span>Cópiala y pégala en la app.</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://app.tavily.com" target="_blank" rel="noopener noreferrer">Abrir app.tavily.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <span class="lim">Plan gratis: <b>1000 créditos por mes</b>, sin tarjeta.</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="colar">
+        <h2>Pegar la clave en la app</h2>
+        <ul class="pg-list">
+          <li>La primera vez, el asistente de configuración pide la clave. Después, queda en <strong>Configuración → Proveedores</strong>.</li>
+          <li>Haz clic en <strong>Probar</strong>. Si algo sale mal, la app muestra el mensaje real del proveedor, nada de “error desconocido”.</li>
+          <li>El orden de los proveedores es el orden de intento. Arrastra para cambiarlo.</li>
+        </ul>
+        <h3>Dónde se guarda la clave</h3>
+        <p>En el <strong>Administrador de credenciales de Windows</strong>. Solo en casos raros, con el almacén no disponible o rechazando una clave muy larga, queda en un archivo local en tu carpeta de usuario. Solo sale de tu PC hacia el propio proveedor, en cada pedido.</p>
+        <h3>Más de una clave</h3>
+        <p>Puedes registrar varias claves en el mismo proveedor. Cuando una llega al límite o falla, FlowVoice pasa a la siguiente automáticamente.</p>
+        <h3>¿Y cuando un modelo se retira?</h3>
+        <p>Los proveedores cambian de modelo con frecuencia. FlowVoice detecta cuándo un modelo deja de funcionar, elige un reemplazo de la lista actual del proveedor, lo prueba y pasa a <span class="nowrap">usarlo</span> solo. También lo comprueba una vez al día, en segundo plano. No tienes que tocar nada.</p>
+      </section>
+
+      <section id="limites">
+        <h2>Límites del plan gratis, sin rodeos</h2>
+        <p>Todo plan gratis tiene un tope: tantos pedidos por minuto, tantos minutos de audio por día. Para dictar a diario, sobra. Las cifras exactas cambian de vez en cuando, así que consulta la página de cada proveedor.</p>
+        <div class="pg-table">
+          <table>
+            <caption class="sr">Cómo se cuenta el límite gratis de cada proveedor</caption>
+            <thead><tr><th scope="col">Proveedor</th><th scope="col">El límite vale para</th><th scope="col">Otra clave en la misma cuenta</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Groq</th><td data-l="El límite vale para">Toda la cuenta (organización)</td><td data-l="Otra clave en la misma cuenta">No aumenta la cuota</td></tr>
+              <tr><th scope="row">Gemini</th><td data-l="El límite vale para">El proyecto de Google, no la clave</td><td data-l="Otra clave en la misma cuenta">No aumenta, si es del mismo proyecto</td></tr>
+              <tr><th scope="row">OpenRouter</th><td data-l="El límite vale para">Pedidos por día en los modelos <code>:free</code>; sube si la cuenta tiene créditos comprados</td><td data-l="Otra clave en la misma cuenta">No aumenta</td></tr>
+              <tr><th scope="row">Tavily</th><td data-l="El límite vale para">Créditos por mes; cada búsqueda gasta 1 o 2</td><td data-l="Otra clave en la misma cuenta">No aumenta</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-warn"/></svg>
+          <p><b>Varias claves de la misma cuenta no se suman</b>En Groq, el límite vale para toda la cuenta: cinco claves en la misma cuenta dan exactamente la misma cuota que una. Lo que sí ayuda es tener <strong>proveedores distintos</strong> de respaldo, por ejemplo Groq y Gemini.</p>
+        </div>
+      </section>
+
+      <section id="offline">
+        <h2>Sin internet: 100% sin conexión</h2>
+        <p>¿Prefieres no usar ninguna nube? En <strong>Configuración → Transcripción</strong>, elige <strong>100% local</strong> y descarga un modelo de reconocimiento de voz (Whisper). La transcripción se ejecuta en tu procesador y el audio nunca sale del PC.</p>
+        <p>La app muestra qué modelos se recomiendan para el idioma en que hablas. Las cifras de abajo son aproximadas:</p>
+        <div class="pg-table">
+          <table>
+            <caption class="sr">Modelos sin conexión: tamaño, memoria y uso recomendado</caption>
+            <thead><tr><th scope="col">Modelo</th><th scope="col">Descarga</th><th scope="col">Memoria en uso</th><th scope="col">Para quién</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Tiny</th><td class="num" data-l="Descarga">31 MB</td><td class="num" data-l="Memoria en uso">~150 MB</td><td data-l="Para quién">PC muy modestos; se equivoca más</td></tr>
+              <tr><th scope="row">Base</th><td class="num" data-l="Descarga">57 MB</td><td class="num" data-l="Memoria en uso">~300 MB</td><td data-l="Para quién">Rápido; también se usa en la vista previa en vivo</td></tr>
+              <tr><th scope="row">Small</th><td class="num" data-l="Descarga">181 MB</td><td class="num" data-l="Memoria en uso">~600 MB</td><td data-l="Para quién">Buen equilibrio en los idiomas más hablados</td></tr>
+              <tr><th scope="row">Distil-Whisper pt-BR <span class="pill">pt-BR</span></th><td class="num" data-l="Descarga">513 MB</td><td class="num" data-l="Memoria en uso">~950 MB</td><td data-l="Para quién">Ajustado para el portugués de Brasil</td></tr>
+              <tr><th scope="row">Large v3 Turbo</th><td class="num" data-l="Descarga">547 MB</td><td class="num" data-l="Memoria en uso">~1 GB</td><td data-l="Para quién">Máxima precisión en cualquier idioma</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="pg-list">
+          <li><strong>Siendo sinceros:</strong> sin conexión es más lento que la nube, sobre todo con los modelos grandes en PC modestos. El modo local necesita un procesador con AVX2 (la mayoría de los de los últimos diez años lo tiene; si el tuyo no, la app te avisa).</li>
+          <li>El modelo solo ocupa memoria mientras dictas y se libera unos segundos después.</li>
+          <li>Cada modelo se descarga una vez, solo cuando lo pides, y se puede <strong>eliminar en cualquier momento</strong> en la misma pantalla.</li>
+          <li>Para pulir el texto también sin internet, usa <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Ollama</a>, que ejecuta una IA de texto en tu PC.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <section class="pg-next" aria-labelledby="next-t">
+    <div class="wrap">
+      <div class="pg-next-in">
+        <div>
+          <h2 id="next-t">¿Ya tienes la clave? Ahora solo falta hablar.</h2>
+          <p>Instalador ligero, sin permisos de administrador.</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>Descargar para Windows</a>
+          <a class="btn btn-ghost btn-lg" href="privacidade.html">Privacidad</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · hecho en Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
+      <nav aria-label="Pie de página">
+        <ul>
+          <li><a href="guia.html" aria-current="page">Guía de claves</a></li>
+          <li><a href="novidades.html">Novedades</a></li>
+          <li><a href="privacidade.html">Privacidad</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Licencia GPL-3.0</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">Reportar un problema</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">Sugerir una mejora</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>Apoya el proyecto: <a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> (Brasil) · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/es.js" defer></script>
+<script src="../site.js" defer></script>
+<script>
+  /* Contents rail: always open on wide screens, collapsed on phones; marks the section being read.
+     Header and menu live in site.js. */
+  addEventListener("DOMContentLoaded", function () {
+    var toc = document.querySelector(".pg-toc details");
+    if (!toc) return;
+    var wide = matchMedia("(min-width: 901px)");
+    var sync = function () { toc.open = wide.matches; };
+    sync(); wide.addEventListener("change", sync);
+    toc.querySelector("summary").addEventListener("click", function (e) { if (wide.matches) e.preventDefault(); });
+    var links = [].slice.call(toc.querySelectorAll("a"));
+    if (!("IntersectionObserver" in window)) return;
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+    var spy = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var a = map[en.target.id]; if (!a) return;
+        links.forEach(function (l) { l.classList.remove("is-active"); l.removeAttribute("aria-current"); });
+        a.classList.add("is-active"); a.setAttribute("aria-current", "location");
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    Object.keys(map).forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
+  });
+</script>
+</body>
+</html>

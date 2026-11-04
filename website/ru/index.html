@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowVoice: бесплатный голосовой ввод с ИИ для Windows</title>
+<meta name="description" content="Нажмите сочетание клавиш, говорите — и текст появится там, где курсор, переписанный ИИ в выбранном стиле. Бесплатно и с открытым кодом, с бесплатными API-ключами или на 100% офлайн.">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/ru/">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/ru/">
+<meta property="og:title" content="FlowVoice: говорите — и текст появится там, где курсор">
+<meta property="og:description" content="Голосовой ввод с ИИ в любом приложении Windows. Бесплатно, открытый код, с бесплатными ключами или на 100% офлайн.">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="FlowVoice: оверлей распознаёт речь в реальном времени">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlowVoice: говорите — и текст появится там, где курсор">
+<meta name="twitter:description" content="Голосовой ввод с ИИ в любом приложении Windows. Бесплатно, открытый код, с бесплатными ключами или на 100% офлайн.">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "FlowVoice",
+  "description": "Голосовой ввод с ИИ в любом приложении. Нажмите сочетание клавиш, говорите — и текст появится там, где курсор, переписанный в выбранном стиле. Работает с бесплатными API-ключами или на 100% офлайн.",
+  "url": "https://flowvoice.caliberda.com.br/ru/",
+  "image": "https://flowvoice.caliberda.com.br/assets/og.png",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Windows 10, Windows 11",
+  "softwareVersion": "2.2",
+  "inLanguage": ["pt-BR", "en", "es", "fr", "de", "ja", "zh-Hans", "ru", "hi", "bn"],
+  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "isAccessibleForFree": true,
+  "downloadUrl": "https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+  "author": { "@type": "Person", "name": "Júlio Caliberda", "url": "https://caliberda.com.br", "sameAs": ["https://github.com/cesarkali"] }
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Перейти к содержимому</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.56 9.56 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20s-8-4.8-8-10.4A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.6C20 15.2 12 20 12 20z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h3.2v14H7zM13.8 5H17v14h-3.2z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7.5 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L8.7 4.5a.8.8 0 0 0-1.2.7z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0-5.5-5.5M19.5 12l-5.5 5.5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+    <symbol id="fv-stop" viewBox="0 0 20 20"><rect x="5.5" y="5.5" width="9" height="9" rx="1.75" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="fv-x" viewBox="0 0 20 20"><path d="m5.5 5.5 9 9"/><path d="m14.5 5.5-9 9"/></symbol>
+    <symbol id="fv-check" viewBox="0 0 20 20"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></symbol>
+    <symbol id="fv-copy" viewBox="0 0 20 20"><rect x="7" y="7" width="9.5" height="9.5" rx="1.75"/><path d="M13 7V5.25c0-.97-.78-1.75-1.75-1.75h-6c-.97 0-1.75.78-1.75 1.75v6c0 .97.78 1.75 1.75 1.75H7"/></symbol>
+    <symbol id="fv-replace" viewBox="0 0 20 20"><path d="M4 8h10.5"/><path d="m11.5 5 3 3-3 3"/><path d="M16 12H5.5"/><path d="m8.5 9-3 3 3 3"/></symbol>
+    <symbol id="fv-translate" viewBox="0 0 20 20"><path d="M3 5h8"/><path d="M7 3.25V5"/><path d="M5 5c.6 2.4 2.4 4.6 5 5.75"/><path d="M9.25 5c-.6 2.6-2.5 4.9-5.75 6.5"/><path d="m10.75 16.5 3-7 3 7"/><path d="M11.75 14.25h4"/></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top" data-hero-cta>
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice, главная страница"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="Основное меню">
+      <a href="#estilos">Стили</a>
+      <a href="#gratis">Бесплатно и офлайн</a>
+      <a href="guia.html">Ключи</a>
+      <a href="novidades.html">Что нового</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="Язык">
+        <a href="../" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="../ja/" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="../zh/" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a>
+        <a href="./" hreflang="ru" lang="ru" data-lang="ru" aria-current="true">Русский</a>
+        <a href="../hi/" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="../bn/" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="Язык" aria-label="Язык: Русский"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>RU</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="../ja/" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="../zh/" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a></li>
+          <li><a href="./" hreflang="ru" lang="ru" data-lang="ru" aria-current="true">Русский</a></li>
+          <li><a href="../hi/" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="../bn/" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="Тёмная тема" title="Тёмная тема"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Скачать</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Открыть меню"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" aria-labelledby="hero-t">
+  <div class="wrap hero-grid">
+    <h1 id="hero-t">Говорите. Текст появится там, где <span class="nowrap">курсор.<span class="caret" aria-hidden="true"></span></span></h1>
+
+    <div class="hero-side">
+      <p class="sig"><img src="../assets/logo.svg" alt="" width="40" height="40"><span>FlowVoice</span></p>
+      <p class="lede">Голосовой ввод с ИИ в любом приложении Windows. Чисто, с пунктуацией и в нужном тоне. Бесплатно, с открытым кодом и, если хотите, на 100% офлайн.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>Скачать для Windows</a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
+      </div>
+      <p class="hero-meta">Windows 10 и 11 · ~3 MB · без прав администратора</p>
+    </div>
+
+    <figure class="demo" aria-labelledby="demo-cap">
+      <figcaption id="demo-cap" class="sr">Демонстрация: в каждом приложении человек нажимает Ctrl+Shift+Пробел и говорит. Текст появляется в реальном времени в оверлее FlowVoice и вставляется на место курсора уже переписанным: официально в Outlook, естественно в Slack, как промпт в ChatGPT.</figcaption>
+      <div class="demo-bar">
+        <div class="demo-apps" role="group" aria-label="Выбрать приложение для демонстрации">
+          <button type="button" class="demo-app" data-go="0" aria-pressed="true"><img src="../assets/apps/outlook.svg" alt="" width="18" height="18">Outlook</button>
+          <button type="button" class="demo-app" data-go="1" aria-pressed="false"><img src="../assets/apps/slack.svg" alt="" width="18" height="18">Slack</button>
+          <button type="button" class="demo-app" data-go="2" aria-pressed="false"><img src="../assets/apps/chatgpt.svg" alt="" width="18" height="18">ChatGPT</button>
+        </div>
+        <button type="button" class="demo-pause" aria-pressed="false" aria-label="Приостановить демонстрацию"><svg class="ic-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="ic-play" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </div>
+
+      <div class="sheet" aria-hidden="true">
+        <div class="pane on" data-pane="0">
+          <div class="pane-head"><img src="../assets/apps/outlook.svg" alt="" width="20" height="20"><b>Новое сообщение</b><span>Outlook</span></div>
+          <dl class="mail">
+            <div><dt>Кому</dt><dd>komanda@company.ru</dd></div>
+            <div><dt>Тема</dt><dd>Встреча в четверг</dd></div>
+          </dl>
+          <p class="field"><span class="out"></span><i class="ibeam"></i></p>
+        </div>
+        <div class="pane" data-pane="1">
+          <div class="pane-head"><img src="../assets/apps/slack.svg" alt="" width="20" height="20"><b># продукт</b><span>Slack</span></div>
+          <div class="msg"><span class="av">А</span><div><b>Анна Лебедева</b> <time>14:02</time><p>Кто-нибудь уже тестировал новую версию?</p></div></div>
+          <p class="field boxed"><span class="out"></span><i class="ibeam"></i></p>
+        </div>
+        <div class="pane" data-pane="2">
+          <div class="pane-head"><img src="../assets/apps/chatgpt.svg" alt="" width="20" height="20"><b>Новый чат</b><span>ChatGPT</span></div>
+          <p class="chat-q">Чем могу помочь?</p>
+          <p class="field boxed round"><span class="out"></span><i class="ibeam"></i></p>
+        </div>
+
+        <div class="keys" data-keys><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Пробел</kbd></div>
+
+        <div class="fvo has-text" data-fvo>
+          <div class="fvo-shell" data-shell style="width:500px;height:92px;border-radius:22px">
+            <div class="fvo-wave m-listen" aria-hidden="true"><i style="--i:0;--e:0.461;--hi:0.474"></i><i style="--i:1;--e:0.586;--hi:0.526"></i><i style="--i:2;--e:0.724;--hi:0.584"></i><i style="--i:3;--e:0.849;--hi:0.637"></i><i style="--i:4;--e:0.943;--hi:0.676"></i><i style="--i:5;--e:0.994;--hi:0.697"></i><i style="--i:6;--e:0.994;--hi:0.697"></i><i style="--i:7;--e:0.943;--hi:0.676"></i><i style="--i:8;--e:0.849;--hi:0.637"></i><i style="--i:9;--e:0.724;--hi:0.584"></i><i style="--i:10;--e:0.586;--hi:0.526"></i><i style="--i:11;--e:0.461;--hi:0.474"></i></div>
+            <div class="fvo-layer fvo-listen on" data-layer="listen">
+              <div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-meta"><span class="fvo-mode">Диктовка</span><span class="fvo-sty"><span data-style>Деловой</span><span class="fvo-app">· <span data-app>Outlook</span></span></span></span><span class="fvo-time" data-time>00:01</span><span class="fvo-stop"><svg><use href="#fv-stop"/></svg></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-live"><div class="fvo-lwin"><p data-live><span class="ck">ну, короче, всем привет, </span><span class="ck un">встреча в</span></p></div></div>
+            </div>
+            <div class="fvo-layer fvo-proc" data-layer="proc"><div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-pl" data-proc>Распознаю…</span></div></div>
+            <div class="fvo-layer fvo-card" data-layer="card">
+              <div class="fvo-head"><span class="fvo-badge"><svg><use href="#fv-check"/></svg></span><span class="fvo-ht" data-head>Вставлено</span><span class="fvo-hm"><span data-hm><span data-style>Деловой</span><span class="fvo-app"> · <span data-app>Outlook</span></span></span><span class="fvo-via"> · groq · openai/gpt-oss-20b</span></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-tbox"><p class="fvo-text" data-result>Всем привет. Встреча в четверг подтверждена на 10:00. Если кто-то не сможет прийти, пожалуйста, сообщите мне.</p></div>
+              <div class="fvo-chips"><span class="fvo-chip" data-chip="natural" style="--i:0">Естественный</span><span class="fvo-chip on" data-chip="professional" style="--i:1">Деловой</span><span class="fvo-chip" data-chip="prompt" style="--i:2">Промпт</span><span class="fvo-chip" data-chip="raw" style="--i:3">Без обработки</span><span class="fvo-chip" data-chip="verbatim" style="--i:4">Только расшифровка</span><span class="fvo-chip" style="--i:5"><svg><use href="#fv-translate"/></svg>Перевести</span><span class="fvo-chip" style="--i:6">Исходник</span></div>
+              <div class="fvo-acts"><span class="fvo-esc">esc</span><span class="fvo-btn"><svg><use href="#fv-copy"/></svg>Копировать</span><span class="fvo-btn primary" data-primary hidden><svg><use href="#fv-replace"/></svg>Заменить</span></div>
+              <i class="fvo-life"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="overlay" aria-labelledby="ov-t">
+  <div class="wrap ovsec">
+    <div class="ovsec-txt">
+      <h2 id="ov-t">Вы видите текст, пока говорите.</h2>
+      <dl class="facts">
+        <div>
+          <dt>В реальном времени, без откатов</dt>
+          <dd>Слова, в которых ещё нет уверенности, показаны бледнее и закрепляются, когда два ответа совпадают. Закреплённое больше не меняется.</dd>
+        </div>
+        <div>
+          <dt>Переделать в один клик</dt>
+          <dd>В результате можно сменить стиль, перевести, вставить или скопировать. Если текст уже вставлен, <b>Заменить</b> подменит его на месте.</dd>
+        </div>
+        <div>
+          <dt>Где угодно — новое в 2.2</dt>
+          <dd>Во время записи перетащите капсулу в любой угол, даже на другой монитор. Или выберите своё место в «Общие → Плавающее окно».</dd>
+        </div>
+        <div>
+          <dt>Стекло — новое в 2.1</dt>
+          <dd>Капсула может быть стеклянной, с размытием самой Windows, или полупрозрачной. В «Общие → Плавающее окно».</dd>
+        </div>
+      </dl>
+    </div>
+    <figure class="ovdemo" aria-labelledby="ovdemo-cap">
+      <figcaption id="ovdemo-cap" class="sr">Демонстрация плавающего окна FlowVoice на рабочем столе: текст появляется, пока человек говорит, неуверенные слова показаны бледнее; затем появляется результат, который в один клик переписывается в стиле «Деловой». Кнопки переключают вид капсулы: сплошная, стекло и полупрозрачная.</figcaption>
+      <div class="ov-bar">
+        <div class="seg" role="group" aria-label="Вид капсулы">
+          <button type="button" data-look="solid" aria-pressed="false">Сплошная</button>
+          <button type="button" data-look="glass" aria-pressed="true">Стекло</button>
+          <button type="button" data-look="translucent" aria-pressed="false">Полупрозрачная</button>
+        </div>
+        <button type="button" class="ov-light" aria-pressed="false"><span class="sw" aria-hidden="true"></span>Свет и тень</button>
+        <button type="button" class="demo-pause" aria-pressed="false" aria-label="Приостановить демонстрацию"><svg class="ic-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="ic-play" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </div>
+      <div class="desk" aria-hidden="true">
+        <div class="desk-win">
+          <div class="desk-bar"><img src="../assets/apps/word.svg" alt="" width="16" height="16">Квартальный отчёт</div>
+          <div class="desk-body"><i style="width:72%"></i><i style="width:90%"></i><i style="width:56%"></i><div class="desk-chart"><b></b><b></b><b></b><b></b><b></b></div></div>
+        </div>
+        <div class="desk-task"></div>
+        <div class="fvo" data-fvo>
+          <div class="fvo-shell" data-shell>
+            <div class="fvo-wave m-listen" aria-hidden="true"><i style="--i:0;--e:0.461;--hi:0.474"></i><i style="--i:1;--e:0.586;--hi:0.526"></i><i style="--i:2;--e:0.724;--hi:0.584"></i><i style="--i:3;--e:0.849;--hi:0.637"></i><i style="--i:4;--e:0.943;--hi:0.676"></i><i style="--i:5;--e:0.994;--hi:0.697"></i><i style="--i:6;--e:0.994;--hi:0.697"></i><i style="--i:7;--e:0.943;--hi:0.676"></i><i style="--i:8;--e:0.849;--hi:0.637"></i><i style="--i:9;--e:0.724;--hi:0.584"></i><i style="--i:10;--e:0.586;--hi:0.526"></i><i style="--i:11;--e:0.461;--hi:0.474"></i></div>
+            <div class="fvo-layer fvo-listen on" data-layer="listen">
+              <div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-meta"><span class="fvo-mode">Диктовка</span><span class="fvo-sty"><span data-style>Естественный</span></span></span><span class="fvo-time" data-time>00:01</span><span class="fvo-stop"><svg><use href="#fv-stop"/></svg></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-live"><div class="fvo-lwin"><p data-live></p></div></div>
+            </div>
+            <div class="fvo-layer fvo-proc" data-layer="proc"><div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-pl" data-proc>Распознаю…</span></div></div>
+            <div class="fvo-layer fvo-card" data-layer="card">
+              <div class="fvo-head"><span class="fvo-badge"><svg><use href="#fv-check"/></svg></span><span class="fvo-ht" data-head>Вставлено</span><span class="fvo-hm"><span data-hm><span data-style>Естественный</span></span><span class="fvo-via"> · groq · openai/gpt-oss-20b</span></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-tbox"><p class="fvo-text" data-result>Хочу узнать, можно ли перенести ту встречу на четверг после обеда, потому что в среду я вообще не смогу.</p></div>
+              <div class="fvo-chips"><span class="fvo-chip on" data-chip="natural" style="--i:0">Естественный</span><span class="fvo-chip" data-chip="professional" style="--i:1">Деловой</span><span class="fvo-chip" data-chip="prompt" style="--i:2">Промпт</span><span class="fvo-chip" data-chip="raw" style="--i:3">Без обработки</span><span class="fvo-chip" data-chip="verbatim" style="--i:4">Только расшифровка</span><span class="fvo-chip" style="--i:5"><svg><use href="#fv-translate"/></svg>Перевести</span><span class="fvo-chip" style="--i:6">Исходник</span></div>
+              <div class="fvo-acts"><span class="fvo-esc">esc</span><span class="fvo-btn"><svg><use href="#fv-copy"/></svg>Копировать</span><span class="fvo-btn primary" data-primary hidden><svg><use href="#fv-replace"/></svg>Заменить</span></div>
+              <i class="fvo-life"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="estilos" aria-labelledby="est-t">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="est-t">Одна фраза. Нужный тон для каждого места.</h2>
+      <p>Выберите стиль или доверьте выбор приложению в фокусе.</p>
+    </div>
+
+    <div class="styles">
+      <div class="styler">
+        <div class="said">
+          <p class="said-l">Вы сказали <span class="said-ctx" data-ctx><img src="../assets/apps/outlook.svg" alt="" width="16" height="16">в Outlook</span></p>
+          <div class="stack" data-said-stack><p class="said-t" data-said>«<s>ну,</s> всем привет, <s>короче,</s> по квартальному отчёту, <s>это,</s> нужно, чтобы все прислали свою часть до пятницы, <s>типа,</s> до обеда, чтобы всё успеть проверить до встречи в понедельник»</p></div>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Стили текста">
+          <button class="tab" role="tab" id="t-natural" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="natural">Естественный</button>
+          <button class="tab" role="tab" id="t-professional" aria-controls="sty-panel" aria-selected="true" data-style="professional">Деловой</button>
+          <button class="tab" role="tab" id="t-prompt" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="prompt">Промпт</button>
+          <button class="tab" role="tab" id="t-raw" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="raw">Без обработки</button>
+          <button class="tab" role="tab" id="t-verbatim" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="verbatim">Только расшифровка</button>
+        </div>
+        <div class="result" id="sty-panel" role="tabpanel" aria-labelledby="t-professional" aria-live="polite">
+          <div class="stack" data-out-stack><p class="result-t" data-out>Всем привет. По квартальному отчёту: прошу всех прислать свою часть до 12:00 пятницы, чтобы всё успеть проверить до встречи в понедельник.</p></div>
+          <div class="result-foot">
+            <p class="result-d" data-desc>Официально и чётко, готово для письма.</p>
+            <div class="strength off" role="group" aria-label="Интенсивность стиля «Промпт»">
+              <span class="strength-l" aria-hidden="true">Интенсивность</span>
+              <button type="button" data-level="light" aria-pressed="false">Слабая</button>
+              <button type="button" data-level="medium" aria-pressed="true">Средняя</button>
+              <button type="button" data-level="strong" aria-pressed="false">Сильная</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="per-app">
+        <h3>Стиль для приложения</h3>
+        <p>FlowVoice узнаёт приложение в фокусе, даже в браузере, и применяет стиль, который вы для него задали.</p>
+        <ul class="map">
+          <li><button type="button" data-pick="professional" aria-controls="sty-panel"><span class="icons"><img src="../assets/apps/outlook.svg" alt="Outlook" width="28" height="28"><img src="../assets/apps/gmail.svg" alt="Gmail" width="28" height="28"><img src="../assets/apps/word.svg" alt="Word" width="28" height="28"><img src="../assets/apps/notion.svg" alt="Notion" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>Деловой</b></button></li>
+          <li><button type="button" data-pick="natural" aria-controls="sty-panel"><span class="icons"><img src="../assets/apps/slack.svg" alt="Slack" width="28" height="28"><img src="../assets/apps/whatsapp.svg" alt="WhatsApp" width="28" height="28"><img src="../assets/apps/teams.svg" alt="Teams" width="28" height="28"><img src="../assets/apps/discord.svg" alt="Discord" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>Естественный</b></button></li>
+          <li><button type="button" data-pick="prompt" aria-controls="sty-panel"><span class="icons"><img src="../assets/apps/vscode.svg" alt="VS Code" width="28" height="28"><img src="../assets/apps/chatgpt.svg" alt="ChatGPT" width="28" height="28"><img src="../assets/apps/claude.svg" alt="Claude" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>Промпт</b></button></li>
+        </ul>
+        <p class="note"><img src="../assets/apps/chrome.svg" alt="" width="16" height="16">Gmail, WhatsApp Web, ChatGPT и другие тоже распознаются внутри Chrome и Edge.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="comando" aria-labelledby="cmd-t">
+  <div class="wrap cmd">
+    <div class="sec-head">
+      <h2 id="cmd-t">Выделите текст. Скажите, что изменить.</h2>
+      <p>В режиме «Команда» <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>K</kbd> переписывает выделенное прямо на месте, в любом приложении.</p>
+    </div>
+    <ol class="cmd-steps">
+      <li><span class="cmd-l">Выделено</span><p class="cmd-before"><mark>ань привет, завтра на встречу не смогу, тут проблема вылезла, сорян</mark></p></li>
+      <li><span class="cmd-l">Вы говорите</span><p class="cmd-say"><span class="wave sm" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>«сделай официальнее»</p></li>
+      <li><span class="cmd-l">Получается</span><p class="cmd-after">Анна, добрый день. К сожалению, не смогу присутствовать на завтрашней встрече из-за непредвиденных обстоятельств. Приношу извинения.</p></li>
+    </ol>
+    <p class="cmd-more">Подойдёт и «переведи на английский», «сделай тезисы», «исправь грамматику».</p>
+  </div>
+</section>
+
+<section class="sec" id="gratis" aria-labelledby="gr-t">
+  <div class="wrap free">
+    <div class="free-txt">
+      <h2 id="gr-t">Действительно бесплатно. Даже без интернета.</h2>
+      <dl class="facts">
+        <div>
+          <dt>С бесплатным ключом</dt>
+          <dd>Groq (рекомендуется), Gemini, Mistral или OpenRouter. Без карты, за пару минут. <a href="guia.html">Открыть гайд по ключам</a></dd>
+        </div>
+        <div>
+          <dt>Или на 100% на вашем ПК</dt>
+          <dd>Локальные модели Whisper, в том числе одна, настроенная на бразильский португальский. Ничего не покидает компьютер.</dd>
+        </div>
+        <div>
+          <dt>Без аккаунта и без наших серверов</dt>
+          <dd>Ключи хранятся в хранилище учётных данных Windows. Открытый код, лицензия GPL-3.0. <a href="privacidade.html">Конфиденциальность</a></dd>
+        </div>
+      </dl>
+    </div>
+    <figure class="shot">
+      <img src="../assets/shot-providers.png" width="2200" height="1440" loading="lazy" decoding="async" alt="Экран провайдеров FlowVoice: Groq — рекомендуется и бесплатно, Google Gemini, OpenRouter и Mistral — бесплатно, OpenAI — платно, Ollama — локально.">
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="detalhes" aria-labelledby="det-t">
+  <div class="wrap">
+    <h2 id="det-t" class="h-small">И мелочи, которых обычно не хватает.</h2>
+    <ul class="specs">
+      <li><b>Перевод во время диктовки</b><span>Говорите по-русски, вставляйте на одном из 34 языков. <span class="nowrap"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Y</kbd></span></span></li>
+      <li><b>Свой словарь</b><span>Имена, бренды и термины всегда пишутся правильно.</span></li>
+      <li><b>История с поиском</b><span>Всё, что вы надиктовали, сохраняется на вашем ПК.</span></li>
+      <li><b>Удерживать, чтобы говорить</b><span>Запись идёт, только пока зажато сочетание клавиш.</span></li>
+      <li><b>Голосовой ассистент</b><span>Спросите вслух — ответ с поиском в интернете. <span class="nowrap"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>U</kbd></span></span></li>
+      <li><b>Обновляется сам</b><span>Установщик ~3 MB, без прав администратора.</span></li>
+      <li><b>Повторить</b><span>Если распознавание не удалось, запись остаётся в памяти, и один клик повторяет диктовку.</span></li>
+      <li><b>Тишина во время записи</b><span>По желанию: звук ПК отключается на время записи и потом возвращается сам.</span></li>
+      <li><b>10 языков</b><span>Португальский, английский, испанский, французский, немецкий, японский, китайский, русский, хинди и бенгальский.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec faq" id="duvidas" aria-labelledby="faq-t">
+  <div class="wrap faq-grid">
+    <h2 id="faq-t" class="h-small">Коротко о главном</h2>
+    <div class="qa">
+      <details>
+        <summary>Это правда бесплатно?</summary>
+        <p>Да. У FlowVoice нет сервера: он использует ваш ключ напрямую у провайдера или работает на вашем ПК. Бесплатных тарифов Groq и Gemini хватает для обычного ежедневного использования, без карты.</p>
+      </details>
+      <details>
+        <summary>Windows показала предупреждение при установке. Это безопасно?</summary>
+        <p>Это ожидаемо: у установщика пока нет платной подписи. Нажмите «Подробнее» и «Выполнить в любом случае». Установщик собирается в GitHub Actions из открытого кода.</p>
+      </details>
+      <details>
+        <summary>На каких системах работает?</summary>
+        <p>На Windows 10 и 11. Установщик весит около 3 MB, не требует прав администратора и обновляется сам.</p>
+      </details>
+      <details>
+        <summary>Нашли проблему или есть идея. Куда писать?</summary>
+        <p>На GitHub: <a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">сообщить о проблеме</a> или <a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">предложить улучшение</a>. В самом приложении, в «Настройки → О программе», те же кнопки сразу подставляют версию приложения и Windows.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="apoie" aria-labelledby="ap-t">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="ap-t">Сделано одним человеком в Бразилии, открыто.</h2>
+      <p>FlowVoice бесплатен и всегда будет бесплатным. Если он экономит ваше время, чашка кофе через LivePix (Pix, для Бразилии) или GitHub Sponsors (любая карта, ежемесячно или разово) помогает выпускать обновления дальше.</p>
+    </div>
+    <div class="support">
+      <div class="pix">
+        <a class="qr" href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer"><img src="../assets/qr-livepix.svg" width="168" height="168" alt="QR-код LivePix для пожертвования FlowVoice"></a>
+        <div class="pix-act">
+          <a class="btn btn-primary" href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#i-heart"/></svg>Пожертвовать через LivePix</a>
+          <p class="pix-note"><code>livepix.gg/caliberda</code><br>Наведите камеру телефона на код или нажмите на него.</p>
+          <a class="btn btn-ghost sponsor" href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#i-heart"/></svg>Спонсировать на GitHub</a>
+          <p class="pix-note">Ежемесячно или разово, любой картой. GitHub передаёт всё полностью.</p>
+        </div>
+      </div>
+      <div class="help">
+        <h3>Нет возможности пожертвовать? Это помогает не меньше.</h3>
+        <ul>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">Звезда на GitHub</a><span>Так проект найдёт больше людей.</span></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">Сообщение об ошибке</a><span>С версией и шагами исправление выйдет быстрее.</span></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">Идея</a><span>Расскажите, что сделало бы FlowVoice удобнее для вас.</span></li>
+          <li><b>Посоветовать кому-нибудь</b><span>Те, кто печатает весь день, скажут спасибо.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final" aria-labelledby="fin-t">
+  <div class="wrap">
+    <p class="sig sig-lg"><img src="../assets/logo.svg" alt="" width="56" height="56"><span>FlowVoice</span></p>
+    <h2 id="fin-t">Хватит печатать то, что можно сказать.</h2>
+    <p>Скачайте, вставьте бесплатный ключ Groq и надиктуйте первый текст за пять минут.</p>
+    <div class="cta-row">
+      <a class="btn btn-light btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-down"/></svg>Скачать для Windows</a>
+      <a class="btn btn-ghost-dark btn-lg" href="guia.html">Получить бесплатные ключи</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · сделано в Бразилии, автор — <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
+      <nav aria-label="Подвал">
+        <ul>
+          <li><a href="guia.html">Ключи</a></li>
+          <li><a href="novidades.html">Что нового</a></li>
+          <li><a href="privacidade.html">Конфиденциальность</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Лицензия GPL-3.0</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">Сообщить о проблеме</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">Предложить улучшение</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>Поддержать проект: <a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/ru.js" defer></script>
+<script src="../site.js" defer></script>
+</body>
+</html>

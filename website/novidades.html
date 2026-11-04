@@ -3,27 +3,40 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novidades · FlowVoice 2.1: prévia mais estável e cápsula de vidro</title>
-<meta name="description" content="O que mudou no FlowVoice: na 2.1, prévia ao vivo que não volta atrás e cápsula de vidro; na 2.0, reescrito do zero em Rust, estilo Prompt, modo Comando, troca automática de modelos aposentados e modo offline com modelo para pt-BR.">
+<title>Novidades · FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas</title>
+<meta name="description" content="O que mudou no FlowVoice: na 2.2, cápsula arrastável, Tentar de novo quando a transcrição falha e interface em 10 idiomas; na 2.1, prévia ao vivo que não volta atrás e cápsula de vidro; na 2.0, reescrito do zero em Rust, estilo Prompt, modo Comando, troca automática de modelos aposentados e modo offline com modelo para pt-BR.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <link rel="canonical" href="https://flowvoice.caliberda.com.br/novidades">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/novidades">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/novidades">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/novidades">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/novidades">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/novidades">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/novidades">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/novidades">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/novidades">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/novidades">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/novidades">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/novidades">
+<!-- /i18n:alternates -->
 
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="FlowVoice">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:url" content="https://flowvoice.caliberda.com.br/novidades">
-<meta property="og:title" content="FlowVoice 2.1: prévia mais estável e cápsula de vidro">
-<meta property="og:description" content="A prévia ao vivo não volta mais atrás, e a cápsula pode ser de vidro. Veja o que mudou na 2.1 e na 2.0.">
+<meta property="og:title" content="FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas">
+<meta property="og:description" content="Arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.">
 <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="FlowVoice 2.1: prévia mais estável e cápsula de vidro">
-<meta name="twitter:description" content="A prévia ao vivo não volta mais atrás, e a cápsula pode ser de vidro. Veja o que mudou na 2.1 e na 2.0.">
+<meta name="twitter:title" content="FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas">
+<meta name="twitter:description" content="Arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.">
 <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
@@ -61,8 +74,39 @@
       <a href="guia.html">Guia de chaves</a>
       <a href="novidades.html" aria-current="page">Novidades</a>
       <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="Idioma">
+        <a href="novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt" aria-current="true">Português</a>
+        <a href="en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a>
+        <a href="ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
     </nav>
     <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="Idioma" aria-label="Idioma: Português"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>PT</span></summary>
+        <ul class="lang-menu">
+          <li><a href="novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt" aria-current="true">Português</a></li>
+          <li><a href="en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a></li>
+          <li><a href="ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
       <button class="theme-btn" type="button" aria-pressed="false" aria-label="Tema escuro" title="Tema escuro"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
       <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Baixar</a>
       <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Abrir menu"><span></span></button>
@@ -74,14 +118,80 @@
   <header class="pg-head">
     <div class="wrap">
       <div class="pg-head-in">
-        <h1>2.1: o texto não volta <span class="nowrap">atrás.<span class="caret" aria-hidden="true"></span></span></h1>
-        <p class="pg-lede">A prévia ao vivo ficou estável: o que já apareceu firme não muda mais. E a cápsula ganhou uma aparência de vidro, com o desfoque do próprio Windows.</p>
-        <p class="pg-meta"><span>Versão <b>2.1</b></span><span>Windows 10 e 11</span><span>Atualiza sozinho</span></p>
+        <h1>2.2: a cápsula vai aonde você <span class="nowrap">quiser.<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas.</p>
+        <p class="pg-meta"><span>Versão <b>2.2</b></span><span>Windows 10 e 11</span><span>Atualiza sozinho</span></p>
       </div>
     </div>
   </header>
 
   <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v22">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2</p>
+        <span class="pg-rel-date">Novembro de 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v22">Cápsula arrastável, Tentar de novo e 10 idiomas</h2>
+        <p>A cápsula deixou de ter lugar fixo: arraste durante a gravação ou escolha uma posição só sua. Um ditado que falhou não se perde mais, e o app passa a seguir o idioma do Windows.</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Mova a cápsula</h3>
+            <ul>
+              <li><b>Arrastar durante a gravação</b>: clique na cápsula e arraste para qualquer canto da tela, até para outro monitor. Ela fica onde você largou até o fim daquele ditado; no próximo, volta para a posição padrão.</li>
+              <li><b>Posição personalizada</b>: além de Embaixo e Em cima, escolha o lugar arrastando a cápsula numa miniatura da tela, com encaixe nos cantos, nas bordas e no centro. <b>Testar</b> mostra onde ela aparece.</li>
+              <li><b>Usar onde arrastei por último</b> aproveita o ponto em que você largou a cápsula. Tudo em <b>Geral → Janela flutuante</b>, onde também dá para desligar o arraste.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Tentar de novo e ditados seguidos</h3>
+            <ul>
+              <li>Quando a transcrição falha (rede, limite, chave), o cartão de erro ganha o botão <b>Tentar de novo</b> e fica 30 s na tela. O histórico mostra a falha, com o motivo e o mesmo botão.</li>
+              <li>Refaz como foi ditado: mesmo app, estilo e tradução, com os provedores e as chaves de agora. A gravação fica só na memória (as 3 últimas falhas), nunca em disco.</li>
+              <li>Dois ditados seguidos no mesmo campo ganham um espaço entre eles, quando o cursor ficou onde o anterior terminou. Não em terminais, nem em escritas sem espaço, como japonês e chinês.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>10 idiomas</h3>
+            <ul>
+              <li>A interface agora também está em francês, alemão, japonês, chinês, russo, hindi e bengali, além de português, inglês e espanhol, com as fontes certas do Windows para cada escrita.</li>
+              <li><b>Automático (Windows)</b>, o novo padrão, segue o idioma do Windows. Quem já usa o app mantém o que escolheu.</li>
+              <li>O menu da bandeja, as mensagens de erro e os nomes dos estilos prontos seguem o idioma da interface.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Atalhos sem conflito</h3>
+            <ul>
+              <li><b>Colar de novo</b> vem sem atalho em instalações novas, porque <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd> é o Colar Especial do Office. Continua no menu da bandeja, e dá para escolher um atalho.</li>
+              <li>Em teclados onde <kbd>AltGr</kbd> <kbd>K</kbd> digita um caractere, o Comando começa sem atalho, para não roubar a tecla, e a tela <b>Atalhos</b> explica por quê.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Privacidade e microfone</h3>
+            <ul>
+              <li>Nova seção <b>Privacidade</b> na tela <b>Sobre</b>: o que fica no PC, o que vai para cada provedor e onde ficam as chaves. <a href="privacidade.html">A política completa está aqui</a>.</li>
+              <li>Erros de microfone mais claros: quando o Windows bloqueia o microfone, o app diz onde liberar; quando outro app o usa com exclusividade, também avisa.</li>
+              <li>Mensagem própria quando outro app está segurando a área de transferência.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Correções</h3>
+            <ul>
+              <li>Se o app fechasse no meio de uma gravação com o som do PC silenciado, o som continuava mudo. Agora ele volta na próxima abertura.</li>
+              <li><b>Iniciar com o Windows</b> mais confiável: o app também cria uma tarefa de logon no Agendador de Tarefas, sem pedir administrador. E desligar a inicialização no Gerenciador de Tarefas agora vale de verdade.</li>
+              <li>Comando ou “Outra versão” com tradução não devolve mais duas versões, nem uma nota no fim.</li>
+              <li>Texto em árabe, hebraico, persa e urdu aparece na direção certa no overlay, no histórico e no chat.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>Agora sob a GPL-3.0</b>O FlowVoice continua gratuito e de código aberto. Qualquer versão modificada que for distribuída precisa vir com o código-fonte, sob a mesma licença. <a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Ler a licença</a></p>
+        </div>
+      </div>
+    </section>
+
     <section class="pg-rel" aria-labelledby="v21">
       <div class="pg-rel-meta">
         <p class="pg-rel-ver">2.1</p>
@@ -249,7 +359,7 @@
     <div class="wrap">
       <div class="pg-next-in">
         <div>
-          <h2 id="next-t">Pronto para a 2.1?</h2>
+          <h2 id="next-t">Pronto para a 2.2?</h2>
           <p>Grátis, de código aberto e sem conta.</p>
         </div>
         <div class="cta-row">
@@ -264,7 +374,7 @@
 <footer class="foot-site">
   <div class="wrap">
     <div class="foot-row">
-      <p class="foot-about">FlowVoice 2.1 · feito no Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
+      <p class="foot-about">FlowVoice 2.2 · feito no Brasil por <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
       <nav aria-label="Rodapé">
         <ul>
           <li><a href="guia.html">Guia de chaves</a></li>
@@ -284,6 +394,7 @@
   </div>
 </footer>
 
+<script src="i18n/pt.js" defer></script>
 <script src="site.js" defer></script>
 </body>
 </html>

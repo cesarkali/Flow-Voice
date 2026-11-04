@@ -2,3 +2,6 @@ PRODUCT.md
 DESIGN.md
 assets/apps/CREDITS.md
 assets/apps/preview.html
+i18n/src
+i18n/build.py
+i18n/check.py

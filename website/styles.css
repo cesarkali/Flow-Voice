@@ -275,6 +275,94 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
   .js .top[data-hero-cta]:not(.past-hero) .top-cta .btn { opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity 160ms var(--ease), transform 160ms var(--ease), visibility 0s 160ms; }
 }
 
+/* ---------- languages ----------
+   Picker: a hairline pill beside the theme switch (globe and the language's short code); the menu lists each
+   language by its own name. It is a <details>, so it opens without JS; site.js closes it on Escape or a click
+   outside. The hint (Portuguese pages only, built by site.js) offers the browser's language, never redirects. */
+.lang { position: relative; flex: none; }
+.lang summary {
+  display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px 0 10px; border-radius: 999px;
+  border: 1px solid var(--line-2); color: var(--text-2); font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+  list-style: none; cursor: pointer; user-select: none;
+  transition: border-color 160ms var(--ease), color 160ms var(--ease);
+}
+.lang summary::-webkit-details-marker { display: none; }
+.lang summary:hover, .lang[open] summary { border-color: var(--text-3); color: var(--text); }
+.lang summary:focus-visible { border-radius: 999px; }
+.lang summary svg { width: 16px; height: 16px; flex: none; }
+.lang-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: max-content; min-width: 180px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow-menu);
+}
+.lang-menu a {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 8px 10px; border-radius: 8px;
+  color: var(--text-2); text-decoration: none; font-size: 15px; line-height: 1.35;
+}
+.lang-menu a:hover { background: var(--surface-2); color: var(--text); }
+.lang-menu a[aria-current] { color: var(--text); font-weight: 600; }
+.lang-menu a[aria-current]::after { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+/* Phones: the header keeps the download button, whose word is long in some languages, so the picker moves to
+   the foot of the menu as a row of pills and the theme switch folds to one round button. */
+.nav-lang { display: none; }
+@media (max-width: 480px) {
+  .lang { display: none; }
+  .nav-lang { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 18px; }
+  .nav .nav-lang a {
+    padding: 6px 13px; font-size: 15px; line-height: 1.35; color: var(--text-2);
+    border: 1px solid var(--line-2); border-radius: 999px;
+  }
+  .nav .nav-lang a[aria-current] { color: var(--btn-fg); background: var(--btn-bg); border-color: var(--btn-bg); }
+  .theme-btn { width: 36px; }
+  .theme-knob { display: none; }
+  .theme-btn[aria-pressed] .ic-sun, .theme-btn[aria-pressed] .ic-moon { left: 9px; color: var(--text-2); }
+  .theme-btn[aria-pressed="false"] .ic-moon, .theme-btn[aria-pressed="true"] .ic-sun { display: none; }
+}
+@media (max-width: 380px) {
+  .top .wrap { gap: 8px; }
+  .brand { font-size: 16px; gap: 8px; }
+}
+
+.lang-hint {
+  position: fixed; left: 16px; bottom: 16px; z-index: 70;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px;
+  max-width: min(460px, calc(100vw - 32px)); padding: 12px 12px 12px 18px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow);
+  font-size: 15px; line-height: 1.4;
+  opacity: 0; transform: translateY(10px); transition: opacity 260ms var(--ease), transform 340ms var(--ease);
+}
+.lang-hint.in { opacity: 1; transform: none; }
+.lang-hint p { flex: 1 1 180px; }
+.lang-hint-x { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--text-3); }
+.lang-hint-x:hover { color: var(--text); background: var(--surface-2); }
+.lang-hint-x svg { width: 18px; height: 18px; }
+@media (prefers-reduced-motion: reduce) { .lang-hint { transition: none; } }
+
+/* Scripts Schibsted Grotesk doesn't cover get their system font by name, after it so Latin words keep the
+   brand face (Windows first, then macOS/iOS, then Noto). Letter-spacing is tuned for Latin: it spreads CJK
+   apart and breaks Devanagari/Bengali joins, so those languages drop it; their headings get room for the
+   tall marks and the CJK line rhythm. Same idea as src/lib/styles/base.css in the app. */
+:root {
+  --font-ja: "Schibsted Grotesk", "Yu Gothic UI", "Yu Gothic", Meiryo, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", system-ui, sans-serif;
+  --font-zh: "Schibsted Grotesk", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", system-ui, sans-serif;
+  --font-hi: "Schibsted Grotesk", "Nirmala UI", "Kohinoor Devanagari", "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-bn: "Schibsted Grotesk", "Nirmala UI", "Kohinoor Bangla", "Noto Sans Bengali", system-ui, sans-serif;
+}
+:root:lang(ja) { --font: var(--font-ja); }
+:root:lang(zh) { --font: var(--font-zh); }
+:root:lang(hi) { --font: var(--font-hi); }
+:root:lang(bn) { --font: var(--font-bn); }
+/* language names in the picker and the hint carry their own lang */
+[lang]:lang(ja):not(:root) { font-family: var(--font-ja); }
+[lang]:lang(zh):not(:root) { font-family: var(--font-zh); }
+[lang]:lang(hi):not(:root) { font-family: var(--font-hi); }
+[lang]:lang(bn):not(:root) { font-family: var(--font-bn); }
+:root:is(:lang(ja), :lang(zh), :lang(hi), :lang(bn)) *, .lang-menu a:is(:lang(ja), :lang(zh), :lang(hi), :lang(bn)) {
+  letter-spacing: normal !important;
+}
+:root:is(:lang(ja), :lang(zh)) :is(h1, h2, h3) { line-height: 1.22; }
+:root:is(:lang(hi), :lang(bn)) :is(h1, h2, h3) { line-height: 1.32; }
+:root:lang(ja) :is(h1, h2, h3) { word-break: auto-phrase; }
+
 /* ---------- hero ---------- */
 .hero { padding: clamp(36px, 6vw, 84px) 0 clamp(64px, 9vw, 120px); }
 .hero-grid {
@@ -650,6 +738,8 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
 .strength button { height: 26px; padding: 0 11px; border-radius: 999px; font-size: 13.5px; font-weight: 500; color: var(--text-2); transition: background-color 160ms, color 160ms; }
 .strength button:hover { color: var(--text); background: var(--surface-2); }
 .strength button[aria-pressed="true"] { background: var(--btn-bg); color: var(--btn-fg); }
+/* small phones: the buttons say it already, and in long languages the label pushes the pill off screen */
+@media (max-width: 400px) { .strength-l { display: none; } }
 
 .per-app h3 { font-size: 21px; letter-spacing: -0.02em; }
 .per-app > p { margin-top: 8px; color: var(--text-2); font-size: 16px; }
@@ -724,6 +814,27 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
 .qa details p { padding: 0 0 22px; max-width: 40em; color: var(--text-2); }
 .qa a { color: var(--accent-ink); }
 
+/* support: the QR stays white in both themes so phones can read it */
+.support { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 16px; align-items: stretch; }
+.pix, .help { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: clamp(22px, 2.8vw, 32px); }
+.pix { display: flex; flex-wrap: wrap; align-items: center; gap: clamp(22px, 3vw, 32px); }
+.qr { display: block; flex: none; padding: 12px; border-radius: 16px; background: #fff; border: 1px solid var(--line); line-height: 0; transition: transform 200ms var(--ease); }
+.qr:hover { transform: scale(1.03); }
+.qr img { width: 168px; height: 168px; }
+.pix-act { flex: 1 1 15rem; display: flex; flex-direction: column; align-items: flex-start; }
+.pix-act .btn svg { color: var(--accent); }
+.pix-act .sponsor { margin-top: 20px; }
+.pix-act .sponsor svg { color: #db61a2; }
+.pix-note { margin-top: 10px; font-size: 14.5px; color: var(--text-3); }
+.pix-note code { color: var(--text-2); }
+.help h3 { font-size: 19px; letter-spacing: -0.02em; }
+.help ul { margin-top: 14px; }
+.help li { padding: 12px 0; border-top: 1px solid var(--line); }
+.help li:last-child { padding-bottom: 0; }
+.help a, .help b { font-size: 16px; font-weight: 600; }
+.help a { color: var(--accent-ink); }
+.help li > span { display: block; margin-top: 2px; font-size: 14.5px; color: var(--text-2); }
+
 /* closing field */
 .final { background: var(--field); box-shadow: inset 0 1px 0 var(--field-edge); color: var(--ink-text); padding: clamp(88px, 12vw, 160px) 0 clamp(80px, 10vw, 128px); text-align: center; }
 .final .wrap { display: flex; flex-direction: column; align-items: center; }
@@ -762,7 +873,7 @@ html { scrollbar-color: var(--scroll-thumb) transparent; }
   .sheet { height: 480px; }
 }
 @media (max-width: 860px) {
-  .styles, .free, .ovsec { grid-template-columns: minmax(0, 1fr); }
+  .styles, .free, .ovsec, .support { grid-template-columns: minmax(0, 1fr); }
   .free-txt { max-width: 40rem; }
   .shot { max-width: 40rem; }
 }

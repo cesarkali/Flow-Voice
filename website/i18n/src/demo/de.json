@@ -1,0 +1,111 @@
+{
+  "sep": " ",
+  "ui": {
+    "menuClose": "Menü schließen",
+    "play": "Demo fortsetzen",
+    "transcribing": "Wird transkribiert…",
+    "refining": "Verfeinern mit Groq…",
+    "pasted": "Eingefügt",
+    "rewriting": "Wird umgeschrieben…",
+    "pastedPrev": "Vorige Version eingefügt"
+  },
+  "hint": {
+    "label": "Sprache der Website",
+    "text": "Diese Website gibt es auch auf Deutsch.",
+    "go": "Auf Deutsch ansehen",
+    "close": "Schließen"
+  },
+  "styles": {
+    "natural": "Natürlich",
+    "professional": "Professionell",
+    "prompt": "Prompt",
+    "raw": "Roh",
+    "verbatim": "Nur Transkript"
+  },
+  "hero": [
+    {
+      "app": "Outlook",
+      "style": "professional",
+      "said": "äh, also, leute, das meeting am donnerstag ist halt um zehn bestätigt, und wer nicht kann, sagt mir bitte bescheid",
+      "out": "Hallo zusammen, das Meeting am Donnerstag ist für 10 Uhr bestätigt. Wer nicht teilnehmen kann, gibt mir bitte Bescheid."
+    },
+    {
+      "app": "Slack",
+      "style": "natural",
+      "said": "also, ich hab die neue version auf den testserver gepackt, äh, schau halt mal rein, wenn du zeit hast, und sag mir, ob was kaputt ist",
+      "out": "Ich hab die neue Version auf den Testserver gepackt. Schau mal rein, wenn du Zeit hast, und sag mir, ob was kaputt ist."
+    },
+    {
+      "app": "ChatGPT",
+      "style": "prompt",
+      "said": "äh, ich brauch ein python-skript, das irgendwie eine excel-tabelle liest, also, und für jede rechnung, die seit mehr als zehn tagen überfällig ist, ne mail an die kundenadresse schickt",
+      "out": "Ich brauche ein Python-Skript, das eine Excel-Tabelle liest und für jede Rechnung, die seit mehr als 10 Tagen überfällig ist, eine E-Mail an die jeweilige Kundenadresse schickt."
+    }
+  ],
+  "overlay": {
+    "said": "ich wollt eigentlich fragen ob wir das meeting auf donnerstag verschieben können weil ich am mittwoch echt nich kann",
+    "fix": {
+      "0": "Ich",
+      "1": "wollte",
+      "3": "fragen,",
+      "7": "Meeting",
+      "9": "Donnerstag",
+      "11": "können,",
+      "15": "Mittwoch",
+      "16": "wirklich",
+      "17": "nicht",
+      "18": "kann."
+    },
+    "natural": "Ich wollte eigentlich fragen, ob wir das Meeting auf Donnerstag verschieben können, weil ich am Mittwoch wirklich nicht kann.",
+    "professional": "Könnten wir das Meeting auf Donnerstag verlegen? Am Mittwoch bin ich leider verhindert."
+  },
+  "styler": {
+    "natural": {
+      "icon": "whatsapp",
+      "where": "auf WhatsApp",
+      "said": "„<s>äh,</s> mama, ich komm heute später, <s>also,</s> auf der A100 ist totaler stau, <s>halt,</s> heb mir was vom essen auf, ich ess dann, wenn ich da bin“",
+      "text": "Mama, ich komm heute später, auf der A100 ist totaler Stau. Heb mir was vom Essen auf, ich ess dann, wenn ich da bin.",
+      "desc": "Korrigiert und glättet das Gesprochene und behält deine Art zu reden."
+    },
+    "professional": {
+      "icon": "outlook",
+      "where": "in Outlook",
+      "said": "„<s>äh,</s> hallo zusammen, <s>also,</s> wegen dem quartalsbericht, <s>ne,</s> ich brauch von euch allen euren teil bis freitag, <s>halt</s> bis mittag, damit ich alles vor dem meeting am montag durchgehen kann“",
+      "text": "Hallo zusammen, zum Quartalsbericht: Bitte schickt mir euren Teil bis Freitag um 12 Uhr, damit ich vor dem Meeting am Montag alles prüfen kann.",
+      "desc": "Förmlich und strukturiert, fertig für E-Mails."
+    },
+    "prompt": {
+      "icon": "claude",
+      "where": "in Claude",
+      "said": "„<s>äh, also,</s> ich bräuchte hilfe bei einer javascript-funktion, <s>ne,</s> die soll die preise im warenkorb zusammenrechnen, gibt aber NaN zurück, wenn ein produkt keinen preis hat, <s>halt,</s> und lass den namen der funktion so, weil sie noch woanders benutzt wird“",
+      "levels": {
+        "light": {
+          "text": "Ich bräuchte Hilfe bei einer JavaScript-Funktion. Die soll die Preise im Warenkorb zusammenrechnen, gibt aber NaN zurück, wenn ein Produkt keinen Preis hat. Und lass den Namen der Funktion so, weil sie noch woanders benutzt wird.",
+          "desc": "Leicht: Entfernt nur Füllwörter und überflüssige Wörter; behält deine Sätze."
+        },
+        "medium": {
+          "text": "Korrigiere eine JavaScript-Funktion, die die Preise im Warenkorb summieren soll, aber NaN zurückgibt, wenn ein Produkt keinen Preis hat. Ändere den Funktionsnamen nicht: Er wird an anderen Stellen verwendet.",
+          "desc": "Mittel: Kürzt ausgewogen für eine KI, ohne den Kontext zu verlieren."
+        },
+        "strong": {
+          "text": "JavaScript-Funktion für die Warenkorbsumme korrigieren:\n- gibt NaN zurück, wenn ein Produkt keinen Preis hat\n- Namen nicht ändern (wird anderswo verwendet)",
+          "desc": "Stark: Verdichtet zu kurzen Stichpunkten; behält Anforderungen, Zahlen und Fristen."
+        }
+      }
+    },
+    "raw": {
+      "icon": "chrome",
+      "where": "in der Chrome-Suche",
+      "said": "„beste bluetooth in-ear kopfhörer unter 100 euro, <s>also,</s> mit noise cancelling, <s>halt,</s> fürs fitnessstudio“",
+      "text": "Beste bluetooth in-ear kopfhörer unter 100 euro mit noise cancelling fürs fitnessstudio",
+      "desc": "Nur die Wörter: ohne Satzzeichen und ohne KI. Gut für Suchen und schnelle Notizen."
+    },
+    "verbatim": {
+      "icon": "",
+      "where": "in Interviewnotizen",
+      "said": "„äh, also, die idee ist, dass wir im märz starten, ne, aber halt nur, wenn der kundentest klappt“",
+      "text": "Äh, also, die Idee ist, dass wir im März starten, ne? Aber halt nur, wenn der Kundentest klappt.",
+      "desc": "Genau das, was transkribiert wurde, mit jedem „äh“ und „halt“, ohne KI."
+    }
+  }
+}

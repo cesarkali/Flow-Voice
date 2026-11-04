@@ -1,0 +1,108 @@
+{
+  "sep": " ",
+  "ui": {
+    "menuClose": "Close menu",
+    "play": "Resume demo",
+    "transcribing": "Transcribing…",
+    "refining": "Polishing with Groq…",
+    "pasted": "Pasted",
+    "rewriting": "Rewriting…",
+    "pastedPrev": "Previous version pasted"
+  },
+  "hint": {
+    "label": "Site language",
+    "text": "This site is also in English.",
+    "go": "View in English",
+    "close": "Close"
+  },
+  "styles": {
+    "natural": "Natural",
+    "professional": "Professional",
+    "prompt": "Prompt",
+    "raw": "Raw",
+    "verbatim": "Transcript only"
+  },
+  "hero": [
+    {
+      "app": "Outlook",
+      "style": "professional",
+      "said": "um, like, hey everyone, the thursday meeting is confirmed for ten, you know, and if you can't make it just let me know",
+      "out": "Hi, everyone. Thursday's meeting is confirmed for 10 a.m. If you can't attend, please let me know."
+    },
+    {
+      "app": "Slack",
+      "style": "natural",
+      "said": "so, i pushed the new version to the test server, like, take a look when you can and let me know if anything broke",
+      "out": "I pushed the new version to the test server. Take a look when you can and let me know if anything broke."
+    },
+    {
+      "app": "ChatGPT",
+      "style": "prompt",
+      "said": "um, i need a python script that reads an excel spreadsheet, you know, and sends an email to each client with an invoice that's more than ten days overdue",
+      "out": "I need a Python script that reads an Excel spreadsheet and emails each client with an invoice more than 10 days overdue."
+    }
+  ],
+  "overlay": {
+    "said": "i was wondering if we can set up that meeting for thursday afternoon cause on wednesday i can't make it",
+    "fix": {
+      "0": "I",
+      "11": "Thursday",
+      "12": "afternoon,",
+      "13": "because",
+      "15": "Wednesday",
+      "16": "I",
+      "19": "it."
+    },
+    "natural": "I was wondering if we can set up that meeting for Thursday afternoon, because on Wednesday I can't make it.",
+    "professional": "I was wondering whether we could schedule the meeting for Thursday afternoon, as I am unavailable on Wednesday."
+  },
+  "styler": {
+    "natural": {
+      "icon": "whatsapp",
+      "where": "on WhatsApp",
+      "said": "“<s>um,</s> mom, I'm gonna be home late tonight, <s>like,</s> traffic is stopped dead on I-95, <s>you know,</s> save me a plate and I'll eat when I get in”",
+      "text": "Mom, I'll be home late tonight, traffic is stopped dead on I-95. Save me a plate and I'll eat when I get in.",
+      "desc": "Fixes and cleans up your speech, keeping your own way of talking."
+    },
+    "professional": {
+      "icon": "outlook",
+      "where": "in Outlook",
+      "said": "“<s>um,</s> hi everyone, <s>so,</s> about the quarterly report, <s>you know,</s> I need each of you to send me your part by Friday, <s>like,</s> by noon, so I can go over everything before Monday's meeting”",
+      "text": "Hi, everyone. About the quarterly report: I need each of you to send me your part by noon on Friday, so I can review everything before Monday's meeting.",
+      "desc": "Formal and organized, ready for email."
+    },
+    "prompt": {
+      "icon": "claude",
+      "where": "in Claude",
+      "said": "“<s>um, so,</s> I wanted you to help me fix a JavaScript function, <s>you know,</s> it's supposed to add up the cart prices, but it's returning NaN when a product comes without a price, <s>like,</s> and don't rename the function because it's used in other places”",
+      "levels": {
+        "light": {
+          "text": "I wanted you to help me fix a JavaScript function. It's supposed to add up the cart prices, but it's returning NaN when a product has no price. And don't rename the function, because it's used in other places.",
+          "desc": "Light: only removes fillers and extra words; keeps your sentences."
+        },
+        "medium": {
+          "text": "I need to fix a JavaScript function that should add up the cart prices but returns NaN when a product has no price. Don't rename the function: it's used in other places.",
+          "desc": "Medium: trims with balance to send to an AI, without losing context."
+        },
+        "strong": {
+          "text": "Fix JavaScript function that adds up cart prices:\n- returns NaN when a product has no price\n- don't rename it (used in other places)",
+          "desc": "Strong: condenses into short bullets, without losing requirements, numbers and deadlines."
+        }
+      }
+    },
+    "raw": {
+      "icon": "chrome",
+      "where": "in a Chrome search",
+      "said": "“best bluetooth earbuds under 100 dollars, <s>like,</s> with noise cancelling, <s>you know,</s> to use at the gym”",
+      "text": "Best bluetooth earbuds under 100 dollars with noise cancelling to use at the gym",
+      "desc": "Just the words: no punctuation and no AI. Good for searches and quick notes."
+    },
+    "verbatim": {
+      "icon": "",
+      "where": "in interview notes",
+      "said": "“um, so, the idea is we launch in March, you know, but, like, only if the test with customers works out”",
+      "text": "Um, so, the idea is we launch in March, you know? But, like, only if the test with customers works out.",
+      "desc": "Exactly what was transcribed, with every “um” and “like”, with no AI."
+    }
+  }
+}

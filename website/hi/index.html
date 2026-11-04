@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowVoice: Windows के लिए AI वॉइस डिक्टेशन, मुफ़्त</title>
+<meta name="description" content="शॉर्टकट दबाएं, बोलें, और टेक्स्ट कर्सर की जगह आ जाता है, आपकी चुनी शैली में AI से दोबारा लिखा हुआ। मुफ़्त और ओपन सोर्स, मुफ़्त API कुंजियों के साथ या 100% ऑफ़लाइन।">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/hi/">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="hi_IN">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/hi/">
+<meta property="og:title" content="FlowVoice: बोलें, और टेक्स्ट कर्सर की जगह आ जाता है">
+<meta property="og:description" content="Windows के किसी भी ऐप में AI से वॉइस डिक्टेशन। मुफ़्त, ओपन सोर्स, मुफ़्त कुंजियों के साथ या 100% ऑफ़लाइन।">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="FlowVoice: ओवरले बोली को लाइव ट्रांसक्राइब करता हुआ">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlowVoice: बोलें, और टेक्स्ट कर्सर की जगह आ जाता है">
+<meta name="twitter:description" content="Windows के किसी भी ऐप में AI से वॉइस डिक्टेशन। मुफ़्त, ओपन सोर्स, मुफ़्त कुंजियों के साथ या 100% ऑफ़लाइन।">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "FlowVoice",
+  "description": "किसी भी ऐप में AI से वॉइस डिक्टेशन। शॉर्टकट दबाएं, बोलें, और टेक्स्ट कर्सर की जगह आ जाता है, आपकी चुनी शैली में दोबारा लिखा हुआ। मुफ़्त API कुंजियों के साथ या 100% ऑफ़लाइन चलता है।",
+  "url": "https://flowvoice.caliberda.com.br/hi/",
+  "image": "https://flowvoice.caliberda.com.br/assets/og.png",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Windows 10, Windows 11",
+  "softwareVersion": "2.2",
+  "inLanguage": ["pt-BR", "en", "es", "fr", "de", "ja", "zh-Hans", "ru", "hi", "bn"],
+  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "isAccessibleForFree": true,
+  "downloadUrl": "https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+  "author": { "@type": "Person", "name": "Júlio Caliberda", "url": "https://caliberda.com.br", "sameAs": ["https://github.com/cesarkali"] }
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">सामग्री पर जाएं</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.56 9.56 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20s-8-4.8-8-10.4A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.6C20 15.2 12 20 12 20z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h3.2v14H7zM13.8 5H17v14h-3.2z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M7.5 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L8.7 4.5a.8.8 0 0 0-1.2.7z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0-5.5-5.5M19.5 12l-5.5 5.5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+    <symbol id="fv-stop" viewBox="0 0 20 20"><rect x="5.5" y="5.5" width="9" height="9" rx="1.75" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="fv-x" viewBox="0 0 20 20"><path d="m5.5 5.5 9 9"/><path d="m14.5 5.5-9 9"/></symbol>
+    <symbol id="fv-check" viewBox="0 0 20 20"><path d="m4.5 10.5 3.5 3.5 7.5-8"/></symbol>
+    <symbol id="fv-copy" viewBox="0 0 20 20"><rect x="7" y="7" width="9.5" height="9.5" rx="1.75"/><path d="M13 7V5.25c0-.97-.78-1.75-1.75-1.75h-6c-.97 0-1.75.78-1.75 1.75v6c0 .97.78 1.75 1.75 1.75H7"/></symbol>
+    <symbol id="fv-replace" viewBox="0 0 20 20"><path d="M4 8h10.5"/><path d="m11.5 5 3 3-3 3"/><path d="M16 12H5.5"/><path d="m8.5 9-3 3 3 3"/></symbol>
+    <symbol id="fv-translate" viewBox="0 0 20 20"><path d="M3 5h8"/><path d="M7 3.25V5"/><path d="M5 5c.6 2.4 2.4 4.6 5 5.75"/><path d="M9.25 5c-.6 2.6-2.5 4.9-5.75 6.5"/><path d="m10.75 16.5 3-7 3 7"/><path d="M11.75 14.25h4"/></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top" data-hero-cta>
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice, होम पेज"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="मुख्य">
+      <a href="#estilos">शैलियां</a>
+      <a href="#gratis">मुफ़्त और ऑफ़लाइन</a>
+      <a href="guia.html">कुंजी गाइड</a>
+      <a href="novidades.html">नया क्या है</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="भाषा">
+        <a href="../" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="../ja/" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="../zh/" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a>
+        <a href="../ru/" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="./" hreflang="hi" lang="hi" data-lang="hi" aria-current="true">हिन्दी</a>
+        <a href="../bn/" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="भाषा" aria-label="भाषा: हिन्दी"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>HI</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="../ja/" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="../zh/" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a></li>
+          <li><a href="../ru/" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="./" hreflang="hi" lang="hi" data-lang="hi" aria-current="true">हिन्दी</a></li>
+          <li><a href="../bn/" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="डार्क थीम" title="डार्क थीम"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>डाउनलोड</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="मेन्यू खोलें"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" aria-labelledby="hero-t">
+  <div class="wrap hero-grid">
+    <h1 id="hero-t">बोलें। टेक्स्ट वहीं आता है जहां&nbsp;<span class="nowrap">कर्सर है।<span class="caret" aria-hidden="true"></span></span></h1>
+
+    <div class="hero-side">
+      <p class="sig"><img src="../assets/logo.svg" alt="" width="40" height="40"><span>FlowVoice</span></p>
+      <p class="lede">Windows के किसी भी ऐप में AI से वॉइस डिक्टेशन। साफ़, सही विराम चिह्नों के साथ और सही लहजे में। मुफ़्त, ओपन सोर्स और, आप चाहें तो, 100% ऑफ़लाइन।</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>Windows के लिए डाउनलोड करें</a>
+        <a class="btn btn-ghost btn-lg" href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#i-gh"/></svg>GitHub</a>
+      </div>
+      <p class="hero-meta">Windows 10 और 11 · ~3 MB · एडमिनिस्ट्रेटर अनुमति नहीं चाहिए</p>
+    </div>
+
+    <figure class="demo" aria-labelledby="demo-cap">
+      <figcaption id="demo-cap" class="sr">डेमो: हर ऐप में Ctrl+Shift+Space दबाकर बोला जाता है। टेक्स्ट FlowVoice के ओवरले में लाइव दिखता है और कर्सर की जगह पेस्ट होता है, पहले से दोबारा लिखा हुआ: Outlook में औपचारिक, Slack में स्वाभाविक, ChatGPT में प्रॉम्प्ट की तरह।</figcaption>
+      <div class="demo-bar">
+        <div class="demo-apps" role="group" aria-label="डेमो के लिए ऐप चुनें">
+          <button type="button" class="demo-app" data-go="0" aria-pressed="true"><img src="../assets/apps/outlook.svg" alt="" width="18" height="18">Outlook</button>
+          <button type="button" class="demo-app" data-go="1" aria-pressed="false"><img src="../assets/apps/slack.svg" alt="" width="18" height="18">Slack</button>
+          <button type="button" class="demo-app" data-go="2" aria-pressed="false"><img src="../assets/apps/chatgpt.svg" alt="" width="18" height="18">ChatGPT</button>
+        </div>
+        <button type="button" class="demo-pause" aria-pressed="false" aria-label="डेमो रोकें"><svg class="ic-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="ic-play" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </div>
+
+      <div class="sheet" aria-hidden="true">
+        <div class="pane on" data-pane="0">
+          <div class="pane-head"><img src="../assets/apps/outlook.svg" alt="" width="20" height="20"><b>नया ईमेल</b><span>Outlook</span></div>
+          <dl class="mail">
+            <div><dt>प्रति</dt><dd>team@company.in</dd></div>
+            <div><dt>विषय</dt><dd>गुरुवार की मीटिंग</dd></div>
+          </dl>
+          <p class="field"><span class="out"></span><i class="ibeam"></i></p>
+        </div>
+        <div class="pane" data-pane="1">
+          <div class="pane-head"><img src="../assets/apps/slack.svg" alt="" width="20" height="20"><b># प्रोडक्ट</b><span>Slack</span></div>
+          <div class="msg"><span class="av">अ</span><div><b>अनन्या शर्मा</b> <time>14:02</time><p>क्या किसी ने नया वर्ज़न टेस्ट किया?</p></div></div>
+          <p class="field boxed"><span class="out"></span><i class="ibeam"></i></p>
+        </div>
+        <div class="pane" data-pane="2">
+          <div class="pane-head"><img src="../assets/apps/chatgpt.svg" alt="" width="20" height="20"><b>नई चैट</b><span>ChatGPT</span></div>
+          <p class="chat-q">मैं आपकी क्या मदद करूं?</p>
+          <p class="field boxed round"><span class="out"></span><i class="ibeam"></i></p>
+        </div>
+
+        <div class="keys" data-keys><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Space</kbd></div>
+
+        <div class="fvo has-text" data-fvo>
+          <div class="fvo-shell" data-shell style="width:500px;height:92px;border-radius:22px">
+            <div class="fvo-wave m-listen" aria-hidden="true"><i style="--i:0;--e:0.461;--hi:0.474"></i><i style="--i:1;--e:0.586;--hi:0.526"></i><i style="--i:2;--e:0.724;--hi:0.584"></i><i style="--i:3;--e:0.849;--hi:0.637"></i><i style="--i:4;--e:0.943;--hi:0.676"></i><i style="--i:5;--e:0.994;--hi:0.697"></i><i style="--i:6;--e:0.994;--hi:0.697"></i><i style="--i:7;--e:0.943;--hi:0.676"></i><i style="--i:8;--e:0.849;--hi:0.637"></i><i style="--i:9;--e:0.724;--hi:0.584"></i><i style="--i:10;--e:0.586;--hi:0.526"></i><i style="--i:11;--e:0.461;--hi:0.474"></i></div>
+            <div class="fvo-layer fvo-listen on" data-layer="listen">
+              <div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-meta"><span class="fvo-mode">डिक्टेशन</span><span class="fvo-sty"><span data-style>पेशेवर</span><span class="fvo-app">· <span data-app>Outlook</span></span></span></span><span class="fvo-time" data-time>00:01</span><span class="fvo-stop"><svg><use href="#fv-stop"/></svg></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-live"><div class="fvo-lwin"><p data-live><span class="ck">मतलब, वो, सुनो सब, </span><span class="ck un">गुरुवार की</span></p></div></div>
+            </div>
+            <div class="fvo-layer fvo-proc" data-layer="proc"><div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-pl" data-proc>ट्रांसक्राइब हो रहा है…</span></div></div>
+            <div class="fvo-layer fvo-card" data-layer="card">
+              <div class="fvo-head"><span class="fvo-badge"><svg><use href="#fv-check"/></svg></span><span class="fvo-ht" data-head>पेस्ट हो गया</span><span class="fvo-hm"><span data-hm><span data-style>पेशेवर</span><span class="fvo-app"> · <span data-app>Outlook</span></span></span><span class="fvo-via"> · groq · openai/gpt-oss-20b</span></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-tbox"><p class="fvo-text" data-result>नमस्ते सभी को। गुरुवार की मीटिंग सुबह 10 बजे के लिए पक्की है। जो शामिल न हो सकें, कृपया मुझे बता दें।</p></div>
+              <div class="fvo-chips"><span class="fvo-chip" data-chip="natural" style="--i:0">स्वाभाविक</span><span class="fvo-chip on" data-chip="professional" style="--i:1">पेशेवर</span><span class="fvo-chip" data-chip="prompt" style="--i:2">प्रॉम्प्ट</span><span class="fvo-chip" data-chip="raw" style="--i:3">कच्चा</span><span class="fvo-chip" data-chip="verbatim" style="--i:4">केवल ट्रांसक्रिप्ट</span><span class="fvo-chip" style="--i:5"><svg><use href="#fv-translate"/></svg>अनुवाद करें</span><span class="fvo-chip" style="--i:6">मूल</span></div>
+              <div class="fvo-acts"><span class="fvo-esc">esc</span><span class="fvo-btn"><svg><use href="#fv-copy"/></svg>कॉपी करें</span><span class="fvo-btn primary" data-primary hidden><svg><use href="#fv-replace"/></svg>बदलें</span></div>
+              <i class="fvo-life"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="overlay" aria-labelledby="ov-t">
+  <div class="wrap ovsec">
+    <div class="ovsec-txt">
+      <h2 id="ov-t">बोलते-बोलते टेक्स्ट दिखता है।</h2>
+      <dl class="facts">
+        <div>
+          <dt>लाइव, बिना पीछे लौटे</dt>
+          <dd>जिन शब्दों पर अभी भरोसा नहीं, वे हल्के दिखते हैं और दो जवाबों के मिलने पर पक्के हो जाते हैं। जो पक्का हो गया, वह फिर नहीं बदलता।</dd>
+        </div>
+        <div>
+          <dt>एक क्लिक में दोबारा</dt>
+          <dd>नतीजे पर शैली बदलें, अनुवाद करें, पेस्ट या कॉपी करें। पेस्ट हो चुका हो, तो <b>बदलें</b> उसी जगह टेक्स्ट बदल देता है।</dd>
+        </div>
+        <div>
+          <dt>जहां चाहें, 2.2 में नया</dt>
+          <dd>रिकॉर्डिंग के दौरान कैप्सूल को किसी भी कोने में खींचें, दूसरे मॉनिटर तक भी। या सामान्य → तैरती विंडो में अपनी पसंद की जगह चुनें।</dd>
+        </div>
+        <div>
+          <dt>कांच, 2.1 में नया</dt>
+          <dd>कैप्सूल कांच का हो सकता है, Windows के अपने धुंधलेपन के साथ, या पारभासी। सामान्य → तैरती विंडो में।</dd>
+        </div>
+      </dl>
+    </div>
+    <figure class="ovdemo" aria-labelledby="ovdemo-cap">
+      <figcaption id="ovdemo-cap" class="sr">डेस्कटॉप पर FlowVoice की तैरती विंडो का डेमो: बोलते समय टेक्स्ट दिखता है, अनिश्चित शब्द हल्के रंग में; फिर नतीजा आता है, जिसे एक क्लिक में पेशेवर शैली में दोबारा लिखा जाता है। बटन कैप्सूल का रूप ठोस, कांच और पारभासी के बीच बदलते हैं।</figcaption>
+      <div class="ov-bar">
+        <div class="seg" role="group" aria-label="कैप्सूल का रूप">
+          <button type="button" data-look="solid" aria-pressed="false">ठोस</button>
+          <button type="button" data-look="glass" aria-pressed="true">कांच</button>
+          <button type="button" data-look="translucent" aria-pressed="false">पारभासी</button>
+        </div>
+        <button type="button" class="ov-light" aria-pressed="false"><span class="sw" aria-hidden="true"></span>रोशनी और छाया</button>
+        <button type="button" class="demo-pause" aria-pressed="false" aria-label="डेमो रोकें"><svg class="ic-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="ic-play" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </div>
+      <div class="desk" aria-hidden="true">
+        <div class="desk-win">
+          <div class="desk-bar"><img src="../assets/apps/word.svg" alt="" width="16" height="16">तिमाही रिपोर्ट</div>
+          <div class="desk-body"><i style="width:72%"></i><i style="width:90%"></i><i style="width:56%"></i><div class="desk-chart"><b></b><b></b><b></b><b></b><b></b></div></div>
+        </div>
+        <div class="desk-task"></div>
+        <div class="fvo" data-fvo>
+          <div class="fvo-shell" data-shell>
+            <div class="fvo-wave m-listen" aria-hidden="true"><i style="--i:0;--e:0.461;--hi:0.474"></i><i style="--i:1;--e:0.586;--hi:0.526"></i><i style="--i:2;--e:0.724;--hi:0.584"></i><i style="--i:3;--e:0.849;--hi:0.637"></i><i style="--i:4;--e:0.943;--hi:0.676"></i><i style="--i:5;--e:0.994;--hi:0.697"></i><i style="--i:6;--e:0.994;--hi:0.697"></i><i style="--i:7;--e:0.943;--hi:0.676"></i><i style="--i:8;--e:0.849;--hi:0.637"></i><i style="--i:9;--e:0.724;--hi:0.584"></i><i style="--i:10;--e:0.586;--hi:0.526"></i><i style="--i:11;--e:0.461;--hi:0.474"></i></div>
+            <div class="fvo-layer fvo-listen on" data-layer="listen">
+              <div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-meta"><span class="fvo-mode">डिक्टेशन</span><span class="fvo-sty"><span data-style>स्वाभाविक</span></span></span><span class="fvo-time" data-time>00:01</span><span class="fvo-stop"><svg><use href="#fv-stop"/></svg></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-live"><div class="fvo-lwin"><p data-live></p></div></div>
+            </div>
+            <div class="fvo-layer fvo-proc" data-layer="proc"><div class="fvo-row"><span class="fvo-wslot"></span><span class="fvo-pl" data-proc>ट्रांसक्राइब हो रहा है…</span></div></div>
+            <div class="fvo-layer fvo-card" data-layer="card">
+              <div class="fvo-head"><span class="fvo-badge"><svg><use href="#fv-check"/></svg></span><span class="fvo-ht" data-head>पेस्ट हो गया</span><span class="fvo-hm"><span data-hm><span data-style>स्वाभाविक</span></span><span class="fvo-via"> · groq · openai/gpt-oss-20b</span></span><span class="fvo-x"><svg><use href="#fv-x"/></svg></span></div>
+              <div class="fvo-tbox"><p class="fvo-text" data-result>मुझे यह पूछना था कि क्या हम वह मीटिंग गुरुवार दोपहर को रख सकते हैं, क्योंकि बुधवार को मेरा आना नहीं हो पाएगा।</p></div>
+              <div class="fvo-chips"><span class="fvo-chip on" data-chip="natural" style="--i:0">स्वाभाविक</span><span class="fvo-chip" data-chip="professional" style="--i:1">पेशेवर</span><span class="fvo-chip" data-chip="prompt" style="--i:2">प्रॉम्प्ट</span><span class="fvo-chip" data-chip="raw" style="--i:3">कच्चा</span><span class="fvo-chip" data-chip="verbatim" style="--i:4">केवल ट्रांसक्रिप्ट</span><span class="fvo-chip" style="--i:5"><svg><use href="#fv-translate"/></svg>अनुवाद करें</span><span class="fvo-chip" style="--i:6">मूल</span></div>
+              <div class="fvo-acts"><span class="fvo-esc">esc</span><span class="fvo-btn"><svg><use href="#fv-copy"/></svg>कॉपी करें</span><span class="fvo-btn primary" data-primary hidden><svg><use href="#fv-replace"/></svg>बदलें</span></div>
+              <i class="fvo-life"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="estilos" aria-labelledby="est-t">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="est-t">एक बार बोलें। हर जगह के लिए सही लहजा।</h2>
+      <p>शैली चुनें, या फ़ोकस वाले ऐप को आपके लिए चुनने दें।</p>
+    </div>
+
+    <div class="styles">
+      <div class="styler">
+        <div class="said">
+          <p class="said-l">आपने कहा <span class="said-ctx" data-ctx><img src="../assets/apps/outlook.svg" alt="" width="16" height="16">Outlook में</span></p>
+          <div class="stack" data-said-stack><p class="said-t" data-said>“<s>मतलब,</s> नमस्ते सबको, <s>तो,</s> तिमाही रिपोर्ट के बारे में, <s>वो,</s> सबको अपना हिस्सा शुक्रवार तक भेजना है, <s>यार,</s> दोपहर बारह बजे तक, ताकि सोमवार की मीटिंग से पहले मैं सब देख सकूं”</p></div>
+        </div>
+        <div class="tabs" role="tablist" aria-label="लिखने की शैलियां">
+          <button class="tab" role="tab" id="t-natural" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="natural">स्वाभाविक</button>
+          <button class="tab" role="tab" id="t-professional" aria-controls="sty-panel" aria-selected="true" data-style="professional">पेशेवर</button>
+          <button class="tab" role="tab" id="t-prompt" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="prompt">प्रॉम्प्ट</button>
+          <button class="tab" role="tab" id="t-raw" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="raw">कच्चा</button>
+          <button class="tab" role="tab" id="t-verbatim" aria-controls="sty-panel" aria-selected="false" tabindex="-1" data-style="verbatim">केवल ट्रांसक्रिप्ट</button>
+        </div>
+        <div class="result" id="sty-panel" role="tabpanel" aria-labelledby="t-professional" aria-live="polite">
+          <div class="stack" data-out-stack><p class="result-t" data-out>नमस्ते सभी को। तिमाही रिपोर्ट के संबंध में: कृपया अपना हिस्सा शुक्रवार दोपहर 12 बजे तक भेज दें, ताकि मैं सोमवार की मीटिंग से पहले सब कुछ देख सकूं।</p></div>
+          <div class="result-foot">
+            <p class="result-d" data-desc>औपचारिक और व्यवस्थित, ईमेल के लिए तैयार।</p>
+            <div class="strength off" role="group" aria-label="प्रॉम्प्ट शैली की तीव्रता">
+              <span class="strength-l" aria-hidden="true">तीव्रता</span>
+              <button type="button" data-level="light" aria-pressed="false">हल्की</button>
+              <button type="button" data-level="medium" aria-pressed="true">मध्यम</button>
+              <button type="button" data-level="strong" aria-pressed="false">तेज़</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="per-app">
+        <h3>हर ऐप की अपनी शैली</h3>
+        <p>FlowVoice फ़ोकस वाले ऐप को पहचानता है, ब्राउज़र के अंदर भी, और उसके लिए आपकी तय की हुई शैली इस्तेमाल करता है।</p>
+        <ul class="map">
+          <li><button type="button" data-pick="professional" aria-controls="sty-panel"><span class="icons"><img src="../assets/apps/outlook.svg" alt="Outlook" width="28" height="28"><img src="../assets/apps/gmail.svg" alt="Gmail" width="28" height="28"><img src="../assets/apps/word.svg" alt="Word" width="28" height="28"><img src="../assets/apps/notion.svg" alt="Notion" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>पेशेवर</b></button></li>
+          <li><button type="button" data-pick="natural" aria-controls="sty-panel"><span class="icons"><img src="../assets/apps/slack.svg" alt="Slack" width="28" height="28"><img src="../assets/apps/whatsapp.svg" alt="WhatsApp" width="28" height="28"><img src="../assets/apps/teams.svg" alt="Teams" width="28" height="28"><img src="../assets/apps/discord.svg" alt="Discord" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>स्वाभाविक</b></button></li>
+          <li><button type="button" data-pick="prompt" aria-controls="sty-panel"><span class="icons"><img src="../assets/apps/vscode.svg" alt="VS Code" width="28" height="28"><img src="../assets/apps/chatgpt.svg" alt="ChatGPT" width="28" height="28"><img src="../assets/apps/claude.svg" alt="Claude" width="28" height="28"></span><svg class="to" aria-hidden="true"><use href="#i-arrow"/></svg><b>प्रॉम्प्ट</b></button></li>
+        </ul>
+        <p class="note"><img src="../assets/apps/chrome.svg" alt="" width="16" height="16">Gmail, WhatsApp Web, ChatGPT और दूसरे ऐप Chrome और Edge के अंदर भी पहचाने जाते हैं।</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="comando" aria-labelledby="cmd-t">
+  <div class="wrap cmd">
+    <div class="sec-head">
+      <h2 id="cmd-t">टेक्स्ट चुनें। बताएं क्या बदलना है।</h2>
+      <p>कमांड मोड में <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>K</kbd> चुने हुए टेक्स्ट को उसी जगह दोबारा लिखता है, किसी भी ऐप में।</p>
+    </div>
+    <ol class="cmd-steps">
+      <li><span class="cmd-l">चुना हुआ</span><p class="cmd-before"><mark>हाय अनन्या, कल मीटिंग में आना नहीं हो पाएगा, यहां कुछ गड़बड़ हो गई, सॉरी यार</mark></p></li>
+      <li><span class="cmd-l">आप बोलें</span><p class="cmd-say"><span class="wave sm" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>“इसे थोड़ा औपचारिक बना दो”</p></li>
+      <li><span class="cmd-l">नतीजा</span><p class="cmd-after">नमस्ते अनन्या, एक अप्रत्याशित कारण से कल की मीटिंग में मेरा शामिल होना संभव नहीं होगा। इसके लिए क्षमा करें।</p></li>
+    </ol>
+    <p class="cmd-more">यह भी चलता है: “अंग्रेज़ी में अनुवाद करो”, “बुलेट में सारांश दो”, “व्याकरण ठीक करो”।</p>
+  </div>
+</section>
+
+<section class="sec" id="gratis" aria-labelledby="gr-t">
+  <div class="wrap free">
+    <div class="free-txt">
+      <h2 id="gr-t">सच में मुफ़्त। इंटरनेट के बिना भी।</h2>
+      <dl class="facts">
+        <div>
+          <dt>एक मुफ़्त कुंजी से</dt>
+          <dd>Groq (सुझाया गया), Gemini, Mistral या OpenRouter। बिना कार्ड के, कुछ ही मिनटों में। <a href="guia.html">कुंजी गाइड देखें</a></dd>
+        </div>
+        <div>
+          <dt>या 100% आपके PC पर</dt>
+          <dd>लोकल Whisper मॉडल, जिनमें ब्राज़ीलियाई पुर्तगाली के लिए ख़ास तौर पर ट्यून किया गया एक मॉडल भी है। कुछ भी मशीन से बाहर नहीं जाता।</dd>
+        </div>
+        <div>
+          <dt>न खाता, न हमारा कोई सर्वर</dt>
+          <dd>कुंजियां Windows क्रेडेंशियल मैनेजर में रहती हैं। ओपन सोर्स, GPL-3.0 लाइसेंस। <a href="privacidade.html">गोपनीयता</a></dd>
+        </div>
+      </dl>
+    </div>
+    <figure class="shot">
+      <img src="../assets/shot-providers.png" width="2200" height="1440" loading="lazy" decoding="async" alt="FlowVoice की प्रदाता स्क्रीन: Groq सुझाया गया और मुफ़्त, Google Gemini, OpenRouter और Mistral मुफ़्त, OpenAI पेड और Ollama लोकल।">
+    </figure>
+  </div>
+</section>
+
+<section class="sec" id="detalhes" aria-labelledby="det-t">
+  <div class="wrap">
+    <h2 id="det-t" class="h-small">और वे छोटी बातें जिनकी कमी खलती है।</h2>
+    <ul class="specs">
+      <li><b>बोलते हुए अनुवाद</b><span>हिन्दी में बोलें, 34 भाषाओं में से किसी में भी पेस्ट करें। <span class="nowrap"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Y</kbd></span></span></li>
+      <li><b>अपनी शब्दावली</b><span>नाम, ब्रांड और तकनीकी शब्द हमेशा सही लिखे जाते हैं।</span></li>
+      <li><b>खोज के साथ इतिहास</b><span>आपका डिक्टेट किया सब कुछ आपके PC पर सेव रहता है।</span></li>
+      <li><b>दबाकर बोलें</b><span>शॉर्टकट दबा रहने तक ही रिकॉर्ड करता है।</span></li>
+      <li><b>वॉइस असिस्टेंट</b><span>ज़ोर से पूछें, वेब खोज के साथ। <span class="nowrap"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>U</kbd></span></span></li>
+      <li><b>अपने-आप अपडेट होता है</b><span>~3 MB का इंस्टॉलर, एडमिनिस्ट्रेटर अनुमति के बिना।</span></li>
+      <li><b>फिर कोशिश करें</b><span>ट्रांसक्रिप्शन विफल हो, तो रिकॉर्डिंग मेमोरी में रहती है और एक क्लिक से डिक्टेशन दोबारा हो जाता है।</span></li>
+      <li><b>रिकॉर्डिंग के दौरान ख़ामोशी</b><span>वैकल्पिक: रिकॉर्डिंग के दौरान PC की आवाज़ बंद रहती है और बाद में अपने-आप लौट आती है।</span></li>
+      <li><b>10 भाषाओं में</b><span>पुर्तगाली, अंग्रेज़ी, स्पैनिश, फ़्रेंच, जर्मन, जापानी, चीनी, रूसी, हिन्दी और बांग्ला।</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec faq" id="duvidas" aria-labelledby="faq-t">
+  <div class="wrap faq-grid">
+    <h2 id="faq-t" class="h-small">झटपट सवाल-जवाब</h2>
+    <div class="qa">
+      <details>
+        <summary>क्या यह सच में मुफ़्त है?</summary>
+        <p>हां। FlowVoice का कोई सर्वर नहीं है: यह आपकी कुंजी से सीधे प्रदाता से बात करता है, या आपके PC पर चलता है। Groq और Gemini के मुफ़्त प्लान रोज़ के सामान्य इस्तेमाल के लिए काफ़ी हैं, बिना कार्ड के।</p>
+      </details>
+      <details>
+        <summary>इंस्टॉल करते समय Windows ने चेतावनी दिखाई। क्या यह सुरक्षित है?</summary>
+        <p>यह अपेक्षित है: इंस्टॉलर पर अभी पेड सिग्नेचर नहीं है। “अधिक जानकारी” और फिर “फिर भी चलाएं” पर क्लिक करें। इंस्टॉलर को GitHub Actions ओपन सोर्स कोड से बनाता है।</p>
+      </details>
+      <details>
+        <summary>यह किन सिस्टम पर चलता है?</summary>
+        <p>Windows 10 और 11 पर। इंस्टॉलर लगभग 3 MB का है, एडमिनिस्ट्रेटर अनुमति नहीं मांगता और अपने-आप अपडेट होता है।</p>
+      </details>
+      <details>
+        <summary>कोई समस्या मिली या कोई आइडिया है? कहां बताएं?</summary>
+        <p>GitHub पर: <a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">समस्या बताएं</a> या <a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">सुधार सुझाएं</a>। ऐप में, सेटिंग्स → परिचय में यही बटन ऐप और Windows का वर्ज़न पहले से भर देते हैं।</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="apoie" aria-labelledby="ap-t">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2 id="ap-t">ब्राज़ील में एक व्यक्ति ने बनाया, पूरी पारदर्शिता से।</h2>
+      <p>FlowVoice मुफ़्त है और हमेशा रहेगा। अगर यह आपका समय बचाता है, तो LivePix (Pix, ब्राज़ील के लिए) या GitHub Sponsors (कोई भी कार्ड, हर महीने या एक बार) से एक कप कॉफ़ी अपडेट जारी रखने में मदद करती है।</p>
+    </div>
+    <div class="support">
+      <div class="pix">
+        <a class="qr" href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer"><img src="../assets/qr-livepix.svg" width="168" height="168" alt="FlowVoice को दान देने के लिए LivePix का QR कोड"></a>
+        <div class="pix-act">
+          <a class="btn btn-primary" href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#i-heart"/></svg>LivePix से दान करें</a>
+          <p class="pix-note"><code>livepix.gg/caliberda</code><br>फ़ोन का कैमरा कोड की ओर करें या उस पर क्लिक करें।</p>
+          <a class="btn btn-ghost sponsor" href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer"><svg aria-hidden="true"><use href="#i-heart"/></svg>GitHub पर स्पॉन्सर करें</a>
+          <p class="pix-note">हर महीने या एक बार, किसी भी कार्ड से। GitHub पूरी रकम आगे भेजता है।</p>
+        </div>
+      </div>
+      <div class="help">
+        <h3>दान नहीं कर सकते? यह भी उतनी ही मदद करता है।</h3>
+        <ul>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub पर एक स्टार</a><span>इससे ज़्यादा लोग प्रोजेक्ट तक पहुँचते हैं।</span></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">बग की रिपोर्ट</a><span>वर्ज़न और स्टेप्स के साथ सुधार जल्दी आता है।</span></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">कोई आइडिया</a><span>बताएं कि FlowVoice आपके लिए और बेहतर कैसे हो सकता है।</span></li>
+          <li><b>किसी को सुझाएं</b><span>दिन भर टाइप करने वाले लोग शुक्रिया कहेंगे।</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final" aria-labelledby="fin-t">
+  <div class="wrap">
+    <p class="sig sig-lg"><img src="../assets/logo.svg" alt="" width="56" height="56"><span>FlowVoice</span></p>
+    <h2 id="fin-t">जो बोला जा सकता है, उसे&nbsp;टाइप करना छोड़ें।</h2>
+    <p>डाउनलोड करें, Groq की मुफ़्त कुंजी पेस्ट करें और पांच मिनट में पहला डिक्टेशन करें।</p>
+    <div class="cta-row">
+      <a class="btn btn-light btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-down"/></svg>Windows के लिए डाउनलोड करें</a>
+      <a class="btn btn-ghost-dark btn-lg" href="guia.html">मुफ़्त कुंजियां पाएं</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · ब्राज़ील में <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a> द्वारा बनाया गया</p>
+      <nav aria-label="फ़ुटर">
+        <ul>
+          <li><a href="guia.html">कुंजी गाइड</a></li>
+          <li><a href="novidades.html">नया क्या है</a></li>
+          <li><a href="privacidade.html">गोपनीयता</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 लाइसेंस</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">समस्या बताएं</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">सुधार सुझाएं</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>प्रोजेक्ट का साथ दें: <a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/hi.js" defer></script>
+<script src="../site.js" defer></script>
+</body>
+</html>

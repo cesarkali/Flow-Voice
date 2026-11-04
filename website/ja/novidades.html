@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新機能 · FlowVoice 2.2：ドラッグできるカプセル、もう一度試す、10 言語</title>
+<meta name="description" content="FlowVoice の変更点：2.2 ではドラッグできるカプセル、文字起こし失敗時の「もう一度試す」、10 言語のインターフェース。2.1 では後戻りしないライブプレビューとガラスのカプセル。2.0 では Rust でゼロから書き直し、プロンプトスタイル、コマンドモード、廃止モデルの自動切り替え、ブラジル・ポルトガル語向けモデル付きのオフラインモード。">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/ja/novidades">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/novidades">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/novidades">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/novidades">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/novidades">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/novidades">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/novidades">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/novidades">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/novidades">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/novidades">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/novidades">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/novidades">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/ja/novidades">
+<meta property="og:title" content="FlowVoice 2.2：ドラッグできるカプセル、もう一度試す、10 言語">
+<meta property="og:description" content="カプセルを好きな場所へドラッグし、失敗した音声入力をやり直し、アプリを 10 言語で使えます。2.2、2.1、2.0 の変更点をご覧ください。">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlowVoice 2.2：ドラッグできるカプセル、もう一度試す、10 言語">
+<meta name="twitter:description" content="カプセルを好きな場所へドラッグし、失敗した音声入力をやり直し、アプリを 10 言語で使えます。2.2、2.1、2.0 の変更点をご覧ください。">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../pages.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="pg">
+<a class="skip" href="#main">本文へスキップ</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice ホーム"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="メイン">
+      <a href="./#estilos">スタイル</a>
+      <a href="./#gratis">無料・オフライン</a>
+      <a href="guia.html">キーの取得</a>
+      <a href="novidades.html" aria-current="page">新機能</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="言語">
+        <a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="novidades.html" hreflang="ja" lang="ja" data-lang="ja" aria-current="true">日本語</a>
+        <a href="../zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a>
+        <a href="../ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="../hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="言語" aria-label="言語: 日本語"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>JA</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="novidades.html" hreflang="ja" lang="ja" data-lang="ja" aria-current="true">日本語</a></li>
+          <li><a href="../zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a></li>
+          <li><a href="../ru/novidades.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="../hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="ダークテーマ" title="ダークテーマ"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>入手</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="メニューを開く"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
+    <div class="wrap">
+      <div class="pg-head-in">
+        <h1>2.2：カプセルを<span class="nowrap">好きな場所へ。<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">録音中にカプセルをドラッグするか、決まった位置を選べます。失敗した音声入力には「もう一度試す」ボタンが付き、アプリは 10 言語に対応しました。</p>
+        <p class="pg-meta"><span>バージョン <b>2.2</b></span><span>Windows 10・11</span><span>自動でアップデート</span></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v22">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2</p>
+        <span class="pg-rel-date">2026年11月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v22">ドラッグできるカプセル、もう一度試す、10 言語</h2>
+        <p>カプセルの位置は固定ではなくなりました。録音中にドラッグするか、決まった位置を選べます。失敗した音声入力は失われなくなり、アプリは Windows の言語に合わせて表示されます。</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>カプセルを動かす</h3>
+            <ul>
+              <li><b>録音中にドラッグ</b>：カプセルをクリックして、画面のどの隅へでもドラッグできます。別のモニターにも移せます。その音声入力が終わるまでは置いた場所にとどまり、次の音声入力では既定の位置に戻ります。</li>
+              <li><b>カスタム位置</b>：下と上に加えて、画面の縮小図の上でカプセルをドラッグして場所を選べます。隅、端、中央にスナップします。<b>テスト</b>で表示位置を確認できます。</li>
+              <li><b>最後にドラッグした場所を使う</b>を選ぶと、最後にカプセルを置いた位置を使います。設定はすべて<b>一般 → フローティングウィンドウ</b>にあり、ドラッグをオフにすることもできます。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>もう一度試す、続けての音声入力</h3>
+            <ul>
+              <li>文字起こしが失敗したとき（ネットワーク、上限、キー）、エラーカードに<b>もう一度試す</b>ボタンが付き、30 秒間表示されます。履歴にも失敗が理由と同じボタン付きで残ります。</li>
+              <li>音声入力したときと同じ条件でやり直します。同じアプリ、スタイル、翻訳で、プロバイダーとキーは現在のものを使います。録音はメモリにだけ保持され（直近 3 件の失敗まで）、ディスクには保存されません。</li>
+              <li>同じ欄に続けて音声入力すると、前の入力の終わりにカーソルが残っていれば、間にスペースが入ります。ターミナルや、日本語・中国語のようにスペースを使わない言語では入りません。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>10 言語</h3>
+            <ul>
+              <li>インターフェースはポルトガル語、英語、スペイン語に加えて、フランス語、ドイツ語、日本語、中国語、ロシア語、ヒンディー語、ベンガル語にも対応しました。文字ごとに適切な Windows のフォントを使います。</li>
+              <li>新しい既定の<b>自動 (Windows)</b> は Windows の言語に合わせます。すでに使っている人は、選んだ言語がそのまま残ります。</li>
+              <li>トレイメニュー、エラーメッセージ、組み込みスタイルの名前もインターフェースの言語で表示されます。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>ぶつからないショートカット</h3>
+            <ul>
+              <li><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd> は Office の「形式を選択して貼り付け」なので、新規インストールでは<b>もう一度貼り付け</b>にショートカットが割り当てられません。トレイメニューからは使え、ショートカットを選ぶこともできます。</li>
+              <li><kbd>AltGr</kbd> <kbd>K</kbd> で文字が入力されるキーボードでは、キーを奪わないようコマンドのショートカットは未設定で始まり、<b>ショートカット</b>画面でその理由を説明します。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>プライバシーとマイク</h3>
+            <ul>
+              <li><b>情報</b>画面に新しい<b>プライバシー</b>セクション：PC に残るもの、各プロバイダーに送られるもの、キーの保存場所。<a href="privacidade.html">ポリシーの全文はこちら</a>。</li>
+              <li>マイクのエラーがわかりやすくなりました。Windows がマイクをブロックしているときは許可する場所を、別のアプリがマイクを占有しているときもそのことを知らせます。</li>
+              <li>別のアプリがクリップボードを使用中のときは、専用のメッセージを表示します。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>修正</h3>
+            <ul>
+              <li>PC の音をミュートした状態で録音中にアプリが終了すると、音が消えたままになっていました。今は次の起動時に戻ります。</li>
+              <li><b>システムと一緒に起動</b>の信頼性が上がりました。管理者権限なしでタスク スケジューラにログオン時のタスクも作成します。また、タスク マネージャーでスタートアップを無効にすると、きちんと無効になります。</li>
+              <li>翻訳ありのコマンドや「別のバージョン」で、2 つのバージョンや末尾の注記が返ってくることはなくなりました。</li>
+              <li>アラビア語、ヘブライ語、ペルシャ語、ウルドゥー語の文章が、オーバーレイ、履歴、チャットで正しい向きに表示されます。</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>GPL-3.0 になりました</b>FlowVoice は引き続き無料でオープンソースです。改変したバージョンを配布する場合は、同じライセンスでソースコードも公開する必要があります。<a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">ライセンスを読む</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v21">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.1</p>
+        <span class="pg-rel-date">2026年10月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v21">より安定したプレビューとガラスのカプセル</h2>
+        <p>言葉は、2 回続けて同じ結果になって初めて確定します。それまでは薄く表示され、まだ変わることがあります。確定した後は後戻りしません。</p>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-live.png" width="1120" height="348" loading="lazy" decoding="async" alt="聞き取り中の FlowVoice オーバーレイ：文の始まりはすでに確定して白く、まだ確定していない最後の言葉は薄いグレーで表示。">
+          <figcaption>アプリ内：「木曜日の午後」はすでに確定し、最後の部分はまだ薄く表示されています。</figcaption>
+        </figure>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>ライブプレビュー</h3>
+            <ul>
+              <li>文章が<b>後戻りしなくなりました</b>。各モデルへのリクエストは一度に 1 つだけで、遅れて届いた応答は破棄されます。</li>
+              <li>プレビューは前の文章を文脈として送らなくなりました（同じ文が繰り返し出ることがありました）。</li>
+              <li>ペースは Groq 自身が知らせる上限に従い、最終の文字起こし用の枠を常に残します。プレビュー直後に「上限に達しました」となることはなくなりました。</li>
+              <li>長い文は最大 15 秒で区切ります。応答が速くなり、無料プランの秒数も節約できます。</li>
+              <li>プレビューでの Gemini の追加レーンを廃止しました（Whisper と書き方が違い、遅かったため）。</li>
+              <li>同じ 4 つの音声で計測：確定表示された後に変わった文章は、音声入力 1 回あたり 2.5〜7.5 回から 0 回になり、更新は約 1.2〜1.5 秒ごとに届きます（以前は約 1.7〜2.0 秒）。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>ガラスのカプセル</h3>
+            <ul>
+              <li><b>一般 → フローティングウィンドウ</b>で：<b>ガラス</b>（透けてぼかしがかかり、縁が光る）または<b>半透明</b>（より薄い色合い）。Windows 自体のぼかしを使い、描画はグラフィックスカードが行います。</li>
+              <li><b>macOS 27 のような光と影</b>：光沢、面取りした縁、下側の光、柔らかな影（Thiago Silva のアイデア）。</li>
+              <li>Windows の透明効果が必要です。オフのときや省電力モードのときは、カプセルは不透明になります。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>修正</h3>
+            <ul>
+              <li>負荷の高い PC で Windows と一緒に起動すると、設定の代わりにエラーが表示されることがありました。</li>
+              <li>アップデート後、FlowVoice はウィンドウを開いた状態で自動的に再起動します。</li>
+            </ul>
+          </li>
+        </ul>
+        <figure class="pg-fig">
+          <img src="../assets/shot-glass-setting.webp" width="1700" height="388" loading="lazy" decoding="async" alt="FlowVoice の設定、一般：カプセルの見た目に不透明、ガラス、半透明の選択肢があり、ガラスが選択され、「macOS 27 のような光と影」がオン。">
+          <figcaption>一般 → フローティングウィンドウの設定。<a href="./#overlay">ガラスはトップページで見られます</a>。</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v2">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.0</p>
+        <span class="pg-rel-date">2026年10月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v2">書き直した理由</h2>
+        <p>2026 年、1.x は多くの人の環境で動かなくなりました。推奨していた GitHub Models が終了し、Groq で無料だったモデルが無料プランから外れ、Gemini の古いバージョンも停止されました。しかも 1.x は本当のエラーを隠していたので、アプリがただ「動かない」ように見えていました。</p>
+        <p>2.0 は同じことを繰り返さないために作られました。プロバイダーからの実際のメッセージを表示し、<strong>廃止されたモデルを自動で切り替えます</strong>。</p>
+
+        <h2>変わったこと</h2>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-result.png" width="1320" height="492" loading="lazy" decoding="async" alt="FlowVoice オーバーレイの結果：貼り付けました、Outlook でビジネススタイル、書き直された文章と、自然、ビジネス、プロンプト、そのまま、文字起こしのみ、翻訳、元の文のチップ、コピーボタン。">
+          <figcaption>オーバーレイの結果：ワンクリックで別のスタイルに書き直したり、翻訳したりできます。</figcaption>
+        </figure>
+        <ul class="pg-changes">
+          <li>
+            <h3>音声入力</h3>
+            <ul>
+              <li><b>ライブプレビュー</b>：話している間に文字が表示されます。</li>
+              <li>新しい<b>プロンプト</b>スタイル。話した内容を AI に送れるよう簡潔にまとめます。強さも調整できます。</li>
+              <li>自然、ビジネス、そのまま、文字起こしのみ、そして自分のスタイル。</li>
+              <li><b>アプリごとのスタイル</b>：<img class="pg-app" src="../assets/apps/outlook.svg" alt="" width="18" height="18">Outlook は常にビジネス、<img class="pg-app" src="../assets/apps/vscode.svg" alt="" width="18" height="18">VS Code は常にプロンプト。</li>
+              <li>つなぎ言葉（「えっと」「なんか」、言いよどみ）を取り除き、あなたの語彙を守ります。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>新しいオーバーレイ</h3>
+            <ul>
+              <li>結果が出た後、ワンクリックで<b>別のスタイルに書き直し</b>たり、数十の言語に<b>翻訳</b>したりできます。</li>
+              <li><b>置き換え</b>は前の貼り付けを取り消し、新しいバージョンを貼り付けます。</li>
+              <li>マウスかフォーカス中のウィンドウに合わせて、今いるモニターに表示されます。</li>
+              <li><kbd>Esc</kbd> でいつでもキャンセルできます。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>新しいショートカット</h3>
+            <ul>
+              <li><b>選択範囲にコマンド</b>：どのアプリでも文章を選び、やりたいことを言います（「もっと丁寧に」「箇条書きでまとめて」）。</li>
+              <li>最後の音声入力を、フォーカス中のアプリに<b>もう一度貼り付け</b>。</li>
+              <li>音声での翻訳と、Web 検索と出典付きの音声アシスタント。</li>
+              <li>押している間だけ話すモード（プッシュトゥトーク）。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>信頼性</h3>
+            <ul>
+              <li>プロバイダー間、複数のキー間での<b>フェイルオーバー</b>。クラウドが落ちたらローカルモデルを使います。</li>
+              <li>廃止されたモデルは<b>自動で切り替え</b>、毎日チェックします。</li>
+              <li>安全な貼り付け：貼り付け先のウィンドウを確認し、クリップボードの元の内容を戻します。</li>
+              <li>マイクが外れたら知らせて、別のマイクを使います。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>より良いオフライン</h3>
+            <ul>
+              <li>言語ごとのモデルカタログ。あなたの言語へのおすすめ付き。</li>
+              <li><b>ブラジル・ポルトガル語向けに調整した</b>モデル（Distil-Whisper pt-BR）。</li>
+              <li>ローカルの文字起こしが数倍速くなりました。</li>
+              <li>音声入力をやめるとモデルはメモリから解放されます。モデルはいつでも削除できます。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>インターフェース</h3>
+            <ul>
+              <li>設定画面を一新し、<b>検索</b>（<kbd>Ctrl</kbd> <kbd>K</kbd>）を追加。</li>
+              <li>初回起動時のウィザード。チュートリアルと各キーのテスト付き。</li>
+              <li>ライトとダークのテーマ、好きなアクセントカラー、PT/EN/ES。</li>
+              <li>新しいアイコンと、検索できる履歴。</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h2>1.x × 2.0</h2>
+        <div class="pg-table cmp-ver">
+          <table>
+            <caption class="sr">バージョン 1.x と 2.0 の比較</caption>
+            <thead><tr><th scope="col"><span class="sr">項目</span></th><th scope="col">1.x</th><th scope="col">2.0</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Base</th><td data-l="1.x">Python + PySide6</td><td data-l="2.0">Rust (Tauri 2) + Svelte</td></tr>
+              <tr><th scope="row">インストーラー</th><td data-l="1.x">大きく、Python を同梱</td><td data-l="2.0">数 MB。モデルは必要なときだけ</td></tr>
+              <tr><th scope="row">話している間</th><td data-l="1.x">画面に文字は出ない</td><td data-l="2.0">文字のライブプレビュー</td></tr>
+              <tr><th scope="row">結果が出た後</th><td data-l="1.x">貼り付けて終わり</td><td data-l="2.0">スタイル変更、翻訳、置き換え</td></tr>
+              <tr><th scope="row">プロバイダーが失敗したとき</th><td data-l="1.x">汎用的なエラー</td><td data-l="2.0">次のキーかプロバイダーへ。実際のメッセージも表示</td></tr>
+              <tr><th scope="row">廃止されたモデル</th><td data-l="1.x">動かなくなっていた</td><td data-l="2.0">自動で切り替え</td></tr>
+              <tr><th scope="row">キー</th><td data-l="1.x">設定ファイル</td><td data-l="2.0">システムの資格情報ストア</td></tr>
+              <tr><th scope="row">アップデート</th><td data-l="1.x">自動</td><td data-l="2.0">自動、デジタル署名付き</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>1.x から移行する場合</b>上書きでインストールしてください。初回起動時に、2.0 が古いキーをシステムの資格情報ストアへ自動で取り込みます。GitHub Models を使っていた場合は、Groq で無料のキーを作ってください。<a href="guia.html#groq">数分で終わります</a>。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v1">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">1.x</p>
+        <span class="pg-rel-date">2026年6月まで</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v1">第 1 世代</h2>
+        <p>Python で書かれた最初のバージョン。主な変更を新しい順に：</p>
+        <ul class="pg-old">
+          <li><span>1.9</span>検索モードでの Tavily による Web 検索、キーの表示にパスワード、ポルトガル語・英語・スペイン語のインターフェース。</li>
+          <li><span>1.8</span>オーバーレイを一新し、文字起こしの「ハルシネーション」を防ぐフィルターを追加。</li>
+          <li><span>1.5–1.7</span>アプリ内での自動アップデート。</li>
+        </ul>
+        <p class="pg-gap">各バージョンの詳しいリリースノートは <a href="https://github.com/cesarkali/Flow-Voice/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a> にあります。</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="pg-next" aria-labelledby="next-t">
+    <div class="wrap">
+      <div class="pg-next-in">
+        <div>
+          <h2 id="next-t">2.2 を使ってみませんか？</h2>
+          <p>無料、オープンソース、アカウント不要。</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>Windows 版をダウンロード</a>
+          <a class="btn btn-ghost btn-lg" href="guia.html">無料のキーを入手</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · ブラジルで <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a> が開発</p>
+      <nav aria-label="フッター">
+        <ul>
+          <li><a href="guia.html">キーの取得</a></li>
+          <li><a href="novidades.html" aria-current="page">新機能</a></li>
+          <li><a href="privacidade.html">プライバシー</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 ライセンス</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">問題を報告</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">改善を提案</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>プロジェクトを支援：<a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/ja.js" defer></script>
+<script src="../site.js" defer></script>
+</body>
+</html>

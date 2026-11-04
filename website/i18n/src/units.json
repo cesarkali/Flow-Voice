@@ -1,0 +1,3192 @@
+[
+ {
+  "pt": "FlowVoice: ditado por voz com IA, grátis, para Windows",
+  "kind": "text",
+  "where": [
+   "index: title"
+  ]
+ },
+ {
+  "pt": "Pular para o conteúdo",
+  "kind": "text",
+  "where": [
+   "index: a.skip",
+   "guia: a.skip",
+   "novidades: a.skip",
+   "privacidade: a.skip"
+  ]
+ },
+ {
+  "pt": "Estilos",
+  "kind": "text",
+  "where": [
+   "index: a",
+   "guia: a",
+   "novidades: a",
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Grátis e offline",
+  "kind": "text",
+  "where": [
+   "index: a",
+   "guia: a",
+   "novidades: a",
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Guia de chaves",
+  "kind": "text",
+  "where": [
+   "index: a",
+   "guia: a",
+   "novidades: a",
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Novidades",
+  "kind": "text",
+  "where": [
+   "index: a",
+   "guia: a",
+   "novidades: a",
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Baixar",
+  "kind": "text",
+  "where": [
+   "index: a.btn",
+   "guia: a.btn",
+   "novidades: a.btn",
+   "privacidade: a.btn"
+  ]
+ },
+ {
+  "pt": "Fale. O texto aparece onde está o&nbsp;[1]cursor.[2/][/1]",
+  "kind": "text",
+  "where": [
+   "index: h1"
+  ]
+ },
+ {
+  "pt": "Ditado por voz com IA, em qualquer app do Windows. Limpo, pontuado e no tom certo. Grátis, de código aberto e, se você quiser, 100% offline.",
+  "kind": "text",
+  "where": [
+   "index: p.lede"
+  ]
+ },
+ {
+  "pt": "[1/]Baixar para Windows",
+  "kind": "text",
+  "where": [
+   "index: a.btn",
+   "guia: a.btn",
+   "novidades: a.btn"
+  ]
+ },
+ {
+  "pt": "Windows 10 e 11 · ~3 MB · sem pedir administrador",
+  "kind": "text",
+  "where": [
+   "index: p.hero-meta"
+  ]
+ },
+ {
+  "pt": "Demonstração: em cada app, a pessoa aperta Ctrl+Shift+Espaço e fala. O texto aparece ao vivo no overlay do FlowVoice e é colado no lugar do cursor, já reescrito: formal no Outlook, natural no Slack, como prompt no ChatGPT.",
+  "kind": "text",
+  "where": [
+   "index: figcaption.sr"
+  ]
+ },
+ {
+  "pt": "Nova mensagem",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Para",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "equipe@empresa.com.br",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "Assunto",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "Reunião de quinta",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "# produto",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "A",
+  "kind": "text",
+  "where": [
+   "index: span.av"
+  ]
+ },
+ {
+  "pt": "Ana Lima",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Alguém já testou a versão nova?",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "Nova conversa",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Como posso ajudar?",
+  "kind": "text",
+  "where": [
+   "index: p.chat-q"
+  ]
+ },
+ {
+  "pt": "Espaço",
+  "kind": "text",
+  "where": [
+   "index: kbd"
+  ]
+ },
+ {
+  "pt": "Ditado",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-mode",
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Profissional",
+  "kind": "text",
+  "where": [
+   "index: span",
+   "index: span.fvo-chip",
+   "index: button.tab",
+   "index: b"
+  ]
+ },
+ {
+  "pt": "é, tipo, pessoal, a",
+  "kind": "text",
+  "where": [
+   "index: span.ck"
+  ]
+ },
+ {
+  "pt": "reunião de",
+  "kind": "text",
+  "where": [
+   "index: span.ck"
+  ]
+ },
+ {
+  "pt": "Transcrevendo…",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-pl"
+  ]
+ },
+ {
+  "pt": "Colado",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-ht"
+  ]
+ },
+ {
+  "pt": "Olá, pessoal. A reunião de quinta-feira está confirmada para as 10h. Quem não puder participar, por favor me avise.",
+  "kind": "text",
+  "where": [
+   "index: p.fvo-text"
+  ]
+ },
+ {
+  "pt": "Natural",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-chip",
+   "index: span",
+   "index: button.tab",
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Prompt",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-chip",
+   "index: button.tab",
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Cru",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-chip",
+   "index: button.tab"
+  ]
+ },
+ {
+  "pt": "Só transcrição",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-chip",
+   "index: button.tab"
+  ]
+ },
+ {
+  "pt": "[1/]Traduzir",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-chip"
+  ]
+ },
+ {
+  "pt": "Original",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-chip"
+  ]
+ },
+ {
+  "pt": "[1/]Copiar",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-btn"
+  ]
+ },
+ {
+  "pt": "[1/]Substituir",
+  "kind": "text",
+  "where": [
+   "index: span.fvo-btn"
+  ]
+ },
+ {
+  "pt": "Você vê o texto enquanto fala.",
+  "kind": "text",
+  "where": [
+   "index: h2"
+  ]
+ },
+ {
+  "pt": "Ao vivo, sem voltar atrás",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "Palavras ainda incertas aparecem mais claras e firmam quando duas respostas concordam. O que firmou não muda mais.",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "Um clique para refazer",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "No resultado, troque o estilo, traduza, cole ou copie. Se já colou, [1]Substituir[/1] troca o texto no lugar.",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "Onde você quiser, novo na 2.2",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "Durante a gravação, arraste a cápsula para qualquer canto, até para outro monitor. Ou escolha uma posição só sua em Geral → Janela flutuante.",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "Vidro, novo na 2.1",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "A cápsula pode ser de vidro, com o desfoque do próprio Windows, ou translúcida. Em Geral → Janela flutuante.",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "Demonstração da janela flutuante do FlowVoice sobre a área de trabalho: o texto aparece enquanto a pessoa fala, com as palavras ainda incertas mais claras; depois vem o resultado, que é refeito no estilo Profissional com um clique. Os botões trocam a aparência da cápsula entre sólida, vidro e translúcida.",
+  "kind": "text",
+  "where": [
+   "index: figcaption.sr"
+  ]
+ },
+ {
+  "pt": "Sólida",
+  "kind": "text",
+  "where": [
+   "index: button"
+  ]
+ },
+ {
+  "pt": "Vidro",
+  "kind": "text",
+  "where": [
+   "index: button"
+  ]
+ },
+ {
+  "pt": "Translúcido",
+  "kind": "text",
+  "where": [
+   "index: button"
+  ]
+ },
+ {
+  "pt": "[1/]Luz e sombra",
+  "kind": "text",
+  "where": [
+   "index: button.ov-light"
+  ]
+ },
+ {
+  "pt": "[1/]Relatório do trimestre",
+  "kind": "text",
+  "where": [
+   "index: div.desk-bar"
+  ]
+ },
+ {
+  "pt": "Eu queria saber se a gente consegue marcar aquela reunião para quinta-feira à tarde, porque na quarta eu não consigo.",
+  "kind": "text",
+  "where": [
+   "index: p.fvo-text"
+  ]
+ },
+ {
+  "pt": "Uma fala. O tom certo para cada lugar.",
+  "kind": "text",
+  "where": [
+   "index: h2"
+  ]
+ },
+ {
+  "pt": "Escolha o estilo, ou deixe o app em foco escolher por você.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "Você falou [1][2/]no Outlook[/1]",
+  "kind": "text",
+  "where": [
+   "index: p.said-l"
+  ]
+ },
+ {
+  "pt": "“[1]é,[/1] oi, pessoal, [2]então,[/2] sobre o relatório do trimestre, [3]né,[/3] eu preciso que cada um mande a sua parte até sexta, [4]tipo,[/4] até o meio-dia, pra eu conseguir revisar tudo antes da reunião de segunda”",
+  "kind": "text",
+  "where": [
+   "index: p.said-t"
+  ]
+ },
+ {
+  "pt": "Olá, pessoal. Sobre o relatório trimestral: preciso que cada um envie a sua parte até sexta-feira, ao meio-dia, para que eu consiga revisar tudo antes da reunião de segunda-feira.",
+  "kind": "text",
+  "where": [
+   "index: p.result-t"
+  ]
+ },
+ {
+  "pt": "Formal e organizado, pronto para e-mail.",
+  "kind": "text",
+  "where": [
+   "index: p.result-d"
+  ]
+ },
+ {
+  "pt": "Intensidade",
+  "kind": "text",
+  "where": [
+   "index: span.strength-l"
+  ]
+ },
+ {
+  "pt": "Fraco",
+  "kind": "text",
+  "where": [
+   "index: button"
+  ]
+ },
+ {
+  "pt": "Médio",
+  "kind": "text",
+  "where": [
+   "index: button"
+  ]
+ },
+ {
+  "pt": "Forte",
+  "kind": "text",
+  "where": [
+   "index: button"
+  ]
+ },
+ {
+  "pt": "Estilo por app",
+  "kind": "text",
+  "where": [
+   "index: h3"
+  ]
+ },
+ {
+  "pt": "O FlowVoice reconhece o app em foco, inclusive no navegador, e usa o estilo que você definiu para ele.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "[1/]Gmail, WhatsApp Web, ChatGPT e outros também são reconhecidos dentro do Chrome e do Edge.",
+  "kind": "text",
+  "where": [
+   "index: p.note"
+  ]
+ },
+ {
+  "pt": "Selecione um texto. Diga o que mudar.",
+  "kind": "text",
+  "where": [
+   "index: h2"
+  ]
+ },
+ {
+  "pt": "No modo Comando, [1]Ctrl[/1] [2]Alt[/2] [3]K[/3] reescreve a seleção no próprio lugar, em qualquer app.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "Selecionado",
+  "kind": "text",
+  "where": [
+   "index: span.cmd-l"
+  ]
+ },
+ {
+  "pt": "oi ana, não vou conseguir ir na reunião amanhã não, deu um problema aqui, foi mal",
+  "kind": "text",
+  "where": [
+   "index: mark"
+  ]
+ },
+ {
+  "pt": "Você diz",
+  "kind": "text",
+  "where": [
+   "index: span.cmd-l"
+  ]
+ },
+ {
+  "pt": "[1/]“deixa mais formal”",
+  "kind": "text",
+  "where": [
+   "index: p.cmd-say"
+  ]
+ },
+ {
+  "pt": "Fica assim",
+  "kind": "text",
+  "where": [
+   "index: span.cmd-l"
+  ]
+ },
+ {
+  "pt": "Oi, Ana. Infelizmente não poderei participar da reunião de amanhã por causa de um imprevisto. Peço desculpas.",
+  "kind": "text",
+  "where": [
+   "index: p.cmd-after"
+  ]
+ },
+ {
+  "pt": "Também vale “traduz pro inglês”, “resume em tópicos”, “corrige a gramática”.",
+  "kind": "text",
+  "where": [
+   "index: p.cmd-more"
+  ]
+ },
+ {
+  "pt": "Grátis de verdade. Até sem internet.",
+  "kind": "text",
+  "where": [
+   "index: h2"
+  ]
+ },
+ {
+  "pt": "Com uma chave grátis",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "Groq (o recomendado), Gemini, Mistral ou OpenRouter. Sem cartão, em poucos minutos. [1]Ver o guia das chaves[/1]",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "Ou 100% no seu PC",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "Modelos Whisper locais, inclusive um ajustado para o português do Brasil. Nada sai da máquina.",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "Sem conta, sem servidor nosso",
+  "kind": "text",
+  "where": [
+   "index: dt"
+  ]
+ },
+ {
+  "pt": "As chaves ficam no cofre de credenciais do Windows. Código aberto, licença GPL-3.0. [1]Privacidade[/1]",
+  "kind": "text",
+  "where": [
+   "index: dd"
+  ]
+ },
+ {
+  "pt": "E os detalhes que fazem falta.",
+  "kind": "text",
+  "where": [
+   "index: h2.h-small"
+  ]
+ },
+ {
+  "pt": "Tradução enquanto dita",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Fale em português, cole em um de 34 idiomas. [1][2]Ctrl[/2] [3]Shift[/3] [4]Y[/4][/1]",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Vocabulário próprio",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Nomes, marcas e termos técnicos sempre escritos do jeito certo.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Histórico com busca",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Tudo o que você ditou fica salvo no seu PC.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Segurar para falar",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Grava só enquanto o atalho estiver pressionado.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Assistente por voz",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Pergunte em voz alta, com busca na web. [1][2]Ctrl[/2] [3]Shift[/3] [4]U[/4][/1]",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Atualiza sozinho",
+  "kind": "text",
+  "where": [
+   "index: b",
+   "novidades: span"
+  ]
+ },
+ {
+  "pt": "Instalador de ~3 MB, sem pedir administrador.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Tentar de novo",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Se a transcrição falhar, a gravação fica na memória e um clique refaz o ditado.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Silêncio enquanto grava",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Opcional: o som do PC fica mudo durante a gravação e volta sozinho.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Em 10 idiomas",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Português, inglês, espanhol, francês, alemão, japonês, chinês, russo, hindi e bengali.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Dúvidas rápidas",
+  "kind": "text",
+  "where": [
+   "index: h2.h-small"
+  ]
+ },
+ {
+  "pt": "É grátis mesmo?",
+  "kind": "text",
+  "where": [
+   "index: summary"
+  ]
+ },
+ {
+  "pt": "Sim. O FlowVoice não tem servidor: usa a sua chave direto no provedor, ou roda no seu PC. Os planos gratuitos do Groq e do Gemini dão conta de um uso diário normal, sem cartão.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "O Windows mostrou um aviso ao instalar. É seguro?",
+  "kind": "text",
+  "where": [
+   "index: summary"
+  ]
+ },
+ {
+  "pt": "É esperado: o instalador ainda não tem assinatura paga. Clique em “Mais informações” e “Executar assim mesmo”. O instalador é gerado pelo GitHub Actions a partir do código aberto.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "Em quais sistemas funciona?",
+  "kind": "text",
+  "where": [
+   "index: summary"
+  ]
+ },
+ {
+  "pt": "No Windows 10 e 11. O instalador tem cerca de 3 MB, não pede administrador e se atualiza sozinho.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "Achei um problema ou tenho uma ideia. Onde falo?",
+  "kind": "text",
+  "where": [
+   "index: summary"
+  ]
+ },
+ {
+  "pt": "No GitHub: [1]reportar um problema[/1] ou [2]sugerir uma melhoria[/2]. Dentro do app, em Configurações → Sobre, os mesmos botões já preenchem a versão do app e do Windows.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "Feito por uma pessoa no Brasil, às claras.",
+  "kind": "text",
+  "where": [
+   "index: h2"
+  ]
+ },
+ {
+  "pt": "O FlowVoice é grátis e sempre vai ser. Se ele poupa o seu tempo, um cafezinho pelo LivePix (Pix, na hora) ou pelo GitHub Sponsors (cartão, mensal ou uma vez) mantém as atualizações vindo.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "[1/]Doar pelo LivePix",
+  "kind": "text",
+  "where": [
+   "index: a.btn"
+  ]
+ },
+ {
+  "pt": "[1]livepix.gg/caliberda[/1][2/]Aponte a câmera do celular para o código ou clique nele.",
+  "kind": "text",
+  "where": [
+   "index: p.pix-note"
+  ]
+ },
+ {
+  "pt": "[1/]Patrocinar no GitHub",
+  "kind": "text",
+  "where": [
+   "index: a.btn"
+  ]
+ },
+ {
+  "pt": "Mensal ou uma vez, com qualquer cartão. O GitHub repassa tudo.",
+  "kind": "text",
+  "where": [
+   "index: p.pix-note"
+  ]
+ },
+ {
+  "pt": "Não rola doar? Isto ajuda do mesmo jeito.",
+  "kind": "text",
+  "where": [
+   "index: h3"
+  ]
+ },
+ {
+  "pt": "Uma estrela no GitHub",
+  "kind": "text",
+  "where": [
+   "index: a"
+  ]
+ },
+ {
+  "pt": "Faz o projeto aparecer para mais gente.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Um relato de bug",
+  "kind": "text",
+  "where": [
+   "index: a"
+  ]
+ },
+ {
+  "pt": "Com a versão e o passo a passo, a correção sai mais rápido.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Uma ideia",
+  "kind": "text",
+  "where": [
+   "index: a"
+  ]
+ },
+ {
+  "pt": "Conte o que faria o FlowVoice servir melhor para você.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Indicar para alguém",
+  "kind": "text",
+  "where": [
+   "index: b"
+  ]
+ },
+ {
+  "pt": "Quem digita o dia todo vai agradecer.",
+  "kind": "text",
+  "where": [
+   "index: span"
+  ]
+ },
+ {
+  "pt": "Pare de digitar o&nbsp;que você pode falar.",
+  "kind": "text",
+  "where": [
+   "index: h2"
+  ]
+ },
+ {
+  "pt": "Baixe, cole uma chave grátis do Groq e faça o primeiro ditado em cinco minutos.",
+  "kind": "text",
+  "where": [
+   "index: p"
+  ]
+ },
+ {
+  "pt": "Pegar chaves grátis",
+  "kind": "text",
+  "where": [
+   "index: a.btn"
+  ]
+ },
+ {
+  "pt": "FlowVoice 2.2 · feito no Brasil por [1]Júlio Caliberda[/1]",
+  "kind": "text",
+  "where": [
+   "index: p.foot-about",
+   "guia: p.foot-about",
+   "novidades: p.foot-about",
+   "privacidade: p.foot-about"
+  ]
+ },
+ {
+  "pt": "Privacidade",
+  "kind": "text",
+  "where": [
+   "index: a",
+   "guia: a.btn",
+   "guia: a",
+   "novidades: a",
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Licença GPL-3.0",
+  "kind": "text",
+  "where": [
+   "index: a",
+   "guia: a",
+   "novidades: a",
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Reportar um problema",
+  "kind": "text",
+  "where": [
+   "index: a",
+   "guia: a",
+   "novidades: a",
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Sugerir melhoria",
+  "kind": "text",
+  "where": [
+   "index: a",
+   "guia: a",
+   "novidades: a",
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Apoie o projeto: [1]Pix[/1] · [2]GitHub Sponsors[/2]",
+  "kind": "text",
+  "where": [
+   "index: span",
+   "guia: span",
+   "novidades: span",
+   "privacidade: span"
+  ]
+ },
+ {
+  "pt": "Aperte um atalho, fale, e o texto aparece onde está o cursor, reescrito por IA no estilo que você escolher. Grátis e de código aberto, com chaves de API gratuitas ou 100% offline.",
+  "kind": "meta",
+  "where": [
+   "index: meta description"
+  ]
+ },
+ {
+  "pt": "FlowVoice: fale, e o texto aparece onde está o cursor",
+  "kind": "meta",
+  "where": [
+   "index: meta og:title",
+   "index: meta twitter:title"
+  ]
+ },
+ {
+  "pt": "Ditado por voz com IA em qualquer app do Windows. Grátis, código aberto, com chaves gratuitas ou 100% offline.",
+  "kind": "meta",
+  "where": [
+   "index: meta og:description",
+   "index: meta twitter:description"
+  ]
+ },
+ {
+  "pt": "FlowVoice: o overlay transcrevendo a fala ao vivo",
+  "kind": "meta",
+  "where": [
+   "index: meta og:image:alt"
+  ]
+ },
+ {
+  "pt": "Ditado por voz com IA em qualquer aplicativo. Aperte um atalho, fale, e o texto aparece onde está o cursor, reescrito no estilo que você escolher. Funciona com chaves de API gratuitas ou 100% offline.",
+  "kind": "jsonld",
+  "where": [
+   "index: JSON-LD description"
+  ]
+ },
+ {
+  "pt": "FlowVoice, página inicial",
+  "kind": "attr",
+  "where": [
+   "index: a.brand[aria-label]",
+   "guia: a.brand[aria-label]",
+   "novidades: a.brand[aria-label]",
+   "privacidade: a.brand[aria-label]"
+  ]
+ },
+ {
+  "pt": "Principal",
+  "kind": "attr",
+  "where": [
+   "index: nav.nav[aria-label]",
+   "guia: nav.nav[aria-label]",
+   "novidades: nav.nav[aria-label]",
+   "privacidade: nav.nav[aria-label]"
+  ]
+ },
+ {
+  "pt": "Tema escuro",
+  "kind": "attr",
+  "where": [
+   "index: button.theme-btn[title]",
+   "index: button.theme-btn[aria-label]",
+   "guia: button.theme-btn[title]",
+   "guia: button.theme-btn[aria-label]",
+   "novidades: button.theme-btn[title]",
+   "novidades: button.theme-btn[aria-label]",
+   "privacidade: button.theme-btn[title]",
+   "privacidade: button.theme-btn[aria-label]"
+  ]
+ },
+ {
+  "pt": "Abrir menu",
+  "kind": "attr",
+  "where": [
+   "index: button.menu-btn[aria-label]",
+   "guia: button.menu-btn[aria-label]",
+   "novidades: button.menu-btn[aria-label]",
+   "privacidade: button.menu-btn[aria-label]"
+  ]
+ },
+ {
+  "pt": "Escolher app da demonstração",
+  "kind": "attr",
+  "where": [
+   "index: div.demo-apps[aria-label]"
+  ]
+ },
+ {
+  "pt": "Pausar demonstração",
+  "kind": "attr",
+  "where": [
+   "index: button.demo-pause[aria-label]"
+  ]
+ },
+ {
+  "pt": "Aparência da cápsula",
+  "kind": "attr",
+  "where": [
+   "index: div.seg[aria-label]"
+  ]
+ },
+ {
+  "pt": "Estilos de escrita",
+  "kind": "attr",
+  "where": [
+   "index: div.tabs[aria-label]"
+  ]
+ },
+ {
+  "pt": "Intensidade do estilo Prompt",
+  "kind": "attr",
+  "where": [
+   "index: div.strength[aria-label]"
+  ]
+ },
+ {
+  "pt": "Tela de provedores do FlowVoice: Groq recomendado e grátis, Google Gemini, OpenRouter e Mistral grátis, OpenAI pago e Ollama local.",
+  "kind": "attr",
+  "where": [
+   "index: img[alt]"
+  ]
+ },
+ {
+  "pt": "QR code do LivePix para doar ao FlowVoice",
+  "kind": "attr",
+  "where": [
+   "index: img[alt]"
+  ]
+ },
+ {
+  "pt": "Rodapé",
+  "kind": "attr",
+  "where": [
+   "index: nav[aria-label]",
+   "guia: nav[aria-label]",
+   "novidades: nav[aria-label]",
+   "privacidade: nav[aria-label]"
+  ]
+ },
+ {
+  "pt": "Chaves grátis em poucos minutos · Guia do FlowVoice",
+  "kind": "text",
+  "where": [
+   "guia: title"
+  ]
+ },
+ {
+  "pt": "Chaves grátis em poucos [1]minutos[2/][/1]",
+  "kind": "text",
+  "where": [
+   "guia: h1"
+  ]
+ },
+ {
+  "pt": "O FlowVoice não cobra nada e não tem servidor próprio: ele conversa direto com o provedor de IA que você escolher. Para isso, basta uma chave de API gratuita. Ou nenhuma, se você preferir usar offline.",
+  "kind": "text",
+  "where": [
+   "guia: p.pg-lede"
+  ]
+ },
+ {
+  "pt": "[1]Sem cartão[/1] nos planos grátis",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Chaves no cofre do Windows",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Offline também funciona",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Nesta página",
+  "kind": "text",
+  "where": [
+   "guia: summary",
+   "guia: nav.pg-toc[aria-label]",
+   "privacidade: summary",
+   "privacidade: nav.pg-toc[aria-label]"
+  ]
+ },
+ {
+  "pt": "O caminho mais rápido",
+  "kind": "text",
+  "where": [
+   "guia: a",
+   "guia: h2"
+  ]
+ },
+ {
+  "pt": "Provedores, passo a passo",
+  "kind": "text",
+  "where": [
+   "guia: a",
+   "guia: h2"
+  ]
+ },
+ {
+  "pt": "Tavily (busca na web)",
+  "kind": "text",
+  "where": [
+   "guia: a"
+  ]
+ },
+ {
+  "pt": "Colando a chave no app",
+  "kind": "text",
+  "where": [
+   "guia: a",
+   "guia: h2"
+  ]
+ },
+ {
+  "pt": "Limites do plano grátis",
+  "kind": "text",
+  "where": [
+   "guia: a"
+  ]
+ },
+ {
+  "pt": "Sem internet",
+  "kind": "text",
+  "where": [
+   "guia: a"
+  ]
+ },
+ {
+  "pt": "Se você só quer ditar hoje: crie uma chave na [1]Groq[/1] e pronto. Ela transcreve a voz e refina o texto, é muito rápida, e o plano grátis dá conta de um dia inteiro de uso normal.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "As outras chaves são opcionais. Ter mais de um provedor serve de reserva: se um falhar ou bater no limite, o FlowVoice passa para o próximo sozinho.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "[1]Não precisa decorar nada[/1]Dentro do app, cada provedor tem este mesmo passo a passo, um botão que abre a página certa e um botão [2]Testar[/2] que confirma se a chave funciona.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "Cada um leva poucos minutos. Comece pela Groq; os outros servem de reserva ou adicionam recursos.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "Recomendado",
+  "kind": "text",
+  "where": [
+   "guia: span.pg-tag"
+  ]
+ },
+ {
+  "pt": "Grátis",
+  "kind": "text",
+  "where": [
+   "guia: span.pg-tag"
+  ]
+ },
+ {
+  "pt": "Voz e texto. Transcrição e refinamento muito rápidos.",
+  "kind": "text",
+  "where": [
+   "guia: p.uses"
+  ]
+ },
+ {
+  "pt": "Abra o [1]console da Groq[/1] e entre com Google, GitHub ou e-mail.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Em [1]API Keys[/1], clique em [2]Create API Key[/2] e dê um nome qualquer, como “FlowVoice”.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Copie a chave (começa com [1]gsk_[/1]). Ela só aparece uma vez.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Cole no FlowVoice e clique em [1]Testar[/1].",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Abrir console.groq.com[1/]",
+  "kind": "text",
+  "where": [
+   "guia: a.btn"
+  ]
+ },
+ {
+  "pt": "Plano grátis: [1]horas de áudio por dia[/1], sem cartão.",
+  "kind": "text",
+  "where": [
+   "guia: span.lim"
+  ]
+ },
+ {
+  "pt": "Voz e texto. A IA do Google, com plano gratuito generoso.",
+  "kind": "text",
+  "where": [
+   "guia: p.uses"
+  ]
+ },
+ {
+  "pt": "Abra o [1]Google AI Studio[/1] e entre com sua conta Google.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Clique em [1]Create API key[/1].",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Escolha um projeto existente ou crie um novo.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Copie a chave (começa com [1]AIza[/1]) e cole no app.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Abrir aistudio.google.com[1/]",
+  "kind": "text",
+  "where": [
+   "guia: a.btn"
+  ]
+ },
+ {
+  "pt": "No plano grátis, o Google [1]pode usar o que você envia[/1] para melhorar os produtos dele.",
+  "kind": "text",
+  "where": [
+   "guia: span.lim"
+  ]
+ },
+ {
+  "pt": "Modelos :free",
+  "kind": "text",
+  "where": [
+   "guia: span.pg-tag"
+  ]
+ },
+ {
+  "pt": "Só texto: refinamento, tradução e perguntas. Dá acesso a dezenas de modelos, e os que terminam em [1]:free[/1] não custam nada.",
+  "kind": "text",
+  "where": [
+   "guia: p.uses"
+  ]
+ },
+ {
+  "pt": "Abra o [1]OpenRouter[/1] e entre com Google, GitHub ou e-mail.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Clique em [1]Create Key[/1] e dê um nome. O limite de crédito é opcional.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Copie a chave (começa com [1]sk-or-[/1]) e cole no app.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Abrir openrouter.ai[1/]",
+  "kind": "text",
+  "where": [
+   "guia: a.btn"
+  ]
+ },
+ {
+  "pt": "Sem créditos na conta: [1]cerca de 50 pedidos por dia[/1] nos modelos grátis.",
+  "kind": "text",
+  "where": [
+   "guia: span.lim"
+  ]
+ },
+ {
+  "pt": "Sem cartão",
+  "kind": "text",
+  "where": [
+   "guia: span.pg-tag"
+  ]
+ },
+ {
+  "pt": "Voz e texto. IA europeia, com um modelo de transcrição muito bom.",
+  "kind": "text",
+  "where": [
+   "guia: p.uses"
+  ]
+ },
+ {
+  "pt": "Abra o [1]console da Mistral[/1] e crie sua conta.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Escolha o plano gratuito ([1]Experiment[/1]). Ele não pede cartão.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Em [1]API Keys[/1], crie uma chave nova.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Copie a chave e cole no app.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Abrir console.mistral.ai[1/]",
+  "kind": "text",
+  "where": [
+   "guia: a.btn"
+  ]
+ },
+ {
+  "pt": "Busca na web",
+  "kind": "text",
+  "where": [
+   "guia: span.pg-tag"
+  ]
+ },
+ {
+  "pt": "Opcional. Dá ao assistente por voz ([1]Ctrl[/1] [2]Shift[/2] [3]U[/3]) acesso à internet: ele pesquisa e responde citando as fontes.",
+  "kind": "text",
+  "where": [
+   "guia: p.uses"
+  ]
+ },
+ {
+  "pt": "Abra o [1]Tavily[/1] e crie sua conta.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "A chave (começa com [1]tvly-[/1]) já aparece no painel.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Copie e cole no app.",
+  "kind": "text",
+  "where": [
+   "guia: span"
+  ]
+ },
+ {
+  "pt": "Abrir app.tavily.com[1/]",
+  "kind": "text",
+  "where": [
+   "guia: a.btn"
+  ]
+ },
+ {
+  "pt": "Plano grátis: [1]1.000 créditos por mês[/1], sem cartão.",
+  "kind": "text",
+  "where": [
+   "guia: span.lim"
+  ]
+ },
+ {
+  "pt": "Na primeira vez, o assistente de configuração pede a chave. Depois, ela fica em [1]Configurações → Provedores[/1].",
+  "kind": "text",
+  "where": [
+   "guia: li"
+  ]
+ },
+ {
+  "pt": "Clique em [1]Testar[/1]. Se algo der errado, o app mostra a mensagem real do provedor, nada de “erro desconhecido”.",
+  "kind": "text",
+  "where": [
+   "guia: li"
+  ]
+ },
+ {
+  "pt": "A ordem dos provedores é a ordem de tentativa. Arraste para mudar.",
+  "kind": "text",
+  "where": [
+   "guia: li"
+  ]
+ },
+ {
+  "pt": "Onde a chave fica guardada",
+  "kind": "text",
+  "where": [
+   "guia: h3"
+  ]
+ },
+ {
+  "pt": "No [1]Gerenciador de Credenciais do Windows[/1]. Só em casos raros, com o cofre indisponível ou recusando uma chave muito longa, ela fica num arquivo local na sua pasta de usuário. Ela só sai do seu PC para o próprio provedor, a cada pedido.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "Mais de uma chave",
+  "kind": "text",
+  "where": [
+   "guia: h3"
+  ]
+ },
+ {
+  "pt": "Você pode cadastrar várias chaves no mesmo provedor. Quando uma bate no limite ou falha, o FlowVoice passa para a próxima automaticamente.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "E quando um modelo é aposentado?",
+  "kind": "text",
+  "where": [
+   "guia: h3"
+  ]
+ },
+ {
+  "pt": "Os provedores trocam de modelo com frequência. O FlowVoice percebe quando um modelo sai do ar, escolhe um substituto na lista atual do provedor, testa e passa a [1]usá-lo[/1] sozinho. Ele também confere isso uma vez por dia, em segundo plano. Você não precisa mexer em nada.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "Limites do plano grátis, sem rodeios",
+  "kind": "text",
+  "where": [
+   "guia: h2"
+  ]
+ },
+ {
+  "pt": "Todo plano grátis tem um teto: tantos pedidos por minuto, tantos minutos de áudio por dia. Para ditado no dia a dia, sobra. Os números exatos mudam de tempos em tempos, então confira na página de cada provedor.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "Como o limite grátis de cada provedor é contado",
+  "kind": "text",
+  "where": [
+   "guia: caption.sr"
+  ]
+ },
+ {
+  "pt": "Provedor",
+  "kind": "text",
+  "where": [
+   "guia: th"
+  ]
+ },
+ {
+  "pt": "O limite vale para",
+  "kind": "text",
+  "where": [
+   "guia: th",
+   "guia: td[data-l]"
+  ]
+ },
+ {
+  "pt": "Outra chave na mesma conta",
+  "kind": "text",
+  "where": [
+   "guia: th",
+   "guia: td[data-l]"
+  ]
+ },
+ {
+  "pt": "A conta (organização) inteira",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Não aumenta a cota",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "O projeto do Google, não a chave",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Não aumenta, se for do mesmo projeto",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Pedidos por dia nos modelos [1]:free[/1]; sobe se a conta tiver créditos comprados",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Não aumenta",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Créditos por mês; cada busca gasta 1 ou 2",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "[1]Várias chaves da mesma conta não somam[/1]Na Groq, o limite vale para a conta inteira: cinco chaves na mesma conta dão exatamente a mesma cota que uma. O que ajuda de verdade é ter [2]provedores diferentes[/2] como reserva, por exemplo Groq e Gemini.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "Sem internet: 100% offline",
+  "kind": "text",
+  "where": [
+   "guia: h2"
+  ]
+ },
+ {
+  "pt": "Prefere não usar nuvem nenhuma? Em [1]Configurações → Transcrição[/1], escolha [2]100% local[/2] e baixe um modelo de reconhecimento de voz (Whisper). A transcrição roda no seu processador e o áudio nunca sai do PC.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "O app mostra quais modelos são recomendados para o idioma em que você fala. Os números abaixo são aproximados:",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "Modelos offline: tamanho, memória e indicação",
+  "kind": "text",
+  "where": [
+   "guia: caption.sr"
+  ]
+ },
+ {
+  "pt": "Modelo",
+  "kind": "text",
+  "where": [
+   "guia: th"
+  ]
+ },
+ {
+  "pt": "Download",
+  "kind": "text",
+  "where": [
+   "guia: th",
+   "guia: td.num[data-l]"
+  ]
+ },
+ {
+  "pt": "Memória em uso",
+  "kind": "text",
+  "where": [
+   "guia: th",
+   "guia: td.num[data-l]"
+  ]
+ },
+ {
+  "pt": "Para quem",
+  "kind": "text",
+  "where": [
+   "guia: th",
+   "guia: td[data-l]"
+  ]
+ },
+ {
+  "pt": "PCs bem fracos; erra mais",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Rápido; também usado na prévia ao vivo",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Bom equilíbrio nos idiomas mais falados",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Ajustado para o português do Brasil",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "Máxima precisão em qualquer idioma",
+  "kind": "text",
+  "where": [
+   "guia: td"
+  ]
+ },
+ {
+  "pt": "[1]Sendo honesto:[/1] offline é mais lento que a nuvem, principalmente com os modelos grandes em PCs modestos. O modo local precisa de um processador com AVX2 (a maioria dos últimos dez anos tem; se o seu não tiver, o app avisa).",
+  "kind": "text",
+  "where": [
+   "guia: li"
+  ]
+ },
+ {
+  "pt": "O modelo só ocupa memória enquanto você dita e é liberado poucos segundos depois.",
+  "kind": "text",
+  "where": [
+   "guia: li"
+  ]
+ },
+ {
+  "pt": "Cada modelo é baixado uma vez, só quando você pede, e pode ser [1]apagado a qualquer momento[/1] na mesma tela.",
+  "kind": "text",
+  "where": [
+   "guia: li"
+  ]
+ },
+ {
+  "pt": "Para refinar o texto sem internet também, use o [1]Ollama[/1], que roda uma IA de texto no seu PC.",
+  "kind": "text",
+  "where": [
+   "guia: li"
+  ]
+ },
+ {
+  "pt": "Chave na mão? Agora é só falar.",
+  "kind": "text",
+  "where": [
+   "guia: h2"
+  ]
+ },
+ {
+  "pt": "Instalador leve, sem precisar de administrador.",
+  "kind": "text",
+  "where": [
+   "guia: p"
+  ]
+ },
+ {
+  "pt": "Passo a passo para pegar chaves de API gratuitas (Groq, Google Gemini, OpenRouter, Mistral e Tavily) e usar no FlowVoice. Ou use 100% offline, sem chave nenhuma.",
+  "kind": "meta",
+  "where": [
+   "guia: meta description"
+  ]
+ },
+ {
+  "pt": "Chaves grátis em poucos minutos · FlowVoice",
+  "kind": "meta",
+  "where": [
+   "guia: meta og:title",
+   "guia: meta twitter:title"
+  ]
+ },
+ {
+  "pt": "Groq, Gemini, OpenRouter, Mistral e Tavily: onde clicar, o que colar e quais são os limites do plano grátis.",
+  "kind": "meta",
+  "where": [
+   "guia: meta og:description",
+   "guia: meta twitter:description"
+  ]
+ },
+ {
+  "pt": "Novidades · FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas",
+  "kind": "text",
+  "where": [
+   "novidades: title"
+  ]
+ },
+ {
+  "pt": "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]",
+  "kind": "text",
+  "where": [
+   "novidades: h1"
+  ]
+ },
+ {
+  "pt": "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas.",
+  "kind": "text",
+  "where": [
+   "novidades: p.pg-lede"
+  ]
+ },
+ {
+  "pt": "Versão [1]2.2[/1]",
+  "kind": "text",
+  "where": [
+   "novidades: span"
+  ]
+ },
+ {
+  "pt": "Windows 10 e 11",
+  "kind": "text",
+  "where": [
+   "novidades: span"
+  ]
+ },
+ {
+  "pt": "Novembro de 2026",
+  "kind": "text",
+  "where": [
+   "novidades: span.pg-rel-date"
+  ]
+ },
+ {
+  "pt": "Cápsula arrastável, Tentar de novo e 10 idiomas",
+  "kind": "text",
+  "where": [
+   "novidades: h2"
+  ]
+ },
+ {
+  "pt": "A cápsula deixou de ter lugar fixo: arraste durante a gravação ou escolha uma posição só sua. Um ditado que falhou não se perde mais, e o app passa a seguir o idioma do Windows.",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "Mova a cápsula",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "[1]Arrastar durante a gravação[/1]: clique na cápsula e arraste para qualquer canto da tela, até para outro monitor. Ela fica onde você largou até o fim daquele ditado; no próximo, volta para a posição padrão.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Posição personalizada[/1]: além de Embaixo e Em cima, escolha o lugar arrastando a cápsula numa miniatura da tela, com encaixe nos cantos, nas bordas e no centro. [2]Testar[/2] mostra onde ela aparece.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Usar onde arrastei por último[/1] aproveita o ponto em que você largou a cápsula. Tudo em [2]Geral → Janela flutuante[/2], onde também dá para desligar o arraste.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Tentar de novo e ditados seguidos",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Quando a transcrição falha (rede, limite, chave), o cartão de erro ganha o botão [1]Tentar de novo[/1] e fica 30 s na tela. O histórico mostra a falha, com o motivo e o mesmo botão.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Refaz como foi ditado: mesmo app, estilo e tradução, com os provedores e as chaves de agora. A gravação fica só na memória (as 3 últimas falhas), nunca em disco.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Dois ditados seguidos no mesmo campo ganham um espaço entre eles, quando o cursor ficou onde o anterior terminou. Não em terminais, nem em escritas sem espaço, como japonês e chinês.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "10 idiomas",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "A interface agora também está em francês, alemão, japonês, chinês, russo, hindi e bengali, além de português, inglês e espanhol, com as fontes certas do Windows para cada escrita.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Automático (Windows)[/1], o novo padrão, segue o idioma do Windows. Quem já usa o app mantém o que escolheu.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "O menu da bandeja, as mensagens de erro e os nomes dos estilos prontos seguem o idioma da interface.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Atalhos sem conflito",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "[1]Colar de novo[/1] vem sem atalho em instalações novas, porque [2]Ctrl[/2] [3]Alt[/3] [4]V[/4] é o Colar Especial do Office. Continua no menu da bandeja, e dá para escolher um atalho.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Em teclados onde [1]AltGr[/1] [2]K[/2] digita um caractere, o Comando começa sem atalho, para não roubar a tecla, e a tela [3]Atalhos[/3] explica por quê.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Privacidade e microfone",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Nova seção [1]Privacidade[/1] na tela [2]Sobre[/2]: o que fica no PC, o que vai para cada provedor e onde ficam as chaves. [3]A política completa está aqui[/3].",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Erros de microfone mais claros: quando o Windows bloqueia o microfone, o app diz onde liberar; quando outro app o usa com exclusividade, também avisa.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Mensagem própria quando outro app está segurando a área de transferência.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Correções",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Se o app fechasse no meio de uma gravação com o som do PC silenciado, o som continuava mudo. Agora ele volta na próxima abertura.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Iniciar com o Windows[/1] mais confiável: o app também cria uma tarefa de logon no Agendador de Tarefas, sem pedir administrador. E desligar a inicialização no Gerenciador de Tarefas agora vale de verdade.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Comando ou “Outra versão” com tradução não devolve mais duas versões, nem uma nota no fim.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Texto em árabe, hebraico, persa e urdu aparece na direção certa no overlay, no histórico e no chat.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Agora sob a GPL-3.0[/1]O FlowVoice continua gratuito e de código aberto. Qualquer versão modificada que for distribuída precisa vir com o código-fonte, sob a mesma licença. [2]Ler a licença[/2]",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "Outubro de 2026",
+  "kind": "text",
+  "where": [
+   "novidades: span.pg-rel-date"
+  ]
+ },
+ {
+  "pt": "Prévia mais estável e cápsula de vidro",
+  "kind": "text",
+  "where": [
+   "novidades: h2"
+  ]
+ },
+ {
+  "pt": "Uma palavra só fica firme quando duas respostas seguidas concordam nela. Até lá, aparece mais clara e ainda pode mudar. Depois, não volta atrás.",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "No app: “quinta-feira à tarde” já firmou; o final ainda está mais claro.",
+  "kind": "text",
+  "where": [
+   "novidades: figcaption"
+  ]
+ },
+ {
+  "pt": "Prévia ao vivo",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "O texto [1]não volta mais atrás[/1]: cada modelo tem um pedido por vez, e uma resposta atrasada é descartada.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "A prévia não manda mais o texto anterior como contexto (às vezes ele voltava repetido).",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "O ritmo segue os limites que o próprio Groq informa e sempre guarda espaço para a transcrição final, que não leva mais “limite atingido” logo depois da prévia.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Frases longas são fechadas em até 15 s: respostas mais rápidas e menos segundos gastos do plano grátis.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Saiu a faixa extra do Gemini na prévia (escrevia diferente do Whisper e era mais lenta).",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Medido com os mesmos 4 áudios: texto mostrado como firme e depois trocado caiu de 2,5–7,5 vezes por ditado para zero, e as atualizações chegam a cada ~1,2–1,5 s (antes ~1,7–2,0 s).",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Vidro na cápsula",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Em [1]Geral → Janela flutuante[/1]: [2]Vidro[/2] (transparente e desfocada, com borda de luz) ou [3]Translúcido[/3] (tinta mais leve), com o desfoque do próprio Windows, feito pela placa de vídeo.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Luz e sombra como no macOS 27[/1]: brilho, borda chanfrada, luz na parte de baixo e sombra suave (ideia de Thiago Silva).",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Precisa dos efeitos de transparência do Windows; com eles desligados ou com a economia de energia, a cápsula fica sólida.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Num PC ocupado, ao iniciar com o Windows, a janela às vezes mostrava um erro no lugar das configurações.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Depois de atualizar, o FlowVoice reabre sozinho com a janela aberta.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "A opção em Geral → Janela flutuante. [1]Veja o vidro na página inicial[/1].",
+  "kind": "text",
+  "where": [
+   "novidades: figcaption"
+  ]
+ },
+ {
+  "pt": "Por que reescrever",
+  "kind": "text",
+  "where": [
+   "novidades: h2"
+  ]
+ },
+ {
+  "pt": "Em 2026 a 1.x parou de funcionar para muita gente: o GitHub Models, que ela recomendava, foi descontinuado; modelos que eram grátis na Groq saíram do plano gratuito; versões antigas do Gemini foram desligadas. E a 1.x escondia o erro real, então parecia que o app simplesmente “não funcionava”.",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "A 2.0 nasceu para não passar por isso de novo: ela mostra a mensagem real do provedor e [1]troca sozinha um modelo que foi aposentado[/1].",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "O que mudou",
+  "kind": "text",
+  "where": [
+   "novidades: h2"
+  ]
+ },
+ {
+  "pt": "O resultado no overlay: um clique refaz em outro estilo ou traduz.",
+  "kind": "text",
+  "where": [
+   "novidades: figcaption"
+  ]
+ },
+ {
+  "pt": "[1]Prévia ao vivo[/1]: o texto aparece enquanto você fala.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Novo estilo [1]Prompt[/1], que enxuga a fala para mandar a uma IA, com intensidade ajustável.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Natural, Profissional, Cru, Só transcrição e estilos seus.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Estilo por aplicativo[/1]: [2/]Outlook sempre Profissional, [3/]VS Code sempre Prompt.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Tira vícios de linguagem (“né”, “tipo”, gagueira) e respeita seu vocabulário.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Overlay novo",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Depois do resultado, um clique [1]refaz em outro estilo[/1] ou [2]traduz[/2] para dezenas de idiomas.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Substituir[/1] desfaz a colagem anterior e cola a nova versão.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Acompanha o mouse ou a janela em foco, no monitor em que você está.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Esc[/1] cancela a qualquer momento.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Novos atalhos",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "[1]Comando na seleção[/1]: selecione um texto em qualquer app e diga o que fazer (“mais formal”, “resume em tópicos”).",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]Colar de novo[/1] o último ditado no app em foco.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Tradução por voz e assistente por voz com busca na web e fontes.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Modo segurar para falar (push-to-talk).",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Confiável",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "[1]Failover[/1] entre provedores e entre várias chaves; se a nuvem cair, usa o modelo local.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Modelos aposentados [1]trocados automaticamente[/1], com checagem diária.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Colagem segura: confere a janela de destino e devolve o que estava na sua área de transferência.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Avisa se o microfone desconectar e usa outro.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Offline melhor",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Catálogo de modelos por idioma, com recomendação para o seu.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Modelo [1]ajustado para o português do Brasil[/1] (Distil-Whisper pt-BR).",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Transcrição local várias vezes mais rápida.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "O modelo sai da memória quando você para de ditar; apague modelos quando quiser.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Interface",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Configurações redesenhadas, com [1]busca[/1] ([2]Ctrl[/2] [3]K[/3]).",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Assistente de primeira execução com tutorial e teste de cada chave.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Temas claro e escuro, cor de destaque à sua escolha, PT/EN/ES.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Ícone novo e histórico pesquisável.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Comparação entre a versão 1.x e a 2.0",
+  "kind": "text",
+  "where": [
+   "novidades: caption.sr"
+  ]
+ },
+ {
+  "pt": "Aspecto",
+  "kind": "text",
+  "where": [
+   "novidades: span.sr"
+  ]
+ },
+ {
+  "pt": "Instalador",
+  "kind": "text",
+  "where": [
+   "novidades: th"
+  ]
+ },
+ {
+  "pt": "Grande, com Python embutido",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Poucos MB; modelos só se você quiser",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Enquanto você fala",
+  "kind": "text",
+  "where": [
+   "novidades: th"
+  ]
+ },
+ {
+  "pt": "Sem texto na tela",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Prévia do texto ao vivo",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Depois do resultado",
+  "kind": "text",
+  "where": [
+   "novidades: th"
+  ]
+ },
+ {
+  "pt": "Colar e pronto",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Trocar estilo, traduzir, substituir",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Quando o provedor falha",
+  "kind": "text",
+  "where": [
+   "novidades: th"
+  ]
+ },
+ {
+  "pt": "Erro genérico",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Próxima chave ou provedor, com a mensagem real",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Modelo aposentado",
+  "kind": "text",
+  "where": [
+   "novidades: th"
+  ]
+ },
+ {
+  "pt": "Parava de funcionar",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Trocado automaticamente",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Chaves",
+  "kind": "text",
+  "where": [
+   "novidades: th"
+  ]
+ },
+ {
+  "pt": "Arquivo de configuração",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Cofre de credenciais do sistema",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Atualização",
+  "kind": "text",
+  "where": [
+   "novidades: th"
+  ]
+ },
+ {
+  "pt": "Automática",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "Automática e assinada digitalmente",
+  "kind": "text",
+  "where": [
+   "novidades: td"
+  ]
+ },
+ {
+  "pt": "[1]Vindo da 1.x?[/1]Instale por cima. Na primeira execução, a 2.0 importa suas chaves antigas automaticamente para o cofre do sistema. Se você usava o GitHub Models, crie uma chave grátis na Groq: [2]leva poucos minutos[/2].",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "Até junho de 2026",
+  "kind": "text",
+  "where": [
+   "novidades: span.pg-rel-date"
+  ]
+ },
+ {
+  "pt": "A primeira geração",
+  "kind": "text",
+  "where": [
+   "novidades: h2"
+  ]
+ },
+ {
+  "pt": "A versão original, em Python. Os destaques, do mais recente ao mais antigo:",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "[1]1.9[/1]Busca na web pelo Tavily no modo Pesquisa, senha para revelar as chaves e interface em português, inglês e espanhol.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]1.8[/1]Overlay redesenhado e filtro contra “alucinações” da transcrição.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "[1]1.5–1.7[/1]Atualização automática dentro do app.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Notas completas de cada versão no [1]GitHub Releases[/1].",
+  "kind": "text",
+  "where": [
+   "novidades: p.pg-gap"
+  ]
+ },
+ {
+  "pt": "Pronto para a 2.2?",
+  "kind": "text",
+  "where": [
+   "novidades: h2"
+  ]
+ },
+ {
+  "pt": "Grátis, de código aberto e sem conta.",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "Pegar uma chave grátis",
+  "kind": "text",
+  "where": [
+   "novidades: a.btn"
+  ]
+ },
+ {
+  "pt": "O que mudou no FlowVoice: na 2.2, cápsula arrastável, Tentar de novo quando a transcrição falha e interface em 10 idiomas; na 2.1, prévia ao vivo que não volta atrás e cápsula de vidro; na 2.0, reescrito do zero em Rust, estilo Prompt, modo Comando, troca automática de modelos aposentados e modo offline com modelo para pt-BR.",
+  "kind": "meta",
+  "where": [
+   "novidades: meta description"
+  ]
+ },
+ {
+  "pt": "FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas",
+  "kind": "meta",
+  "where": [
+   "novidades: meta og:title",
+   "novidades: meta twitter:title"
+  ]
+ },
+ {
+  "pt": "Arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.",
+  "kind": "meta",
+  "where": [
+   "novidades: meta og:description",
+   "novidades: meta twitter:description"
+  ]
+ },
+ {
+  "pt": "Overlay do FlowVoice ouvindo: o começo da frase já firme, em branco, e as últimas palavras, ainda não confirmadas, em cinza mais claro.",
+  "kind": "attr",
+  "where": [
+   "novidades: img[alt]"
+  ]
+ },
+ {
+  "pt": "Configurações do FlowVoice, Geral: Aparência da cápsula com as opções Sólida, Vidro e Translúcido, Vidro selecionado, e a opção Luz e sombra como no macOS 27 ligada.",
+  "kind": "attr",
+  "where": [
+   "novidades: img[alt]"
+  ]
+ },
+ {
+  "pt": "Resultado no overlay do FlowVoice: Colado, estilo Profissional no Outlook, o texto reescrito e os chips Natural, Profissional, Prompt, Cru, Só transcrição, Traduzir e Original, com o botão Copiar.",
+  "kind": "attr",
+  "where": [
+   "novidades: img[alt]"
+  ]
+ },
+ {
+  "pt": "Privacidade · FlowVoice",
+  "kind": "text",
+  "where": [
+   "privacidade: title",
+   "privacidade: meta og:title",
+   "privacidade: meta twitter:title"
+  ]
+ },
+ {
+  "pt": "Sua voz é [1]sua.[2/][/1]",
+  "kind": "text",
+  "where": [
+   "privacidade: h1"
+  ]
+ },
+ {
+  "pt": "O FlowVoice não tem servidor, não pede conta e não coleta nada sobre você. Esta página explica, sem juridiquês, para onde vai cada coisa.",
+  "kind": "text",
+  "where": [
+   "privacidade: p.pg-lede"
+  ]
+ },
+ {
+  "pt": "Atualizada em [1]01/11/2026[/1]",
+  "kind": "text",
+  "where": [
+   "privacidade: span"
+  ]
+ },
+ {
+  "pt": "Vale para a versão 2.2",
+  "kind": "text",
+  "where": [
+   "privacidade: span"
+  ]
+ },
+ {
+  "pt": "Resumo",
+  "kind": "text",
+  "where": [
+   "privacidade: a",
+   "privacidade: h2"
+  ]
+ },
+ {
+  "pt": "Sua voz e seu texto",
+  "kind": "text",
+  "where": [
+   "privacidade: a",
+   "privacidade: h2"
+  ]
+ },
+ {
+  "pt": "Chaves de API",
+  "kind": "text",
+  "where": [
+   "privacidade: a",
+   "privacidade: h2"
+  ]
+ },
+ {
+  "pt": "O que fica no seu PC",
+  "kind": "text",
+  "where": [
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Outras conexões",
+  "kind": "text",
+  "where": [
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Telemetria",
+  "kind": "text",
+  "where": [
+   "privacidade: a"
+  ]
+ },
+ {
+  "pt": "Este site",
+  "kind": "text",
+  "where": [
+   "privacidade: a",
+   "privacidade: h2"
+  ]
+ },
+ {
+  "pt": "Contato",
+  "kind": "text",
+  "where": [
+   "privacidade: a",
+   "privacidade: h2"
+  ]
+ },
+ {
+  "pt": "O áudio fica na memória",
+  "kind": "text",
+  "where": [
+   "privacidade: dt"
+  ]
+ },
+ {
+  "pt": "Nenhuma gravação é salva em disco. O áudio vai só para o provedor que você escolheu, ou para lugar nenhum no modo offline. Se a transcrição falhar, a gravação fica na memória só para você tentar de novo.",
+  "kind": "text",
+  "where": [
+   "privacidade: dd"
+  ]
+ },
+ {
+  "pt": "Chaves no cofre do sistema",
+  "kind": "text",
+  "where": [
+   "privacidade: dt"
+  ]
+ },
+ {
+  "pt": "Guardadas no Gerenciador de Credenciais do Windows; só em casos raros ficam num arquivo local (veja abaixo).",
+  "kind": "text",
+  "where": [
+   "privacidade: dd"
+  ]
+ },
+ {
+  "pt": "Histórico só no seu PC",
+  "kind": "text",
+  "where": [
+   "privacidade: dt"
+  ]
+ },
+ {
+  "pt": "Pode ser desligado ou apagado quando você quiser.",
+  "kind": "text",
+  "where": [
+   "privacidade: dd"
+  ]
+ },
+ {
+  "pt": "Zero telemetria",
+  "kind": "text",
+  "where": [
+   "privacidade: dt"
+  ]
+ },
+ {
+  "pt": "O app não tem analytics, rastreamento nem relatório de uso.",
+  "kind": "text",
+  "where": [
+   "privacidade: dd"
+  ]
+ },
+ {
+  "pt": "Enquanto você dita, o áudio do microfone fica [1]apenas na memória do programa[/1]. Ele nunca é gravado em arquivo e é descartado quando o ditado termina.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "A única exceção: se a transcrição [1]falhar[/1] (sem internet, limite do plano, chave inválida), a gravação continua na memória para o botão [2]Tentar de novo[/2], no máximo as 3 últimas falhas. Ela também nunca vai para o disco: some quando você apaga o item do histórico, limpa o histórico ou fecha o FlowVoice.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "Na nuvem",
+  "kind": "text",
+  "where": [
+   "privacidade: h3"
+  ]
+ },
+ {
+  "pt": "Se você usa um provedor na nuvem (Groq, Google Gemini, Mistral, OpenAI, OpenRouter ou um endereço próprio), o FlowVoice envia [1]direto para ele[/1], com a sua chave:",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "o áudio, para virar texto;",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "o texto transcrito, junto com as instruções do estilo escolhido, o seu vocabulário e o nome do aplicativo em que você está ditando (para o texto sair no tom certo);",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "no modo [1]Comando[/1], o texto que você selecionou;",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "no [1]assistente por voz[/1], a pergunta e a conversa. Com uma chave Tavily, a pergunta também vai para o Tavily, para buscar na web.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "Não existe servidor do FlowVoice no meio do caminho. O que cada provedor faz com esses dados segue a política dele.",
+  "kind": "text",
+  "where": [
+   "privacidade: p.pg-gap"
+  ]
+ },
+ {
+  "pt": "[1]Vale saber[/1]No plano grátis do Google Gemini, o Google pode usar o que você envia para melhorar os produtos dele. Se isso incomoda, prefira outro provedor ou o modo offline.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "Offline",
+  "kind": "text",
+  "where": [
+   "privacidade: h3"
+  ]
+ },
+ {
+  "pt": "No modo [1]100% local[/1], a transcrição roda no seu processador. Com o Ollama refinando o texto, nada do que você fala sai do seu computador.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "As chaves ficam no [1]Gerenciador de Credenciais do Windows[/1]. Elas só saem do PC para o próprio provedor, a cada pedido, e aparecem mascaradas na tela.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "Exceção rara: se o cofre não estiver disponível ou recusar uma chave longa demais, ela fica num arquivo dentro da pasta de configurações do app, no seu usuário.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "O que fica salvo no seu PC",
+  "kind": "text",
+  "where": [
+   "privacidade: h2"
+  ]
+ },
+ {
+  "pt": "[1]Histórico[/1] dos ditados (texto, estilo e app de destino), até os 300 mais recentes. Desligue em [2]Configurações → Geral → Guardar histórico[/2], apague itens um a um ou limpe tudo na tela inicial.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "[1]Configurações[/1], estilos e vocabulário.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "[1]Modelos offline[/1] que você baixou. Apague quando quiser na tela de modelos.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "Um [1]log técnico[/1] para diagnosticar problemas. Ele registra só eventos técnicos (horários, erros, tempos de resposta), nunca o que você ditou. Fica limitado a cerca de 1 MB (é recriado quando passa disso) e nunca é enviado a lugar nenhum: só sai do PC se você mesmo anexar a um relato de bug.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "Tudo fica dentro do seu usuário do Windows:",
+  "kind": "text",
+  "where": [
+   "privacidade: p.pg-gap"
+  ]
+ },
+ {
+  "pt": "Pastas onde o FlowVoice guarda dados no Windows",
+  "kind": "text",
+  "where": [
+   "privacidade: caption.sr"
+  ]
+ },
+ {
+  "pt": "Pasta",
+  "kind": "text",
+  "where": [
+   "privacidade: th"
+  ]
+ },
+ {
+  "pt": "O que guarda",
+  "kind": "text",
+  "where": [
+   "privacidade: th",
+   "privacidade: td[data-l]"
+  ]
+ },
+ {
+  "pt": "Configurações, histórico e log",
+  "kind": "text",
+  "where": [
+   "privacidade: td"
+  ]
+ },
+ {
+  "pt": "Modelos offline",
+  "kind": "text",
+  "where": [
+   "privacidade: td"
+  ]
+ },
+ {
+  "pt": "Para apagar tudo de uma vez, basta excluir essas pastas.",
+  "kind": "text",
+  "where": [
+   "privacidade: p.pg-gap"
+  ]
+ },
+ {
+  "pt": "Outras conexões que o app faz",
+  "kind": "text",
+  "where": [
+   "privacidade: h2"
+  ]
+ },
+ {
+  "pt": "Além dos provedores que você configurou, o FlowVoice só acessa a internet para:",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "[1]Procurar atualizações[/1] no GitHub. As atualizações são assinadas digitalmente.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "[1]Baixar modelos offline[/1] do Hugging Face, só quando você pede.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "[1]Mostrar a foto do autor[/1] na tela Sobre, buscada no GitHub e guardada para uso offline.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "[1]Conferir a lista de modelos[/1] dos seus provedores, para trocar sozinho um modelo aposentado.",
+  "kind": "text",
+  "where": [
+   "privacidade: li"
+  ]
+ },
+ {
+  "pt": "Nenhuma dessas conexões leva sua voz, seu texto ou seu histórico.",
+  "kind": "text",
+  "where": [
+   "privacidade: p.pg-gap"
+  ]
+ },
+ {
+  "pt": "Telemetria: nenhuma",
+  "kind": "text",
+  "where": [
+   "privacidade: h2"
+  ]
+ },
+ {
+  "pt": "O app [1]não tem analytics, rastreamento, identificador de usuário nem envio automático de erros[/1]. Não sabemos quantas pessoas usam, nem como. O código é aberto: qualquer pessoa pode conferir no [2]repositório no GitHub[/2].",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "Este site é estático e hospedado na [1]Vercel[/1]. Como qualquer servidor, a Vercel registra dados técnicos das visitas (como endereço IP e navegador) para entregar as páginas e proteger contra abuso, conforme a [2]política de privacidade dela[/2].",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "O site [1]não tem analytics, cookies nem scripts de rastreamento[/1]. A fonte do texto vem do Google Fonts, que recebe o pedido de download dela como qualquer servidor.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "Não há formulários, login nem anúncios. O instalador é baixado direto do GitHub.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "Dúvidas, pedidos ou algo que parece errado nesta página? Abra uma issue no GitHub. É o canal oficial do projeto.",
+  "kind": "text",
+  "where": [
+   "privacidade: p"
+  ]
+ },
+ {
+  "pt": "Abrir uma issue no GitHub[1/]",
+  "kind": "text",
+  "where": [
+   "privacidade: a.btn"
+  ]
+ },
+ {
+  "pt": "Se esta política mudar, a data no topo muda junto, e a alteração fica registrada no histórico do repositório.",
+  "kind": "text",
+  "where": [
+   "privacidade: p.pg-gap"
+  ]
+ },
+ {
+  "pt": "Política de privacidade do FlowVoice em linguagem simples: o áudio fica na memória, vai só para o provedor que você escolheu (ou para lugar nenhum, offline), as chaves ficam no cofre do sistema e o app não tem telemetria.",
+  "kind": "meta",
+  "where": [
+   "privacidade: meta description"
+  ]
+ },
+ {
+  "pt": "O que o FlowVoice faz com a sua voz, suas chaves e seu histórico. Em linguagem simples.",
+  "kind": "meta",
+  "where": [
+   "privacidade: meta og:description",
+   "privacidade: meta twitter:description"
+  ]
+ }
+]

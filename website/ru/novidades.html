@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Что нового · FlowVoice 2.2: перетаскиваемая капсула, «Повторить» и 10 языков</title>
+<meta name="description" content="Что изменилось во FlowVoice: в 2.2 — перетаскиваемая капсула, «Повторить», если распознавание не удалось, и интерфейс на 10 языках; в 2.1 — предпросмотр без откатов и стеклянная капсула; в 2.0 — переписан с нуля на Rust, стиль «Промпт», режим «Команда», автозамена снятых моделей и офлайн-режим с моделью для бразильского португальского.">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/ru/novidades">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/novidades">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/novidades">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/novidades">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/novidades">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/novidades">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/novidades">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/novidades">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/novidades">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/novidades">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/novidades">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/novidades">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/ru/novidades">
+<meta property="og:title" content="FlowVoice 2.2: перетаскиваемая капсула, «Повторить» и 10 языков">
+<meta property="og:description" content="Перетаскивайте капсулу куда угодно, повторяйте неудавшуюся диктовку и пользуйтесь приложением на 10 языках. Смотрите, что изменилось в 2.2, 2.1 и 2.0.">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FlowVoice 2.2: перетаскиваемая капсула, «Повторить» и 10 языков">
+<meta name="twitter:description" content="Перетаскивайте капсулу куда угодно, повторяйте неудавшуюся диктовку и пользуйтесь приложением на 10 языках. Смотрите, что изменилось в 2.2, 2.1 и 2.0.">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../pages.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="pg">
+<a class="skip" href="#main">Перейти к содержимому</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice, главная страница"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="Основное меню">
+      <a href="./#estilos">Стили</a>
+      <a href="./#gratis">Бесплатно и офлайн</a>
+      <a href="guia.html">Ключи</a>
+      <a href="novidades.html" aria-current="page">Что нового</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="Язык">
+        <a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="../ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="../zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a>
+        <a href="novidades.html" hreflang="ru" lang="ru" data-lang="ru" aria-current="true">Русский</a>
+        <a href="../hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="Язык" aria-label="Язык: Русский"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>RU</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../novidades.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/novidades.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/novidades.html" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/novidades.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/novidades.html" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="../ja/novidades.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="../zh/novidades.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh">简体中文</a></li>
+          <li><a href="novidades.html" hreflang="ru" lang="ru" data-lang="ru" aria-current="true">Русский</a></li>
+          <li><a href="../hi/novidades.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="../bn/novidades.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="Тёмная тема" title="Тёмная тема"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>Скачать</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="Открыть меню"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
+    <div class="wrap">
+      <div class="pg-head-in">
+        <h1>2.2: капсула там, где вам <span class="nowrap">удобно.<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">Перетащите капсулу во время записи или выберите для неё своё место. У неудавшейся диктовки появилась кнопка «Повторить», а приложение теперь говорит на 10 языках.</p>
+        <p class="pg-meta"><span>Версия <b>2.2</b></span><span>Windows 10 и 11</span><span>Обновляется сам</span></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v22">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2</p>
+        <span class="pg-rel-date">Ноябрь 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v22">Перетаскиваемая капсула, «Повторить» и 10 языков</h2>
+        <p>У капсулы больше нет фиксированного места: перетащите её во время записи или выберите своё место. Неудавшаяся диктовка больше не теряется, а приложение теперь следует языку Windows.</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Перемещайте капсулу</h3>
+            <ul>
+              <li><b>Перетаскивание во время записи</b>: нажмите на капсулу и перетащите её в любой угол экрана, даже на другой монитор. Она остаётся там, где вы её отпустили, до конца этой диктовки; в следующей возвращается на стандартное место.</li>
+              <li><b>Своё положение</b>: помимо «Снизу» и «Сверху», выберите место, перетащив капсулу на миниатюре экрана, с привязкой к углам, краям и центру. <b>Проверить</b> показывает, где она появится.</li>
+              <li><b>Использовать последнее место, куда её перетаскивали</b> — капсула появится там, где вы её отпустили в прошлый раз. Всё это в <b>Общие → Плавающее окно</b>, там же можно отключить перетаскивание.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>«Повторить» и диктовки подряд</h3>
+            <ul>
+              <li>Когда распознавание не удаётся (сеть, лимит, ключ), на карточке ошибки появляется кнопка <b>Повторить</b>, и карточка остаётся на экране 30 с. В истории видна неудача, с причиной и той же кнопкой.</li>
+              <li>Повтор идёт так, как вы диктовали: то же приложение, стиль и перевод, но с текущими провайдерами и ключами. Запись хранится только в памяти (последние 3 неудачи), никогда на диске.</li>
+              <li>Две диктовки подряд в одном поле разделяются пробелом, если курсор остался там, где закончилась предыдущая. Кроме терминалов и письменностей без пробелов, таких как японская и китайская.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>10 языков</h3>
+            <ul>
+              <li>Интерфейс теперь есть и на французском, немецком, японском, китайском, русском, хинди и бенгальском, помимо португальского, английского и испанского, с подходящими шрифтами Windows для каждой письменности.</li>
+              <li><b>Автоматически (Windows)</b>, новое значение по умолчанию, следует языку Windows. Если приложение у вас уже стоит, выбранный язык сохранится.</li>
+              <li>Меню в трее, сообщения об ошибках и названия встроенных стилей следуют языку интерфейса.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Сочетания без конфликтов</h3>
+            <ul>
+              <li>В новых установках у <b>Вставить снова</b> нет сочетания, потому что <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>V</kbd> — это «Специальная вставка» в Office. Команда остаётся в меню трея, и сочетание можно назначить.</li>
+              <li>На раскладках, где <kbd>AltGr</kbd> <kbd>K</kbd> вводит символ, «Команда» сначала не имеет сочетания, чтобы не перехватывать клавишу, а экран <b>Сочетания клавиш</b> объясняет почему.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Конфиденциальность и микрофон</h3>
+            <ul>
+              <li>Новый раздел <b>Конфиденциальность</b> на экране <b>О программе</b>: что остаётся на ПК, что уходит каждому провайдеру и где хранятся ключи. <a href="privacidade.html">Полная политика здесь</a>.</li>
+              <li>Понятнее ошибки микрофона: когда Windows блокирует микрофон, приложение подсказывает, где его разрешить; когда другое приложение занимает его монопольно, тоже предупреждает.</li>
+              <li>Отдельное сообщение, когда буфер обмена занят другим приложением.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Исправления</h3>
+            <ul>
+              <li>Если приложение закрывалось посреди записи с отключённым звуком ПК, звук так и оставался выключенным. Теперь он возвращается при следующем запуске.</li>
+              <li><b>Запускать вместе с системой</b> работает надёжнее: приложение также создаёт задачу входа в Планировщике заданий, без прав администратора. А отключение автозагрузки в Диспетчере задач теперь действительно срабатывает.</li>
+              <li>«Команда» или «Другой вариант» с переводом больше не возвращают две версии или примечание в конце.</li>
+              <li>Текст на арабском, иврите, персидском и урду отображается в правильном направлении в оверлее, истории и чате.</li>
+            </ul>
+          </li>
+        </ul>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>Теперь под GPL-3.0</b>FlowVoice по-прежнему бесплатный и с открытым кодом. Любая распространяемая изменённая версия должна поставляться с исходным кодом под той же лицензией. <a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Прочитать лицензию</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v21">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.1</p>
+        <span class="pg-rel-date">Октябрь 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v21">Стабильный предпросмотр и стеклянная капсула</h2>
+        <p>Слово закрепляется, только когда два ответа подряд в нём совпадают. До этого оно показано бледнее и ещё может измениться. После — уже не откатывается.</p>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-live.png" width="1120" height="348" loading="lazy" decoding="async" alt="Оверлей FlowVoice слушает: начало фразы уже закреплено и показано белым, последние, ещё не подтверждённые слова — светло-серым.">
+          <figcaption>В приложении: «в четверг днём» уже закрепилось; конец ещё бледный.</figcaption>
+        </figure>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Предпросмотр в реальном времени</h3>
+            <ul>
+              <li>Текст <b>больше не откатывается</b>: у каждой модели один запрос за раз, а опоздавший ответ отбрасывается.</li>
+              <li>Предпросмотр больше не отправляет предыдущий текст как контекст (иногда он возвращался повтором).</li>
+              <li>Темп следует лимитам, которые сообщает сам Groq, и всегда оставляет запас для финального распознавания, которое больше не получает «лимит исчерпан» сразу после предпросмотра.</li>
+              <li>Длинные фразы закрываются не позже чем через 15 с: ответы быстрее, а секунд бесплатного тарифа уходит меньше.</li>
+              <li>Убрана дополнительная дорожка Gemini в предпросмотре (писала иначе, чем Whisper, и была медленнее).</li>
+              <li>Замеры на тех же 4 записях: текст, показанный как закреплённый и потом заменённый, — с 2,5–7,5 раза за диктовку до нуля, а обновления приходят каждые ~1,2–1,5 с (раньше ~1,7–2,0 с).</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Стеклянная капсула</h3>
+            <ul>
+              <li>В <b>Общие → Плавающее окно</b>: <b>Стекло</b> (прозрачное и размытое, со светлой кромкой) или <b>Полупрозрачная</b> (более лёгкий оттенок), с размытием самой Windows, которое рисует видеокарта.</li>
+              <li><b>Свет и тень как в macOS 27</b>: блеск, скошенная кромка, свет по нижнему краю и мягкая тень (идея Thiago Silva).</li>
+              <li>Нужны эффекты прозрачности Windows; если они выключены или включено энергосбережение, капсула будет сплошной.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Исправления</h3>
+            <ul>
+              <li>На загруженном ПК при запуске вместе с Windows окно иногда показывало ошибку вместо настроек.</li>
+              <li>После обновления FlowVoice сам перезапускается с открытым окном.</li>
+            </ul>
+          </li>
+        </ul>
+        <figure class="pg-fig">
+          <img src="../assets/shot-glass-setting.webp" width="1700" height="388" loading="lazy" decoding="async" alt="Настройки FlowVoice, Общие: вид капсулы с вариантами «Сплошная», «Стекло» и «Полупрозрачная», выбрано «Стекло», и включён параметр «Свет и тень как в macOS 27».">
+          <figcaption>Параметр в «Общие → Плавающее окно». <a href="./#overlay">Посмотрите на стекло на главной странице</a>.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v2">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.0</p>
+        <span class="pg-rel-date">Октябрь 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v2">Зачем переписывать</h2>
+        <p>В 2026 году 1.x перестала работать у многих: рекомендованный ею GitHub Models закрыли; модели, бесплатные в Groq, ушли из бесплатного тарифа; старые версии Gemini отключили. К тому же 1.x скрывала настоящую ошибку, и казалось, что приложение просто «не работает».</p>
+        <p>2.0 создана, чтобы это не повторилось: она показывает настоящее сообщение провайдера и <strong>сама заменяет снятую с поддержки модель</strong>.</p>
+
+        <h2>Что изменилось</h2>
+        <figure class="pg-fig">
+          <img src="../assets/shot-overlay-result.png" width="1320" height="492" loading="lazy" decoding="async" alt="Результат в оверлее FlowVoice: «Вставлено», стиль «Деловой» в Outlook, переписанный текст и кнопки «Естественный», «Деловой», «Промпт», «Без обработки», «Только расшифровка», «Перевести» и «Исходник», а также кнопка «Копировать».">
+          <figcaption>Результат в оверлее: один клик — и другой стиль или перевод.</figcaption>
+        </figure>
+        <ul class="pg-changes">
+          <li>
+            <h3>Диктовка</h3>
+            <ul>
+              <li><b>Предпросмотр в реальном времени</b>: текст появляется, пока вы говорите.</li>
+              <li>Новый стиль <b>Промпт</b>: сжимает речь для отправки ИИ, с настраиваемой интенсивностью.</li>
+              <li>Естественный, Деловой, Без обработки, Только расшифровка и ваши собственные стили.</li>
+              <li><b>Стиль для приложения</b>: <img class="pg-app" src="../assets/apps/outlook.svg" alt="" width="18" height="18">Outlook всегда «Деловой», <img class="pg-app" src="../assets/apps/vscode.svg" alt="" width="18" height="18">VS Code всегда «Промпт».</li>
+              <li>Убирает слова-паразиты («ну», «типа», запинки) и соблюдает ваш словарь.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Новый оверлей</h3>
+            <ul>
+              <li>После результата один клик <b>переделывает в другом стиле</b> или <b>переводит</b> на десятки языков.</li>
+              <li><b>Заменить</b> отменяет предыдущую вставку и вставляет новую версию.</li>
+              <li>Следует за мышью или окном в фокусе, на том мониторе, где вы работаете.</li>
+              <li><kbd>Esc</kbd> отменяет в любой момент.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Новые сочетания клавиш</h3>
+            <ul>
+              <li><b>Команда для выделенного</b>: выделите текст в любом приложении и скажите, что сделать («официальнее», «сделай тезисы»).</li>
+              <li><b>Вставить снова</b> последнюю диктовку в приложение в фокусе.</li>
+              <li>Голосовой перевод и голосовой ассистент с веб-поиском и источниками.</li>
+              <li>Режим «удерживать, чтобы говорить» (push-to-talk).</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Надёжность</h3>
+            <ul>
+              <li><b>Переключение</b> между провайдерами и между несколькими ключами; если облако недоступно, используется локальная модель.</li>
+              <li>Снятые с поддержки модели <b>заменяются автоматически</b>, с ежедневной проверкой.</li>
+              <li>Безопасная вставка: проверяет целевое окно и возвращает то, что было в буфере обмена.</li>
+              <li>Предупреждает, если микрофон отключился, и переходит на другой.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Офлайн лучше</h3>
+            <ul>
+              <li>Каталог моделей по языкам с рекомендацией для вашего.</li>
+              <li>Модель, <b>настроенная на бразильский португальский</b> (Distil-Whisper pt-BR).</li>
+              <li>Локальное распознавание в несколько раз быстрее.</li>
+              <li>Модель выгружается из памяти, когда вы перестаёте диктовать; удаляйте модели, когда захотите.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Интерфейс</h3>
+            <ul>
+              <li>Переработанные настройки с <b>поиском</b> (<kbd>Ctrl</kbd> <kbd>K</kbd>).</li>
+              <li>Мастер первого запуска с обучением и проверкой каждого ключа.</li>
+              <li>Светлая и тёмная темы, акцентный цвет на ваш выбор, PT/EN/ES.</li>
+              <li>Новый значок и история с поиском.</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h2>1.x × 2.0</h2>
+        <div class="pg-table cmp-ver">
+          <table>
+            <caption class="sr">Сравнение версий 1.x и 2.0</caption>
+            <thead><tr><th scope="col"><span class="sr">Параметр</span></th><th scope="col">1.x</th><th scope="col">2.0</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Base</th><td data-l="1.x">Python + PySide6</td><td data-l="2.0">Rust (Tauri 2) + Svelte</td></tr>
+              <tr><th scope="row">Установщик</th><td data-l="1.x">Большой, со встроенным Python</td><td data-l="2.0">Несколько MB; модели — только по желанию</td></tr>
+              <tr><th scope="row">Пока вы говорите</th><td data-l="1.x">Текста на экране нет</td><td data-l="2.0">Предпросмотр текста в реальном времени</td></tr>
+              <tr><th scope="row">После результата</th><td data-l="1.x">Вставить, и всё</td><td data-l="2.0">Сменить стиль, перевести, заменить</td></tr>
+              <tr><th scope="row">Когда провайдер отказывает</th><td data-l="1.x">Общая ошибка</td><td data-l="2.0">Следующий ключ или провайдер, с настоящим сообщением</td></tr>
+              <tr><th scope="row">Модель снята с поддержки</th><td data-l="1.x">Переставала работать</td><td data-l="2.0">Заменяется автоматически</td></tr>
+              <tr><th scope="row">Ключи</th><td data-l="1.x">Файл настроек</td><td data-l="2.0">Системное хранилище учётных данных</td></tr>
+              <tr><th scope="row">Обновление</th><td data-l="1.x">Автоматическое</td><td data-l="2.0">Автоматическое, с цифровой подписью</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-check"/></svg>
+          <p><b>Переходите с 1.x?</b>Установите поверх. При первом запуске 2.0 автоматически перенесёт ваши старые ключи в системное хранилище. Если вы пользовались GitHub Models, создайте бесплатный ключ в Groq: <a href="guia.html#groq">это займёт пару минут</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pg-rel" aria-labelledby="v1">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">1.x</p>
+        <span class="pg-rel-date">До июня 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v1">Первое поколение</h2>
+        <p>Исходная версия на Python. Главное, от новых к старым:</p>
+        <ul class="pg-old">
+          <li><span>1.9</span>Веб-поиск через Tavily в режиме поиска, пароль для показа ключей и интерфейс на португальском, английском и испанском.</li>
+          <li><span>1.8</span>Переработанный оверлей и фильтр против «галлюцинаций» распознавания.</li>
+          <li><span>1.5–1.7</span>Автоматическое обновление внутри приложения.</li>
+        </ul>
+        <p class="pg-gap">Полные заметки к каждой версии — в <a href="https://github.com/cesarkali/Flow-Voice/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="pg-next" aria-labelledby="next-t">
+    <div class="wrap">
+      <div class="pg-next-in">
+        <div>
+          <h2 id="next-t">Готовы к 2.2?</h2>
+          <p>Бесплатно, с открытым кодом и без аккаунта.</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>Скачать для Windows</a>
+          <a class="btn btn-ghost btn-lg" href="guia.html">Получить бесплатный ключ</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · сделано в Бразилии, автор — <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a></p>
+      <nav aria-label="Подвал">
+        <ul>
+          <li><a href="guia.html">Ключи</a></li>
+          <li><a href="novidades.html" aria-current="page">Что нового</a></li>
+          <li><a href="privacidade.html">Конфиденциальность</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Лицензия GPL-3.0</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">Сообщить о проблеме</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">Предложить улучшение</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>Поддержать проект: <a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/ru.js" defer></script>
+<script src="../site.js" defer></script>
+</body>
+</html>

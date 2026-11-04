@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>几分钟拿到免费密钥 · FlowVoice 指南</title>
+<meta name="description" content="分步获取免费 API 密钥（Groq、Google Gemini、OpenRouter、Mistral 和 Tavily）并在 FlowVoice 中使用。也可以 100% 离线使用，完全不需要密钥。">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/zh/guia">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/guia">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/guia">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/guia">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/guia">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/guia">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/guia">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/guia">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/guia">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/guia">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/guia">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/guia">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/zh/guia">
+<meta property="og:title" content="几分钟拿到免费密钥 · FlowVoice">
+<meta property="og:description" content="Groq、Gemini、OpenRouter、Mistral 和 Tavily：点哪里、粘贴什么，以及免费套餐有哪些限制。">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="几分钟拿到免费密钥 · FlowVoice">
+<meta name="twitter:description" content="Groq、Gemini、OpenRouter、Mistral 和 Tavily：点哪里、粘贴什么，以及免费套餐有哪些限制。">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../pages.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="pg">
+<a class="skip" href="#main">跳到正文</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice 首页"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="主导航">
+      <a href="./#estilos">风格</a>
+      <a href="./#gratis">免费与离线</a>
+      <a href="guia.html" aria-current="page">密钥指南</a>
+      <a href="novidades.html">更新内容</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="语言">
+        <a href="../guia.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/guia.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/guia.html" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/guia.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/guia.html" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="../ja/guia.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="guia.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh" aria-current="true">简体中文</a>
+        <a href="../ru/guia.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="../hi/guia.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="../bn/guia.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="语言" aria-label="语言: 简体中文"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>ZH</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../guia.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/guia.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/guia.html" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/guia.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/guia.html" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="../ja/guia.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="guia.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh" aria-current="true">简体中文</a></li>
+          <li><a href="../ru/guia.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="../hi/guia.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="../bn/guia.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="深色主题" title="深色主题"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>下载</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="打开菜单"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
+    <div class="wrap">
+      <div class="pg-head-in">
+        <h1>几分钟拿到免费<span class="nowrap">密钥<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">FlowVoice 完全免费，也没有自己的服务器：它直接与你选择的 AI 服务商通信。为此只需要一个免费的 API 密钥。如果你想离线使用，连密钥都不用。</p>
+        <p class="pg-meta"><span>免费套餐<b>无需银行卡</b></span><span>密钥存放在 Windows 凭据库</span><span>离线也能用</span></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap pg-doc">
+    <nav class="pg-toc" aria-label="本页内容">
+      <details open>
+        <summary>本页内容</summary>
+        <ol>
+          <li><a href="#rapido">最快的方法</a></li>
+          <li><a href="#provedores">各服务商分步说明</a>
+            <ol>
+              <li><a href="#groq">Groq</a></li>
+              <li><a href="#gemini">Google Gemini</a></li>
+              <li><a href="#openrouter">OpenRouter</a></li>
+              <li><a href="#mistral">Mistral</a></li>
+              <li><a href="#tavily">Tavily（网页搜索）</a></li>
+            </ol>
+          </li>
+          <li><a href="#colar">把密钥粘贴到应用中</a></li>
+          <li><a href="#limites">免费套餐的限制</a></li>
+          <li><a href="#offline">不联网使用</a></li>
+        </ol>
+      </details>
+    </nav>
+
+    <div class="pg-prose">
+      <section id="rapido">
+        <h2>最快的方法</h2>
+        <p>如果你今天就想听写：在 <strong>Groq</strong> 创建一个密钥就够了。它既能转写语音也能润色文字，速度很快，免费套餐足够一整天的正常使用。</p>
+        <p>其他密钥都是可选的。多一个服务商就多一份备用：一个失败或达到上限时，FlowVoice 会自动换下一个。</p>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-bulb"/></svg>
+          <p><b>不用死记</b>在应用中，每个服务商都有同样的分步说明，一个打开正确页面的按钮，以及一个确认密钥是否可用的<strong>测试</strong>按钮。</p>
+        </div>
+      </section>
+
+      <section id="provedores">
+        <h2>各服务商分步说明</h2>
+        <p>每个只需几分钟。先从 Groq 开始；其他的可作为备用或增加功能。</p>
+
+        <div class="pg-provs">
+          <article id="groq" class="pg-prov" aria-labelledby="groq-t">
+            <div class="pg-prov-h"><h3 id="groq-t">Groq</h3><span class="pg-tag rec">推荐</span><span class="pg-tag">免费</span></div>
+            <p class="uses">语音和文字。转写和润色都非常快。</p>
+            <ol class="pg-steps">
+              <li><span>打开 <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Groq 控制台</a>，用 Google、GitHub 或邮箱登录。</span></li>
+              <li><span>在 <strong>API Keys</strong> 中点击 <strong>Create API Key</strong>，随便起个名字，比如“FlowVoice”。</span></li>
+              <li><span>复制密钥（以 <code>gsk_</code> 开头）。它只显示一次。</span></li>
+              <li><span>粘贴到 FlowVoice 中，点击<strong>测试</strong>。</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">打开 console.groq.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <span class="lim">免费套餐：<b>每天数小时音频</b>，无需银行卡。</span>
+            </div>
+          </article>
+
+          <article id="gemini" class="pg-prov" aria-labelledby="gemini-t">
+            <div class="pg-prov-h"><h3 id="gemini-t">Google Gemini</h3><span class="pg-tag">免费</span></div>
+            <p class="uses">语音和文字。Google 的 AI，免费额度很充足。</p>
+            <ol class="pg-steps">
+              <li><span>打开 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>，用你的 Google 账号登录。</span></li>
+              <li><span>点击 <strong>Create API key</strong>。</span></li>
+              <li><span>选择一个现有项目，或新建一个。</span></li>
+              <li><span>复制密钥（以 <code>AIza</code> 开头），粘贴到应用中。</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">打开 aistudio.google.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <span class="lim">在免费套餐中，Google <b>可能会使用你发送的内容</b>来改进其产品。</span>
+            </div>
+          </article>
+
+          <article id="openrouter" class="pg-prov" aria-labelledby="openrouter-t">
+            <div class="pg-prov-h"><h3 id="openrouter-t">OpenRouter</h3><span class="pg-tag">:free 模型</span></div>
+            <p class="uses">仅文字：润色、翻译和提问。可使用数十个模型，名称以 <code>:free</code> 结尾的模型不收费。</p>
+            <ol class="pg-steps">
+              <li><span>打开 <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener noreferrer">OpenRouter</a>，用 Google、GitHub 或邮箱登录。</span></li>
+              <li><span>点击 <strong>Create Key</strong> 并起个名字。额度上限可不填。</span></li>
+              <li><span>复制密钥（以 <code>sk-or-</code> 开头），粘贴到应用中。</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener noreferrer">打开 openrouter.ai<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <span class="lim">账户中没有额度时：免费模型<b>每天约 50 次请求</b>。</span>
+            </div>
+          </article>
+
+          <article id="mistral" class="pg-prov" aria-labelledby="mistral-t">
+            <div class="pg-prov-h"><h3 id="mistral-t">Mistral</h3><span class="pg-tag">无需银行卡</span></div>
+            <p class="uses">语音和文字。欧洲的 AI，转写模型非常好。</p>
+            <ol class="pg-steps">
+              <li><span>打开 <a href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">Mistral 控制台</a>，创建账号。</span></li>
+              <li><span>选择免费套餐（<strong>Experiment</strong>），无需银行卡。</span></li>
+              <li><span>在 <strong>API Keys</strong> 中新建一个密钥。</span></li>
+              <li><span>复制密钥，粘贴到应用中。</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">打开 console.mistral.ai<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+            </div>
+          </article>
+
+          <article id="tavily" class="pg-prov" aria-labelledby="tavily-t">
+            <div class="pg-prov-h"><h3 id="tavily-t">Tavily</h3><span class="pg-tag">网页搜索</span></div>
+            <p class="uses">可选。让语音助手（<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>U</kbd>）能够上网：它会搜索并在回答中注明来源。</p>
+            <ol class="pg-steps">
+              <li><span>打开 <a href="https://app.tavily.com" target="_blank" rel="noopener noreferrer">Tavily</a>，创建账号。</span></li>
+              <li><span>密钥（以 <code>tvly-</code> 开头）已经显示在控制面板上。</span></li>
+              <li><span>复制并粘贴到应用中。</span></li>
+            </ol>
+            <div class="pg-prov-f">
+              <a class="btn btn-ghost btn-sm" href="https://app.tavily.com" target="_blank" rel="noopener noreferrer">打开 app.tavily.com<svg aria-hidden="true"><use href="#i-out"/></svg></a>
+              <span class="lim">免费套餐：<b>每月 1000 积分</b>，无需银行卡。</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="colar">
+        <h2>把密钥粘贴到应用中</h2>
+        <ul class="pg-list">
+          <li>首次使用时，设置向导会请你输入密钥。之后，它在<strong>设置 → 服务商</strong>中。</li>
+          <li>点击<strong>测试</strong>。如果出了问题，应用会显示服务商返回的真实信息，而不是“未知错误”。</li>
+          <li>服务商的排列顺序就是尝试的顺序。拖动即可调整。</li>
+        </ul>
+        <h3>密钥存放在哪里</h3>
+        <p>在 <strong>Windows 凭据管理器</strong>中。只有在极少数情况下，比如凭据库不可用或拒绝过长的密钥时，它才会保存在你用户文件夹中的一个本地文件里。它只会在每次请求时发送给对应的服务商，不会以其他方式离开你的电脑。</p>
+        <h3>多个密钥</h3>
+        <p>同一个服务商可以添加多个密钥。一个达到上限或失败时，FlowVoice 会自动换用下一个。</p>
+        <h3>模型下线了怎么办？</h3>
+        <p>服务商经常更换模型。FlowVoice 发现某个模型下线后，会从服务商当前的列表中选一个替代模型，测试后自动<span class="nowrap">改用它</span>。它还会每天在后台检查一次。你什么都不用做。</p>
+      </section>
+
+      <section id="limites">
+        <h2>免费套餐的限制，直说</h2>
+        <p>每个免费套餐都有上限：每分钟多少次请求，每天多少分钟音频。日常听写绰绰有余。具体数字会不时变化，请以各服务商的页面为准。</p>
+        <div class="pg-table">
+          <table>
+            <caption class="sr">各服务商免费额度的计算方式</caption>
+            <thead><tr><th scope="col">服务商</th><th scope="col">限制针对</th><th scope="col">同一账号再建一个密钥</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Groq</th><td data-l="限制针对">整个账号（组织）</td><td data-l="同一账号再建一个密钥">不增加额度</td></tr>
+              <tr><th scope="row">Gemini</th><td data-l="限制针对">Google 项目，而不是密钥</td><td data-l="同一账号再建一个密钥">同一项目则不增加</td></tr>
+              <tr><th scope="row">OpenRouter</th><td data-l="限制针对"><code>:free</code> 模型每天的请求数；账户有已购额度时会提高</td><td data-l="同一账号再建一个密钥">不增加</td></tr>
+              <tr><th scope="row">Tavily</th><td data-l="限制针对">按月计算的积分；每次搜索消耗 1 或 2 个</td><td data-l="同一账号再建一个密钥">不增加</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-warn"/></svg>
+          <p><b>同一账号的多个密钥不会叠加</b>在 Groq，限制针对整个账号：同一账号下五个密钥的额度和一个完全一样。真正有用的是用<strong>不同的服务商</strong>互为备用，比如 Groq 和 Gemini。</p>
+        </div>
+      </section>
+
+      <section id="offline">
+        <h2>不联网：100% 离线</h2>
+        <p>完全不想用云端？在<strong>设置 → 转写</strong>中选择<strong>100% 本地</strong>，并下载一个语音识别模型（Whisper）。转写在你的处理器上运行，音频永远不会离开电脑。</p>
+        <p>应用会显示适合你所说语言的推荐模型。下面的数字仅供参考：</p>
+        <div class="pg-table">
+          <table>
+            <caption class="sr">离线模型：大小、内存和适用场景</caption>
+            <thead><tr><th scope="col">模型</th><th scope="col">下载大小</th><th scope="col">内存占用</th><th scope="col">适合谁</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Tiny</th><td class="num" data-l="下载大小">31 MB</td><td class="num" data-l="内存占用">~150 MB</td><td data-l="适合谁">配置很低的电脑；错误较多</td></tr>
+              <tr><th scope="row">Base</th><td class="num" data-l="下载大小">57 MB</td><td class="num" data-l="内存占用">~300 MB</td><td data-l="适合谁">速度快；也用于实时预览</td></tr>
+              <tr><th scope="row">Small</th><td class="num" data-l="下载大小">181 MB</td><td class="num" data-l="内存占用">~600 MB</td><td data-l="适合谁">常用语言中表现均衡</td></tr>
+              <tr><th scope="row">Distil-Whisper pt-BR <span class="pill">pt-BR</span></th><td class="num" data-l="下载大小">513 MB</td><td class="num" data-l="内存占用">~950 MB</td><td data-l="适合谁">针对巴西葡萄牙语优化</td></tr>
+              <tr><th scope="row">Large v3 Turbo</th><td class="num" data-l="下载大小">547 MB</td><td class="num" data-l="内存占用">~1 GB</td><td data-l="适合谁">任何语言都有最高的准确度</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="pg-list">
+          <li><strong>说实话：</strong>离线比云端慢，尤其是在配置一般的电脑上使用大模型时。本地模式需要支持 AVX2 的处理器（近十年的大多数处理器都支持；如果你的不支持，应用会提示）。</li>
+          <li>模型只在你听写时占用内存，几秒后就会释放。</li>
+          <li>每个模型只在你需要时下载一次，并且可以在同一页面<strong>随时删除</strong>。</li>
+          <li>如果想在不联网时也能润色文字，可以使用 <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer">Ollama</a>，它能在你的电脑上运行文字 AI。</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <section class="pg-next" aria-labelledby="next-t">
+    <div class="wrap">
+      <div class="pg-next-in">
+        <div>
+          <h2 id="next-t">密钥到手了？现在只管说吧。</h2>
+          <p>轻量安装程序，无需管理员权限。</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl><svg aria-hidden="true"><use href="#i-win"/></svg>下载 Windows 版</a>
+          <a class="btn btn-ghost btn-lg" href="privacidade.html">隐私</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · 由 <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a> 在巴西制作</p>
+      <nav aria-label="页脚">
+        <ul>
+          <li><a href="guia.html" aria-current="page">密钥指南</a></li>
+          <li><a href="novidades.html">更新内容</a></li>
+          <li><a href="privacidade.html">隐私</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 许可证</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">报告问题</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">提出建议</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>支持本项目：<a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/zh.js" defer></script>
+<script src="../site.js" defer></script>
+<script>
+  /* Contents rail: always open on wide screens, collapsed on phones; marks the section being read.
+     Header and menu live in site.js. */
+  addEventListener("DOMContentLoaded", function () {
+    var toc = document.querySelector(".pg-toc details");
+    if (!toc) return;
+    var wide = matchMedia("(min-width: 901px)");
+    var sync = function () { toc.open = wide.matches; };
+    sync(); wide.addEventListener("change", sync);
+    toc.querySelector("summary").addEventListener("click", function (e) { if (wide.matches) e.preventDefault(); });
+    var links = [].slice.call(toc.querySelectorAll("a"));
+    if (!("IntersectionObserver" in window)) return;
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+    var spy = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var a = map[en.target.id]; if (!a) return;
+        links.forEach(function (l) { l.classList.remove("is-active"); l.removeAttribute("aria-current"); });
+        a.classList.add("is-active"); a.setAttribute("aria-current", "location");
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    Object.keys(map).forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
+  });
+</script>
+</body>
+</html>

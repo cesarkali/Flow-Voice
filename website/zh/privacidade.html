@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>隐私 · FlowVoice</title>
+<meta name="description" content="用通俗语言写成的 FlowVoice 隐私政策：音频只在内存中，只发送给你选择的服务商（离线时哪里都不发送），密钥保存在系统凭据库中，应用没有遥测。">
+<meta name="author" content="Júlio Caliberda">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="canonical" href="https://flowvoice.caliberda.com.br/zh/privacidade">
+<!-- i18n:alternates -->
+<link rel="alternate" hreflang="pt-BR" href="https://flowvoice.caliberda.com.br/privacidade">
+<link rel="alternate" hreflang="en" href="https://flowvoice.caliberda.com.br/en/privacidade">
+<link rel="alternate" hreflang="es" href="https://flowvoice.caliberda.com.br/es/privacidade">
+<link rel="alternate" hreflang="fr" href="https://flowvoice.caliberda.com.br/fr/privacidade">
+<link rel="alternate" hreflang="de" href="https://flowvoice.caliberda.com.br/de/privacidade">
+<link rel="alternate" hreflang="ja" href="https://flowvoice.caliberda.com.br/ja/privacidade">
+<link rel="alternate" hreflang="zh-Hans" href="https://flowvoice.caliberda.com.br/zh/privacidade">
+<link rel="alternate" hreflang="ru" href="https://flowvoice.caliberda.com.br/ru/privacidade">
+<link rel="alternate" hreflang="hi" href="https://flowvoice.caliberda.com.br/hi/privacidade">
+<link rel="alternate" hreflang="bn" href="https://flowvoice.caliberda.com.br/bn/privacidade">
+<link rel="alternate" hreflang="x-default" href="https://flowvoice.caliberda.com.br/en/privacidade">
+<!-- /i18n:alternates -->
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="FlowVoice">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://flowvoice.caliberda.com.br/zh/privacidade">
+<meta property="og:title" content="隐私 · FlowVoice">
+<meta property="og:description" content="FlowVoice 如何处理你的声音、密钥和历史记录。用通俗的语言说明。">
+<meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="隐私 · FlowVoice">
+<meta name="twitter:description" content="FlowVoice 如何处理你的声音、密钥和历史记录。用通俗的语言说明。">
+<meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
+
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..800&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="../pages.css">
+<script>(function(d){d.classList.add("js");try{var t=localStorage.getItem("fv-theme");if(t==="dark"||t==="light"){d.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.content=t==="dark"?"#0b0b0a":"#f6f6f4"});document.querySelector('meta[name="color-scheme"]').content=t}}catch(e){}})(document.documentElement)</script>
+</head>
+<body class="pg">
+<a class="skip" href="#main">跳到正文</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.4 10.3 4.4v7.1H3zM11.3 4.3 21 3v8.5h-9.7zM3 12.5h7.3v7.1L3 18.6zM11.3 12.5H21V21l-9.7-1.3z"/></symbol>
+    <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M9 18h6M10 21.5h4M12 2.5a6.5 6.5 0 0 0-3.8 11.8c.6.5 1 1.2 1 2V16h5.6v-.2c0-.8.4-1.5 1-2A6.5 6.5 0 0 0 12 2.5Z"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17h.01"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M19.5 14.6A7.6 7.6 0 0 1 9.4 4.5a7.6 7.6 0 1 0 10.1 10.1z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.9"/><path d="M12 2.8v1.9M12 19.3v1.9M2.8 12h1.9M19.3 12h1.9M5.5 5.5l1.35 1.35M17.15 17.15l1.35 1.35M5.5 18.5l1.35-1.35M17.15 6.85l1.35-1.35"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="FlowVoice 首页"><img src="../assets/favicon.svg" alt="" width="28" height="28"><span>FlowVoice</span></a>
+    <nav class="nav" id="nav" aria-label="主导航">
+      <a href="./#estilos">风格</a>
+      <a href="./#gratis">免费与离线</a>
+      <a href="guia.html">密钥指南</a>
+      <a href="novidades.html">更新内容</a>
+      <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <!-- i18n:navlang -->
+      <div class="nav-lang" role="group" aria-label="语言">
+        <a href="../privacidade.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a>
+        <a href="../en/privacidade.html" hreflang="en" lang="en" data-lang="en">English</a>
+        <a href="../es/privacidade.html" hreflang="es" lang="es" data-lang="es">Español</a>
+        <a href="../fr/privacidade.html" hreflang="fr" lang="fr" data-lang="fr">Français</a>
+        <a href="../de/privacidade.html" hreflang="de" lang="de" data-lang="de">Deutsch</a>
+        <a href="../ja/privacidade.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a>
+        <a href="privacidade.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh" aria-current="true">简体中文</a>
+        <a href="../ru/privacidade.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a>
+        <a href="../hi/privacidade.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a>
+        <a href="../bn/privacidade.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a>
+      </div>
+    <!-- /i18n:navlang -->
+    </nav>
+    <div class="top-cta">
+      <!-- i18n:picker -->
+      <details class="lang">
+        <summary title="语言" aria-label="语言: 简体中文"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6s1.2-6.2 3.5-8.6z"/></g></svg><span>ZH</span></summary>
+        <ul class="lang-menu">
+          <li><a href="../privacidade.html" hreflang="pt-BR" lang="pt-BR" data-lang="pt">Português</a></li>
+          <li><a href="../en/privacidade.html" hreflang="en" lang="en" data-lang="en">English</a></li>
+          <li><a href="../es/privacidade.html" hreflang="es" lang="es" data-lang="es">Español</a></li>
+          <li><a href="../fr/privacidade.html" hreflang="fr" lang="fr" data-lang="fr">Français</a></li>
+          <li><a href="../de/privacidade.html" hreflang="de" lang="de" data-lang="de">Deutsch</a></li>
+          <li><a href="../ja/privacidade.html" hreflang="ja" lang="ja" data-lang="ja">日本語</a></li>
+          <li><a href="privacidade.html" hreflang="zh-Hans" lang="zh-Hans" data-lang="zh" aria-current="true">简体中文</a></li>
+          <li><a href="../ru/privacidade.html" hreflang="ru" lang="ru" data-lang="ru">Русский</a></li>
+          <li><a href="../hi/privacidade.html" hreflang="hi" lang="hi" data-lang="hi">हिन्दी</a></li>
+          <li><a href="../bn/privacidade.html" hreflang="bn" lang="bn" data-lang="bn">বাংলা</a></li>
+        </ul>
+      </details>
+      <!-- /i18n:picker -->
+      <button class="theme-btn" type="button" aria-pressed="false" aria-label="深色主题" title="深色主题"><span class="theme-knob" aria-hidden="true"></span><svg class="ic-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg><svg class="ic-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="https://github.com/cesarkali/Flow-Voice/releases/latest/download/FlowVoiceSetup.exe" data-dl>下载</a>
+      <button class="menu-btn" type="button" aria-controls="nav" aria-expanded="false" aria-label="打开菜单"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <header class="pg-head">
+    <div class="wrap">
+      <div class="pg-head-in">
+        <h1>你的声音，<span class="nowrap">属于你。<span class="caret" aria-hidden="true"></span></span></h1>
+        <p class="pg-lede">FlowVoice 没有服务器，不要求注册账号，也不收集任何关于你的信息。本页不讲法律术语，直接说明每样东西去了哪里。</p>
+        <p class="pg-meta"><span>更新于 <b>2026年11月1日</b></span><span>适用于 2.2 版本</span></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap pg-doc">
+    <nav class="pg-toc" aria-label="本页内容">
+      <details open>
+        <summary>本页内容</summary>
+        <ol>
+          <li><a href="#resumo">摘要</a></li>
+          <li><a href="#voz">你的声音和文字</a></li>
+          <li><a href="#chaves">API 密钥</a></li>
+          <li><a href="#local">保存在你电脑上的内容</a></li>
+          <li><a href="#conexoes">其他连接</a></li>
+          <li><a href="#telemetria">遥测</a></li>
+          <li><a href="#site">本网站</a></li>
+          <li><a href="#contato">联系方式</a></li>
+        </ol>
+      </details>
+    </nav>
+
+    <div class="pg-prose">
+      <section id="resumo">
+        <h2>摘要</h2>
+        <dl class="pg-facts">
+          <div><dt>音频只在内存中</dt><dd>录音不会保存到磁盘。音频只发送给你选择的服务商，离线模式下则哪里都不发送。如果转写失败，录音会留在内存中，仅供你重试。</dd></div>
+          <div><dt>密钥在系统凭据库中</dt><dd>保存在 Windows 凭据管理器中；只有在极少数情况下才会存到本地文件（见下文）。</dd></div>
+          <div><dt>历史记录只在你的电脑上</dt><dd>可以随时关闭或删除。</dd></div>
+          <div><dt>零遥测</dt><dd>应用没有统计分析、跟踪或使用情况报告。</dd></div>
+        </dl>
+      </section>
+
+      <section id="voz">
+        <h2>你的声音和文字</h2>
+        <p>你听写时，麦克风音频<strong>只存在于程序的内存中</strong>。它从不写入文件，听写结束后即被丢弃。</p>
+        <p>唯一的例外：如果转写<strong>失败</strong>（没网、套餐额度用完、密钥无效），录音会留在内存中供<strong>重试</strong>按钮使用，最多保留最近 3 次失败。它同样不会写入磁盘：当你删除该条历史记录、清空历史记录或关闭 FlowVoice 时就会消失。</p>
+        <h3>云端</h3>
+        <p>如果你使用云端服务商（Groq、Google Gemini、Mistral、OpenAI、OpenRouter 或自定义地址），FlowVoice 会用你的密钥把以下内容<strong>直接发送给它</strong>：</p>
+        <ul class="pg-list">
+          <li>音频，用于转成文字；</li>
+          <li>转写出的文字，以及所选风格的指令、你的词汇和你正在听写的应用名称（让文字语气得当）；</li>
+          <li>在<strong>命令</strong>模式下，你选中的文字；</li>
+          <li>在<strong>语音助手</strong>中，你的问题和对话。如果有 Tavily 密钥，问题也会发送给 Tavily 用于网页搜索。</li>
+        </ul>
+        <p class="pg-gap">中间没有任何 FlowVoice 服务器。各服务商如何处理这些数据，遵循其自身的政策。</p>
+        <div class="pg-note">
+          <svg aria-hidden="true"><use href="#i-warn"/></svg>
+          <p><b>值得注意</b>在 Google Gemini 的免费套餐中，Google 可能会使用你发送的内容来改进其产品。如果你介意，请选择其他服务商或离线模式。</p>
+        </div>
+        <h3>离线</h3>
+        <p>在<strong>100% 本地</strong>模式下，转写在你的处理器上运行。再用 Ollama 润色文字，你说的任何内容都不会离开你的电脑。</p>
+      </section>
+
+      <section id="chaves">
+        <h2>API 密钥</h2>
+        <p>密钥保存在 <strong>Windows 凭据管理器</strong>中。它们只会在每次请求时发送给对应的服务商，在屏幕上以遮掩形式显示。</p>
+        <p>罕见的例外：如果凭据库不可用或拒绝过长的密钥，密钥会保存在你用户目录下应用设置文件夹中的一个文件里。</p>
+      </section>
+
+      <section id="local">
+        <h2>保存在你电脑上的内容</h2>
+        <ul class="pg-list">
+          <li>听写的<strong>历史记录</strong>（文字、风格和目标应用），最多保留最近 300 条。可在<strong>设置 → 常规 → 保留历史记录</strong>中关闭，也可以在主页逐条删除或全部清空。</li>
+          <li><strong>设置</strong>、风格和词汇。</li>
+          <li>你下载的<strong>离线模型</strong>。可随时在模型页面删除。</li>
+          <li>用于诊断问题的<strong>技术日志</strong>。它只记录技术事件（时间、错误、响应时长），从不记录你听写的内容。大小限制在约 1 MB（超过后会重新创建），也从不发送到任何地方：只有你自己把它附在错误报告里时，它才会离开电脑。</li>
+        </ul>
+        <p class="pg-gap">所有内容都在你的 Windows 用户目录中：</p>
+        <div class="pg-table">
+          <table>
+            <caption class="sr">FlowVoice 在 Windows 上存放数据的文件夹</caption>
+            <thead><tr><th scope="col">文件夹</th><th scope="col">存放内容</th></tr></thead>
+            <tbody>
+              <tr><th scope="row"><code>%APPDATA%\<wbr>br.com.caliberda.flowvoice</code></th><td data-l="存放内容">设置、历史记录和日志</td></tr>
+              <tr><th scope="row"><code>%LOCALAPPDATA%\<wbr>br.com.caliberda.flowvoice</code></th><td data-l="存放内容">离线模型</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="pg-gap">要一次删除所有内容，只需删除这些文件夹。</p>
+      </section>
+
+      <section id="conexoes">
+        <h2>应用的其他连接</h2>
+        <p>除了你配置的服务商，FlowVoice 只会在以下情况访问网络：</p>
+        <ul class="pg-list">
+          <li>在 GitHub 上<strong>检查更新</strong>。更新均有数字签名。</li>
+          <li>从 Hugging Face <strong>下载离线模型</strong>，仅在你要求时。</li>
+          <li>在“关于”页面<strong>显示作者照片</strong>，从 GitHub 获取并保存以便离线使用。</li>
+          <li><strong>检查服务商的模型列表</strong>，以便自动替换已下线的模型。</li>
+        </ul>
+        <p class="pg-gap">这些连接都不会传送你的声音、文字或历史记录。</p>
+      </section>
+
+      <section id="telemetria">
+        <h2>遥测：没有</h2>
+        <p>应用<strong>没有统计分析、跟踪、用户标识符，也不会自动发送错误报告</strong>。我们不知道有多少人在用，也不知道怎么用。代码是开源的：任何人都可以在 <a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>中核实。</p>
+      </section>
+
+      <section id="site">
+        <h2>本网站</h2>
+        <p>本网站是静态网站，托管在 <strong>Vercel</strong> 上。和任何服务器一样，Vercel 会记录访问的技术数据（如 IP 地址和浏览器），用于提供页面和防止滥用，具体遵循<a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">其隐私政策</a>。</p>
+        <p>本网站<strong>没有统计分析、Cookie 或跟踪脚本</strong>。文字字体来自 Google Fonts，它会像任何服务器一样收到字体的下载请求。</p>
+        <p>没有表单、登录或广告。安装程序直接从 GitHub 下载。</p>
+      </section>
+
+      <section id="contato">
+        <h2>联系方式</h2>
+        <p>有疑问、请求，或觉得本页有不对的地方？请在 GitHub 上提交 issue。这是项目的官方渠道。</p>
+        <p class="pg-gap"><a class="btn btn-ghost" href="https://github.com/cesarkali/Flow-Voice/issues" target="_blank" rel="noopener noreferrer">在 GitHub 上提交 issue<svg aria-hidden="true"><use href="#i-out"/></svg></a></p>
+        <p class="pg-gap">如果本政策有变，顶部的日期会随之更新，改动也会记录在仓库的历史中。</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="foot-site">
+  <div class="wrap">
+    <div class="foot-row">
+      <p class="foot-about">FlowVoice 2.2 · 由 <a href="https://caliberda.com.br" target="_blank" rel="noopener noreferrer">Júlio Caliberda</a> 在巴西制作</p>
+      <nav aria-label="页脚">
+        <ul>
+          <li><a href="guia.html">密钥指南</a></li>
+          <li><a href="novidades.html">更新内容</a></li>
+          <li><a href="privacidade.html" aria-current="page">隐私</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 许可证</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">报告问题</a></li>
+          <li><a href="https://github.com/cesarkali/Flow-Voice/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">提出建议</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Júlio Caliberda</span>
+      <span>支持本项目：<a href="https://livepix.gg/caliberda" target="_blank" rel="noopener noreferrer">Pix</a> · <a href="https://github.com/sponsors/cesarkali" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="../i18n/zh.js" defer></script>
+<script src="../site.js" defer></script>
+<script>
+  /* Contents rail: always open on wide screens, collapsed on phones; marks the section being read.
+     Header and menu live in site.js. */
+  addEventListener("DOMContentLoaded", function () {
+    var toc = document.querySelector(".pg-toc details");
+    if (!toc) return;
+    var wide = matchMedia("(min-width: 901px)");
+    var sync = function () { toc.open = wide.matches; };
+    sync(); wide.addEventListener("change", sync);
+    toc.querySelector("summary").addEventListener("click", function (e) { if (wide.matches) e.preventDefault(); });
+    var links = [].slice.call(toc.querySelectorAll("a"));
+    if (!("IntersectionObserver" in window)) return;
+    var map = {};
+    links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+    var spy = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var a = map[en.target.id]; if (!a) return;
+        links.forEach(function (l) { l.classList.remove("is-active"); l.removeAttribute("aria-current"); });
+        a.classList.add("is-active"); a.setAttribute("aria-current", "location");
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    Object.keys(map).forEach(function (id) { var s = document.getElementById(id); if (s) spy.observe(s); });
+  });
+</script>
+</body>
+</html>

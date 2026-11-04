@@ -6,6 +6,11 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  /* The page's language and its texts for the scripts: i18n/<lang>.js, written by i18n/build.py from
+     i18n/src/demo/<lang>.json. Pages in a language folder sit one level down, so assets resolve from here. */
+  const LANG = (document.documentElement.lang || "pt").slice(0, 2);
+  const T = (window.FV_I18N && window.FV_I18N[LANG]) || null;
+  const SITE = new URL(".", document.currentScript ? document.currentScript.src : location.href).href;
 
   /* ---------- header + mobile nav ---------- */
   const top = $(".top");
@@ -24,9 +29,11 @@
   const menuBtn = $(".menu-btn");
   const nav = $("#nav");
   if (menuBtn && nav) {
+    const openLabel = menuBtn.getAttribute("aria-label");
+    const closeLabel = T ? T.ui.menuClose : openLabel;
     const setMenu = (open) => {
       menuBtn.setAttribute("aria-expanded", String(open));
-      menuBtn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+      menuBtn.setAttribute("aria-label", open ? closeLabel : openLabel);
       nav.classList.toggle("open", open);
     };
     menuBtn.addEventListener("click", () => setMenu(menuBtn.getAttribute("aria-expanded") !== "true"));
@@ -92,6 +99,46 @@
     sync();
   }
 
+  /* ---------- language picker: a <details> menu (works without JS); this closes it on Escape or a click
+     outside, and remembers that the visitor knows where the languages are ---------- */
+  const langPick = $(".lang");
+  if (langPick) {
+    const close = (focus) => { if (!langPick.open) return; langPick.open = false; if (focus) $("summary", langPick).focus(); };
+    document.addEventListener("click", (e) => { if (!langPick.contains(e.target)) close(false); });
+    langPick.addEventListener("keydown", (e) => { if (e.key === "Escape") close(true); });
+  }
+  $$("a[data-lang]").forEach((a) => a.addEventListener("click", () => { try { localStorage.setItem("fv-lang-hint", "1"); } catch {} }));
+
+  /* ---------- on a Portuguese page, a browser set to another of the site's languages gets a quiet offer
+     to switch (never a redirect), until it is dismissed or a language is picked ---------- */
+  if (T && T.hints && langPick) {
+    let seen = false;
+    try { seen = localStorage.getItem("fv-lang-hint") === "1"; } catch {}
+    const want = (navigator.languages || [navigator.language || ""]).map((l) => l.toLowerCase().slice(0, 2)).find((l) => l === LANG || T.hints[l]);
+    const to = want && want !== LANG && $(`a[data-lang="${want}"]`, langPick);
+    if (!seen && to) {
+      const h = T.hints[want];
+      const box = document.createElement("div");
+      box.className = "lang-hint";
+      box.lang = to.lang;
+      box.setAttribute("role", "region");
+      box.setAttribute("aria-label", h.label);
+      box.innerHTML = '<p></p><a class="btn btn-primary btn-sm"></a><button type="button" class="lang-hint-x"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>';
+      $("p", box).textContent = h.text;
+      const go = $("a", box);
+      go.textContent = h.go;
+      go.href = to.href;
+      go.hreflang = to.hreflang;
+      const x = $("button", box);
+      x.setAttribute("aria-label", h.close);
+      const done = () => { try { localStorage.setItem("fv-lang-hint", "1"); } catch {} };
+      go.addEventListener("click", done);
+      x.addEventListener("click", () => { done(); box.remove(); });
+      document.body.append(box);
+      requestAnimationFrame(() => requestAnimationFrame(() => box.classList.add("in")));
+    }
+  }
+
   /* ---------- page loader: if the next page takes more than ~120 ms, a caret types a line across the top ----------
      Internal page links only (not same-page anchors, new tabs, downloads or modified clicks). */
   const bar = document.createElement("div");
@@ -122,7 +169,8 @@
   const BARS = 12;
   const ENV = Array.from({ length: BARS }, (_, i) => 0.42 + 0.58 * Math.pow(Math.sin((Math.PI * (i + 0.5)) / BARS), 1.3));
   const LAG = Array.from({ length: BARS }, (_, i) => Math.round(Math.abs(i - (BARS - 1) / 2) * (23 / BARS)));
-  const STYLE_KEY = { Natural: "natural", Profissional: "professional", Prompt: "prompt", Cru: "raw", "Só transcrição": "verbatim" };
+  /* words are joined with a space, or with nothing in scripts written without spaces (Japanese, Chinese) */
+  const SEP = T ? T.sep : " ";
 
   /** Pausable clock for a looping demo: waits stop while paused, off screen or in a hidden tab. */
   function runner(watch) {
@@ -226,7 +274,7 @@
     c.push = (w, firm = false) => {
       const s = document.createElement("span");
       s.className = `ck${firm ? "" : " un"}${reduce ? "" : " add"}`;
-      s.textContent = (words.length ? " " : "") + w;
+      s.textContent = (words.length ? SEP : "") + w;
       live.append(s);
       words.push({ el: s, firm });
       if (words.length === 1) root.classList.add("has-text");
@@ -237,7 +285,7 @@
         const wd = words[i];
         if (wd.firm) continue;
         if (fixes[i] != null) {
-          wd.el.textContent = (i ? " " : "") + fixes[i];
+          wd.el.textContent = (i ? SEP : "") + fixes[i];
           wd.el.classList.remove("add", "fix");
           void wd.el.offsetWidth;
           if (!reduce) wd.el.classList.add("fix");
@@ -251,12 +299,13 @@
     c.firmCount = () => words.filter((w) => w.firm).length;
     c.proc = (label) => { proc.textContent = label; if (view === "proc") fit(false); };
 
-    /* result card */
-    c.card = ({ title = "Colado", style, app = "", out, busy = false, primaryOn = false, ms = 6000 }) => {
+    /* result card; style is the key (natural, professional…), its name comes from the page's language */
+    c.card = ({ title = T.ui.pasted, style, app = "", out, busy = false, primaryOn = false, ms = 6000 }) => {
       head.textContent = title;
-      hm.innerHTML = busy ? '<span class="fvo-rw">Reescrevendo…</span>' : `<span data-style></span>${app ? '<span class="fvo-app"> · <span data-app></span></span>' : ""}`;
-      if (!busy) {
-        $("[data-style]", hm).textContent = style;
+      hm.innerHTML = busy ? '<span class="fvo-rw"></span>' : `<span data-style></span>${app ? '<span class="fvo-app"> · <span data-app></span></span>' : ""}`;
+      if (busy) $(".fvo-rw", hm).textContent = T.ui.rewriting;
+      else {
+        $("[data-style]", hm).textContent = T.styles[style];
         if (app) $("[data-app]", hm).textContent = app;
       }
       $(".fvo-via", root).hidden = busy;
@@ -266,11 +315,11 @@
         text.textContent = out;
         if (!reduce) { text.classList.remove("reveal"); void text.offsetWidth; text.classList.add("reveal"); }
       }
-      chips.forEach((ch) => { ch.classList.toggle("on", !busy && ch.dataset.chip === STYLE_KEY[style]); ch.classList.remove("loading"); });
+      chips.forEach((ch) => { ch.classList.toggle("on", !busy && ch.dataset.chip === style); ch.classList.remove("loading"); });
       L.card.style.setProperty("--life", `${ms}ms`);
       if (view === "card") fit(false);
     };
-    c.loading = (style) => chips.forEach((ch) => ch.classList.toggle("loading", ch.dataset.chip === STYLE_KEY[style]));
+    c.loading = (style) => chips.forEach((ch) => ch.classList.toggle("loading", ch.dataset.chip === style));
     c.restartLife = () => { life.style.animation = "none"; void life.offsetWidth; life.style.animation = ""; };
     c.look = (look, light) => {
       shell.classList.toggle("glass", look !== "solid");
@@ -286,24 +335,8 @@
 
   /* ---------- hero demo ---------- */
   const demo = $(".demo");
-  if (demo) {
-    const SCENES = [
-      {
-        app: "Outlook", style: "Profissional",
-        said: "é, tipo, pessoal, a reunião de quinta tá confirmada às dez, né, e quem não puder me avisa",
-        out: "Olá, pessoal. A reunião de quinta-feira está confirmada para as 10h. Quem não puder participar, por favor me avise.",
-      },
-      {
-        app: "Slack", style: "Natural",
-        said: "então, subi a versão nova no servidor de teste, tipo, dá uma olhada quando puder e me fala se quebrou alguma coisa",
-        out: "Subi a versão nova no servidor de teste. Dá uma olhada quando puder e me fala se quebrou alguma coisa.",
-      },
-      {
-        app: "ChatGPT", style: "Prompt",
-        said: "é, eu preciso de um script em python que lê uma planilha do excel, né, e manda um e-mail pra cada cliente com a fatura atrasada há mais de dez dias",
-        out: "Preciso de um script em Python que leia uma planilha do Excel e envie um e-mail a cada cliente com fatura atrasada há mais de 10 dias.",
-      },
-    ];
+  if (demo && T) {
+    const SCENES = T.hero;
     const panes = $$(".pane", demo);
     const appBtns = $$(".demo-app", demo);
     const pauseBtn = $(".demo-pause", demo);
@@ -314,15 +347,18 @@
     const cap = capsule($("[data-fvo]", demo), sheet, R.canRun);
     const fill = (sel, v) => $$(sel, demo).forEach((el) => (el.textContent = v));
 
+    // what was said comes as space-separated words in every language (SEP joins them on screen)
     const words = (s) => s.split(" ");
+    // the pasted text appears word by word, or two characters at a time where words have no spaces
+    const pieces = (t) => (SEP ? t.split(" ").map((w, i, a) => w + (i < a.length - 1 ? " " : "")) : t.match(/[\s\S]{1,2}/gu) || []);
     function setOut(pane, text, animate) {
       const out = $(".out", pane);
       out.textContent = "";
       if (!text) return [];
-      return words(text).map((w, i, a) => {
+      return pieces(text).map((w) => {
         const s = document.createElement("span");
         s.className = "w" + (animate ? " new" : "");
-        s.textContent = w + (i < a.length - 1 ? " " : "");
+        s.textContent = w;
         out.append(s);
         return s;
       });
@@ -330,7 +366,7 @@
     function select(i) {
       panes.forEach((p, k) => p.classList.toggle("on", k === i));
       appBtns.forEach((b, k) => b.setAttribute("aria-pressed", String(k === i)));
-      fill("[data-style]", SCENES[i].style);
+      fill("[data-style]", T.styles[SCENES[i].style]);
       fill("[data-app]", SCENES[i].app);
     }
     const doneCard = (i) => cap.card({ style: SCENES[i].style, app: SCENES[i].app, out: SCENES[i].out, ms: 5200 });
@@ -389,10 +425,10 @@
       cap.speaking = false;
       await R.wait(700, my);
       await press(my);
-      cap.proc("Transcrevendo…");
+      cap.proc(T.ui.transcribing);
       cap.view("proc");
       await R.wait(650, my);
-      cap.proc("Refinando com Groq…");
+      cap.proc(T.ui.refining);
       await R.wait(950, my);
 
       doneCard(i);
@@ -431,10 +467,11 @@
       pauseBtn.hidden = true;
       still(0);
     } else {
+      const pauseLabel = pauseBtn.getAttribute("aria-label");
       pauseBtn.addEventListener("click", () => {
         R.paused = !R.paused;
         pauseBtn.setAttribute("aria-pressed", String(R.paused));
-        pauseBtn.setAttribute("aria-label", R.paused ? "Continuar demonstração" : "Pausar demonstração");
+        pauseBtn.setAttribute("aria-label", R.paused ? T.ui.play : pauseLabel);
         demo.classList.toggle("paused", R.paused);
       });
       // first frame: the static markup, measured to its real size
@@ -448,7 +485,7 @@
 
   /* ---------- the overlay section: live preview, one-click restyle, and the capsule's look ---------- */
   const ovd = $(".ovdemo");
-  if (ovd) {
+  if (ovd && T) {
     const desk = $(".desk", ovd);
     const R = runner(desk);
     const cap = capsule($("[data-fvo]", ovd), desk, R.canRun);
@@ -469,10 +506,10 @@
     applyLook();
 
     // what the cloud first hears, and the words it settles on once two answers agree
-    const SAID = "eu queria saber se a gente consegue marcar aquela reunião pra quinta de tarde porque na quarta eu não consigo".split(" ");
-    const FIX = { 0: "Eu", 10: "para", 11: "quinta-feira", 12: "à", 13: "tarde,", 19: "consigo." };
-    const NAT = "Eu queria saber se a gente consegue marcar aquela reunião para quinta-feira à tarde, porque na quarta eu não consigo.";
-    const PRO = "Gostaria de saber se conseguimos marcar a reunião para quinta-feira à tarde, pois na quarta-feira não estarei disponível.";
+    const SAID = T.overlay.said.split(" ");
+    const FIX = T.overlay.fix;
+    const NAT = T.overlay.natural;
+    const PRO = T.overlay.professional;
 
     async function run(my) {
       cap.hide();
@@ -496,19 +533,19 @@
       await R.wait(500, my);
       cap.firm(cap.count(), FIX);
       await R.wait(1100, my);
-      cap.proc("Transcrevendo…");
+      cap.proc(T.ui.transcribing);
       cap.view("proc");
       await R.wait(650, my);
-      cap.proc("Refinando com Groq…");
+      cap.proc(T.ui.refining);
       await R.wait(950, my);
-      cap.card({ style: "Natural", out: NAT, ms: 9000 });
+      cap.card({ style: "natural", out: NAT, ms: 9000 });
       cap.view("card");
       await R.wait(1900, my);
-      cap.loading("Profissional");
-      cap.card({ busy: true, style: "Natural", ms: 9000 });
-      cap.loading("Profissional");
+      cap.loading("professional");
+      cap.card({ busy: true, style: "natural", ms: 9000 });
+      cap.loading("professional");
       await R.wait(1300, my);
-      cap.card({ title: "Versão anterior colada", style: "Profissional", out: PRO, primaryOn: true, ms: 5000 });
+      cap.card({ title: T.ui.pastedPrev, style: "professional", out: PRO, primaryOn: true, ms: 5000 });
       cap.restartLife();
       await R.wait(5000, my);
       cap.hide();
@@ -520,14 +557,15 @@
     }
     if (reduce) {
       pauseBtn.hidden = true;
-      SAID.slice(0, 15).forEach((w, k) => cap.push(w));
-      cap.firm(11, FIX);
+      SAID.slice(0, 15).forEach((w) => cap.push(w));
+      cap.firm(Math.min(11, SAID.length), FIX);
       cap.show("listen");
     } else {
+      const pauseLabel = pauseBtn.getAttribute("aria-label");
       pauseBtn.addEventListener("click", () => {
         R.paused = !R.paused;
         pauseBtn.setAttribute("aria-pressed", String(R.paused));
-        pauseBtn.setAttribute("aria-label", R.paused ? "Continuar demonstração" : "Pausar demonstração");
+        pauseBtn.setAttribute("aria-label", R.paused ? T.ui.play : pauseLabel);
         ovd.classList.toggle("paused", R.paused);
       });
       cap.hide();
@@ -540,52 +578,9 @@
      three intensities. The said line and the result sit in stacks with hidden copies of every variant, so the
      card keeps one height and the tabs never move. */
   const styler = $(".styler");
-  if (styler) {
-    const icon = (app) => `<img src="assets/apps/${app}.svg" alt="" width="16" height="16">`;
-    const STY = {
-      natural: {
-        ctx: icon("whatsapp") + "no WhatsApp",
-        said: "“<s>é,</s> mãe, vou chegar mais tarde hoje, <s>tipo,</s> o trânsito tá parado aqui na marginal, <s>né,</s> guarda um prato pra mim que eu janto quando chegar”",
-        text: "Mãe, vou chegar mais tarde hoje, o trânsito tá parado aqui na Marginal. Guarda um prato pra mim que eu janto quando chegar.",
-        desc: "Corrige e limpa a fala, mantendo o seu jeito de falar.",
-      },
-      professional: {
-        ctx: icon("outlook") + "no Outlook",
-        said: "“<s>é,</s> oi, pessoal, <s>então,</s> sobre o relatório do trimestre, <s>né,</s> eu preciso que cada um mande a sua parte até sexta, <s>tipo,</s> até o meio-dia, pra eu conseguir revisar tudo antes da reunião de segunda”",
-        text: "Olá, pessoal. Sobre o relatório trimestral: preciso que cada um envie a sua parte até sexta-feira, ao meio-dia, para que eu consiga revisar tudo antes da reunião de segunda-feira.",
-        desc: "Formal e organizado, pronto para e-mail.",
-      },
-      prompt: {
-        ctx: icon("claude") + "no Claude",
-        said: "“<s>é, então,</s> eu queria que você me ajudasse a corrigir uma função em JavaScript, <s>né,</s> ela devia somar os preços do carrinho, mas tá retornando NaN quando algum produto vem sem preço, <s>tipo,</s> e não muda o nome da função porque ela é usada em outros lugares”",
-        levels: {
-          light: {
-            text: "Eu queria que você me ajudasse a corrigir uma função em JavaScript. Ela devia somar os preços do carrinho, mas tá retornando NaN quando algum produto vem sem preço. E não muda o nome da função, porque ela é usada em outros lugares.",
-            desc: "Fraco: só tira vícios e palavras sobrando; mantém as suas frases.",
-          },
-          medium: {
-            text: "Preciso corrigir uma função em JavaScript que deveria somar os preços do carrinho, mas retorna NaN quando algum produto vem sem preço. Não mude o nome da função: ela é usada em outros lugares.",
-            desc: "Médio: enxuga com equilíbrio para mandar a uma IA, sem perder contexto.",
-          },
-          strong: {
-            text: "Corrigir função JavaScript que soma os preços do carrinho:\n- retorna NaN quando um produto vem sem preço\n- não mudar o nome (usada em outros lugares)",
-            desc: "Forte: condensa em tópicos curtos, sem perder requisitos, números e prazos.",
-          },
-        },
-      },
-      raw: {
-        ctx: icon("chrome") + "na busca do Chrome",
-        said: "“melhores fones bluetooth até 300 reais, <s>tipo,</s> com cancelamento de ruído, <s>né,</s> pra usar na academia”",
-        text: "Melhores fones bluetooth até 300 reais com cancelamento de ruído pra usar na academia",
-        desc: "Só as palavras: sem pontuação e sem IA. Bom para buscas e anotações rápidas.",
-      },
-      verbatim: {
-        ctx: "nas notas de uma entrevista",
-        said: "“é, então, a ideia é a gente lançar em março, né, mas, tipo, só se o teste com os clientes der certo”",
-        text: "É, então, a ideia é a gente lançar em março, né? Mas, tipo, só se o teste com os clientes der certo.",
-        desc: "Exatamente o que foi transcrito, com cada “né” e “tipo”, sem passar por IA.",
-      },
-    };
+  if (styler && T) {
+    const icon = (app) => (app ? `<img src="${SITE}assets/apps/${app}.svg" alt="" width="16" height="16">` : "");
+    const STY = T.styler;
     let level = "medium";
     let currentKey = "professional";
     const pick = (key) => (STY[key].levels ? STY[key].levels[level] : STY[key]);
@@ -617,7 +612,8 @@
       out.textContent = v.text;
       desc.textContent = v.desc;
       said.innerHTML = STY[key].said;
-      ctx.innerHTML = STY[key].ctx;
+      ctx.innerHTML = icon(STY[key].icon);
+      ctx.append(STY[key].where);
       strength.classList.toggle("off", !STY[key].levels);
       levelBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.level === level)));
       if (animate && !reduce) {
@@ -650,5 +646,6 @@
     levelBtns.forEach((b) => b.addEventListener("click", () => { level = b.dataset.level; render(currentKey, true); }));
     picks.forEach((p) => p.addEventListener("click", () => setStyle(p.dataset.pick)));
     picks.forEach((p) => p.setAttribute("aria-pressed", String(p.dataset.pick === "professional")));
+    render(currentKey, false);
   }
 })();
