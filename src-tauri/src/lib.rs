@@ -83,6 +83,8 @@ pub fn run() {
                 pipeline::control(app, pipeline::Ctl::Toggle(state::RecordMode::Ask));
             } else if has("--command") {
                 pipeline::control(app, pipeline::Ctl::Toggle(state::RecordMode::Command));
+            } else if has("--proofread") {
+                pipeline::control(app, pipeline::Ctl::Proofread);
             } else if has("--paste-last") {
                 pipeline::paste_last(app, platform::last_app_window());
             } else if has("--cancel") {
@@ -116,6 +118,10 @@ pub fn run() {
             log::info!("FlowVoice {} starting", app.package_info().version);
 
             let first_run = !settings::settings_path(&config_dir).exists();
+            // The "Revisar" shortcut is new in 2.2: its AltGr check runs once, on the first start
+            // that doesn't have it in the file yet (new installs and updates alike).
+            let new_proofread = std::fs::read_to_string(settings::settings_path(&config_dir))
+                .map_or(true, |t| !t.contains("\"proofread\""));
             pipeline::restore_mute_after_crash(&config_dir);
             let state = AppState::new(config_dir.clone(), models_dir);
             if first_run {
@@ -124,10 +130,22 @@ pub fn run() {
                     log::info!("imported {n} key(s) from FlowVoice 1.x");
                 }
                 let mut s = state.settings();
+                // A new install starts on this version: no "what's new" (onboarding shows the app).
+                s.seen_version = app.package_info().version.to_string();
                 // Ctrl+Alt is AltGr: where AltGr+K types a character, the shortcut would stop it.
                 if platform::altgr_types('K' as u32) {
                     log::info!("AltGr+K types on this keyboard: Command starts without a shortcut");
                     s.hotkeys.command.clear();
+                }
+                let _ = state.save_settings(s);
+            }
+            if new_proofread {
+                let mut s = state.settings();
+                let h = &s.hotkeys;
+                let taken = [&h.dictate, &h.translate, &h.ask, &h.command, &h.paste_last].contains(&&h.proofread);
+                if taken || platform::altgr_types('J' as u32) {
+                    log::info!("Ctrl+Alt+J is another shortcut or AltGr+J types here: Revisar starts without a shortcut");
+                    s.hotkeys.proofread.clear();
                 }
                 let _ = state.save_settings(s);
             }
@@ -220,6 +238,7 @@ pub fn run() {
             commands::reset_styles,
             commands::validate_hotkey,
             commands::altgr_blocks_command,
+            commands::altgr_blocks_proofread,
             commands::list_input_devices,
             commands::suspend_hotkeys,
             commands::get_key_status,
@@ -261,6 +280,7 @@ pub fn run() {
             commands::chat_reset,
             commands::open_settings,
             commands::app_info,
+            commands::whats_new_seen,
             commands::open_feedback,
             commands::feedback_log,
             commands::check_update,

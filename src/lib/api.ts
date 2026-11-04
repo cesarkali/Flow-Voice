@@ -39,6 +39,7 @@ export const api = {
   saveSettings: (settings: Settings) => call<Settings>("save_settings", { settings }),
   resetStyles: () => call<Settings>("reset_styles"),
   altgrBlocksCommand: () => call<boolean>("altgr_blocks_command"),
+  altgrBlocksProofread: () => call<boolean>("altgr_blocks_proofread"),
   validateHotkey: (accelerator: string) => call<string | null>("validate_hotkey", { accelerator }),
   listInputDevices: () => call<string[]>("list_input_devices"),
   /** Pause global shortcuts while the user records a new one. */
@@ -119,6 +120,7 @@ export const api = {
   // app
   openSettings: (page?: SettingsPage) => call<void>("open_settings", { page: page ?? null }),
   appInfo: () => call<AppInfo>("app_info"),
+  whatsNewSeen: () => call<void>("whats_new_seen"),
   /** GitHub issue form ("bug" | "idea") prefilled with app/Windows versions (+ an error message). */
   openFeedback: (kind: "bug" | "idea", context?: string, includeLog = true) =>
     call<void>("open_feedback", { kind, context: context ?? null, includeLog }),

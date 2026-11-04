@@ -108,6 +108,8 @@ pub enum Ctl {
     /// Command card: rewrite the selected text in a style (and/or translate it) instead of a
     /// spoken instruction.
     CommandStyle(String, Option<String>),
+    /// "Revisar" shortcut: fix spelling and punctuation of the selection, no recording.
+    Proofread,
 }
 
 static CTL: once_cell::sync::OnceCell<parking_lot::Mutex<std::sync::mpsc::Sender<Ctl>>> = once_cell::sync::OnceCell::new();
@@ -138,11 +140,123 @@ fn run_ctl(app: &AppHandle, c: Ctl) {
         }
         Ctl::Cancel => cancel(app),
         Ctl::CommandStyle(style, target) => command_style(app, style, target),
+        Ctl::Proofread => proofread(app),
     }
 }
 
 /// Style id of a Command result that came from a spoken instruction (not from a style chip).
 pub const COMMAND_STYLE: &str = "command";
+/// Style id of a Command result that only got spelling and punctuation fixed ("Revisar").
+pub const PROOFREAD_STYLE: &str = "proofread";
+/// What the history shows as a proofread's instruction.
+const PROOFREAD_INSTRUCTION: &str = "Revisar a ortografia e a pontuação";
+const NO_PROOFREAD_SELECTION: &str = "Selecione um texto antes de revisar.";
+
+/// The shortcut "Revisar": copies the selection of the focused app, fixes its spelling and
+/// punctuation and pastes it over the selection. While a Command is listening it's that card's
+/// "Revisar" chip; during another recording it does nothing.
+fn proofread(app: &AppHandle) {
+    let st = state(app);
+    let recording = st.session.lock().as_ref().map(|s| s.mode);
+    match recording {
+        Some(RecordMode::Command) => return command_style(app, PROOFREAD_STYLE.into(), None),
+        Some(_) => return,
+        None => {}
+    }
+    let target_window = platform::foreground_window();
+    let app_ctx = platform::window_app(target_window);
+    if app_ctx.as_ref().is_some_and(|c| crate::apps::is_terminal(&c.id)) {
+        overlay_hint(app, &tr(NO_TERMINAL));
+        return;
+    }
+    let gen = DICTATION.fetch_add(1, Ordering::SeqCst) + 1;
+    let busy = BusyGuard::new();
+    let s = st.settings();
+    let provider_hint = first_llm(app, &s).map(display_name).unwrap_or("IA");
+    windows::show_overlay_for_recording(app);
+    emit_overlay(app, json!({ "phase": "refining", "provider": provider_hint, "mode": "proofread" }));
+    log::info!("proofread: on the selection (app {:?})", app_ctx.as_ref().map(|c| &c.id));
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let _busy = busy;
+        let work = async {
+            // Waits for the shortcut's keys to be released (Ctrl+C with Alt still down is another combo).
+            let copied = tauri::async_runtime::spawn_blocking(move || platform::copy_selection(target_window))
+                .await
+                .map_err(|e| anyhow!(e.to_string()))?;
+            let source = match selection_from(copied) {
+                Selection::Got(t) if text::has_words(&t) => t,
+                Selection::Failed(m) => return Err(perr(m, None, None)),
+                _ => return Err(hint_error(tr(NO_PROOFREAD_SELECTION))),
+            };
+            let s = state(&app).settings();
+            let mut result = DictationResult {
+                id: new_id(),
+                ts: chrono::Local::now().to_rfc3339(),
+                mode: RecordMode::Command,
+                raw: PROOFREAD_INSTRUCTION.into(),
+                text: String::new(),
+                style_id: PROOFREAD_STYLE.into(),
+                target: None,
+                provider: None,
+                stt_provider: String::new(),
+                pasted: false,
+                duration_ms: 0,
+                warnings: vec![],
+                app: app_ctx.as_ref().map(|c| c.id.clone()),
+                app_name: app_ctx.as_ref().map(|c| c.name.clone()),
+                source: Some(source),
+                failed: false,
+                error: None,
+                retry: None,
+            };
+            proofread_into(&app, &mut result, &s).await?;
+            if !is_current(gen) {
+                return Ok(());
+            }
+            finish_dictation(&app, result, target_window, gen, &s).await
+        };
+        let res = tokio::time::timeout(PROCESS_DEADLINE, guarded(work)).await.unwrap_or_else(|_| {
+            Err(perr(tr("Demorou demais — os serviços não responderam. Tente de novo."), None, None))
+        });
+        if let Err(e) = res {
+            log::warn!("proofread failed: {e}");
+            report_selection_error(&app, gen, e);
+        }
+    });
+}
+
+/// A user-side problem for `report_selection_error`: shown as a hint (no "settings" button).
+#[derive(Debug)]
+struct HintError(String);
+
+impl std::fmt::Display for HintError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for HintError {}
+
+fn hint_error(message: String) -> anyhow::Error {
+    anyhow::Error::new(HintError(message))
+}
+
+/// The error card of a Command style chip or a proofread, if that one still owns the overlay.
+fn report_selection_error(app: &AppHandle, gen: u64, e: anyhow::Error) {
+    if !owns_overlay(app, gen) {
+        return;
+    }
+    if let Some(h) = e.downcast_ref::<HintError>() {
+        overlay_hint(app, &h.0);
+        return;
+    }
+    let (message, detail, raw) = match e.downcast::<PipelineError>() {
+        Ok(pe) => (pe.message, pe.detail, pe.raw),
+        Err(e) => (e.to_string(), None, None),
+    };
+    overlay_error(app, &message, detail, raw);
+}
 
 /// Command card → style chip: stop listening (the audio is dropped), take the selection and
 /// rewrite it in that style (and/or translate it), then paste it over the selection.
@@ -172,15 +286,16 @@ fn command_style(app: &AppHandle, style_id: String, target: Option<String>) {
         let work = async {
             let source = resolve_selection(&selection, target_window).await?;
             let s = state(&app).settings();
+            let proofread = style_id == PROOFREAD_STYLE;
             let style = s.style(&style_id);
             let mut result = DictationResult {
                 id: new_id(),
                 ts: chrono::Local::now().to_rfc3339(),
                 mode: RecordMode::Command,
                 // Also the instruction used by "Outra versão" later.
-                raw: format!("Reescreva no estilo {}", style.name),
+                raw: if proofread { PROOFREAD_INSTRUCTION.into() } else { format!("Reescreva no estilo {}", style.name) },
                 text: String::new(),
-                style_id: style.id.clone(),
+                style_id: if proofread { PROOFREAD_STYLE.into() } else { style.id.clone() },
                 target: target.filter(|t| !t.is_empty()),
                 provider: None,
                 stt_provider: String::new(),
@@ -194,7 +309,11 @@ fn command_style(app: &AppHandle, style_id: String, target: Option<String>) {
                 error: None,
                 retry: None,
             };
-            style_selection_into(&app, &mut result, &s, None).await;
+            if proofread {
+                proofread_into(&app, &mut result, &s).await?;
+            } else {
+                style_selection_into(&app, &mut result, &s, None).await;
+            }
             if !is_current(gen) {
                 return Ok(());
             }
@@ -205,14 +324,7 @@ fn command_style(app: &AppHandle, style_id: String, target: Option<String>) {
         });
         if let Err(e) = res {
             log::warn!("command style failed: {e}");
-            if !owns_overlay(&app, gen) {
-                return;
-            }
-            let (message, detail, raw) = match e.downcast::<PipelineError>() {
-                Ok(pe) => (pe.message, pe.detail, pe.raw),
-                Err(e) => (e.to_string(), None, None),
-            };
-            overlay_error(&app, &message, detail, raw);
+            report_selection_error(&app, gen, e);
         }
     });
 }
@@ -233,7 +345,12 @@ async fn style_selection_into(app: &AppHandle, result: &mut DictationResult, s: 
 
 /// Paste (auto-paste on), history, `last` and the result card — shared end of every dictation.
 async fn finish_dictation(app: &AppHandle, mut result: DictationResult, target_window: isize, gen: u64, s: &Settings) -> Result<()> {
-    if s.auto_paste {
+    // A proofread with nothing to fix leaves the selection alone: pasting plain text over it
+    // would only drop its formatting (bold, links) in apps like Word.
+    let untouched = result.style_id == PROOFREAD_STYLE && result.source.as_deref().map(str::trim) == Some(result.text.trim());
+    if untouched {
+        result.warnings.push(tr("Nada para corrigir: o texto já estava certo."));
+    } else if s.auto_paste {
         let text = result.text.clone();
         // (Only Command results end here: "Substituir" may undo this paste later.)
         let pasted = tauri::async_runtime::spawn_blocking(move || platform::paste_replaceable(&text, target_window, false))
@@ -1180,7 +1297,7 @@ async fn command_into(app: &AppHandle, result: &mut DictationResult, s: &Setting
             let out = if result.target.is_some() { text::drop_echoed_source(&out, &selection) } else { out };
             let out = text::clean_command_output(&out, &selection);
             if !text::has_words(&out) && text::has_words(&selection) {
-                return Err(perr("A IA devolveu um texto vazio — nada foi alterado.", None, Some(result.raw.clone())));
+                return Err(perr(tr("A IA devolveu um texto vazio — nada foi alterado."), None, Some(result.raw.clone())));
             }
             result.text = out;
             result.provider = Some(provider);
@@ -1198,6 +1315,42 @@ async fn command_into(app: &AppHandle, result: &mut DictationResult, s: &Setting
     }
 }
 
+/// "Revisar": fixes spelling and punctuation of the selection (`source`) and nothing else. A
+/// version that changed more than that is refused, the selection stays as it was.
+async fn proofread_into(app: &AppHandle, result: &mut DictationResult, s: &Settings) -> Result<()> {
+    let selection = result.source.clone().unwrap_or_default();
+    let system = settings::proofread_prompt(&s.dictionary, result.target.as_deref());
+    let user = settings::proofread_message(&selection);
+    let max_tokens = ((selection.len() as u32) + 1024).clamp(1024, 8192);
+    result.provider = None;
+    match llm_chain(app, &[ChatMsg::new("system", system), ChatMsg::new("user", user)], 0.0, max_tokens).await {
+        Ok((out, provider)) => {
+            let out = if result.target.is_some() { text::drop_echoed_source(&out, &selection) } else { out };
+            let out = text::clean_command_output(&out, &selection);
+            if !text::has_words(&out) && text::has_words(&selection) {
+                return Err(perr(tr("A IA devolveu um texto vazio — nada foi alterado."), None, None));
+            }
+            // (A translation changes every word: only the plain proofread is checked.)
+            if result.target.is_none() && text::proofread_drift(&selection, &out) {
+                log::warn!("proofread: the model rewrote the text ({} -> {} chars), refused", selection.chars().count(), out.chars().count());
+                return Err(perr(tr("A IA mudou mais do que a ortografia e a pontuação, então o texto ficou como estava. Tente de novo."), None, None));
+            }
+            result.text = out;
+            result.provider = Some(provider);
+            Ok(())
+        }
+        Err(errors) if errors.is_empty() => Err(perr(
+            tr("O Comando precisa de uma IA. Adicione uma chave grátis (Groq ou Gemini) em Configurações → Provedores."),
+            None,
+            None,
+        )),
+        Err(errors) => {
+            let detail = errors.iter().map(|e| format!("{} — {}", e, e.detail)).collect::<Vec<_>>().join("\n");
+            Err(perr(trf("Não foi possível revisar o texto: {}", &[&errors[0]]), Some(detail), None))
+        }
+    }
+}
+
 /// A Command result redone from its original selection: "command" (or the legacy "redo")
 /// asks for another version of the spoken instruction; any other id rewrites the selection in
 /// that style. A target also translates.
@@ -1205,6 +1358,9 @@ async fn command_restyle(app: &AppHandle, result: &mut DictationResult, s: &Sett
     if style_id == COMMAND_STYLE || style_id == "redo" {
         result.style_id = COMMAND_STYLE.into();
         command_into(app, result, s, None).await
+    } else if style_id == PROOFREAD_STYLE {
+        result.style_id = style_id;
+        proofread_into(app, result, s).await
     } else {
         result.style_id = style_id;
         style_selection_into(app, result, s, None).await;

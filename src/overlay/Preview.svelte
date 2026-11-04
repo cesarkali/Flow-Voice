@@ -38,6 +38,9 @@
     { id: "command", label: "Comando" },
     { id: "cmddone", label: "Comando (resultado)" },
     { id: "cmdnosel", label: "Comando sem seleção" },
+    { id: "proofread", label: "Revisar (atalho)" },
+    { id: "proofdone", label: "Revisar (resultado)" },
+    { id: "proofok", label: "Revisar (nada a corrigir)" },
   ];
   const q = new URLSearchParams(location.search);
   let theme = $state<"dark" | "light">(q.get("theme") === "light" ? "light" : "dark");

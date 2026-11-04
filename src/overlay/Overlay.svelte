@@ -209,7 +209,9 @@
     }
     if (e.phase === "transcribing") procLabel = t("ov.transcribing");
     if (e.phase === "refining")
-      procLabel = t(e.mode === "command" ? "ovx.cmd_applying" : "ov.refining", { provider: pname(e.provider) });
+      procLabel = t(e.mode === "proofread" ? "ovx.proofreading" : e.mode === "command" ? "ovx.cmd_applying" : "ov.refining", {
+        provider: pname(e.provider),
+      });
     if (e.phase === "answer") procLabel = t("ov.answer");
     if (e.phase === "done") {
       result = e.result;
@@ -1039,11 +1041,16 @@
 
   // ------------------------------------------------------------ actions
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-  const styleName = (id: string | undefined) => settings?.styles.find((s) => s.id === id)?.name ?? id ?? "";
+  const styleName = (id: string | undefined) =>
+    id === "proofread" ? t("mode.proofread") : (settings?.styles.find((s) => s.id === id)?.name ?? id ?? "");
   const busy = $derived(!!pending);
   /** Paste rules: never pasted → Colar; pasted and unchanged → nothing; pasted and changed → Substituir. */
-  const pasteAction = $derived(pastedText === null ? "paste" : targetText !== pastedText ? "replace" : null);
-  const headTitle = $derived(pastedText === null ? t("ov.copied") : targetText === pastedText ? t("ov.pasted") : t("ovx.pasted_prev"));
+  /** A proofread that found nothing to fix: the selection was left as it was (nothing pasted or copied). */
+  const untouched = $derived(!!result && result.style_id === "proofread" && !result.pasted && (result.source ?? "").trim() === targetText.trim());
+  const pasteAction = $derived(untouched ? null : pastedText === null ? "paste" : targetText !== pastedText ? "replace" : null);
+  const headTitle = $derived(
+    untouched ? t("ovx.no_fixes") : pastedText === null ? t("ov.copied") : targetText === pastedText ? t("ov.pasted") : t("ovx.pasted_prev"),
+  );
 
   function dismiss() {
     // Release the hold before Rust hides (the effect would only send it after dismissOverlay).
@@ -1182,11 +1189,22 @@
                 <div class="cmdstyles" in:rise={{ delay: 140, y: 8 * dir }} out:fadeOut>
                   <span class="cmdlab">{t("ovx.cmd_or_style")}</span>
                   <div class="cmdrow">
+                    <!-- spelling and punctuation only: the words stay -->
+                    <button
+                      type="button"
+                      class="chip"
+                      data-k="proofread"
+                      style="--i:0"
+                      data-tip={t("ovx.proofread_tip")}
+                      onclick={() => api.commandStyle("proofread", null)}
+                    >
+                      <Icon name="edit" size={14} />{t("ovx.proofread")}
+                    </button>
                     {#each settings?.styles ?? [] as st, i (st.id)}
                       <button
                         type="button"
                         class="chip"
-                        style="--i:{i}"
+                        style="--i:{i + 1}"
                         data-tip={st.description || null}
                         onclick={() => api.commandStyle(st.id, null)}
                       >
@@ -1282,7 +1300,7 @@
 
               {#if actionError}
                 <p class="warnline err" data-flip in:rise={{ y: 4 }}>{actionError}</p>
-              {:else if result.warnings.length}
+              {:else if result.warnings.length && !untouched}
                 <p class="warnline" data-flip>{result.warnings.join(" · ")}</p>
               {/if}
 
@@ -1328,7 +1346,7 @@
                         </button>
                       {/each}
                     {:else}
-                      {#if isCommand}
+                      {#if isCommand && result.style_id !== "proofread"}
                         <!-- the spoken instruction again, on the same selection, for a different take -->
                         <button
                           type="button"
@@ -1344,12 +1362,28 @@
                           <Icon name="refresh" size={14} />{t("ovx.redo")}
                         </button>
                       {/if}
+                      {#if isCommand}
+                        <!-- the selection with only its spelling and punctuation fixed -->
+                        <button
+                          type="button"
+                          class="chip"
+                          data-k="proofread"
+                          style="--i:1"
+                          class:on={!showOriginal && result.style_id === "proofread"}
+                          class:loading={pending?.key === "proofread"}
+                          disabled={busy}
+                          data-tip={t("ovx.proofread_tip")}
+                          onclick={() => reprocess("proofread", null)}
+                        >
+                          <Icon name="edit" size={14} />{t("ovx.proofread")}
+                        </button>
+                      {/if}
                       <!-- a Command's styles rewrite the text that was selected -->
                       {#each settings?.styles ?? [] as st, i (st.id)}
                         <button
                           type="button"
                           class="chip"
-                          style="--i:{i + (isCommand ? 1 : 0)}"
+                          style="--i:{i + (isCommand ? 2 : 0)}"
                           class:on={!showOriginal && result.style_id === st.id}
                           class:loading={pending?.key === st.id}
                           disabled={busy}

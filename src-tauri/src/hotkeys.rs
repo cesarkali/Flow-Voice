@@ -12,6 +12,7 @@ use crate::state::{AppState, RecordMode};
 #[derive(Clone, Copy, PartialEq)]
 enum Action {
     Record(RecordMode),
+    Proofread,
     PasteLast,
     Cancel,
 }
@@ -38,6 +39,7 @@ pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
             let app = app.clone();
             std::thread::spawn(move || pipeline::paste_last(&app, target));
         }
+        (Action::Proofread, ShortcutState::Pressed) => pipeline::control(app, pipeline::Ctl::Proofread),
         (Action::Record(mode), ShortcutState::Pressed) => {
             pipeline::control(app, if hold { pipeline::Ctl::Hold(mode) } else { pipeline::Ctl::Toggle(mode) });
         }
@@ -46,7 +48,7 @@ pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     }
 }
 
-/// (Re)registers the recording shortcuts and "paste last". Returns the ones that failed.
+/// (Re)registers the recording shortcuts, "Revisar" and "paste last". Returns the ones that failed.
 /// The plugin's register/unregister block until the main thread runs them, so BINDINGS is never
 /// held across those calls (a thread waiting on the main thread while holding it, with the main
 /// thread waiting for BINDINGS in the hotkey handler, froze the whole app). Esc (Action::Cancel)
@@ -71,6 +73,7 @@ pub fn register_all(app: &AppHandle) -> Vec<String> {
         (hk.translate, Action::Record(RecordMode::Translate)),
         (hk.ask, Action::Record(RecordMode::Ask)),
         (hk.command, Action::Record(RecordMode::Command)),
+        (hk.proofread, Action::Proofread),
         (hk.paste_last, Action::PasteLast),
     ];
     for (acc, action) in actions {

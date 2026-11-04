@@ -325,6 +325,66 @@ fn is_unspaced_script(c: char) -> bool {
         | 0xF900..=0xFAFF | 0xFF00..=0xFFEF)
 }
 
+/// Words for comparing two versions of a text: lowercase, punctuation dropped, one character per
+/// word in scripts without spaces (so a comma fixed in Chinese changes nothing here).
+fn compare_words(t: &str) -> Vec<String> {
+    let is_punct = |c: char| c.is_ascii_punctuation() || "“”‘’«»…—–¿¡。，、！？：；（）·।「」『』".contains(c);
+    let mut words = vec![];
+    let mut cur = String::new();
+    for c in t.chars() {
+        if c.is_whitespace() || is_punct(c) || is_unspaced_script(c) {
+            if !cur.is_empty() {
+                words.push(std::mem::take(&mut cur));
+            }
+            if is_unspaced_script(c) && !is_punct(c) {
+                words.push(c.to_string());
+            }
+        } else {
+            cur.extend(c.to_lowercase().map(fold_accent));
+        }
+    }
+    if !cur.is_empty() {
+        words.push(cur);
+    }
+    words
+}
+
+/// "reuniao" and "reunião" are the same word with an accent fixed.
+fn fold_accent(c: char) -> char {
+    match c {
+        'á' | 'à' | 'â' | 'ã' | 'ä' | 'å' => 'a',
+        'é' | 'è' | 'ê' | 'ë' => 'e',
+        'í' | 'ì' | 'î' | 'ï' => 'i',
+        'ó' | 'ò' | 'ô' | 'õ' | 'ö' => 'o',
+        'ú' | 'ù' | 'û' | 'ü' => 'u',
+        'ç' => 'c',
+        'ñ' => 'n',
+        _ => c,
+    }
+}
+
+/// "Revisar" may only fix spelling and punctuation: true when the model changed more than that
+/// (over ~30% of the words, and more than 3 of them), i.e. it rewrote the text. A text full of
+/// typos can trip it; then nothing is replaced, which is the safe side.
+pub fn proofread_drift(before: &str, after: &str) -> bool {
+    let (a, b) = (compare_words(before), compare_words(after));
+    if a.is_empty() || b.is_empty() {
+        return a.len() != b.len();
+    }
+    // Longest common subsequence of words, two rows.
+    let mut prev = vec![0u32; b.len() + 1];
+    let mut row = vec![0u32; b.len() + 1];
+    for wa in &a {
+        for (j, wb) in b.iter().enumerate() {
+            row[j + 1] = if wa == wb { prev[j] + 1 } else { row[j].max(prev[j + 1]) };
+        }
+        std::mem::swap(&mut prev, &mut row);
+    }
+    let common = prev[b.len()] as usize;
+    let (gone, added) = (a.len() - common, b.len() - common);
+    (gone + added) as f32 / (a.len() + b.len()) as f32 > 0.3 && gone.max(added) > 3
+}
+
 /// A dictation that continues the previous one in the same field gets a space in between
 /// ("…na quinta. A reunião…"), unless the joint already has one, the previous one ends opening
 /// something, the new one starts with punctuation, or the script has no spaces (Japanese,
@@ -345,6 +405,23 @@ pub fn needs_join_space(previous_last: Option<char>, text: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn proofread_drift_allows_fixes_but_not_rewrites() {
+        let typed = "oi pessoal, concerteza a reuniao de amanha vai ser as 10 entao tragam os relatorio";
+        let fixed = "Oi, pessoal! Com certeza a reunião de amanhã vai ser às 10, então tragam os relatórios.";
+        assert!(!proofread_drift(typed, fixed));
+        assert!(!proofread_drift("Tudo certo.", "Tudo certo."));
+        // Short texts: a few words fixed is never a rewrite.
+        assert!(!proofread_drift("vc vai hj", "Você vai hoje?"));
+        let rewritten = "Prezados, confirmo que a reunião ocorrerá amanhã às 10h. Solicito que tragam os relatórios.";
+        assert!(proofread_drift(typed, rewritten));
+        // An answer instead of the text.
+        assert!(proofread_drift("me manda o arquivo quando puder", "Claro! Aqui está o texto revisado: Me manda o arquivo quando puder. Corrigi a pontuação e a maiúscula inicial."));
+        // Punctuation in Chinese and Japanese is not a word change.
+        assert!(!proofread_drift("我想问一下那个会能不能改到周四下午开因为周三我真的去不了", "我想问一下，那个会能不能改到周四下午开？因为周三我真的去不了。"));
+        assert!(!proofread_drift("あの会議ですが木曜日の午後にできますか", "あの会議ですが、木曜日の午後にできますか。"));
+    }
 
     #[test]
     fn command_output_keeps_selection_shape() {

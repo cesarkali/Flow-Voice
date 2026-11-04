@@ -237,6 +237,12 @@
           <Keys accel={s.hotkeys.command} size="sm" />
         </span>
       {/if}
+      {#if s.hotkeys.proofread}
+        <span class="alt">
+          <span class="muted">{t("home.hk_proofread")}</span>
+          <Keys accel={s.hotkeys.proofread} size="sm" />
+        </span>
+      {/if}
     </div>
   </div>
 </section>
@@ -417,7 +423,7 @@
                   <div class="redo">
                     <span class="label">{t("hx.redo")}</span>
                     <div class="redo-row">
-                      {#if h.mode === "command"}
+                      {#if h.mode === "command" && h.style_id !== "proofread"}
                         <button
                           type="button"
                           class="rchip"
@@ -428,6 +434,19 @@
                           onclick={() => redo(h, "command", h.target ?? null, "command")}
                         >
                           <Icon name="refresh" size={13} />{t("ovx.redo")}
+                        </button>
+                      {/if}
+                      {#if h.mode === "command"}
+                        <button
+                          type="button"
+                          class="rchip"
+                          class:on={h.style_id === "proofread"}
+                          class:loading={redoing?.id === h.id && redoing.key === "proofread"}
+                          disabled={!!redoing}
+                          title={t("ovx.proofread_tip")}
+                          onclick={() => redo(h, "proofread", null, "proofread")}
+                        >
+                          <Icon name="edit" size={13} />{t("ovx.proofread")}
                         </button>
                       {/if}
                         {#each s.styles as st (st.id)}
@@ -474,6 +493,8 @@
     <span class="tag"><Icon name="translate" size={12} />{langName(h.target)}</span>
   {:else if h.mode === "ask"}
     <span class="tag"><Icon name="question" size={12} />{t("mode.ask")}</span>
+  {:else if h.mode === "command" && h.style_id === "proofread"}
+    <span class="tag"><Icon name="edit" size={12} />{t("mode.proofread")}</span>
   {:else if h.mode === "command"}
     <span class="tag"><Icon name="sparkle" size={12} />{t("mode.command")}</span>
   {:else}

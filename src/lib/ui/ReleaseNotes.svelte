@@ -6,7 +6,8 @@
   let { md, max = 260 }: { md: string; max?: number } = $props();
 
   type Span = { t: string; b?: boolean; c?: boolean };
-  type Block = { kind: "h" | "li" | "p"; spans: Span[] };
+  // "v": a version heading ("## 2.2.0"), when the whole changelog is shown
+  type Block = { kind: "v" | "h" | "li" | "p"; spans: Span[] };
 
   function inline(s: string): Span[] {
     const out: Span[] = [];
@@ -33,11 +34,11 @@
     for (const raw of src.replace(/\r/g, "").split("\n")) {
       const line = raw.trimEnd();
       if (/^\s*-{3,}\s*$/.test(line)) break; // GitHub-only footer
-      const h = /^#{1,6}\s+(.*)$/.exec(line);
+      const h = /^(#{1,6})\s+(.*)$/.exec(line);
       const li = /^\s*[-*]\s+(.*)$/.exec(line);
       if (h) {
         flush();
-        cur = { kind: "h", text: h[1] };
+        cur = { kind: h[1].length <= 2 ? "v" : "h", text: h[2] };
         flush();
       } else if (li) {
         flush();
@@ -59,7 +60,9 @@
 
 <div class="rn" style="max-height:{max}px">
   {#each blocks as b, i (i)}
-    {#if b.kind === "h"}
+    {#if b.kind === "v"}
+      <h3>{#each b.spans as s, j (j)}{s.t}{/each}</h3>
+    {:else if b.kind === "h"}
       <h4>{#each b.spans as s, j (j)}{s.t}{/each}</h4>
     {:else}
       <p class:li={b.kind === "li"}>
@@ -78,6 +81,20 @@
     color: var(--text-2);
     user-select: text;
     -webkit-user-select: text;
+  }
+  h3 {
+    margin: 22px 0 4px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: var(--mono);
+  }
+  h3:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
   }
   h4 {
     margin: 14px 0 6px;

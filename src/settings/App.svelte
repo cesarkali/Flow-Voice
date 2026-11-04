@@ -13,6 +13,7 @@
   import TitleBar from "../lib/ui/TitleBar.svelte";
   import { rememberAppearance } from "../lib/ui/appearance-cache";
   import ModelNotice from "./ModelNotice.svelte";
+  import WhatsNew from "./WhatsNew.svelte";
   import Onboarding from "./onboarding/Onboarding.svelte";
   import About from "./pages/About.svelte";
   import General from "./pages/General.svelte";
@@ -210,6 +211,7 @@
   {#if app.settings && !app.settings.onboarded}
     <Onboarding />
   {:else}
+    <WhatsNew />
     <aside class="rail">
       <div class="brand" data-tauri-drag-region>
         <span class="logo"><Logo size={24} glow={false} /></span>

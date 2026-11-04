@@ -93,6 +93,7 @@ const DEFAULT_SETTINGS: Settings = {
     translate: "CommandOrControl+Shift+Y",
     ask: "CommandOrControl+Shift+U",
     command: "CommandOrControl+Alt+K",
+    proofread: "CommandOrControl+Alt+J",
     paste_last: "CommandOrControl+Alt+V",
   },
   hotkey_mode: "toggle",
@@ -112,12 +113,15 @@ const DEFAULT_SETTINGS: Settings = {
   window_glass: false,
   dictionary: ["FlowVoice", "Caliberda", "Tauri", "Svelte"],
   onboarded: true,
+  seen_version: "2.2.0",
 };
 
 const params = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
 
 let settings: Settings = clone(DEFAULT_SETTINGS);
 if (params.has("onboarding")) settings.onboarded = false;
+// as after an update from 2.1: the "what's new" opens
+if (params.has("whatsnew")) settings.seen_version = "2.1.0";
 if (params.get("lang")) settings.ui_language = params.get("lang") as Settings["ui_language"];
 if (params.get("theme") === "light" || params.get("theme") === "dark") settings.theme = params.get("theme") as Settings["theme"];
 // ?accent=FF2E00: preview with a custom accent color · ?style=<id>: active style
@@ -219,6 +223,12 @@ const CMD_SOURCE =
 const CMD_RAW = "deixa mais formal e organiza em tópicos";
 const CMD_TEXT =
   "Prezados,\n\nSegue o relatório do trimestre:\n- Os resultados ficaram abaixo do esperado.\n- Já temos um plano de recuperação para o próximo período.";
+const PROOF_SOURCE = "oi pessoal segue o relatorio do trimestre, os numeros ficaram abaixo do esperado mas agente tem um plano pra recuperar no proximo";
+const PROOF_TEXT = "Oi, pessoal, segue o relatório do trimestre. Os números ficaram abaixo do esperado, mas a gente tem um plano pra recuperar no próximo.";
+/** A "Revisar" result (the shortcut, or the chip of a Command card). */
+function makeProofread(): DictationResult {
+  return { ...makeCommand(), raw: "Revisar a ortografia e a pontuação", style_id: "proofread", source: PROOF_SOURCE, text: PROOF_TEXT, duration_ms: 0, stt_provider: "" };
+}
 const CMD_TEXT_EN =
   "Dear all,\n\nPlease find the quarterly report below:\n- Results came in below expectations.\n- We already have a recovery plan for the next period.";
 function makeCommand(target: string | null = null): DictationResult {
@@ -454,7 +464,10 @@ export type SimScenario =
   | "refining"
   | "command"
   | "cmddone"
-  | "cmdnosel";
+  | "cmdnosel"
+  | "proofread"
+  | "proofdone"
+  | "proofok";
 
 /** Plays the overlay flow by emitting the same events Rust would. */
 export function simulateOverlay(scenario: SimScenario = "live", autoStop = true) {
@@ -509,6 +522,24 @@ export function simulateOverlay(scenario: SimScenario = "live", autoStop = true)
 
   if (scenario === "cmddone") {
     lastResult = makeCommand();
+    return emit({ phase: "done", result: lastResult });
+  }
+  if (scenario === "proofread") {
+    // Like Rust: the shortcut shows "Revisando…" right away, then the fixed text.
+    emit({ phase: "refining", provider: "Groq", mode: "proofread" });
+    later(1300, () => {
+      lastResult = makeProofread();
+      emit({ phase: "done", result: lastResult });
+    });
+    return;
+  }
+  if (scenario === "proofdone") {
+    lastResult = makeProofread();
+    return emit({ phase: "done", result: lastResult });
+  }
+  if (scenario === "proofok") {
+    // Nothing to fix: Rust leaves the selection alone (no paste) and says so.
+    lastResult = { ...makeProofread(), source: PROOF_TEXT, pasted: false, warnings: ["Nada para corrigir: o texto já estava certo."] };
     return emit({ phase: "done", result: lastResult });
   }
   if (scenario === "cmdnosel") {
@@ -607,6 +638,7 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
     case "suspend_hotkeys":
       return;
     case "altgr_blocks_command":
+    case "altgr_blocks_proofread":
       return params.has("altgr") as never;
     case "validate_hotkey": {
       const acc = String(a.accelerator);
@@ -724,7 +756,9 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
       const target = (a.target as string | null) ?? null;
       const prev = lastResult ?? makeResult("dictate", "natural", null);
       lastResult =
-        prev.mode === "command"
+        prev.mode === "command" && a.styleId === "proofread"
+          ? { ...makeProofread(), id: prev.id, pasted: prev.pasted }
+          : prev.mode === "command"
           ? { ...makeCommand(target), id: prev.id, pasted: prev.pasted }
           : { ...makeResult(prev.mode, String(a.styleId), target, false), id: prev.id };
       // Like the Rust core: a reprocess also announces the new version as a `done` with the same id.
@@ -734,10 +768,13 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
     case "command_style": {
       // Like Rust: the listening card turns into "applying", then the restyled selection.
       stopSimulation();
-      mockEmit(EVENTS.overlayState, { phase: "refining", provider: "Groq", mode: "command" } satisfies OverlayEvent);
+      const proof = a.styleId === "proofread";
+      mockEmit(EVENTS.overlayState, { phase: "refining", provider: "Groq", mode: proof ? "proofread" : "command" } satisfies OverlayEvent);
       await sleep(1100);
       const target = (a.target as string | null) ?? null;
-      lastResult = { ...makeCommand(target), style_id: String(a.styleId), raw: "Reescreva no estilo " + String(a.styleId) };
+      lastResult = proof
+        ? makeProofread()
+        : { ...makeCommand(target), style_id: String(a.styleId), raw: "Reescreva no estilo " + String(a.styleId) };
       mockEmit(EVENTS.overlayState, { phase: "done", result: clone(lastResult) } satisfies OverlayEvent);
       return;
     }
@@ -862,9 +899,12 @@ async function route(cmd: string, a: Record<string, unknown>): Promise<unknown> 
     case "open_settings":
       mockEmit(EVENTS.navigate, { page: a.page ?? "home" });
       return;
+    case "whats_new_seen":
+      settings.seen_version = "2.2.0";
+      return;
     case "app_info":
       return {
-        version: "2.0.0",
+        version: "2.2.0",
         author: "Júlio Caliberda",
         github: "https://github.com/cesarkali/Flow-Voice",
         website: "https://caliberda.com.br",

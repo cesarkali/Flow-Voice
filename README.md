@@ -21,6 +21,7 @@ Aperte um atalho, fale, e o texto aparece onde está o cursor: limpo, pontuado e
 - **Estilos de IA**: *Natural*, *Profissional*, *Prompt* (enxuga a fala para mandar a uma IA, com menos tokens e o mesmo contexto), *Cru* e *Só transcrição*. Prompts editáveis e estilos próprios.
 - **Tradução para 34 idiomas**, por atalho ou com um clique no overlay depois do resultado.
 - **Modo Comando**: selecione um texto em qualquer app e diga o que fazer com ele ("resuma", "deixe mais formal").
+- **Revisar**: selecione um texto e aperte um atalho; só a ortografia, os acentos e a pontuação são corrigidos, sem mudar as palavras.
 - **Estilos por aplicativo**: Profissional no Outlook, Natural no Slack, Prompt no VS Code; apps web (Gmail, WhatsApp Web, ChatGPT…) são reconhecidos pela aba do navegador.
 - **Assistente por voz**: faça uma pergunta falada e receba a resposta num chat; com uma chave Tavily, busca na web e cita as fontes.
 - **Chaves grátis com rotação automática**: cadastre várias chaves e provedores; se um estourar o limite ou falhar, o próximo assume.
@@ -43,10 +44,11 @@ Aperte um atalho, fale, e o texto aparece onde está o cursor: limpo, pontuado e
 | Ditar já traduzindo | `Ctrl + Shift + Y` |
 | Assistente por voz | `Ctrl + Shift + U` |
 | Comando sobre o texto selecionado | `Ctrl + Alt + K` |
+| Revisar o texto selecionado (ortografia e pontuação) | `Ctrl + Alt + J` |
 | Colar de novo a última transcrição | sem atalho (fica no menu da bandeja) |
 | Cancelar a gravação | `Esc` |
 
-Todos podem ser trocados em **Configurações**. Colar de novo vem sem atalho porque `Ctrl + Alt + V` é o Colar Especial do Office; escolha um em **Atalhos** se quiser. Em teclados onde `AltGr + K` digita um caractere (`Ctrl + Alt` é o `AltGr`), o Comando também começa sem atalho. Para Stream Deck, AutoHotkey ou scripts, a linha de comando controla o app já aberto: `FlowVoice.exe --toggle` (também `--translate`, `--ask`, `--command`, `--paste-last`, `--cancel`).
+Todos podem ser trocados em **Configurações**. Colar de novo vem sem atalho porque `Ctrl + Alt + V` é o Colar Especial do Office; escolha um em **Atalhos** se quiser. Em teclados onde `AltGr + K` digita um caractere (`Ctrl + Alt` é o `AltGr`), o Comando também começa sem atalho (e o Revisar, onde `AltGr + J` digita). Para Stream Deck, AutoHotkey ou scripts, a linha de comando controla o app já aberto: `FlowVoice.exe --toggle` (também `--translate`, `--ask`, `--command`, `--proofread`, `--paste-last`, `--cancel`).
 
 ## Começo rápido
 

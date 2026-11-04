@@ -17,13 +17,16 @@
 
   let altgrK = $state(false);
   api.altgrBlocksCommand().then((v) => (altgrK = v)).catch(() => {});
+  let altgrJ = $state(false);
+  api.altgrBlocksProofread().then((v) => (altgrJ = v)).catch(() => {});
 
-  type Action = "dictate" | "translate" | "ask" | "command" | "paste_last";
-  const LABELS: Record<Action, "sc.dictate" | "sc.translate" | "sc.ask" | "sc.command" | "sc.paste_last"> = {
+  type Action = "dictate" | "translate" | "ask" | "command" | "proofread" | "paste_last";
+  const LABELS: Record<Action, "sc.dictate" | "sc.translate" | "sc.ask" | "sc.command" | "sc.proofread" | "sc.paste_last"> = {
     dictate: "sc.dictate",
     translate: "sc.translate",
     ask: "sc.ask",
     command: "sc.command",
+    proofread: "sc.proofread",
     paste_last: "sc.paste_last",
   };
   /** The other actions' shortcuts (one combination, one action). */
@@ -51,6 +54,9 @@
 <Section label={t("sc.sec_more")}>
   <Row id="set-sc-command" label={t("sc.command")} hint={!s.hotkeys.command && altgrK ? `${t("sc.command_hint")} ${t("sc.command_altgr")}` : t("sc.command_hint")}>
     <HotkeyInput label={t("sc.command")} bind:value={s.hotkeys.command} clearable taken={others("command")} />
+  </Row>
+  <Row id="set-sc-proofread" label={t("sc.proofread")} hint={!s.hotkeys.proofread && altgrJ ? `${t("sc.proofread_hint")} ${t("sc.proofread_altgr")}` : t("sc.proofread_hint")}>
+    <HotkeyInput label={t("sc.proofread")} bind:value={s.hotkeys.proofread} clearable taken={others("proofread")} />
   </Row>
   <Row id="set-sc-paste-last" label={t("sc.paste_last")} hint={t("sc.paste_last_hint")}>
     <HotkeyInput label={t("sc.paste_last")} bind:value={s.hotkeys.paste_last} clearable taken={others("paste_last")} />

@@ -78,6 +78,7 @@ const STATIC: SearchEntry[] = [
   { page: "shortcuts", key: "sc.ask", hint: "sc.ask_hint", id: "set-sc-ask", kw: "atalho hotkey assistente chat pergunta" },
   { page: "shortcuts", key: "sc.mode", hint: "sc.mode_toggle_hint", id: "set-sc-mode", kw: "segurar hold toggle alternar push to talk" },
   { page: "shortcuts", key: "sc.command", hint: "sc.command_hint", id: "set-sc-command", kw: "comando command selecao selecionado editar reescrever" },
+  { page: "shortcuts", key: "sc.proofread", hint: "sc.proofread_hint", id: "set-sc-proofread", kw: "revisar revisao proofread ortografia pontuacao virgula corrigir erros selecao" },
   { page: "shortcuts", key: "sc.paste_last", hint: "sc.paste_last_hint", id: "set-sc-paste-last", kw: "colar de novo paste again ultimo repetir" },
 
   // General

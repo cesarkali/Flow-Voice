@@ -36,6 +36,8 @@ pub fn save_settings(
     settings: Settings,
 ) -> CmdResult<Settings> {
     let before = state.settings();
+    // Only `whats_new_seen` moves it: a window holding older settings must not undo that.
+    let settings = Settings { seen_version: before.seen_version.clone(), ..settings };
     let saved = state.save_settings(settings).map_err(err)?;
     // Settings are saved even if a shortcut couldn't be registered; the UI hears about that separately.
     if let Err(e) = apply_settings(&app, &before, &saved, Some(window.label())) {
@@ -150,6 +152,12 @@ fn set_logon_task(on: bool) {
 #[tauri::command]
 pub fn altgr_blocks_command() -> bool {
     crate::platform::altgr_types('K' as u32)
+}
+
+/// Same for "Revisar" (Ctrl+Alt+J).
+#[tauri::command]
+pub fn altgr_blocks_proofread() -> bool {
+    crate::platform::altgr_types('J' as u32)
 }
 
 #[tauri::command]
@@ -463,6 +471,16 @@ pub struct AppInfo {
     instagram: String,
     data_dir: String,
     os: String,
+}
+
+/// The "what's new" of this version was shown and closed: not again until the next update.
+#[tauri::command]
+pub fn whats_new_seen(app: AppHandle, state: State<AppState>) -> CmdResult<()> {
+    let mut s = state.settings();
+    s.seen_version = app.package_info().version.to_string();
+    let saved = state.save_settings(s).map_err(err)?;
+    broadcast_settings(&app, &saved, None);
+    Ok(())
 }
 
 #[tauri::command]

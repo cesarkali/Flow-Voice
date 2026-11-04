@@ -10,12 +10,14 @@
   import Button from "../../lib/ui/Button.svelte";
   import Progress from "../../lib/ui/Progress.svelte";
   import ReleaseNotes from "../../lib/ui/ReleaseNotes.svelte";
+  import Changelog from "../Changelog.svelte";
   import { restartOnboarding } from "../../lib/stores.svelte";
   import { author, AUTHOR as ME, loadAuthorAvatar } from "../author.svelte";
   import { checkUpdate, donateOptions, installUpdate, upd, updateFraction } from "../shell-update.svelte";
 
   let { onnavigate: _ }: { onnavigate?: (p: SettingsPage) => void } = $props();
   let info = $state<AppInfo | null>(null);
+  let historyOpen = $state(false);
   let copied = $state(false);
   let imgReady = $state(false);
   let redoing = $state(false);
@@ -236,13 +238,16 @@
           {/if}
         </p>
       </div>
-      {#if upd.info?.available && !upd.installing}
-        <Button variant="primary" icon="download" onclick={installUpdate}>{t("gen.install")}</Button>
-      {:else if !upd.installing}
-        <Button icon="refresh" loading={upd.checking} onclick={checkUpdate}>
-          {upd.checking ? t("gen.checking") : t("gen.check")}
-        </Button>
-      {/if}
+      <div class="ubtns">
+        <Button variant="quiet" icon="history" onclick={() => (historyOpen = true)}>{t("wn.history")}</Button>
+        {#if upd.info?.available && !upd.installing}
+          <Button variant="primary" icon="download" onclick={installUpdate}>{t("gen.install")}</Button>
+        {:else if !upd.installing}
+          <Button icon="refresh" loading={upd.checking} onclick={checkUpdate}>
+            {upd.checking ? t("gen.checking") : t("gen.check")}
+          </Button>
+        {/if}
+      </div>
     </div>
     {#if upd.installing}
       <div class="prog" transition:slide={{ duration: 200 }}>
@@ -257,6 +262,8 @@
     {/if}
   </section>
 </div>
+
+<Changelog bind:open={historyOpen} />
 
 <footer class="foot faint">
   <span>{t("about.license")}</span>
@@ -544,6 +551,13 @@
 
   .upd.avail {
     border-color: var(--accent-line);
+  }
+  .ubtns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
   }
   .uhead {
     display: flex;

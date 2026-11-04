@@ -39,6 +39,8 @@ export interface Hotkeys {
   ask: string;
   /** Edit the selected text by voice ("Comando"). */
   command: string;
+  /** Fix spelling and punctuation of the selected text, no recording ("Revisar"). */
+  proofread: string;
   /** Paste the last dictation again into the focused app ("" = off). */
   paste_last: string;
 }
@@ -107,6 +109,8 @@ export interface Settings {
   /** Custom vocabulary: names/terms to bias transcription and the LLM. */
   dictionary: string[];
   onboarded: boolean;
+  /** Version whose "what's new" was seen and closed ("" = before 2.2). */
+  seen_version: string;
   /** Internal migration counter (round-trip it unchanged). */
   schema?: number;
 }
@@ -214,7 +218,7 @@ export type OverlayEvent =
       selection?: "pending" | "at_stop" | null;
     }
   | { phase: "transcribing" }
-  | { phase: "refining"; provider: string; mode?: RecordMode }
+  | { phase: "refining"; provider: string; mode?: RecordMode | "proofread" }
   | { phase: "done"; result: DictationResult }
   | { phase: "answer"; query: string } // ask mode finished, chat window opened
   /** hint = the user can fix it (nothing selected…): no "open settings" action. */

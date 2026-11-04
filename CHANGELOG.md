@@ -14,6 +14,14 @@ Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases
 - **Tentar de novo** quando a transcrição falha (rede, limite, chave): a gravação fica guardada só na memória (as 3 últimas falhas, nunca em disco). O cartão de erro ganha o botão e fica 30 s na tela; o histórico mostra a falha com o motivo e o mesmo botão (lá o texto só é copiado). Refaz como foi ditado: mesmo app, estilo e tradução, com os provedores e chaves de agora. Não vale para o Comando.
 - Dois ditados seguidos no mesmo campo ganham um espaço entre eles ("…na quinta. A reunião…"), quando o cursor ficou onde o anterior terminou e faz menos de um minuto. Não em terminais, nem em escritas sem espaço (japonês, chinês, tailandês).
 
+### Revisar a seleção
+
+- **Revisar**: selecione um texto em qualquer app e aperte `Ctrl + Alt + J`. O FlowVoice corrige só a ortografia, os acentos e a pontuação (vírgulas inclusive), sem trocar palavras nem mudar o estilo, e sem precisar falar nada. Também aparece como o chip **Revisar** no cartão do Comando, no resultado e no histórico. Se a IA mudar mais do que isso, o texto fica como estava; se não houver nada para corrigir, nada é colado (a formatação do texto fica intacta). Em teclados onde `AltGr + J` digita um caractere, começa sem atalho; dá para escolher outro em **Atalhos**.
+
+### Novidades no app
+
+- Depois de uma atualização, a primeira vez que a janela abre mostra o que há de novo, no idioma da interface. O histórico completo fica em **Sobre → Histórico de mudanças** (funciona sem internet).
+
 ### 10 idiomas
 
 - A interface agora também está em **francês, alemão, japonês, chinês, russo, hindi e bengali**, além de português, inglês e espanhol, com as fontes certas do Windows para japonês, chinês, hindi e bengali.
