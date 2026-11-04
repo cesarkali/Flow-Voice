@@ -107,6 +107,16 @@ export function highlights(version: string, lang: UiLanguage): Highlight[] | nul
   return HIGHLIGHTS[version]?.[lang] ?? null;
 }
 
+/** What's new for someone who last saw `since` and now runs `version`: the highlights of the
+ *  newest version in between that has some (2.1 -> 2.2.1 still shows 2.2.0's), or null. */
+export function highlightsSince(version: string, since: string, lang: UiLanguage): Highlight[] | null {
+  const best = Object.keys(HIGHLIGHTS)
+    .filter((v) => compareVersions(v, since || "0") > 0 && compareVersions(v, version) <= 0)
+    .sort(compareVersions)
+    .pop();
+  return best ? highlights(best, lang) : null;
+}
+
 /** The whole history, from the first version heading on (the file's title and intro left out). */
 export function changelogHistory(): string {
   const i = changelog.search(/^## /m);
@@ -116,7 +126,8 @@ export function changelogHistory(): string {
 /** One version's section of CHANGELOG.md, without its heading ("" if it isn't there). */
 export function changelogSection(version: string): string {
   const all = changelogHistory();
-  const re = new RegExp(`^## ${version.replace(/\./g, "\\.")}\\s*$`, "m");
+  // "## 2.2.1", also with a date after it ("## 2.2.1 - 2026-11-10", "## 2.2.1 (2026-11-10)").
+  const re = new RegExp(`^## ${version.replace(/\./g, "\\.")}(?:[ \\t]+[-–(].*)?\\s*$`, "m");
   const m = re.exec(all);
   if (!m) return "";
   const rest = all.slice(m.index + m[0].length);
@@ -124,13 +135,30 @@ export function changelogSection(version: string): string {
   return (next < 0 ? rest : rest.slice(0, next)).trim();
 }
 
-/** -1, 0 or 1, comparing "2.10.0" and "2.9.1" by numbers. */
+/** The CHANGELOG sections of every version after `since` up to `version`, newest first, each
+ *  under its own heading ("" when there's none). */
+export function changelogSince(version: string, since: string): string {
+  const versions = [...changelogHistory().matchAll(/^## (\d+(?:\.\d+)+)/gm)].map((m) => m[1]);
+  return versions
+    .filter((v) => compareVersions(v, since || "0") > 0 && compareVersions(v, version) <= 0)
+    .map((v) => [v, changelogSection(v)] as const)
+    .filter(([, s]) => s)
+    .map(([v, s]) => `## ${v}\n\n${s}`)
+    .join("\n\n");
+}
+
+/** -1, 0 or 1, comparing "2.10.0" and "2.9.1" by numbers; a prerelease ("2.3.0-beta.1") comes
+ *  before its release. */
 export function compareVersions(a: string, b: string): number {
-  const pa = a.split(".").map((x) => parseInt(x, 10) || 0);
-  const pb = b.split(".").map((x) => parseInt(x, 10) || 0);
+  const [ca, pre_a = ""] = a.split("-", 2);
+  const [cb, pre_b = ""] = b.split("-", 2);
+  const pa = ca.split(".").map((x) => parseInt(x, 10) || 0);
+  const pb = cb.split(".").map((x) => parseInt(x, 10) || 0);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const d = (pa[i] ?? 0) - (pb[i] ?? 0);
     if (d) return d < 0 ? -1 : 1;
   }
-  return 0;
+  if (pre_a === pre_b) return 0;
+  if (!pre_a || !pre_b) return pre_a ? -1 : 1;
+  return pre_a.localeCompare(pre_b, "en", { numeric: true }) < 0 ? -1 : 1;
 }

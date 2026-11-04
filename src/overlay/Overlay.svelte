@@ -1045,8 +1045,11 @@
     id === "proofread" ? t("mode.proofread") : (settings?.styles.find((s) => s.id === id)?.name ?? id ?? "");
   const busy = $derived(!!pending);
   /** Paste rules: never pasted → Colar; pasted and unchanged → nothing; pasted and changed → Substituir. */
-  /** A proofread that found nothing to fix: the selection was left as it was (nothing pasted or copied). */
-  const untouched = $derived(!!result && result.style_id === "proofread" && !result.pasted && (result.source ?? "").trim() === targetText.trim());
+  /** A proofread that found nothing to fix: the selection was left as it was (nothing pasted or copied).
+   *  Same rule as Rust's text::proofread_untouched (line breaks aside), on the result itself: the
+   *  "Seleção" toggle changes targetText, not what the model answered. */
+  const lf = (s: string) => s.replace(/\r\n?/g, "\n").trim();
+  const untouched = $derived(!!result && result.style_id === "proofread" && !result.pasted && lf(result.source ?? "") === lf(result.text));
   const pasteAction = $derived(untouched ? null : pastedText === null ? "paste" : targetText !== pastedText ? "replace" : null);
   const headTitle = $derived(
     untouched ? t("ovx.no_fixes") : pastedText === null ? t("ov.copied") : targetText === pastedText ? t("ov.pasted") : t("ovx.pasted_prev"),

@@ -3,7 +3,7 @@
   import LangPicker from "../../lib/ui/LangPicker.svelte";
   import { onMount } from "svelte";
   import { api, isTauri, on } from "../../lib/api";
-  import { t, type TKey } from "../../lib/i18n.svelte";
+  import { i18n, t, type TKey } from "../../lib/i18n.svelte";
   import Icon from "../../lib/icons/Icon.svelte";
   import Logo from "../../lib/icons/Logo.svelte";
   import ProviderLogo from "../../lib/icons/ProviderLogo.svelte";
@@ -56,8 +56,8 @@
   let fresh = $state<Record<string, boolean>>({});
   const cancelled = new Set<string>();
   /** The language the user speaks; "auto" falls back to the interface language. */
-  const speech = $derived(s.speech_language && s.speech_language !== "auto" ? s.speech_language : s.ui_language);
-  const speechName = $derived(langName(speech, s.ui_language));
+  const speech = $derived(s.speech_language && s.speech_language !== "auto" ? s.speech_language : i18n.lang);
+  const speechName = $derived(langName(speech, i18n.lang));
   const picks = $derived(pickModels(models, speech));
   /** User's choice; until they pick, whatever is installed, else the best model for the language. */
   let chosen = $state("");
@@ -388,6 +388,7 @@
                 { accel: s.hotkeys.ask, label: t("sc.ask") },
                 { accel: s.hotkeys.command, label: t("sc.command") },
                 { accel: s.hotkeys.paste_last, label: t("sc.paste_last") },
+                { accel: s.hotkeys.proofread, label: t("sc.proofread") },
               ]}
             />
           </div>

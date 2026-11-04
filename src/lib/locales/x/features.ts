@@ -86,6 +86,7 @@ export default defineExt({
     "wn.all": "Ver todas as mudanças",
     "wn.history": "Histórico de mudanças",
     "wn.pt_only": "O histórico completo está escrito em português.",
+    "wn.site": "Ver no site",
   },
   en: {
     "mode.command": "Command",
@@ -171,6 +172,7 @@ export default defineExt({
     "wn.all": "See all changes",
     "wn.history": "Change history",
     "wn.pt_only": "The full history is written in Portuguese.",
+    "wn.site": "View on the website",
   },
   es: {
     "mode.command": "Comando",
@@ -256,5 +258,6 @@ export default defineExt({
     "wn.all": "Ver todos los cambios",
     "wn.history": "Historial de cambios",
     "wn.pt_only": "El historial completo está escrito en portugués.",
+    "wn.site": "Ver en el sitio web",
   },
 });

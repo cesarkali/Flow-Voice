@@ -10,7 +10,7 @@
   import Button from "../lib/ui/Button.svelte";
   import Modal from "../lib/ui/Modal.svelte";
   import ReleaseNotes from "../lib/ui/ReleaseNotes.svelte";
-  import { changelogSection, compareVersions, highlights } from "../lib/whatsnew";
+  import { changelogSince, compareVersions, highlightsSince } from "../lib/whatsnew";
   import Changelog from "./Changelog.svelte";
 
   let version = $state("");
@@ -20,8 +20,11 @@
     api.appInfo().then((i) => (version = i.version)).catch(() => {});
   });
 
-  const items = $derived(version ? highlights(version, i18n.lang) : null);
-  const section = $derived(version && !items ? changelogSection(version) : "");
+  /** The version seen before this one (read once, when deciding: closing the modal changes it). */
+  let since = $state<string | null>(null);
+  // Everything since that version: a 2.1 user updating straight to a 2.2.x hotfix still sees 2.2.0.
+  const items = $derived(version && since !== null ? highlightsSince(version, since, i18n.lang) : null);
+  const section = $derived(version && since !== null && !items ? changelogSince(version, since) : "");
 
   // Once per version: only when it's newer than the one last seen, and there's something to say.
   let decided = false;
@@ -29,7 +32,8 @@
     const s = app.settings;
     if (decided || !s || !s.onboarded || !version) return;
     decided = true;
-    if (compareVersions(version, s.seen_version || "0") > 0 && (items || section)) open = true;
+    since = s.seen_version || "0";
+    if (compareVersions(version, since) > 0 && (items || section)) open = true;
   });
 
   function seen() {
@@ -53,6 +57,7 @@
       {/each}
     </ul>
   {:else}
+    {#if i18n.lang !== "pt"}<p class="note">{t("wn.pt_only")}</p>{/if}
     <ReleaseNotes md={section} max={360} />
   {/if}
   {#snippet footer()}
@@ -71,6 +76,11 @@
 <Changelog bind:open={historyOpen} />
 
 <style>
+  .note {
+    margin: -6px 0 12px;
+    font-size: 12.5px;
+    color: var(--text-3);
+  }
   .lede {
     margin: -2px 0 14px;
     color: var(--text-2);

@@ -239,7 +239,7 @@
         </p>
       </div>
       <div class="ubtns">
-        <Button variant="quiet" icon="history" onclick={() => (historyOpen = true)}>{t("wn.history")}</Button>
+        <Button icon="history" onclick={() => (historyOpen = true)}>{t("wn.history")}</Button>
         {#if upd.info?.available && !upd.installing}
           <Button variant="primary" icon="download" onclick={installUpdate}>{t("gen.install")}</Button>
         {:else if !upd.installing}

@@ -19,8 +19,23 @@
 
   let { onnavigate }: { onnavigate?: (p: SettingsPage) => void } = $props();
   const s = $derived(app.settings!);
+  /** Bumped when the window shows again (closing it only hides it): "Bom dia" doesn't last into
+   *  the night. greeting() keeps its pick within the same part of the day, so nothing flickers. */
+  let shownAt = $state(0);
+  $effect(() => {
+    const again = () => {
+      if (document.visibilityState === "visible") shownAt = Date.now();
+    };
+    document.addEventListener("visibilitychange", again);
+    window.addEventListener("focus", again);
+    return () => {
+      document.removeEventListener("visibilitychange", again);
+      window.removeEventListener("focus", again);
+    };
+  });
   /** Casual greeting (one per app open), split into words for the entrance; `nm` marks the name. */
   const hello = $derived.by(() => {
+    void shownAt;
     const name = s.user_name?.trim() ?? "";
     const tpl = greeting(i18n.lang, !!name);
     return tpl.split(" ").map((w) => {

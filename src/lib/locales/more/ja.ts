@@ -722,4 +722,5 @@ export const ja: Record<TKey, string> = {
   "wn.all": "すべての変更を見る",
   "wn.history": "変更履歴",
   "wn.pt_only": "変更履歴はポルトガル語で書かれています。",
+  "wn.site": "サイトで見る",
 };

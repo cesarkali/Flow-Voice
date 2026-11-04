@@ -722,4 +722,5 @@ export const fr: Record<TKey, string> = {
   "wn.all": "Voir tous les changements",
   "wn.history": "Historique des changements",
   "wn.pt_only": "L'historique complet est rédigé en portugais.",
+  "wn.site": "Voir sur le site",
 };

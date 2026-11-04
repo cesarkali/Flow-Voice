@@ -112,7 +112,7 @@ const STATIC: SearchEntry[] = [
   { page: "about", key: "about.repo", hint: "sh.about_project", kw: "github codigo source" },
   { page: "about", key: "about.version", hint: "sh.about_project" },
   { page: "about", key: "about.data_dir", hint: "sh.about_project", kw: "pasta folder dados data" },
-  { page: "about", key: "sh.about_notes", kw: "changelog novidades" },
+  { page: "about", key: "wn.history", kw: "historico versoes novidades melhorias correcoes changelog history versions releases release notes whats what's new historial versiones" },
 ];
 
 /** Entries that depend on data (provider names, the user's styles). */

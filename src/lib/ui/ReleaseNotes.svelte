@@ -12,7 +12,8 @@
   function inline(s: string): Span[] {
     const out: Span[] = [];
     // [text](url) → text; then **bold** and `code`
-    s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+    // (A URL may have balanced parentheses: "[x](https://a/b_(c))".)
+    s = s.replace(/\[([^\]]+)\]\((?:[^()\s]|\([^()\s]*\))+\)/g, "$1");
     const re = /\*\*(.+?)\*\*|`([^`]+)`/g;
     let last = 0;
     for (let m; (m = re.exec(s)); ) {
@@ -32,10 +33,11 @@
       cur = null;
     };
     for (const raw of src.replace(/\r/g, "").split("\n")) {
-      const line = raw.trimEnd();
+      // A quote ("> text") reads as plain text.
+      const line = raw.trimEnd().replace(/^\s*>\s?/, "");
       if (/^\s*-{3,}\s*$/.test(line)) break; // GitHub-only footer
       const h = /^(#{1,6})\s+(.*)$/.exec(line);
-      const li = /^\s*[-*]\s+(.*)$/.exec(line);
+      const li = /^\s*(?:[-*]|\d+[.)])\s+(.*)$/.exec(line);
       if (h) {
         flush();
         cur = { kind: h[1].length <= 2 ? "v" : "h", text: h[2] };

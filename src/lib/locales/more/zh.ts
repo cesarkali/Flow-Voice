@@ -722,4 +722,5 @@ export const zh: Record<TKey, string> = {
   "wn.all": "查看全部更新",
   "wn.history": "更新记录",
   "wn.pt_only": "完整的更新记录以葡萄牙语撰写。",
+  "wn.site": "在网站上查看",
 };

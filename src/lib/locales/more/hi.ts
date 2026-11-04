@@ -722,4 +722,5 @@ export const hi: Record<TKey, string> = {
   "wn.all": "सभी बदलाव देखें",
   "wn.history": "बदलावों का इतिहास",
   "wn.pt_only": "पूरा इतिहास पुर्तगाली में लिखा गया है।",
+  "wn.site": "वेबसाइट पर देखें",
 };
