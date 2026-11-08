@@ -570,7 +570,7 @@ pub async fn check_update(app: AppHandle) -> CmdResult<UpdateInfo> {
 
 #[tauri::command]
 pub async fn install_update(app: AppHandle) -> CmdResult<()> {
-    let update = app.updater().map_err(err)?.check().await.map_err(err)?.ok_or("já está na versão mais recente")?;
+    let update = app.updater().map_err(err)?.check().await.map_err(err)?.ok_or_else(|| crate::i18n::tr("já está na versão mais recente"))?;
     let mut downloaded: u64 = 0;
     let app2 = app.clone();
     update

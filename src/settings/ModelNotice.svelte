@@ -4,6 +4,7 @@
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
   import { api, on } from "../lib/api";
+  import { t } from "../lib/i18n.svelte";
   import Icon from "../lib/icons/Icon.svelte";
   import { EVENTS, type ModelNotice } from "../lib/types";
 
@@ -36,7 +37,7 @@
     <div class="toast" role="status" transition:fly={{ y: 8, duration: 180 }}>
       <span class="ico"><Icon name="refresh" size={15} /></span>
       <span class="msg">{n.message}</span>
-      <button type="button" class="x" aria-label="Fechar" onclick={() => dismiss(n.key)}>
+      <button type="button" class="x" aria-label={t("c.close")} onclick={() => dismiss(n.key)}>
         <Icon name="x" size={13} />
       </button>
     </div>

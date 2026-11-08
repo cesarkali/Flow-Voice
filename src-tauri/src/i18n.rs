@@ -159,13 +159,20 @@ const T: &[[&str; 10]] = &[
     ["modelo local desconhecido: {}", "unknown local model: {}", "modelo local desconocido: {}", "modèle local inconnu : {}", "unbekanntes lokales Modell: {}", "不明なローカルモデル: {}", "未知的本地模型:{}", "неизвестная локальная модель: {}", "अज्ञात लोकल मॉडल: {}", "অজানা লোকাল মডেল: {}"],
     ["o modelo local \"{}\" não foi baixado", "the local model \"{}\" wasn't downloaded", "el modelo local \"{}\" no se descargó", "le modèle local « {} » n'a pas été téléchargé", "das lokale Modell „{}“ wurde nicht heruntergeladen", "ローカルモデル「{}」はダウンロードされていません", "本地模型“{}”尚未下载", "локальная модель «{}» не загружена", "लोकल मॉडल \"{}\" डाउनलोड नहीं हुआ", "লোকাল মডেল \"{}\" ডাউনলোড করা হয়নি"],
     ["falha ao carregar o modelo {}: {}", "couldn't load the model {}: {}", "no se pudo cargar el modelo {}: {}", "impossible de charger le modèle {} : {}", "Modell {} konnte nicht geladen werden: {}", "モデル {} を読み込めませんでした: {}", "无法加载模型 {}:{}", "не удалось загрузить модель {}: {}", "मॉडल {} लोड नहीं हो सका: {}", "মডেল {} লোড করা যায়নি: {}"],
+    // Updater, model downloads and retired models
+    ["já está na versão mais recente", "already on the latest version", "ya tienes la versión más reciente", "déjà à la dernière version", "bereits auf der neuesten Version", "すでに最新バージョンです", "已是最新版本", "уже установлена последняя версия", "पहले से नवीनतम संस्करण है", "ইতিমধ্যে সর্বশেষ সংস্করণ"],
+    ["sem conexão com o Hugging Face", "no connection to Hugging Face", "sin conexión con Hugging Face", "pas de connexion à Hugging Face", "keine Verbindung zu Hugging Face", "Hugging Face に接続できません", "无法连接 Hugging Face", "нет соединения с Hugging Face", "Hugging Face से कनेक्शन नहीं", "Hugging Face-এর সঙ্গে সংযোগ নেই"],
+    ["download recusado", "download refused", "descarga rechazada", "téléchargement refusé", "Download abgelehnt", "ダウンロードが拒否されました", "下载被拒绝", "загрузка отклонена", "डाउनलोड अस्वीकार हुआ", "ডাউনলোড প্রত্যাখ্যাত হয়েছে"],
+    ["conexão interrompida", "connection interrupted", "conexión interrumpida", "connexion interrompue", "Verbindung unterbrochen", "接続が中断されました", "连接中断", "соединение прервано", "कनेक्शन टूट गया", "সংযোগ বিচ্ছিন্ন হয়েছে"],
+    ["{}: o modelo {} foi descontinuado — trocado para {} automaticamente (transcrição).", "{}: the model {} was retired, switched to {} automatically (transcription).", "{}: el modelo {} se retiró; se cambió a {} automáticamente (transcripción).", "{} : le modèle {} a été retiré, remplacé automatiquement par {} (transcription).", "{}: Das Modell {} wurde eingestellt und automatisch durch {} ersetzt (Transkription).", "{}: モデル {} は提供終了のため、{} に自動で切り替えました(文字起こし)。", "{}:模型 {} 已停用,已自动切换为 {}(转写)。", "{}: модель {} снята с поддержки, автоматически заменена на {} (расшифровка).", "{}: मॉडल {} बंद हो गया, अपने आप {} पर बदला गया (ट्रांसक्रिप्शन)।", "{}: মডেল {} বন্ধ হয়ে গেছে, স্বয়ংক্রিয়ভাবে {}-এ বদলানো হয়েছে (ট্রান্সক্রিপশন)।"],
+    ["{}: o modelo {} foi descontinuado — trocado para {} automaticamente (texto).", "{}: the model {} was retired, switched to {} automatically (text).", "{}: el modelo {} se retiró; se cambió a {} automáticamente (texto).", "{} : le modèle {} a été retiré, remplacé automatiquement par {} (texte).", "{}: Das Modell {} wurde eingestellt und automatisch durch {} ersetzt (Text).", "{}: モデル {} は提供終了のため、{} に自動で切り替えました(テキスト)。", "{}:模型 {} 已停用,已自动切换为 {}(文本)。", "{}: модель {} снята с поддержки, автоматически заменена на {} (текст).", "{}: मॉडल {} बंद हो गया, अपने आप {} पर बदला गया (टेक्स्ट)।", "{}: মডেল {} বন্ধ হয়ে গেছে, স্বয়ংক্রিয়ভাবে {}-এ বদলানো হয়েছে (লেখা)।"],
 ];
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const SOURCES: [&str; 10] = [
+    const SOURCES: [&str; 11] = [
         include_str!("pipeline.rs"),
         include_str!("commands.rs"),
         include_str!("audio.rs"),
@@ -176,6 +183,7 @@ mod tests {
         include_str!("tray.rs"),
         include_str!("settings.rs"),
         include_str!("windows.rs"),
+        include_str!("heal.rs"),
     ];
 
     #[test]

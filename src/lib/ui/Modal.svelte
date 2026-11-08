@@ -4,6 +4,7 @@
   import { fade, scale } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import Icon from "../icons/Icon.svelte";
+  import { t } from "../i18n.svelte";
 
   let {
     open = $bindable(false),
@@ -42,7 +43,7 @@
   >
     <header>
       <h2>{title}</h2>
-      <button class="x" aria-label="Fechar" onclick={close}><Icon name="x" size={16} /></button>
+      <button class="x" aria-label={t("c.close")} onclick={close}><Icon name="x" size={16} /></button>
     </header>
     <div class="body">{@render children()}</div>
     {#if footer}<footer>{@render footer()}</footer>{/if}

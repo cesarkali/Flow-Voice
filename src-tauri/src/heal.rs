@@ -443,11 +443,12 @@ fn persist(app: &AppHandle, provider: &str, kind: Kind, old: &str, new: &str) {
         Ok(saved) => crate::commands::broadcast_settings(app, &saved, None),
         Err(e) => log::warn!("heal: save failed: {e}"),
     }
-    let what = if kind == Kind::Stt { "transcrição" } else { "texto" };
-    let message = format!(
-        "{}: o modelo {old} foi descontinuado — trocado para {new} automaticamente ({what}).",
-        display_name(provider)
-    );
+    let args: [&dyn std::fmt::Display; 3] = [&display_name(provider), &old, &new];
+    let message = if kind == Kind::Stt {
+        crate::i18n::trf("{}: o modelo {} foi descontinuado — trocado para {} automaticamente (transcrição).", &args)
+    } else {
+        crate::i18n::trf("{}: o modelo {} foi descontinuado — trocado para {} automaticamente (texto).", &args)
+    };
     log::warn!("{message}");
     let notice = Notice {
         provider: provider.into(),

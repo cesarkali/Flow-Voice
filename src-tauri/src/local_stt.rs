@@ -472,9 +472,9 @@ impl LocalStt {
             r = reqwest::Client::new().get(spec.url).send() => r,
             _ = flag.cancelled() => return Ok(()),
         }
-        .context("sem conexão com o Hugging Face")?
+        .with_context(|| crate::i18n::tr("sem conexão com o Hugging Face"))?
         .error_for_status()
-        .context("download recusado")?;
+        .with_context(|| crate::i18n::tr("download recusado"))?;
         let total = resp.content_length().unwrap_or(spec.size_mb as u64 * 1_048_576);
         // Unique per run: a cancelled run still winding down never shares a file with a new one.
         let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
@@ -502,7 +502,7 @@ async fn stream_to(app: &AppHandle, spec: &ModelSpec, resp: reqwest::Response, t
             c = stream.next() => c,
         };
         let Some(chunk) = next else { break };
-        let chunk = chunk.context("conexão interrompida")?;
+        let chunk = chunk.with_context(|| crate::i18n::tr("conexão interrompida"))?;
         std::io::Write::write_all(&mut file, &chunk)?;
         downloaded += chunk.len() as u64;
         if last_emit.elapsed().as_millis() > 150 && !flag.is_cancelled() {
