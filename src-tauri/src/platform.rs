@@ -245,8 +245,13 @@ fn paste_with(text: &str, target: isize, replace: bool, what: PasteFor) -> Resul
         std::thread::sleep(Duration::from_millis(80));
     }
     // Typed, not on the clipboard: a "Substituir" (Ctrl+Z) undoes only the paste.
-    if dictation && !is_console(target) && continues_mark(&mark, target, &now, started) && crate::text::needs_join_space(mark.last, text) {
-        send_char(' ');
+    if dictation {
+        let continues = !is_console(target) && continues_mark(&mark, target, &now, started);
+        let space = continues && crate::text::needs_join_space(mark.last, text);
+        log::info!("paste: dictation continues={continues} join_space={space} caret_known={}", now.caret.is_some());
+        if space {
+            send_char(' ');
+        }
     }
     send_ctrl('V');
     if what != PasteFor::Other {

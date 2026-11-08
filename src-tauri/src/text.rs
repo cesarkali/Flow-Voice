@@ -327,6 +327,11 @@ pub fn clean_command_output(out: &str, selection: &str) -> String {
             core = core[..gap].trim().to_string();
         }
     }
+    // Markdown hard breaks ("10h.  \n") would paste as stray spaces at the end of a paragraph,
+    // unless the selection itself has lines like that (code, Markdown on purpose).
+    if core.contains('\n') && !sel.lines().any(|l| l.ends_with([' ', '\t'])) {
+        core = core.lines().map(|l| l.trim_end_matches([' ', '\t'])).collect::<Vec<_>>().join("\n");
+    }
     let lead = &selection[..selection.len() - selection.trim_start().len()];
     let trail = &selection[selection.trim_end().len()..];
     format!("{lead}{core}{trail}")
@@ -450,6 +455,14 @@ mod tests {
         assert_eq!(clean_command_output("\"Bom dia\"", "\"bom dia\""), "\"Bom dia\"");
         // Indented code: the first line's indentation comes from the selection.
         assert_eq!(clean_command_output("foo();\n    bar();\n", "    foo()\n    bar()\n"), "    foo();\n    bar();\n");
+        // Markdown hard breaks from the model (seen with Groq in Word): no spaces left at line ends,
+        // the paragraph break itself kept; unless the selection had such lines.
+        assert_eq!(
+            clean_command_output("Oi, amanhã às 10h.  \nNota: segue em anexo.", "oi amanha as 10h\r\nNota: segue em anexo\r\n"),
+            "Oi, amanhã às 10h.\nNota: segue em anexo.\n"
+        );
+        assert_eq!(clean_command_output("A.  \n\nB.", "a\n\nb"), "A.\n\nB.");
+        assert_eq!(clean_command_output("linha 1  \nlinha 2", "linha 1  \nlinha 2"), "linha 1  \nlinha 2");
     }
 
     #[test]
