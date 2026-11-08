@@ -216,6 +216,7 @@ fn proofread(app: &AppHandle) {
                 failed: false,
                 error: None,
                 retry: None,
+                cancelled: false,
             };
             proofread_into(&app, &mut result, &s).await?;
             if !is_current(gen) {
@@ -315,6 +316,7 @@ fn command_style(app: &AppHandle, style_id: String, target: Option<String>) {
                 failed: false,
                 error: None,
                 retry: None,
+                cancelled: false,
             };
             if proofread {
                 proofread_into(&app, &mut result, &s).await?;
@@ -463,6 +465,7 @@ pub fn start_with(app: &AppHandle, mode: RecordMode, keys_held: bool) {
         app: app_ctx,
         style_id: style_id.clone(),
         selection: selection.clone(),
+        live_text: String::new(),
     });
 
     windows::show_overlay_for_recording(app);
@@ -718,14 +721,14 @@ fn local_preview(app: AppHandle, samples: Arc<parking_lot::Mutex<Vec<f32>>>, sto
                         if let Some(slot) = segs.lock().get_mut(idx) {
                             *slot = (t, true);
                         }
-                        emit_preview(&app2, &segs, &tail2, false);
+                        emit_preview(&app2, &segs, &tail2, false, &stop2);
                     }
                 });
             }
         } else {
             *tail_text.lock() = shown;
         }
-        emit_preview(&app, &segments, &tail_text, false);
+        emit_preview(&app, &segments, &tail_text, false, &stop);
     }
 }
 
@@ -734,6 +737,7 @@ fn emit_preview(
     segments: &parking_lot::Mutex<Vec<(String, bool)>>,
     tail: &parking_lot::Mutex<String>,
     tail_is_cloud: bool,
+    stop: &Arc<std::sync::atomic::AtomicBool>,
 ) {
     // `stable` = leading characters already confirmed by the cloud (the rest may still change).
     let mut full = String::new();
@@ -761,7 +765,20 @@ fn emit_preview(
         }
     }
     log::debug!("live preview: {} chars ({} stable)", full.chars().count(), stable);
+    note_live_text(app, stop, &full);
     let _ = app.emit_to("overlay", "overlay-partial", json!({ "text": full, "stable": stable }));
+}
+
+/// Keeps the text the live preview shows on its own recording (`stop` is that recording's flag;
+/// a preview still winding down from an earlier one never writes into a newer one), so a
+/// cancelled recording can save it.
+pub(crate) fn note_live_text(app: &AppHandle, stop: &Arc<std::sync::atomic::AtomicBool>, text: &str) {
+    if let Some(s) = state(app).session.lock().as_mut() {
+        if Arc::ptr_eq(&s.stop_flag, stop) {
+            s.live_text.clear();
+            s.live_text.push_str(text);
+        }
+    }
 }
 
 /// One line, single spaces, first letter capitalized.
@@ -897,14 +914,100 @@ pub fn cancel_processing(app: &AppHandle) {
     windows::hide_overlay(app);
 }
 
+/// Esc or the listening card's X: the recording stops without being processed. A dictation or
+/// translation isn't thrown away, though (Esc gets pressed by accident): what the live preview
+/// showed goes to the history marked as cancelled, and the recording is kept in memory, like a
+/// failed one, to transcribe it from the card that says so or from the history.
 pub fn cancel(app: &AppHandle) {
     let st = state(app);
     let Some(session) = st.session.lock().take() else { return };
     session.stop_flag.store(true, Ordering::SeqCst);
-    drop(session.rec);
+    let keep = matches!(session.mode, RecordMode::Dictate | RecordMode::Translate)
+        && session.started.elapsed() >= Duration::from_millis(250);
+    let duration_ms = session.started.elapsed().as_millis() as u64;
+    let samples = if keep {
+        session.rec.finish()
+    } else {
+        drop(session.rec);
+        Vec::new()
+    };
     after_recording(app);
     release_overlay();
-    windows::hide_overlay(app);
+    if !keep {
+        log::info!("recording cancelled");
+        windows::hide_overlay(app);
+        return;
+    }
+    let live_text = session.live_text.trim().to_string();
+    let voiced = audio::trim_silence(&samples);
+    let has_audio = voiced.len() >= audio::SAMPLE_RATE as usize;
+    // Never what was said, only how much (privacy).
+    log::info!(
+        "recording cancelled: {duration_ms} ms, {} preview chars, {:.1} s voiced",
+        live_text.chars().count(),
+        voiced.len() as f32 / audio::SAMPLE_RATE as f32
+    );
+    if live_text.is_empty() && !has_audio {
+        windows::hide_overlay(app); // nothing was said
+        return;
+    }
+    let id = new_id();
+    let item = DictationResult {
+        id: id.clone(),
+        ts: chrono::Local::now().to_rfc3339(),
+        mode: session.mode,
+        raw: live_text.clone(),
+        text: live_text.clone(),
+        style_id: session.style_id.clone(),
+        target: (session.mode == RecordMode::Translate).then(|| st.settings().translation_target),
+        provider: None,
+        stt_provider: String::new(),
+        pasted: false,
+        duration_ms,
+        warnings: vec![],
+        app: session.app.as_ref().map(|c| c.id.clone()),
+        app_name: session.app.as_ref().map(|c| c.name.clone()),
+        source: None,
+        failed: false,
+        error: None,
+        retry: None,
+        cancelled: true,
+    };
+    if has_audio {
+        let rec = FailedRecording {
+            id: id.clone(),
+            pcm: crate::state::to_pcm16(voiced),
+            mode: session.mode,
+            target_window: session.target_window,
+            app: session.app.clone(),
+            style_id: session.style_id.clone(),
+            target: item.target.clone(),
+            duration_ms,
+            retrying: false,
+        };
+        st.keep_failed(rec, &item);
+    } else {
+        st.push_history(&item);
+    }
+    let _ = app.emit("history-changed", ());
+    // The card is the undo for an Esc pressed by accident: "Transcrever" goes on as if the
+    // recording had been stopped (pasted into the same app).
+    let message = if !st.settings().history_enabled {
+        tr("Ditado cancelado.")
+    } else if live_text.is_empty() {
+        tr("Ditado cancelado. A gravação ficou no histórico para transcrever.")
+    } else {
+        tr("Ditado cancelado. O que deu para ler ficou no histórico.")
+    };
+    windows::show_overlay(app);
+    emit_overlay(
+        app,
+        json!({
+            "phase": "error", "message": message, "detail": null,
+            "raw": (!live_text.is_empty()).then_some(live_text),
+            "hint": true, "cancelled": true, "retry": has_audio.then_some(id),
+        }),
+    );
 }
 
 /// Every way a recording ends goes through here.
@@ -1108,8 +1211,13 @@ fn keep_failed(app: &AppHandle, e: anyhow::Error, voiced: &[f32], job: &Job) -> 
         Err(e) => PipelineError { message: e.to_string(), detail: None, raw: None, retry: None, key_problem: false },
     };
     let st = state(app);
-    // Failed again: the old item goes, a new one comes with the same recording.
     if let Some(old) = &job.retry_of {
+        // A cancelled one stays as it was (its preview text and its recording, to try again).
+        if st.is_cancelled(old) {
+            pe.retry = Some(old.clone());
+            return anyhow::Error::new(pe);
+        }
+        // Failed again: the old item goes, a new one comes with the same recording.
         st.delete_history(old);
     }
     let id = new_id();
@@ -1132,6 +1240,7 @@ fn keep_failed(app: &AppHandle, e: anyhow::Error, voiced: &[f32], job: &Job) -> 
         failed: true,
         error: Some(pe.message.clone()),
         retry: None,
+        cancelled: false,
     };
     let rec = FailedRecording {
         id: id.clone(),
@@ -1218,6 +1327,7 @@ async fn process_recording(app: &AppHandle, samples: Vec<f32>, job: Job, gen: u6
         failed: false,
         error: None,
         retry: None,
+        cancelled: false,
     };
     if mode == RecordMode::Command {
         result.style_id = COMMAND_STYLE.into();
@@ -1455,6 +1565,10 @@ pub async fn reprocess_history(app: &AppHandle, id: String, style_id: String, ta
     }
     if result.failed {
         return Err(anyhow!(tr("a transcrição falhou: use \"Tentar de novo\"")));
+    }
+    // A cancelled one whose preview showed nothing: only its recording can give it text.
+    if result.raw.trim().is_empty() {
+        return Err(anyhow!(tr("nada para refazer")));
     }
     let s = st.settings();
     result.target = target.filter(|t| !t.is_empty());

@@ -201,8 +201,10 @@ export interface DictationResult {
   /** The transcription failed (`error` says why): no text, the recording kept in memory to try again. */
   failed?: boolean;
   error?: string | null;
-  /** Failed items: "ready" = the recording is still kept, "running" = being tried again, absent = gone. */
+  /** Failed or cancelled items: "ready" = the recording is still kept, "running" = being transcribed, absent = gone. */
   retry?: "ready" | "running" | null;
+  /** Stopped with Esc while recording: `text` is what the live preview showed (may be empty). */
+  cancelled?: boolean;
 }
 
 export type OverlayEvent =
@@ -223,7 +225,8 @@ export type OverlayEvent =
   | { phase: "answer"; query: string } // ask mode finished, chat window opened
   /** hint = the user can fix it (nothing selected…): no "open settings" action. */
   /** retry = id of the kept recording ("Tentar de novo"); key = every provider refused the key. */
-  | { phase: "error"; message: string; detail: string | null; raw: string | null; hint?: boolean; retry?: string | null; key?: boolean }
+  /** cancelled = a recording stopped with Esc: raw = its live preview, retry = "Transcrever". */
+  | { phase: "error"; message: string; detail: string | null; raw: string | null; hint?: boolean; retry?: string | null; key?: boolean; cancelled?: boolean }
   | { phase: "hidden" };
 
 export interface ChatSource {

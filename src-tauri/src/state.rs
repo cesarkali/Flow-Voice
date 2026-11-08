@@ -50,9 +50,14 @@ pub struct DictationResult {
     pub failed: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
-    /// For the UI only (filled by `get_history`): whether a failed item's recording is still kept.
+    /// For the UI only (filled by `get_history`): whether a failed or cancelled item's recording
+    /// is still kept.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retry: Option<RetryState>,
+    /// Stopped with Esc (or the card's X) while recording: `raw`/`text` hold what the live preview
+    /// showed at that moment (may be empty), and the recording is kept in memory to transcribe it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub cancelled: bool,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -173,6 +178,8 @@ pub struct ActiveSession {
     /// Style for this dictation: a per-app rule or the active style.
     pub style_id: String,
     pub selection: Arc<Mutex<Selection>>,
+    /// The text the live preview shows right now: kept if the recording is cancelled.
+    pub live_text: String,
 }
 
 pub struct AppState {
@@ -268,31 +275,46 @@ impl AppState {
         }
     }
 
-    /// Keeps a failed recording (dropping the oldest past `FailedStore::MAX`, and their history
-    /// items: they can't be tried again) and, with the history on, lists `item` there.
+    /// Keeps a failed or cancelled recording (dropping the oldest past `FailedStore::MAX`, and
+    /// the history items left with nothing: a failed one, or a cancelled one without text) and,
+    /// with the history on, lists `item` there.
     pub fn keep_failed(&self, rec: FailedRecording, item: &DictationResult) {
         let dropped = self.failed.lock().keep(rec);
         for id in dropped {
-            self.delete_history(&id);
+            let empty = self.history.lock().iter().any(|x| x.id == id && !worth_keeping(x));
+            if empty {
+                self.delete_history(&id);
+            }
         }
         self.push_history(item);
     }
 
-    /// History for the UI: failed items say whether their recording is still kept.
+    /// Whether `id` is a cancelled item (its preview text stays if transcribing it fails).
+    pub fn is_cancelled(&self, id: &str) -> bool {
+        self.history.lock().iter().any(|x| x.id == id && x.cancelled)
+    }
+
+    /// History for the UI: failed and cancelled items say whether their recording is still kept.
     pub fn history_for_ui(&self) -> Vec<DictationResult> {
         let failed = self.failed.lock();
         let mut h = self.history.lock().clone();
-        for item in h.iter_mut().filter(|x| x.failed) {
+        for item in h.iter_mut().filter(|x| x.failed || x.cancelled) {
             item.retry = failed.state(&item.id);
         }
         h
     }
 }
 
-/// history.json: failed items stay out (their recording is memory-only, so after a restart
-/// they could never be tried again).
+/// An item that still means something without its recording: not a failed one (no text), nor a
+/// cancelled one whose preview showed nothing.
+fn worth_keeping(x: &DictationResult) -> bool {
+    !x.failed && !(x.cancelled && x.text.trim().is_empty())
+}
+
+/// history.json: items that need their memory-only recording stay out (after a restart they
+/// would be empty for good).
 fn history_json(h: &[DictationResult]) -> serde_json::Result<Vec<u8>> {
-    serde_json::to_vec(&h.iter().filter(|x| !x.failed).collect::<Vec<_>>())
+    serde_json::to_vec(&h.iter().filter(|x| worth_keeping(x)).collect::<Vec<_>>())
 }
 
 pub fn new_id() -> String {
@@ -368,5 +390,49 @@ mod tests {
         assert!(json.contains(r#""id":"1""#));
         assert!(!json.contains(r#""id":"2""#));
         assert!(!json.contains("failed") && !json.contains("retry") && !json.contains("error"));
+    }
+
+    #[test]
+    fn cancelled_items_keep_their_preview_text() {
+        let ok: DictationResult = serde_json::from_str(
+            r#"{"id":"1","ts":"","mode":"dictate","raw":"oi","text":"Oi.","style_id":"natural","target":null,"provider":null,"stt_provider":"groq","pasted":true,"duration_ms":900,"warnings":[]}"#,
+        )
+        .unwrap();
+        assert!(!ok.cancelled, "older files have no `cancelled`");
+        let with_text = DictationResult { id: "2".into(), cancelled: true, text: "o que a prévia mostrou".into(), ..ok.clone() };
+        let empty = DictationResult { id: "3".into(), cancelled: true, raw: String::new(), text: " ".into(), ..ok.clone() };
+        let json = String::from_utf8(history_json(&[with_text, empty, ok]).unwrap()).unwrap();
+        // the preview text survives a restart; an empty one only meant something with its recording
+        assert!(json.contains(r#""id":"2""#) && json.contains(r#""cancelled":true"#));
+        assert!(!json.contains(r#""id":"3""#));
+        assert!(json.contains(r#""id":"1""#));
+        assert_eq!(json.matches("cancelled").count(), 1, "finished items don't carry the flag");
+    }
+
+    #[test]
+    fn a_dropped_recording_keeps_a_cancelled_item_with_text() {
+        let dir = std::env::temp_dir().join(format!("fv-cancel-{}", new_id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let st = AppState::new(dir.clone(), dir.join("models"));
+        let base: DictationResult = serde_json::from_str(
+            r#"{"id":"x","ts":"","mode":"dictate","raw":"","text":"","style_id":"natural","target":null,"provider":null,"stt_provider":"","pasted":false,"duration_ms":900,"warnings":[]}"#,
+        )
+        .unwrap();
+        let texted = DictationResult { id: "c1".into(), cancelled: true, raw: "fala".into(), text: "fala".into(), ..base.clone() };
+        st.keep_failed(rec("c1"), &texted);
+        let blank = DictationResult { id: "c2".into(), cancelled: true, ..base.clone() };
+        st.keep_failed(rec("c2"), &blank);
+        for id in ["f1", "f2", "f3"] {
+            st.keep_failed(rec(id), &DictationResult { id: id.into(), failed: true, ..base.clone() });
+        }
+        let ids: Vec<String> = st.history.lock().iter().map(|x| x.id.clone()).collect();
+        // c1 and c2 lost their recordings to the 3 newer ones: the one with text stays
+        assert!(ids.contains(&"c1".to_string()), "{ids:?}");
+        assert!(!ids.contains(&"c2".to_string()), "{ids:?}");
+        assert!(st.is_cancelled("c1"));
+        let ui = st.history_for_ui();
+        assert_eq!(ui.iter().find(|x| x.id == "c1").unwrap().retry, None);
+        assert_eq!(ui.iter().find(|x| x.id == "f3").unwrap().retry, Some(RetryState::Ready));
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

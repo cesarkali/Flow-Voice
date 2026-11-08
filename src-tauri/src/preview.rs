@@ -681,7 +681,7 @@ fn accept(sh: &mut Shared, a: &Answer) -> Outcome {
     Outcome::Shown(label)
 }
 
-fn publish(app: &AppHandle, sh: &mut Shared, t0: Instant, debug: bool) {
+fn publish(app: &AppHandle, sh: &mut Shared, t0: Instant, debug: bool, stop: &Arc<AtomicBool>) {
     let (full, stable) = sh.line();
     let n = full.chars().count();
     let at = t0.elapsed().as_secs_f32();
@@ -693,6 +693,7 @@ fn publish(app: &AppHandle, sh: &mut Shared, t0: Instant, debug: bool) {
     if debug {
         log::info!("preview shown t+{at:.2}s stable {stable}/{n}: {full}");
     }
+    crate::pipeline::note_live_text(app, stop, &full);
     let _ = app.emit_to("overlay", "overlay-partial", json!({ "text": full, "stable": stable }));
 }
 
@@ -845,7 +846,7 @@ pub fn cloud_preview(app: AppHandle, samples: Arc<Mutex<Vec<f32>>>, stop: Arc<At
             }
             if let Outcome::Shown(_) = outcome {
                 lanes2.lock()[lane_idx].used += 1;
-                publish(&app2, &mut sh, t0, debug);
+                publish(&app2, &mut sh, t0, debug, &stop2);
             }
         });
     }

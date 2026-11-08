@@ -87,8 +87,8 @@
     let w = 0;
     let saved = 0;
     for (const h of history) {
-      // a failed transcription has no text: not a dictation for the numbers
-      if (h.mode === "ask" || h.failed) continue;
+      // a failed transcription has no text, a cancelled one wasn't used: not dictations for the numbers
+      if (h.mode === "ask" || h.failed || h.cancelled) continue;
       const c = words(h.text);
       w += c;
       saved += Math.max(0, (c / 40) * 60 - h.duration_ms / 1000);
@@ -369,12 +369,18 @@
               <button type="button" class="main" aria-expanded={isOpen} onclick={() => (open = isOpen ? null : h.id)}>
                 <span class="meta">
                   {@render itemMeta(h)}
-                  {#if !h.pasted && h.mode !== "ask"}<span class="faint">{t("home.not_pasted")}</span>{/if}
+                  {#if h.cancelled}
+                    <span class="tag cancel" title={t("hx.cancelled_tip")}>{t("hx.cancelled")}</span>
+                  {:else if !h.pasted && h.mode !== "ask"}<span class="faint">{t("home.not_pasted")}</span>{/if}
                 </span>
                 <!-- dictated text runs in its own direction (Arabic, Hebrew…) -->
-                <span class="text" class:clamp={!isOpen} dir="auto">
-                  {#each parts(h.text) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}
-                </span>
+                {#if h.cancelled && !h.text.trim()}
+                  <span class="text none">{h.retry ? t("hx.cancel_no_text") : t("hx.cancel_gone")}</span>
+                {:else}
+                  <span class="text" class:clamp={!isOpen} dir="auto">
+                    {#each parts(h.text) as p, k (k)}{#if p.m}<mark>{p.s}</mark>{:else}{p.s}{/if}{/each}
+                  </span>
+                {/if}
                 {#if term && !isOpen && !h.text.toLowerCase().includes(term)}
                   <span class="raw-hit">
                     <span class="label">{t("home.raw")}</span>
@@ -384,7 +390,7 @@
               </button>
             {/if}
             <div class="acts">
-              {#if !h.failed}
+              {#if !h.failed && h.text.trim()}
               <span class="copy-wrap" class:done={copied === h.id}>
                 <Button
                   size="sm"
@@ -402,6 +408,21 @@
               <Button size="sm" variant="ghost" icon="trash" aria-label={t("c.delete")} title={t("c.delete")} onclick={() => remove(h)} />
             </div>
           </div>
+          {#if h.cancelled && h.retry}
+            <!-- always in sight (not a hover action): the kept recording is the way to get the full text -->
+            <div class="cretry">
+              <Button
+                size="sm"
+                icon="wave"
+                loading={h.retry === "running"}
+                disabled={h.retry === "running"}
+                title={t("hx.transcribe_tip")}
+                onclick={() => retryFailed(h)}
+              >
+                {t("ovx.transcribe")}
+              </Button>
+            </div>
+          {/if}
           {#if isOpen && !h.failed}
             <div class="detail" transition:slide={{ duration: prefersReducedMotion.current ? 0 : 220, easing: cubicOut }}>
               <div class="detail-in">
@@ -426,7 +447,7 @@
                   {#if h.app_name}
                     <div><dt>{t("home.f_app")}</dt><dd>{h.app_name}</dd></div>
                   {/if}
-                  <div><dt>{t("home.f_voice")}</dt><dd class="mono">{h.stt_provider}</dd></div>
+                  <div><dt>{t("home.f_voice")}</dt><dd class="mono">{h.cancelled ? t("hx.f_preview") : h.stt_provider}</dd></div>
                   <div><dt>{t("home.f_ai")}</dt><dd class="mono">{h.provider ?? t("home.no_ai")}</dd></div>
                   <div><dt>{t("home.f_duration")}</dt><dd class="mono">{(h.duration_ms / 1000).toFixed(1)} s</dd></div>
                   <div><dt>{t("home.f_time")}</dt><dd class="mono">{clockTime(h.ts)}</dd></div>
@@ -1041,6 +1062,19 @@
   }
   .tag.bad {
     color: var(--danger, #ff5a4e);
+  }
+  /* cancelled with Esc: told apart from a finished dictation, quieter than a failure */
+  .tag.cancel,
+  .open .tag.cancel {
+    color: var(--warn);
+  }
+  .cretry {
+    padding: 0 10px 12px;
+    margin-top: -4px;
+  }
+  .text.none {
+    color: var(--text-3);
+    font-style: italic;
   }
   .ferr {
     font-size: 13px;

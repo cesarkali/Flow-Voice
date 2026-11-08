@@ -329,6 +329,30 @@ history.splice(
     text: "- Orçamento do Q4\n- Novo onboarding\n- Cobertura das férias da Ana",
     duration_ms: 6900,
   }),
+  // Cancelled with Esc: the live preview's text, the recording kept to transcribe it.
+  H("hc1", 20, {
+    raw: "Também referente à primeira pessoa faltou só a física de colisão pra subir a escada da copa e o chão quadriculado eu não quero",
+    text: "Também referente à primeira pessoa faltou só a física de colisão pra subir a escada da copa e o chão quadriculado eu não quero",
+    app: "claude",
+    app_name: "Claude",
+    provider: null,
+    stt_provider: "",
+    pasted: false,
+    duration_ms: 174000,
+    cancelled: true,
+    retry: "ready",
+  }),
+  // Cancelled with the live preview off: no text, only the kept recording.
+  H("hc2", 45, {
+    raw: "",
+    text: "",
+    provider: null,
+    stt_provider: "",
+    pasted: false,
+    duration_ms: 12000,
+    cancelled: true,
+    retry: "ready",
+  }),
   // A transcription that failed, its recording kept to try again (like Rust's FailedStore).
   H("hf1", 70, {
     raw: "",

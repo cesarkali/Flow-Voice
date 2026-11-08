@@ -1131,6 +1131,7 @@
       bind:this={shellEl}
       class="shell v-{view} w-{settings?.overlay_width ?? 'normal'}"
       class:hidden={!visible}
+      class:cancelled={view === "error" && !!lastError?.cancelled}
       class:glass={glassOn}
       class:translucent={glassOn && settings?.overlay_glass === "translucent"}
       class:glight={glassOn && settings?.overlay_glass_light}
@@ -1447,16 +1448,17 @@
             <!-- svelte-ignore a11y_mouse_events_have_key_events, a11y_no_static_element_interactions -->
             <div class="card err" onmouseover={tipOver} onfocusin={tipOver} onfocusout={hideTip} onpointerdown={hideTip}>
               <header data-flip>
-                <span class="badge bad" class:hintb={lastError.hint}><Icon name={lastError.hint ? "info" : "alert"} size={14} stroke={1.8} /></span>
-                <span class="ht">{lastError.hint ? t("ovx.hint") : t("ov.error")}</span>
+                <span class="badge bad" class:hintb={lastError.hint}><Icon name={lastError.cancelled ? "stop" : lastError.hint ? "info" : "alert"} size={14} stroke={1.8} /></span>
+                <span class="ht">{lastError.cancelled ? t("ovx.cancelled") : lastError.hint ? t("ovx.hint") : t("ov.error")}</span>
                 <span class="hm"></span>
                 <button type="button" class="x" aria-label={t("ov.dismiss")} onclick={dismiss}>
                   <Icon name="x" size={16} />
                 </button>
               </header>
               <p class="emsg" data-flip>{lastError.message}</p>
-              {#if lastError.retry}
-                <p class="ekept" data-flip>{t("ovx.retry_kept")}</p>
+              <!-- (a cancelled one without preview text already says so in its message) -->
+              {#if lastError.retry && !(lastError.cancelled && !lastError.raw)}
+                <p class="ekept" data-flip>{lastError.cancelled ? t("ovx.cancel_kept") : t("ovx.retry_kept")}</p>
               {/if}
               {#if lastError.detail}
                 <button type="button" class="dtoggle" data-flip aria-expanded={detailOpen} onclick={() => (detailOpen = !detailOpen)}>
@@ -1467,7 +1469,7 @@
                   <pre class="detail" data-flip in:rise={{ y: -4, duration: 220 }}>{lastError.detail}</pre>
                 {/if}
               {/if}
-              {#if !lastError.hint || lastError.raw}
+              {#if !lastError.hint || lastError.raw || lastError.retry}
                 <div class="acts" data-flip>
                   {#if !lastError.hint}
                     <!-- a key problem leads with the providers; otherwise "Tentar de novo" does -->
@@ -1490,8 +1492,14 @@
                     </button>
                   {/if}
                   {#if lastError.raw}
-                    <button type="button" class="btn primary" data-tip={t("ovx.copy_raw_tip")} onclick={() => copy(lastError!.raw!)}>
-                      <Icon name={copied ? "check" : "copy"} size={15} />{copied ? t("c.copied") : t("ov.copy_raw")}
+                    <button
+                      type="button"
+                      class="btn"
+                      class:primary={!lastError.cancelled || !lastError.retry}
+                      data-tip={lastError.cancelled ? t("ovx.copy_preview_tip") : t("ovx.copy_raw_tip")}
+                      onclick={() => copy(lastError!.raw!)}
+                    >
+                      <Icon name={copied ? "check" : "copy"} size={15} />{copied ? t("c.copied") : lastError.cancelled ? t("ovx.copy_preview") : t("ov.copy_raw")}
                     </button>
                   {/if}
                   {#if lastError.retry}
@@ -1500,17 +1508,21 @@
                       class="btn"
                       class:primary={!lastError.key}
                       disabled={retrySent}
-                      data-tip={t("ovx.retry_tip")}
+                      data-tip={lastError.cancelled ? t("ovx.transcribe_tip") : t("ovx.retry_tip")}
                       onclick={() => retry(lastError!.retry!)}
                     >
-                      <Icon name="refresh" size={15} />{retrySent ? t("ovx.retrying") : t("ovx.retry")}
+                      {#if lastError.cancelled}
+                        <Icon name="wave" size={15} />{t("ovx.transcribe")}
+                      {:else}
+                        <Icon name="refresh" size={15} />{retrySent ? t("ovx.retrying") : t("ovx.retry")}
+                      {/if}
                     </button>
                   {/if}
                 </div>
               {/if}
               {@render tipBox()}
               <!-- a kept recording stays on offer longer -->
-              {@render life(lastError.hint ? 5000 : lastError.retry ? 30000 : 12000)}
+              {@render life(lastError.cancelled ? 12000 : lastError.hint ? 5000 : lastError.retry ? 30000 : 12000)}
             </div>
           {/if}
         </div>
@@ -2537,6 +2549,20 @@
   }
   .err .life {
     background: #ff5a4e;
+  }
+  /* cancelled with Esc: amber, not the error red (nothing failed, the dictation is kept) */
+  .shell.v-error.cancelled {
+    border-color: rgba(227, 171, 79, 0.42);
+    background: color-mix(in srgb, var(--cap-bg) 94%, #e3ab4f);
+  }
+  .shell.glass.v-error.cancelled {
+    background: color-mix(in srgb, var(--glass-tint) 88%, rgba(227, 171, 79, 0.45));
+  }
+  .shell.glass.v-error.cancelled::before {
+    background: linear-gradient(180deg, rgba(240, 200, 130, 0.6), rgba(227, 171, 79, 0.3));
+  }
+  .cancelled .err .life {
+    background: #e3ab4f;
   }
   .life.paused {
     animation-play-state: paused;

@@ -25,6 +25,7 @@
   --ok-line: var(--accent-line);
   --danger: #ff5a4e;
   --danger-fg: #ff7a70;
+  --warn: #e3ab4f;
   --danger-soft: rgba(255, 90, 78, 0.1);
   --danger-line: rgba(255, 90, 78, 0.35);
   --hover: rgba(255, 255, 255, 0.05);
@@ -87,6 +88,7 @@
   --accent-soft: rgba(141, 190, 0, 0.14);
   --accent-line: rgba(90, 125, 0, 0.45);
   --danger-fg: #c73a2f;
+  --warn: #9a6512;
   --danger-soft: rgba(255, 90, 78, 0.1);
   --hover: rgba(17, 17, 17, 0.045);
   --press: rgba(17, 17, 17, 0.08);
@@ -120,6 +122,7 @@
     --accent-soft: rgba(141, 190, 0, 0.14);
     --accent-line: rgba(90, 125, 0, 0.45);
     --danger-fg: #c73a2f;
+    --warn: #9a6512;
     --hover: rgba(17, 17, 17, 0.045);
     --press: rgba(17, 17, 17, 0.08);
     --shadow-pop: 0 12px 32px rgba(17, 17, 17, 0.14), 0 0 0 1px rgba(17, 17, 17, 0.08);
