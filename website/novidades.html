@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novidades · FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas</title>
-<meta name="description" content="O que mudou no FlowVoice: na 2.2, cápsula arrastável, Tentar de novo quando a transcrição falha e interface em 10 idiomas; na 2.1, prévia ao vivo que não volta atrás e cápsula de vidro; na 2.0, reescrito do zero em Rust, estilo Prompt, modo Comando, troca automática de modelos aposentados e modo offline com modelo para pt-BR.">
+<title>Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas</title>
+<meta name="description" content="O que mudou no FlowVoice: na 2.2, Revisar (corrige a ortografia e a pontuação do texto selecionado), cápsula arrastável, Tentar de novo quando a transcrição falha e interface em 10 idiomas; na 2.1, prévia ao vivo que não volta atrás e cápsula de vidro; na 2.0, reescrito do zero em Rust, estilo Prompt, modo Comando, troca automática de modelos aposentados e modo offline com modelo para pt-BR.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
@@ -30,13 +30,13 @@
 <meta property="og:locale" content="pt_BR">
 <meta property="og:url" content="https://flowvoice.caliberda.com.br/novidades">
 <meta property="og:title" content="FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas">
-<meta property="og:description" content="Arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.">
+<meta property="og:description" content="Corrija um texto selecionado com um atalho, arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.">
 <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas">
-<meta name="twitter:description" content="Arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.">
+<meta name="twitter:description" content="Corrija um texto selecionado com um atalho, arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.">
 <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
@@ -119,7 +119,7 @@
     <div class="wrap">
       <div class="pg-head-in">
         <h1>2.2: a cápsula vai aonde você <span class="nowrap">quiser.<span class="caret" aria-hidden="true"></span></span></h1>
-        <p class="pg-lede">Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas.</p>
+        <p class="pg-lede">Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.</p>
         <p class="pg-meta"><span>Versão <b>2.2</b></span><span>Windows 10 e 11</span><span>Atualiza sozinho</span></p>
       </div>
     </div>
@@ -132,10 +132,18 @@
         <span class="pg-rel-date">Novembro de 2026</span>
       </div>
       <div class="pg-rel-body">
-        <h2 id="v22">Cápsula arrastável, Tentar de novo e 10 idiomas</h2>
-        <p>A cápsula deixou de ter lugar fixo: arraste durante a gravação ou escolha uma posição só sua. Um ditado que falhou não se perde mais, e o app passa a seguir o idioma do Windows.</p>
+        <h2 id="v22">Revisar, cápsula arrastável, Tentar de novo e 10 idiomas</h2>
+        <p>Um atalho novo corrige a ortografia de qualquer texto selecionado, sem falar nada. A cápsula deixou de ter lugar fixo: arraste durante a gravação ou escolha uma posição só sua. Um ditado que falhou não se perde mais, e o app passa a seguir o idioma do Windows.</p>
 
         <ul class="pg-changes">
+          <li>
+            <h3>Revisar a seleção</h3>
+            <ul>
+              <li><b>Revisar</b>: selecione um texto em qualquer app e aperte <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>J</kbd>. O FlowVoice corrige só a ortografia, os acentos e a pontuação, sem trocar palavras nem mudar o estilo, e sem você precisar falar nada.</li>
+              <li>Se a IA mudar mais do que isso, o texto fica como estava. Se não houver nada para corrigir, nada é colado, e a formatação do texto continua intacta.</li>
+              <li>Também aparece como o chip <b>Revisar</b> no cartão do Comando, no resultado e no histórico. Em teclados onde <kbd>AltGr</kbd> <kbd>J</kbd> digita um caractere, começa sem atalho, e dá para escolher outro.</li>
+            </ul>
+          </li>
           <li>
             <h3>Mova a cápsula</h3>
             <ul>
@@ -173,6 +181,12 @@
               <li>Nova seção <b>Privacidade</b> na tela <b>Sobre</b>: o que fica no PC, o que vai para cada provedor e onde ficam as chaves. <a href="privacidade.html">A política completa está aqui</a>.</li>
               <li>Erros de microfone mais claros: quando o Windows bloqueia o microfone, o app diz onde liberar; quando outro app o usa com exclusividade, também avisa.</li>
               <li>Mensagem própria quando outro app está segurando a área de transferência.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Novidades no app</h3>
+            <ul>
+              <li>Depois de uma atualização, a primeira vez que a janela abre mostra o que há de novo, no idioma da interface. O histórico completo fica em <b>Sobre → Histórico de mudanças</b> e funciona sem internet.</li>
             </ul>
           </li>
           <li>

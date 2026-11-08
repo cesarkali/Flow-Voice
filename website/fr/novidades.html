@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nouveautés · FlowVoice 2.2 : capsule déplaçable, Réessayer et 10 langues</title>
-<meta name="description" content="Ce qui a changé dans FlowVoice : dans la 2.2, capsule déplaçable, Réessayer quand la transcription échoue et interface en 10 langues ; dans la 2.1, aperçu en direct qui ne revient pas en arrière et capsule en verre ; dans la 2.0, réécriture complète en Rust, style Prompt, mode Commande, remplacement automatique des modèles retirés et mode hors ligne avec un modèle pour le pt-BR.">
+<title>Nouveautés · FlowVoice 2.2 : Corriger, capsule déplaçable, Réessayer et 10 langues</title>
+<meta name="description" content="Ce qui a changé dans FlowVoice : dans la 2.2, Corriger (rectifie l'orthographe et la ponctuation du texte sélectionné), capsule déplaçable, Réessayer quand la transcription échoue et interface en 10 langues ; dans la 2.1, aperçu en direct qui ne revient pas en arrière et capsule en verre ; dans la 2.0, réécriture complète en Rust, style Prompt, mode Commande, remplacement automatique des modèles retirés et mode hors ligne avec un modèle pour le pt-BR.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
@@ -30,13 +30,13 @@
 <meta property="og:locale" content="fr_FR">
 <meta property="og:url" content="https://flowvoice.caliberda.com.br/fr/novidades">
 <meta property="og:title" content="FlowVoice 2.2 : capsule déplaçable, Réessayer et 10 langues">
-<meta property="og:description" content="Déplacez la capsule où vous voulez, refaites une dictée qui a échoué et utilisez l'application en 10 langues. Découvrez ce qui a changé dans la 2.2, la 2.1 et la 2.0.">
+<meta property="og:description" content="Corrigez un texte sélectionné avec un raccourci, déplacez la capsule où vous voulez, refaites une dictée qui a échoué et utilisez l'application en 10 langues. Découvrez ce qui a changé dans la 2.2, la 2.1 et la 2.0.">
 <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FlowVoice 2.2 : capsule déplaçable, Réessayer et 10 langues">
-<meta name="twitter:description" content="Déplacez la capsule où vous voulez, refaites une dictée qui a échoué et utilisez l'application en 10 langues. Découvrez ce qui a changé dans la 2.2, la 2.1 et la 2.0.">
+<meta name="twitter:description" content="Corrigez un texte sélectionné avec un raccourci, déplacez la capsule où vous voulez, refaites une dictée qui a échoué et utilisez l'application en 10 langues. Découvrez ce qui a changé dans la 2.2, la 2.1 et la 2.0.">
 <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
@@ -119,7 +119,7 @@
     <div class="wrap">
       <div class="pg-head-in">
         <h1>2.2 : la capsule va où vous <span class="nowrap">voulez.<span class="caret" aria-hidden="true"></span></span></h1>
-        <p class="pg-lede">Faites glisser la capsule pendant l'enregistrement ou choisissez votre propre position. Une dictée qui a échoué reçoit le bouton Réessayer, et l'application existe désormais en 10 langues.</p>
+        <p class="pg-lede">Faites glisser la capsule pendant l'enregistrement ou choisissez votre propre position. Une dictée qui a échoué reçoit le bouton Réessayer, et l'application existe désormais en 10 langues. Et un raccourci corrige l'orthographe de n'importe quel texte sélectionné.</p>
         <p class="pg-meta"><span>Version <b>2.2</b></span><span>Windows 10 et 11</span><span>Se met à jour tout seul</span></p>
       </div>
     </div>
@@ -132,10 +132,18 @@
         <span class="pg-rel-date">Novembre 2026</span>
       </div>
       <div class="pg-rel-body">
-        <h2 id="v22">Capsule déplaçable, Réessayer et 10 langues</h2>
-        <p>La capsule n'a plus de place fixe : faites-la glisser pendant l'enregistrement ou choisissez votre propre position. Une dictée qui a échoué ne se perd plus, et l'application suit désormais la langue de Windows.</p>
+        <h2 id="v22">Corriger, capsule déplaçable, Réessayer et 10 langues</h2>
+        <p>Un nouveau raccourci corrige l'orthographe de n'importe quel texte sélectionné, sans dire un mot. La capsule n'a plus de place fixe : faites-la glisser pendant l'enregistrement ou choisissez votre propre position. Une dictée qui a échoué ne se perd plus, et l'application suit désormais la langue de Windows.</p>
 
         <ul class="pg-changes">
+          <li>
+            <h3>Corriger la sélection</h3>
+            <ul>
+              <li><b>Corriger</b> : sélectionnez un texte dans n'importe quelle application et appuyez sur <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>J</kbd>. FlowVoice corrige seulement l'orthographe, les accents et la ponctuation, sans changer de mots ni de style, et sans que vous ayez à parler.</li>
+              <li>Si l'IA change davantage, le texte reste tel quel. S'il n'y a rien à corriger, rien n'est collé, et la mise en forme du texte reste intacte.</li>
+              <li>C'est aussi la puce <b>Corriger</b> sur la carte de la Commande, sur le résultat et dans l'historique. Sur les claviers où <kbd>AltGr</kbd> <kbd>J</kbd> tape un caractère, elle démarre sans raccourci, et vous pouvez en choisir un autre.</li>
+            </ul>
+          </li>
           <li>
             <h3>Déplacez la capsule</h3>
             <ul>
@@ -173,6 +181,12 @@
               <li>Nouvelle section <b>Confidentialité</b> dans l'écran <b>À propos</b> : ce qui reste sur le PC, ce qui part chez chaque fournisseur et où sont les clés. <a href="privacidade.html">La politique complète est ici</a>.</li>
               <li>Erreurs de microphone plus claires : quand Windows bloque le microphone, l'application indique où le débloquer ; quand une autre application l'utilise en exclusivité, elle le signale aussi.</li>
               <li>Message dédié quand une autre application retient le presse-papiers.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Les nouveautés dans l'application</h3>
+            <ul>
+              <li>Après une mise à jour, la première ouverture de la fenêtre montre les nouveautés, dans la langue de l'interface. L'historique complet se trouve dans <b>À propos → Historique des changements</b> et fonctionne hors ligne.</li>
             </ul>
           </li>
           <li>

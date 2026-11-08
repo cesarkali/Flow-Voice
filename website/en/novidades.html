@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>What's new · FlowVoice 2.2: draggable capsule, Try again and 10 languages</title>
-<meta name="description" content="What changed in FlowVoice: in 2.2, a draggable capsule, Try again when transcription fails and an interface in 10 languages; in 2.1, a live preview that doesn't backtrack and a glass capsule; in 2.0, a rewrite from scratch in Rust, the Prompt style, Command mode, automatic swapping of retired models and an offline mode with a model for pt-BR.">
+<title>What's new · FlowVoice 2.2: Proofread, draggable capsule, Try again and 10 languages</title>
+<meta name="description" content="What changed in FlowVoice: in 2.2, Proofread (fixes the spelling and punctuation of the selected text), a draggable capsule, Try again when transcription fails and an interface in 10 languages; in 2.1, a live preview that doesn't backtrack and a glass capsule; in 2.0, a rewrite from scratch in Rust, the Prompt style, Command mode, automatic swapping of retired models and an offline mode with a model for pt-BR.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
@@ -30,13 +30,13 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://flowvoice.caliberda.com.br/en/novidades">
 <meta property="og:title" content="FlowVoice 2.2: draggable capsule, Try again and 10 languages">
-<meta property="og:description" content="Drag the capsule wherever you want, redo a dictation that failed and use the app in 10 languages. See what changed in 2.2, 2.1 and 2.0.">
+<meta property="og:description" content="Fix selected text with one shortcut, drag the capsule wherever you want, redo a dictation that failed and use the app in 10 languages. See what changed in 2.2, 2.1 and 2.0.">
 <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FlowVoice 2.2: draggable capsule, Try again and 10 languages">
-<meta name="twitter:description" content="Drag the capsule wherever you want, redo a dictation that failed and use the app in 10 languages. See what changed in 2.2, 2.1 and 2.0.">
+<meta name="twitter:description" content="Fix selected text with one shortcut, drag the capsule wherever you want, redo a dictation that failed and use the app in 10 languages. See what changed in 2.2, 2.1 and 2.0.">
 <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
@@ -119,7 +119,7 @@
     <div class="wrap">
       <div class="pg-head-in">
         <h1>2.2: the capsule goes where you <span class="nowrap">want.<span class="caret" aria-hidden="true"></span></span></h1>
-        <p class="pg-lede">Drag the capsule while recording or pick a position of your own. A dictation that failed gets a Try again button, and the app now comes in 10 languages.</p>
+        <p class="pg-lede">Drag the capsule while recording or pick a position of your own. A dictation that failed gets a Try again button, and the app now comes in 10 languages. And one shortcut fixes the spelling of any selected text.</p>
         <p class="pg-meta"><span>Version <b>2.2</b></span><span>Windows 10 and 11</span><span>Updates itself</span></p>
       </div>
     </div>
@@ -132,10 +132,18 @@
         <span class="pg-rel-date">November 2026</span>
       </div>
       <div class="pg-rel-body">
-        <h2 id="v22">Draggable capsule, Try again and 10 languages</h2>
-        <p>The capsule no longer has a fixed place: drag it while recording or pick a position of your own. A dictation that failed is no longer lost, and the app now follows the Windows language.</p>
+        <h2 id="v22">Proofread, draggable capsule, Try again and 10 languages</h2>
+        <p>A new shortcut fixes the spelling of any selected text, without saying a word. The capsule no longer has a fixed place: drag it while recording or pick a position of your own. A dictation that failed is no longer lost, and the app now follows the Windows language.</p>
 
         <ul class="pg-changes">
+          <li>
+            <h3>Proofread the selection</h3>
+            <ul>
+              <li><b>Proofread</b>: select text in any app and press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>J</kbd>. FlowVoice fixes only the spelling, accents and punctuation, without swapping words or changing the style, and you don't have to say anything.</li>
+              <li>If the AI changes more than that, the text stays as it was. If there's nothing to fix, nothing is pasted, and the text's formatting stays intact.</li>
+              <li>It's also the <b>Proofread</b> chip on the Command card, on the result and in the history. On keyboards where <kbd>AltGr</kbd> <kbd>J</kbd> types a character, it starts without a shortcut, and you can pick another one.</li>
+            </ul>
+          </li>
           <li>
             <h3>Move the capsule</h3>
             <ul>
@@ -173,6 +181,12 @@
               <li>New <b>Privacy</b> section on the <b>About</b> screen: what stays on the PC, what goes to each provider and where the keys are kept. <a href="privacidade.html">The full policy is here</a>.</li>
               <li>Clearer microphone errors: when Windows blocks the microphone, the app says where to unblock it; when another app is using it exclusively, it tells you that too.</li>
               <li>Its own message when another app is holding the clipboard.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>What's new, in the app</h3>
+            <ul>
+              <li>After an update, the first time the window opens it shows what's new, in the interface language. The full history is in <b>About → Change history</b> and works offline.</li>
             </ul>
           </li>
           <li>

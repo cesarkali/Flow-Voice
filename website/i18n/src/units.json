@@ -563,7 +563,7 @@
   ]
  },
  {
-  "pt": "Também vale “traduz pro inglês”, “resume em tópicos”, “corrige a gramática”.",
+  "pt": "Também vale “traduz pro inglês”, “resume em tópicos”, “corrige a gramática”. Só quer acertar a ortografia? Selecione e aperte [1][2]Ctrl[/2] [3]Alt[/3] [4]J[/4][/1]: o [5]Revisar[/5] corrige acentos e pontuação sem trocar as palavras e sem você falar nada.",
   "kind": "text",
   "where": [
    "index: p.cmd-more"
@@ -1849,7 +1849,7 @@
   ]
  },
  {
-  "pt": "Novidades · FlowVoice 2.2: cápsula arrastável, Tentar de novo e 10 idiomas",
+  "pt": "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas",
   "kind": "text",
   "where": [
    "novidades: title"
@@ -1863,7 +1863,7 @@
   ]
  },
  {
-  "pt": "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas.",
+  "pt": "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.",
   "kind": "text",
   "where": [
    "novidades: p.pg-lede"
@@ -1891,17 +1891,45 @@
   ]
  },
  {
-  "pt": "Cápsula arrastável, Tentar de novo e 10 idiomas",
+  "pt": "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas",
   "kind": "text",
   "where": [
    "novidades: h2"
   ]
  },
  {
-  "pt": "A cápsula deixou de ter lugar fixo: arraste durante a gravação ou escolha uma posição só sua. Um ditado que falhou não se perde mais, e o app passa a seguir o idioma do Windows.",
+  "pt": "Um atalho novo corrige a ortografia de qualquer texto selecionado, sem falar nada. A cápsula deixou de ter lugar fixo: arraste durante a gravação ou escolha uma posição só sua. Um ditado que falhou não se perde mais, e o app passa a seguir o idioma do Windows.",
   "kind": "text",
   "where": [
    "novidades: p"
+  ]
+ },
+ {
+  "pt": "Revisar a seleção",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "[1]Revisar[/1]: selecione um texto em qualquer app e aperte [2]Ctrl[/2] [3]Alt[/3] [4]J[/4]. O FlowVoice corrige só a ortografia, os acentos e a pontuação, sem trocar palavras nem mudar o estilo, e sem você precisar falar nada.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Se a IA mudar mais do que isso, o texto fica como estava. Se não houver nada para corrigir, nada é colado, e a formatação do texto continua intacta.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Também aparece como o chip [1]Revisar[/1] no cartão do Comando, no resultado e no histórico. Em teclados onde [2]AltGr[/2] [3]J[/3] digita um caractere, começa sem atalho, e dá para escolher outro.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
   ]
  },
  {
@@ -2032,6 +2060,20 @@
  },
  {
   "pt": "Mensagem própria quando outro app está segurando a área de transferência.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "Novidades no app",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Depois de uma atualização, a primeira vez que a janela abre mostra o que há de novo, no idioma da interface. O histórico completo fica em [1]Sobre → Histórico de mudanças[/1] e funciona sem internet.",
   "kind": "text",
   "where": [
    "novidades: li"
@@ -2689,7 +2731,7 @@
   ]
  },
  {
-  "pt": "O que mudou no FlowVoice: na 2.2, cápsula arrastável, Tentar de novo quando a transcrição falha e interface em 10 idiomas; na 2.1, prévia ao vivo que não volta atrás e cápsula de vidro; na 2.0, reescrito do zero em Rust, estilo Prompt, modo Comando, troca automática de modelos aposentados e modo offline com modelo para pt-BR.",
+  "pt": "O que mudou no FlowVoice: na 2.2, Revisar (corrige a ortografia e a pontuação do texto selecionado), cápsula arrastável, Tentar de novo quando a transcrição falha e interface em 10 idiomas; na 2.1, prévia ao vivo que não volta atrás e cápsula de vidro; na 2.0, reescrito do zero em Rust, estilo Prompt, modo Comando, troca automática de modelos aposentados e modo offline com modelo para pt-BR.",
   "kind": "meta",
   "where": [
    "novidades: meta description"
@@ -2704,7 +2746,7 @@
   ]
  },
  {
-  "pt": "Arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.",
+  "pt": "Corrija um texto selecionado com um atalho, arraste a cápsula para onde quiser, refaça um ditado que falhou e use o app em 10 idiomas. Veja o que mudou na 2.2, na 2.1 e na 2.0.",
   "kind": "meta",
   "where": [
    "novidades: meta og:description",

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Neuigkeiten · FlowVoice 2.2: verschiebbare Kapsel, Erneut versuchen und 10 Sprachen</title>
-<meta name="description" content="Was sich in FlowVoice geändert hat: in 2.2 verschiebbare Kapsel, Erneut versuchen bei fehlgeschlagener Transkription und Oberfläche in 10 Sprachen; in 2.1 Live-Vorschau ohne Zurückspringen und Glas-Kapsel; in 2.0 komplett neu in Rust geschrieben, Stil Prompt, Modus Befehl, automatischer Ersatz eingestellter Modelle und Offline-Modus mit einem Modell für brasilianisches Portugiesisch.">
+<title>Neuigkeiten · FlowVoice 2.2: Korrigieren, verschiebbare Kapsel, Erneut versuchen und 10 Sprachen</title>
+<meta name="description" content="Was sich in FlowVoice geändert hat: in 2.2 Korrigieren (verbessert Rechtschreibung und Zeichensetzung des markierten Texts), verschiebbare Kapsel, Erneut versuchen bei fehlgeschlagener Transkription und Oberfläche in 10 Sprachen; in 2.1 Live-Vorschau ohne Zurückspringen und Glas-Kapsel; in 2.0 komplett neu in Rust geschrieben, Stil Prompt, Modus Befehl, automatischer Ersatz eingestellter Modelle und Offline-Modus mit einem Modell für brasilianisches Portugiesisch.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
@@ -30,13 +30,13 @@
 <meta property="og:locale" content="de_DE">
 <meta property="og:url" content="https://flowvoice.caliberda.com.br/de/novidades">
 <meta property="og:title" content="FlowVoice 2.2: verschiebbare Kapsel, Erneut versuchen und 10 Sprachen">
-<meta property="og:description" content="Zieh die Kapsel, wohin du willst, wiederhole ein fehlgeschlagenes Diktat und nutze die App in 10 Sprachen. Sieh dir an, was sich in 2.2, 2.1 und 2.0 geändert hat.">
+<meta property="og:description" content="Korrigiere markierten Text mit einem Tastenkürzel, zieh die Kapsel, wohin du willst, wiederhole ein fehlgeschlagenes Diktat und nutze die App in 10 Sprachen. Sieh dir an, was sich in 2.2, 2.1 und 2.0 geändert hat.">
 <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FlowVoice 2.2: verschiebbare Kapsel, Erneut versuchen und 10 Sprachen">
-<meta name="twitter:description" content="Zieh die Kapsel, wohin du willst, wiederhole ein fehlgeschlagenes Diktat und nutze die App in 10 Sprachen. Sieh dir an, was sich in 2.2, 2.1 und 2.0 geändert hat.">
+<meta name="twitter:description" content="Korrigiere markierten Text mit einem Tastenkürzel, zieh die Kapsel, wohin du willst, wiederhole ein fehlgeschlagenes Diktat und nutze die App in 10 Sprachen. Sieh dir an, was sich in 2.2, 2.1 und 2.0 geändert hat.">
 <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
@@ -119,7 +119,7 @@
     <div class="wrap">
       <div class="pg-head-in">
         <h1>2.2: Die Kapsel geht, wohin du <span class="nowrap">willst.<span class="caret" aria-hidden="true"></span></span></h1>
-        <p class="pg-lede">Zieh die Kapsel während der Aufnahme oder wähle eine eigene Position. Ein fehlgeschlagenes Diktat bekommt die Schaltfläche Erneut versuchen, und die App spricht jetzt 10 Sprachen.</p>
+        <p class="pg-lede">Zieh die Kapsel während der Aufnahme oder wähle eine eigene Position. Ein fehlgeschlagenes Diktat bekommt die Schaltfläche Erneut versuchen, und die App spricht jetzt 10 Sprachen. Und ein Tastenkürzel korrigiert die Rechtschreibung jedes markierten Texts.</p>
         <p class="pg-meta"><span>Version <b>2.2</b></span><span>Windows 10 und 11</span><span>Aktualisiert sich selbst</span></p>
       </div>
     </div>
@@ -132,10 +132,18 @@
         <span class="pg-rel-date">November 2026</span>
       </div>
       <div class="pg-rel-body">
-        <h2 id="v22">Verschiebbare Kapsel, Erneut versuchen und 10 Sprachen</h2>
-        <p>Die Kapsel hat keinen festen Platz mehr: Zieh sie während der Aufnahme oder wähle eine eigene Position. Ein fehlgeschlagenes Diktat geht nicht mehr verloren, und die App folgt jetzt der Sprache von Windows.</p>
+        <h2 id="v22">Korrigieren, verschiebbare Kapsel, Erneut versuchen und 10 Sprachen</h2>
+        <p>Ein neues Tastenkürzel korrigiert die Rechtschreibung jedes markierten Texts, ganz ohne Sprechen. Die Kapsel hat keinen festen Platz mehr: Zieh sie während der Aufnahme oder wähle eine eigene Position. Ein fehlgeschlagenes Diktat geht nicht mehr verloren, und die App folgt jetzt der Sprache von Windows.</p>
 
         <ul class="pg-changes">
+          <li>
+            <h3>Auswahl korrigieren</h3>
+            <ul>
+              <li><b>Korrigieren</b>: Markiere Text in einer beliebigen App und drück <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>J</kbd>. FlowVoice korrigiert nur Rechtschreibung, Akzente und Zeichensetzung, ohne Wörter zu tauschen oder den Stil zu ändern, und du musst nichts sagen.</li>
+              <li>Ändert die KI mehr als das, bleibt der Text, wie er war. Gibt es nichts zu korrigieren, wird nichts eingefügt, und die Formatierung des Texts bleibt erhalten.</li>
+              <li>Es gibt ihn auch als Chip <b>Korrigieren</b> auf der Karte von Befehl, im Ergebnis und im Verlauf. Auf Tastaturen, bei denen <kbd>AltGr</kbd> <kbd>J</kbd> ein Zeichen tippt, startet er ohne Tastenkürzel, und du kannst ein anderes wählen.</li>
+            </ul>
+          </li>
           <li>
             <h3>Kapsel verschieben</h3>
             <ul>
@@ -173,6 +181,12 @@
               <li>Neuer Abschnitt <b>Datenschutz</b> auf dem Bildschirm <b>Info</b>: was auf dem PC bleibt, was an welchen Anbieter geht und wo die Schlüssel liegen. <a href="privacidade.html">Die vollständige Richtlinie steht hier</a>.</li>
               <li>Klarere Mikrofonfehler: Wenn Windows das Mikrofon blockiert, sagt die App, wo du es freigibst; wenn eine andere App es exklusiv nutzt, weist sie ebenfalls darauf hin.</li>
               <li>Eigene Meldung, wenn eine andere App die Zwischenablage blockiert.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Neuigkeiten in der App</h3>
+            <ul>
+              <li>Nach einem Update zeigt das Fenster beim ersten Öffnen, was neu ist, in der Sprache der Oberfläche. Der ganze Verlauf steht unter <b>Info → Änderungsverlauf</b> und funktioniert auch offline.</li>
             </ul>
           </li>
           <li>

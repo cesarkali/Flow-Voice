@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novedades · FlowVoice 2.2: cápsula arrastrable, Intentar de nuevo y 10 idiomas</title>
-<meta name="description" content="Qué cambió en FlowVoice: en la 2.2, cápsula arrastrable, Intentar de nuevo cuando la transcripción falla e interfaz en 10 idiomas; en la 2.1, vista previa en vivo que no vuelve atrás y cápsula de cristal; en la 2.0, reescrito desde cero en Rust, estilo Prompt, modo Comando, cambio automático de modelos retirados y modo sin conexión con modelo para pt-BR.">
+<title>Novedades · FlowVoice 2.2: Revisar, cápsula arrastrable, Intentar de nuevo y 10 idiomas</title>
+<meta name="description" content="Qué cambió en FlowVoice: en la 2.2, Revisar (corrige la ortografía y la puntuación del texto seleccionado), cápsula arrastrable, Intentar de nuevo cuando la transcripción falla e interfaz en 10 idiomas; en la 2.1, vista previa en vivo que no vuelve atrás y cápsula de cristal; en la 2.0, reescrito desde cero en Rust, estilo Prompt, modo Comando, cambio automático de modelos retirados y modo sin conexión con modelo para pt-BR.">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
@@ -30,13 +30,13 @@
 <meta property="og:locale" content="es_ES">
 <meta property="og:url" content="https://flowvoice.caliberda.com.br/es/novidades">
 <meta property="og:title" content="FlowVoice 2.2: cápsula arrastrable, Intentar de nuevo y 10 idiomas">
-<meta property="og:description" content="Arrastra la cápsula adonde quieras, rehace un dictado que falló y usa la app en 10 idiomas. Mira qué cambió en la 2.2, la 2.1 y la 2.0.">
+<meta property="og:description" content="Corrige un texto seleccionado con un atajo, arrastra la cápsula adonde quieras, rehace un dictado que falló y usa la app en 10 idiomas. Mira qué cambió en la 2.2, la 2.1 y la 2.0.">
 <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FlowVoice 2.2: cápsula arrastrable, Intentar de nuevo y 10 idiomas">
-<meta name="twitter:description" content="Arrastra la cápsula adonde quieras, rehace un dictado que falló y usa la app en 10 idiomas. Mira qué cambió en la 2.2, la 2.1 y la 2.0.">
+<meta name="twitter:description" content="Corrige un texto seleccionado con un atajo, arrastra la cápsula adonde quieras, rehace un dictado que falló y usa la app en 10 idiomas. Mira qué cambió en la 2.2, la 2.1 y la 2.0.">
 <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
@@ -119,7 +119,7 @@
     <div class="wrap">
       <div class="pg-head-in">
         <h1>2.2: la cápsula va adonde <span class="nowrap">quieras.<span class="caret" aria-hidden="true"></span></span></h1>
-        <p class="pg-lede">Arrastra la cápsula durante la grabación o elige una posición propia. Un dictado que falló gana el botón Intentar de nuevo, y la app ahora está en 10 idiomas.</p>
+        <p class="pg-lede">Arrastra la cápsula durante la grabación o elige una posición propia. Un dictado que falló gana el botón Intentar de nuevo, y la app ahora está en 10 idiomas. Y un atajo corrige la ortografía de cualquier texto seleccionado.</p>
         <p class="pg-meta"><span>Versión <b>2.2</b></span><span>Windows 10 y 11</span><span>Se actualiza solo</span></p>
       </div>
     </div>
@@ -132,10 +132,18 @@
         <span class="pg-rel-date">Noviembre de 2026</span>
       </div>
       <div class="pg-rel-body">
-        <h2 id="v22">Cápsula arrastrable, Intentar de nuevo y 10 idiomas</h2>
-        <p>La cápsula ya no tiene un lugar fijo: arrástrala durante la grabación o elige una posición propia. Un dictado que falló ya no se pierde, y la app pasa a seguir el idioma de Windows.</p>
+        <h2 id="v22">Revisar, cápsula arrastrable, Intentar de nuevo y 10 idiomas</h2>
+        <p>Un atajo nuevo corrige la ortografía de cualquier texto seleccionado, sin decir nada. La cápsula ya no tiene un lugar fijo: arrástrala durante la grabación o elige una posición propia. Un dictado que falló ya no se pierde, y la app pasa a seguir el idioma de Windows.</p>
 
         <ul class="pg-changes">
+          <li>
+            <h3>Revisar la selección</h3>
+            <ul>
+              <li><b>Revisar</b>: selecciona un texto en cualquier app y pulsa <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>J</kbd>. FlowVoice corrige solo la ortografía, las tildes y la puntuación, sin cambiar palabras ni el estilo, y sin que tengas que decir nada.</li>
+              <li>Si la IA cambia más que eso, el texto se queda como estaba. Si no hay nada que corregir, no se pega nada, y el formato del texto sigue intacto.</li>
+              <li>También aparece como el chip <b>Revisar</b> en la tarjeta del Comando, en el resultado y en el historial. En teclados donde <kbd>AltGr</kbd> <kbd>J</kbd> escribe un carácter, empieza sin atajo, y puedes elegir otro.</li>
+            </ul>
+          </li>
           <li>
             <h3>Mueve la cápsula</h3>
             <ul>
@@ -173,6 +181,12 @@
               <li>Nueva sección <b>Privacidad</b> en la pantalla <b>Acerca de</b>: qué se queda en el PC, qué va a cada proveedor y dónde están las claves. <a href="privacidade.html">La política completa está aquí</a>.</li>
               <li>Errores de micrófono más claros: cuando Windows bloquea el micrófono, la app dice dónde liberarlo; cuando otra app lo usa en exclusiva, también avisa.</li>
               <li>Mensaje propio cuando otra app está reteniendo el portapapeles.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Novedades en la app</h3>
+            <ul>
+              <li>Tras una actualización, la primera vez que se abre la ventana muestra lo nuevo, en el idioma de la interfaz. El historial completo está en <b>Acerca de → Historial de cambios</b> y funciona sin internet.</li>
             </ul>
           </li>
           <li>

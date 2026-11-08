@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>更新内容 · FlowVoice 2.2：可拖动的胶囊、重试和 10 种语言</title>
-<meta name="description" content="FlowVoice 有哪些变化：2.2 带来可拖动的胶囊、转写失败时的“重试”和 10 种界面语言；2.1 带来不会倒退的实时预览和玻璃胶囊；2.0 用 Rust 从零重写，新增提示词风格、命令模式、自动替换下线模型，以及带巴西葡萄牙语模型的离线模式。">
+<title>更新内容 · FlowVoice 2.2：校对、可拖动的胶囊、重试和 10 种语言</title>
+<meta name="description" content="FlowVoice 有哪些变化：2.2 带来校对（修正选中文字的拼写和标点）、可拖动的胶囊、转写失败时的“重试”和 10 种界面语言；2.1 带来不会倒退的实时预览和玻璃胶囊；2.0 用 Rust 从零重写，新增提示词风格、命令模式、自动替换下线模型，以及带巴西葡萄牙语模型的离线模式。">
 <meta name="author" content="Júlio Caliberda">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
@@ -30,13 +30,13 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:url" content="https://flowvoice.caliberda.com.br/zh/novidades">
 <meta property="og:title" content="FlowVoice 2.2：可拖动的胶囊、重试和 10 种语言">
-<meta property="og:description" content="把胶囊拖到任意位置，重做失败的听写，用 10 种语言使用应用。看看 2.2、2.1 和 2.0 有哪些变化。">
+<meta property="og:description" content="用一个快捷键校对选中的文字，把胶囊拖到任意位置，重做失败的听写，用 10 种语言使用应用。看看 2.2、2.1 和 2.0 有哪些变化。">
 <meta property="og:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FlowVoice 2.2：可拖动的胶囊、重试和 10 种语言">
-<meta name="twitter:description" content="把胶囊拖到任意位置，重做失败的听写，用 10 种语言使用应用。看看 2.2、2.1 和 2.0 有哪些变化。">
+<meta name="twitter:description" content="用一个快捷键校对选中的文字，把胶囊拖到任意位置，重做失败的听写，用 10 种语言使用应用。看看 2.2、2.1 和 2.0 有哪些变化。">
 <meta name="twitter:image" content="https://flowvoice.caliberda.com.br/assets/og.png">
 
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
@@ -119,7 +119,7 @@
     <div class="wrap">
       <div class="pg-head-in">
         <h1>2.2：胶囊想放哪就<span class="nowrap">放哪。<span class="caret" aria-hidden="true"></span></span></h1>
-        <p class="pg-lede">录音时拖动胶囊，或选一个专属位置。听写失败时会出现“重试”按钮，应用现在支持 10 种语言。</p>
+        <p class="pg-lede">录音时拖动胶囊，或选一个专属位置。听写失败时会出现“重试”按钮，应用现在支持 10 种语言。还有一个快捷键，可以修正任何选中文字的拼写。</p>
         <p class="pg-meta"><span>版本 <b>2.2</b></span><span>Windows 10 和 11</span><span>自动更新</span></p>
       </div>
     </div>
@@ -132,10 +132,18 @@
         <span class="pg-rel-date">2026年11月</span>
       </div>
       <div class="pg-rel-body">
-        <h2 id="v22">可拖动的胶囊、重试和 10 种语言</h2>
-        <p>胶囊不再固定在一个位置：录音时可以拖动，也可以选一个专属位置。失败的听写不会再丢失，应用也开始跟随 Windows 的语言。</p>
+        <h2 id="v22">校对、可拖动的胶囊、重试和 10 种语言</h2>
+        <p>新的快捷键无需开口，就能修正任何选中文字的拼写。胶囊不再固定在一个位置：录音时可以拖动，也可以选一个专属位置。失败的听写不会再丢失，应用也开始跟随 Windows 的语言。</p>
 
         <ul class="pg-changes">
+          <li>
+            <h3>校对选中内容</h3>
+            <ul>
+              <li><b>校对</b>：在任何应用中选中文字，按 <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>J</kbd>。FlowVoice 只修正拼写、重音和标点，不换词、不改风格，也不用你说话。</li>
+              <li>如果 AI 改动超出这些，文字会保持原样。如果没有需要修正的地方，就不会粘贴任何内容，文字的格式也保持不变。</li>
+              <li>它也会以 <b>校对</b> 标签出现在命令卡片、结果和历史记录中。在 <kbd>AltGr</kbd> <kbd>J</kbd> 会输入字符的键盘上，它默认没有快捷键，你可以另选一个。</li>
+            </ul>
+          </li>
           <li>
             <h3>移动胶囊</h3>
             <ul>
@@ -173,6 +181,12 @@
               <li><b>关于</b>页面新增<b>隐私</b>部分：哪些内容留在电脑上，哪些发送给各服务商，密钥存放在哪里。<a href="privacidade.html">完整政策在这里</a>。</li>
               <li>麦克风错误更清楚了：Windows 阻止麦克风时，应用会告诉你去哪里开启；其他应用独占麦克风时，也会提示。</li>
               <li>其他应用占用剪贴板时，会显示专门的提示。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>应用内的更新介绍</h3>
+            <ul>
+              <li>更新后第一次打开窗口时，会用界面语言展示新内容。完整的记录在 <b>关于 → 更新记录</b>，离线也能查看。</li>
             </ul>
           </li>
           <li>
