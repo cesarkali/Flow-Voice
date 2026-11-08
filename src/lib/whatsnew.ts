@@ -8,6 +8,18 @@ import type { UiLanguage } from "./types";
 export type Highlight = { icon: IconName; title: string; text: string };
 
 const HIGHLIGHTS: Record<string, Record<UiLanguage, Highlight[]>> = {
+  "2.2.1": {
+    pt: [{ icon: "history", title: "Esc não apaga mais o ditado", text: "Cancelou sem querer? O que a prévia mostrou vai para o histórico, marcado como cancelado, e o cartão oferece Transcrever a gravação." }],
+    en: [{ icon: "history", title: "Esc no longer loses your dictation", text: "Cancelled by accident? What the live preview showed goes to the history, marked as cancelled, and the card offers to transcribe the recording." }],
+    es: [{ icon: "history", title: "Esc ya no borra el dictado", text: "¿Cancelaste sin querer? Lo que mostró la vista previa va al historial, marcado como cancelado, y la tarjeta ofrece transcribir la grabación." }],
+    fr: [{ icon: "history", title: "Échap ne fait plus perdre la dictée", text: "Annulé par erreur ? Ce que l'aperçu affichait va dans l'historique, marqué comme annulé, et la carte propose de transcrire l'enregistrement." }],
+    de: [{ icon: "history", title: "Esc löscht das Diktat nicht mehr", text: "Versehentlich abgebrochen? Was die Live-Vorschau zeigte, landet als abgebrochen markiert im Verlauf, und die Karte bietet an, die Aufnahme zu transkribieren." }],
+    ja: [{ icon: "history", title: "Esc で音声入力が消えなくなりました", text: "うっかりキャンセルしても、ライブプレビューの内容が「キャンセル済み」として履歴に残り、カードから録音を文字起こしできます。" }],
+    zh: [{ icon: "history", title: "按 Esc 不再丢失听写", text: "误按取消？实时预览显示的内容会以“已取消”标记保存到历史记录，卡片还可以转写录音。" }],
+    ru: [{ icon: "history", title: "Esc больше не стирает диктовку", text: "Отменили случайно? То, что показал живой черновик, попадает в историю с пометкой «Отменено», а карточка предлагает расшифровать запись." }],
+    hi: [{ icon: "history", title: "Esc से अब डिक्टेशन नहीं खोता", text: "गलती से रद्द कर दिया? लाइव प्रीव्यू में जो दिखा, वह “रद्द” निशान के साथ इतिहास में जाता है, और कार्ड रिकॉर्डिंग ट्रांसक्राइब करने का विकल्प देता है।" }],
+    bn: [{ icon: "history", title: "Esc চাপলে আর ডিকটেশন হারায় না", text: "ভুল করে বাতিল করেছেন? লাইভ প্রিভিউতে যা দেখা গেছে তা “বাতিল” চিহ্নসহ ইতিহাসে যায়, আর কার্ড থেকে রেকর্ডিং ট্রান্সক্রাইব করা যায়।" }],
+  },
   "2.2.0": {
     pt: [
       { icon: "grip", title: "A cápsula vai aonde você quiser", text: "Arraste a cápsula enquanto grava, até para outro monitor, ou escolha uma posição fixa numa miniatura da tela." },
@@ -107,14 +119,15 @@ export function highlights(version: string, lang: UiLanguage): Highlight[] | nul
   return HIGHLIGHTS[version]?.[lang] ?? null;
 }
 
-/** What's new for someone who last saw `since` and now runs `version`: the highlights of the
- *  newest version in between that has some (2.1 -> 2.2.1 still shows 2.2.0's), or null. */
+/** What's new for someone who last saw `since` and now runs `version`: the highlights of every
+ *  version in between that has some, newest first (2.1 -> 2.2.1 shows 2.2.1's, then 2.2.0's), or null. */
 export function highlightsSince(version: string, since: string, lang: UiLanguage): Highlight[] | null {
-  const best = Object.keys(HIGHLIGHTS)
+  const all = Object.keys(HIGHLIGHTS)
     .filter((v) => compareVersions(v, since || "0") > 0 && compareVersions(v, version) <= 0)
     .sort(compareVersions)
-    .pop();
-  return best ? highlights(best, lang) : null;
+    .reverse()
+    .flatMap((v) => highlights(v, lang) ?? []);
+  return all.length ? all : null;
 }
 
 /** The whole history, from the first version heading on (the file's title and intro left out). */

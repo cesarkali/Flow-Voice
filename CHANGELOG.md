@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases antigos](https://github.com/cesarkali/Flow-Voice/releases?q=v1&expanded=true) e no histórico do Git.
 
+## 2.2.1
+
+### Esc não apaga mais o ditado
+
+- Antes, apertar **Esc** durante a gravação jogava fora tudo o que tinha sido dito, sem deixar rastro. Agora um ditado ou tradução cancelado vai para o histórico com a marca **Cancelado** e o texto que a prévia ao vivo mostrava naquele momento (sem refino, mas dá para refinar com os estilos dali mesmo).
+- A gravação fica guardada na memória (junto com as falhas, as 3 últimas, nunca em disco). O cartão que aparece depois do Esc tem **Transcrever**, que segue como se você tivesse parado normalmente e cola no mesmo app, e **Copiar prévia**. No histórico, **Transcrever** transcreve e copia.
+- Um toque rápido no atalho e um Esc sem fala nenhuma continuam sendo descartados. O Comando e as perguntas cancelam como antes.
+
 ## 2.2.0
 
 ### Mova a cápsula

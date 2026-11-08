@@ -1,6 +1,6 @@
 [package]
 name = "flowvoice"
-version = "2.2.0"
+version = "2.2.1"
 description = "FlowVoice — ditado por voz com IA"
 authors = ["Júlio Caliberda (cesarkali)"]
 license = "GPL-3.0-only"
