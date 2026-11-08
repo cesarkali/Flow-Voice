@@ -29,6 +29,9 @@ pub fn handler(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     let action = BINDINGS.lock().iter().find(|(s, _)| s == shortcut).map(|(_, a)| *a);
     let Some(action) = action else { return };
     log::info!("hotkey {} {:?}", shortcut.into_string(), event.state());
+    if event.state() == ShortcutState::Pressed {
+        crate::platform::note_shortcut(shortcut.mods.contains(Modifiers::ALT));
+    }
     let hold = app.state::<AppState>().settings.read().hotkey_mode == "hold";
     match (action, event.state()) {
         (Action::Cancel, ShortcutState::Pressed) => pipeline::control(app, pipeline::Ctl::Cancel),

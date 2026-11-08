@@ -234,6 +234,7 @@ fn paste_with(text: &str, target: isize, replace: bool, what: PasteFor) -> Resul
     if !has_focus(target) {
         return manual("could not focus the target window");
     }
+    leave_access_keys(target);
     let now = focus_now(target);
     let mut mark = PASTE_MARK.lock();
     if replace {
@@ -251,6 +252,9 @@ fn paste_with(text: &str, target: isize, replace: bool, what: PasteFor) -> Resul
         log::info!("paste: dictation continues={continues} join_space={space} caret_known={}", now.caret.is_some());
         if space {
             send_char(' ');
+            // Windows 11's Notepad can still be busy with that key: a Ctrl+V right behind it landed as a
+            // plain "v" (2 in 7 runs) and the dictation stayed on the clipboard only.
+            std::thread::sleep(Duration::from_millis(80));
         }
     }
     send_ctrl('V');
@@ -317,6 +321,7 @@ pub fn copy_selection(target: isize) -> Result<Option<String>> {
     if !has_focus(target) {
         return Err(anyhow!(crate::i18n::tr("A janela com o texto selecionado perdeu o foco.")));
     }
+    leave_access_keys(target);
     send_ctrl('C');
     let t0 = std::time::Instant::now();
     let mut copied = None;
@@ -540,6 +545,56 @@ fn has_focus(target: isize) -> bool {
 fn has_focus(_target: isize) -> bool {
     true
 }
+
+/// The last global shortcut pressed had Alt in it (see `leave_access_keys`).
+static ALT_SHORTCUT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn note_shortcut(has_alt: bool) {
+    ALT_SHORTCUT.store(has_alt, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Windows 11's Notepad: the shortcut's last key never reaches the app, so releasing Alt turns on
+/// its menu's access keys, the editor loses the focus and Ctrl+C / Ctrl+V do nothing (a Revisar
+/// said "nothing selected"). A tap of Alt turns them off, selection intact (not Esc: FlowVoice
+/// takes it while recording, and a Command copies the selection then). Only after a shortcut with
+/// Alt, and only when the editor lost Windows' caret, which is what that mode does.
+#[cfg(windows)]
+fn leave_access_keys(target: isize) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::Input::KeyboardAndMouse::{SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VK_MENU};
+    use windows::Win32::UI::WindowsAndMessaging::GetClassNameW;
+    if !ALT_SHORTCUT.swap(false, std::sync::atomic::Ordering::Relaxed) || target == 0 {
+        return;
+    }
+    let mut buf = [0u16; 32];
+    let n = unsafe { GetClassNameW(HWND(target as *mut _), &mut buf) };
+    if String::from_utf16_lossy(&buf[..n.max(0) as usize]) != "Notepad" {
+        return;
+    }
+    // (The app handles the Alt release on its own time.)
+    std::thread::sleep(Duration::from_millis(80));
+    if focus_now(target).caret.is_some() {
+        return;
+    }
+    let key = |flags| INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: VK_MENU, wScan: 0, dwFlags: flags, time: 0, dwExtraInfo: 0 } },
+    };
+    let inputs = [key(KEYBD_EVENT_FLAGS(0)), key(KEYEVENTF_KEYUP)];
+    unsafe {
+        SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
+    }
+    for _ in 0..15 {
+        std::thread::sleep(Duration::from_millis(20));
+        if focus_now(target).caret.is_some() {
+            break;
+        }
+    }
+    log::info!("paste: left Notepad's access keys (caret back: {})", focus_now(target).caret.is_some());
+}
+
+#[cfg(not(windows))]
+fn leave_access_keys(_target: isize) {}
 
 /// Console hosts where Ctrl+Z is not "undo".
 #[cfg(windows)]
