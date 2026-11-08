@@ -238,7 +238,6 @@
  "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "Nouveautés · FlowVoice 2.2 : Corriger, capsule déplaçable, Réessayer et 10 langues",
  "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]": "2.2 : la capsule va où vous [1]voulez.[2/][/1]",
  "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.": "Faites glisser la capsule pendant l'enregistrement ou choisissez votre propre position. Une dictée qui a échoué reçoit le bouton Réessayer, et l'application existe désormais en 10 langues. Et un raccourci corrige l'orthographe de n'importe quel texte sélectionné.",
- "Versão [1]2.2[/1]": "Version [1]2.2[/1]",
  "Windows 10 e 11": "Windows 10 et 11",
  "Novembro de 2026": "Novembre 2026",
  "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "Corriger, capsule déplaçable, Réessayer et 10 langues",
@@ -446,5 +445,12 @@
  "Uma ideia": "Une idée",
  "Conte o que faria o FlowVoice servir melhor para você.": "Dites ce qui rendrait FlowVoice plus utile pour vous.",
  "Indicar para alguém": "En parler autour de vous",
- "Quem digita o dia todo vai agradecer.": "Les personnes qui tapent toute la journée vous remercieront."
+ "Quem digita o dia todo vai agradecer.": "Les personnes qui tapent toute la journée vous remercieront.",
+ "Versão [1]2.2.1[/1]": "Version [1]2.2.1[/1]",
+ "Esc não apaga mais o ditado": "Échap ne fait plus perdre la dictée",
+ "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "Appuyer sur [1]Esc[/1] par erreur au milieu d'un enregistrement effaçait tout ce que vous aviez dit. Désormais, la dictée annulée est conservée.",
+ "Cancelado, mas não perdido": "Annulée, pas perdue",
+ "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "Une dictée ou une traduction annulée va dans l'historique avec la mention [1]Annulé[/1] et le texte que l'aperçu en direct affichait à ce moment-là. Vous pouvez la copier ou la retoucher avec les styles, directement depuis là.",
+ "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "La carte qui s'affiche après [1]Esc[/1] propose le bouton [2]Transcrire[/2] : la dictée continue comme si vous l'aviez arrêtée normalement et est collée dans la même app. Dans l'historique, le même bouton transcrit et copie.",
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "L'enregistrement reste uniquement en mémoire (les 3 derniers, avec les échecs), jamais sur le disque. Un appui bref sur le raccourci et un [1]Esc[/1] sans parole sont toujours ignorés."
 }

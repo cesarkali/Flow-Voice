@@ -238,7 +238,6 @@
  "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "नया क्या है · FlowVoice 2.2: प्रूफ़रीड, खिसकाने लायक कैप्सूल, फिर कोशिश करें और 10 भाषाएं",
  "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]": "2.2: कैप्सूल वहां जाता है जहां आप [1]चाहें।[2/][/1]",
  "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.": "रिकॉर्डिंग के दौरान कैप्सूल खींचें या अपनी पसंद की जगह चुनें। विफल डिक्टेशन को फिर कोशिश करें बटन मिलता है, और ऐप अब 10 भाषाएं बोलता है। और एक शॉर्टकट किसी भी चुने हुए टेक्स्ट की वर्तनी ठीक करता है।",
- "Versão [1]2.2[/1]": "वर्ज़न [1]2.2[/1]",
  "Windows 10 e 11": "Windows 10 और 11",
  "Novembro de 2026": "नवंबर 2026",
  "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "प्रूफ़रीड, खिसकाने लायक कैप्सूल, फिर कोशिश करें और 10 भाषाएं",
@@ -446,5 +445,12 @@
  "Uma ideia": "कोई आइडिया",
  "Conte o que faria o FlowVoice servir melhor para você.": "बताएं कि FlowVoice आपके लिए और बेहतर कैसे हो सकता है।",
  "Indicar para alguém": "किसी को सुझाएं",
- "Quem digita o dia todo vai agradecer.": "दिन भर टाइप करने वाले लोग शुक्रिया कहेंगे।"
+ "Quem digita o dia todo vai agradecer.": "दिन भर टाइप करने वाले लोग शुक्रिया कहेंगे।",
+ "Versão [1]2.2.1[/1]": "वर्ज़न [1]2.2.1[/1]",
+ "Esc não apaga mais o ditado": "Esc से अब डिक्टेशन नहीं खोता",
+ "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "पहले रिकॉर्डिंग के बीच गलती से [1]Esc[/1] दबाने पर कही गई हर बात मिट जाती थी। अब रद्द किया गया डिक्टेशन रखा रहता है।",
+ "Cancelado, mas não perdido": "रद्द, पर खोया नहीं",
+ "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "रद्द किया गया डिक्टेशन या अनुवाद [1]रद्द[/1] निशान के साथ इतिहास में जाता है, उस पल लाइव प्रीव्यू में दिख रहे टेक्स्ट के साथ। उसे वहीं से कॉपी कर सकते हैं या स्टाइल से सुधार सकते हैं।",
+ "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "[1]Esc[/1] के बाद दिखने वाले कार्ड में [2]ट्रांसक्राइब करें[/2] बटन है: डिक्टेशन ऐसे आगे बढ़ता है जैसे आपने सामान्य रूप से रोका हो, और उसी ऐप में पेस्ट होता है। इतिहास में वही बटन ट्रांसक्राइब करके कॉपी करता है।",
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "रिकॉर्डिंग सिर्फ़ मेमोरी में रहती है (विफल रिकॉर्डिंग के साथ आख़िरी 3), डिस्क पर कभी नहीं। शॉर्टकट को झटपट छूना और बिना बोले [1]Esc[/1] दबाना पहले की तरह हटा दिए जाते हैं।"
 }

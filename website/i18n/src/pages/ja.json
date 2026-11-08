@@ -238,7 +238,6 @@
  "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "新機能 · FlowVoice 2.2：校正、ドラッグできるカプセル、もう一度試す、10 言語",
  "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]": "2.2：カプセルを[1]好きな場所へ。[2/][/1]",
  "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.": "録音中にカプセルをドラッグするか、決まった位置を選べます。失敗した音声入力には「もう一度試す」ボタンが付き、アプリは 10 言語に対応しました。さらに、ショートカットひとつで選択したテキストのつづりを直せます。",
- "Versão [1]2.2[/1]": "バージョン [1]2.2[/1]",
  "Windows 10 e 11": "Windows 10・11",
  "Novembro de 2026": "2026年11月",
  "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "校正、ドラッグできるカプセル、もう一度試す、10 言語",
@@ -446,5 +445,12 @@
  "Uma ideia": "アイデア",
  "Conte o que faria o FlowVoice servir melhor para você.": "FlowVoice がもっと役立つために必要なことを教えてください。",
  "Indicar para alguém": "誰かにすすめる",
- "Quem digita o dia todo vai agradecer.": "一日中タイピングしている人に喜ばれます。"
+ "Quem digita o dia todo vai agradecer.": "一日中タイピングしている人に喜ばれます。",
+ "Versão [1]2.2.1[/1]": "バージョン [1]2.2.1[/1]",
+ "Esc não apaga mais o ditado": "Esc で音声入力が消えなくなりました",
+ "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "これまでは録音中にうっかり [1]Esc[/1] を押すと、話した内容がすべて消えていました。今はキャンセルした音声入力も残ります。",
+ "Cancelado, mas não perdido": "キャンセルしても失われない",
+ "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "キャンセルした音声入力や翻訳は、[1]キャンセル済み[/1] の印と、その時点でライブプレビューに表示されていたテキスト付きで履歴に残ります。そのままコピーしたり、スタイルで整えたりできます。",
+ "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "[1]Esc[/1] のあとに表示されるカードには [2]文字起こし[/2] ボタンがあります。普通に停止したときと同じように処理され、同じアプリに貼り付けられます。履歴では同じボタンで文字起こししてコピーします。",
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "録音はメモリにだけ保持され(失敗分と合わせて最新 3 件)、ディスクには保存されません。ショートカットを一瞬押しただけのときや、話していないときの [1]Esc[/1] は、これまでどおり破棄されます。"
 }

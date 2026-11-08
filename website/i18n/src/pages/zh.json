@@ -238,7 +238,6 @@
  "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "更新内容 · FlowVoice 2.2：校对、可拖动的胶囊、重试和 10 种语言",
  "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]": "2.2：胶囊想放哪就[1]放哪。[2/][/1]",
  "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.": "录音时拖动胶囊，或选一个专属位置。听写失败时会出现“重试”按钮，应用现在支持 10 种语言。还有一个快捷键，可以修正任何选中文字的拼写。",
- "Versão [1]2.2[/1]": "版本 [1]2.2[/1]",
  "Windows 10 e 11": "Windows 10 和 11",
  "Novembro de 2026": "2026年11月",
  "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "校对、可拖动的胶囊、重试和 10 种语言",
@@ -446,5 +445,12 @@
  "Uma ideia": "提个想法",
  "Conte o que faria o FlowVoice servir melhor para você.": "说说怎样让 FlowVoice 更好用。",
  "Indicar para alguém": "推荐给别人",
- "Quem digita o dia todo vai agradecer.": "整天打字的人会感谢你。"
+ "Quem digita o dia todo vai agradecer.": "整天打字的人会感谢你。",
+ "Versão [1]2.2.1[/1]": "版本 [1]2.2.1[/1]",
+ "Esc não apaga mais o ditado": "按 Esc 不再丢失听写",
+ "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "以前在录音中误按 [1]Esc[/1]，说过的内容会全部丢失。现在被取消的听写会保留下来。",
+ "Cancelado, mas não perdido": "取消了，但没有丢失",
+ "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "被取消的听写或翻译会以 [1]已取消[/1] 标记保存到历史记录，并附上当时实时预览显示的文字。可以直接在那里复制，或用风格润色。",
+ "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "按下 [1]Esc[/1] 后出现的卡片上有 [2]转写[/2] 按钮：听写会像正常停止一样继续处理，并粘贴到同一个应用。在历史记录里，同一个按钮会转写并复制。",
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "录音只保存在内存中（与失败的录音一起保留最近 3 条），从不写入磁盘。快速点按快捷键，以及没有说话时按 [1]Esc[/1]，仍然会被丢弃。"
 }

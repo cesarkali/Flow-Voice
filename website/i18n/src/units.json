@@ -1870,7 +1870,7 @@
   ]
  },
  {
-  "pt": "Versão [1]2.2[/1]",
+  "pt": "Versão [1]2.2.1[/1]",
   "kind": "text",
   "where": [
    "novidades: span"
@@ -1888,6 +1888,48 @@
   "kind": "text",
   "where": [
    "novidades: span.pg-rel-date"
+  ]
+ },
+ {
+  "pt": "Esc não apaga mais o ditado",
+  "kind": "text",
+  "where": [
+   "novidades: h2"
+  ]
+ },
+ {
+  "pt": "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.",
+  "kind": "text",
+  "where": [
+   "novidades: p"
+  ]
+ },
+ {
+  "pt": "Cancelado, mas não perdido",
+  "kind": "text",
+  "where": [
+   "novidades: h3"
+  ]
+ },
+ {
+  "pt": "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
+  ]
+ },
+ {
+  "pt": "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.",
+  "kind": "text",
+  "where": [
+   "novidades: li"
   ]
  },
  {

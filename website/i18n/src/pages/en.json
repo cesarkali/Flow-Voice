@@ -238,7 +238,6 @@
  "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "What's new · FlowVoice 2.2: Proofread, draggable capsule, Try again and 10 languages",
  "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]": "2.2: the capsule goes where you [1]want.[2/][/1]",
  "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.": "Drag the capsule while recording or pick a position of your own. A dictation that failed gets a Try again button, and the app now comes in 10 languages. And one shortcut fixes the spelling of any selected text.",
- "Versão [1]2.2[/1]": "Version [1]2.2[/1]",
  "Windows 10 e 11": "Windows 10 and 11",
  "Novembro de 2026": "November 2026",
  "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "Proofread, draggable capsule, Try again and 10 languages",
@@ -446,5 +445,12 @@
  "Uma ideia": "An idea",
  "Conte o que faria o FlowVoice servir melhor para você.": "Say what would make FlowVoice work better for you.",
  "Indicar para alguém": "Telling someone about it",
- "Quem digita o dia todo vai agradecer.": "Anyone who types all day will thank you."
+ "Quem digita o dia todo vai agradecer.": "Anyone who types all day will thank you.",
+ "Versão [1]2.2.1[/1]": "Version [1]2.2.1[/1]",
+ "Esc não apaga mais o ditado": "Esc no longer loses your dictation",
+ "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "Pressing [1]Esc[/1] by accident in the middle of a recording used to throw away everything you had said. Now a cancelled dictation is kept.",
+ "Cancelado, mas não perdido": "Cancelled, not lost",
+ "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "A cancelled dictation or translation goes to the history marked [1]Cancelled[/1], with the text the live preview was showing at that moment. You can copy it or refine it with the styles right there.",
+ "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "The card that shows up after [1]Esc[/1] has a [2]Transcribe[/2] button: the dictation goes on as if you had stopped normally and is pasted into the same app. In the history, the same button transcribes and copies.",
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "The recording stays in memory only (the last 3, together with failures), never on disk. A quick tap on the shortcut and an [1]Esc[/1] with no speech are still discarded."
 }

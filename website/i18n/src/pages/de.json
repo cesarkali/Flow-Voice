@@ -238,7 +238,6 @@
  "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "Neuigkeiten · FlowVoice 2.2: Korrigieren, verschiebbare Kapsel, Erneut versuchen und 10 Sprachen",
  "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]": "2.2: Die Kapsel geht, wohin du [1]willst.[2/][/1]",
  "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.": "Zieh die Kapsel während der Aufnahme oder wähle eine eigene Position. Ein fehlgeschlagenes Diktat bekommt die Schaltfläche Erneut versuchen, und die App spricht jetzt 10 Sprachen. Und ein Tastenkürzel korrigiert die Rechtschreibung jedes markierten Texts.",
- "Versão [1]2.2[/1]": "Version [1]2.2[/1]",
  "Windows 10 e 11": "Windows 10 und 11",
  "Novembro de 2026": "November 2026",
  "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "Korrigieren, verschiebbare Kapsel, Erneut versuchen und 10 Sprachen",
@@ -446,5 +445,12 @@
  "Uma ideia": "Eine Idee",
  "Conte o que faria o FlowVoice servir melhor para você.": "Sag, was FlowVoice für dich besser machen würde.",
  "Indicar para alguém": "Es weiterempfehlen",
- "Quem digita o dia todo vai agradecer.": "Wer den ganzen Tag tippt, wird es dir danken."
+ "Quem digita o dia todo vai agradecer.": "Wer den ganzen Tag tippt, wird es dir danken.",
+ "Versão [1]2.2.1[/1]": "Version [1]2.2.1[/1]",
+ "Esc não apaga mais o ditado": "Esc löscht das Diktat nicht mehr",
+ "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "Wer mitten in einer Aufnahme versehentlich [1]Esc[/1] drückte, verlor alles, was gesagt worden war. Jetzt bleibt ein abgebrochenes Diktat erhalten.",
+ "Cancelado, mas não perdido": "Abgebrochen, nicht verloren",
+ "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "Ein abgebrochenes Diktat oder eine abgebrochene Übersetzung landet im Verlauf, markiert als [1]Abgebrochen[/1], mit dem Text, den die Live-Vorschau in dem Moment zeigte. Du kannst ihn dort kopieren oder mit den Stilen überarbeiten.",
+ "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "Die Karte, die nach [1]Esc[/1] erscheint, hat die Schaltfläche [2]Transkribieren[/2]: Das Diktat geht weiter, als hättest du normal gestoppt, und wird in dieselbe App eingefügt. Im Verlauf transkribiert und kopiert dieselbe Schaltfläche.",
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "Die Aufnahme bleibt nur im Arbeitsspeicher (die letzten 3, zusammen mit Fehlschlägen), nie auf der Festplatte. Ein kurzes Tippen auf das Tastenkürzel und ein [1]Esc[/1] ohne Sprache werden weiterhin verworfen."
 }

@@ -238,7 +238,6 @@
  "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "Novedades · FlowVoice 2.2: Revisar, cápsula arrastrable, Intentar de nuevo y 10 idiomas",
  "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]": "2.2: la cápsula va adonde [1]quieras.[2/][/1]",
  "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.": "Arrastra la cápsula durante la grabación o elige una posición propia. Un dictado que falló gana el botón Intentar de nuevo, y la app ahora está en 10 idiomas. Y un atajo corrige la ortografía de cualquier texto seleccionado.",
- "Versão [1]2.2[/1]": "Versión [1]2.2[/1]",
  "Windows 10 e 11": "Windows 10 y 11",
  "Novembro de 2026": "Noviembre de 2026",
  "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "Revisar, cápsula arrastrable, Intentar de nuevo y 10 idiomas",
@@ -446,5 +445,12 @@
  "Uma ideia": "Una idea",
  "Conte o que faria o FlowVoice servir melhor para você.": "Cuenta qué haría que FlowVoice te sirviera mejor.",
  "Indicar para alguém": "Recomendarlo a alguien",
- "Quem digita o dia todo vai agradecer.": "Quien escribe todo el día te lo agradecerá."
+ "Quem digita o dia todo vai agradecer.": "Quien escribe todo el día te lo agradecerá.",
+ "Versão [1]2.2.1[/1]": "Versión [1]2.2.1[/1]",
+ "Esc não apaga mais o ditado": "Esc ya no borra el dictado",
+ "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "Pulsar [1]Esc[/1] sin querer en medio de una grabación tiraba todo lo que habías dicho. Ahora el dictado cancelado se guarda.",
+ "Cancelado, mas não perdido": "Cancelado, pero no perdido",
+ "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "Un dictado o traducción cancelado va al historial con la marca [1]Cancelado[/1] y el texto que mostraba la vista previa en ese momento. Puedes copiarlo o refinarlo con los estilos desde ahí mismo.",
+ "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "La tarjeta que aparece después de [1]Esc[/1] tiene el botón [2]Transcribir[/2]: el dictado sigue como si hubieras parado normalmente y se pega en la misma app. En el historial, el mismo botón transcribe y copia.",
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "La grabación queda solo en la memoria (las 3 últimas, junto con los fallos), nunca en disco. Un toque rápido en el atajo y un [1]Esc[/1] sin voz se siguen descartando."
 }

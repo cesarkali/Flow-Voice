@@ -238,7 +238,6 @@
  "Novidades · FlowVoice 2.2: Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "Что нового · FlowVoice 2.2: «Проверить», перетаскиваемая капсула, «Повторить» и 10 языков",
  "2.2: a cápsula vai aonde você [1]quiser.[2/][/1]": "2.2: капсула там, где вам [1]удобно.[2/][/1]",
  "Arraste a cápsula durante a gravação ou escolha uma posição só sua. Um ditado que falhou ganha o botão Tentar de novo, e o app agora fala 10 idiomas. E um atalho corrige a ortografia de qualquer texto selecionado.": "Перетащите капсулу во время записи или выберите для неё своё место. У неудавшейся диктовки появилась кнопка «Повторить», а приложение теперь говорит на 10 языках. А одно сочетание клавиш исправляет орфографию любого выделенного текста.",
- "Versão [1]2.2[/1]": "Версия [1]2.2[/1]",
  "Windows 10 e 11": "Windows 10 и 11",
  "Novembro de 2026": "Ноябрь 2026",
  "Revisar, cápsula arrastável, Tentar de novo e 10 idiomas": "«Проверить», перетаскиваемая капсула, «Повторить» и 10 языков",
@@ -446,5 +445,12 @@
  "Uma ideia": "Идея",
  "Conte o que faria o FlowVoice servir melhor para você.": "Расскажите, что сделало бы FlowVoice удобнее для вас.",
  "Indicar para alguém": "Посоветовать кому-нибудь",
- "Quem digita o dia todo vai agradecer.": "Те, кто печатает весь день, скажут спасибо."
+ "Quem digita o dia todo vai agradecer.": "Те, кто печатает весь день, скажут спасибо.",
+ "Versão [1]2.2.1[/1]": "Версия [1]2.2.1[/1]",
+ "Esc não apaga mais o ditado": "Esc больше не стирает диктовку",
+ "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "Раньше случайное нажатие [1]Esc[/1] посреди записи уничтожало всё сказанное. Теперь отменённая диктовка сохраняется.",
+ "Cancelado, mas não perdido": "Отменено, но не потеряно",
+ "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "Отменённая диктовка или перевод попадает в историю с пометкой [1]Отменено[/1] и текстом, который в тот момент показывал живой черновик. Его можно скопировать или обработать стилями прямо там.",
+ "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "На карточке, которая появляется после [1]Esc[/1], есть кнопка [2]Расшифровать[/2]: диктовка продолжается так, будто вы остановили её как обычно, и вставляется в то же приложение. В истории та же кнопка расшифровывает и копирует.",
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "Запись хранится только в памяти (последние 3 вместе с неудачными), никогда на диске. Короткое нажатие сочетания клавиш и [1]Esc[/1] без речи по-прежнему отбрасываются."
 }
