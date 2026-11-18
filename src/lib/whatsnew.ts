@@ -8,6 +8,18 @@ import type { UiLanguage } from "./types";
 export type Highlight = { icon: IconName; title: string; text: string };
 
 const HIGHLIGHTS: Record<string, Record<UiLanguage, Highlight[]>> = {
+  "2.2.2": {
+    pt: [{ icon: "mic", title: "Microfones com ruído voltam a funcionar", text: "Com muito ruído de fundo, todo ditado terminava em Nenhuma fala detectada. Agora a voz é reconhecida, e as teclas que o FlowVoice aperta para colar nunca ficam presas." }],
+    en: [{ icon: "mic", title: "Noisy microphones work again", text: "With a lot of background noise, every dictation ended in No speech detected. Now the voice is picked up, and the keys FlowVoice presses to paste are never left stuck." }],
+    es: [{ icon: "mic", title: "Los micrófonos con ruido vuelven a funcionar", text: "Con mucho ruido de fondo, cada dictado terminaba en No se detectó voz. Ahora la voz se reconoce, y las teclas que FlowVoice pulsa para pegar nunca quedan presionadas." }],
+    fr: [{ icon: "mic", title: "Les micros bruyants fonctionnent à nouveau", text: "Avec beaucoup de bruit de fond, chaque dictée finissait par Aucune parole détectée. Désormais la voix est reconnue, et les touches sur lesquelles FlowVoice appuie pour coller ne restent jamais bloquées." }],
+    de: [{ icon: "mic", title: "Mikrofone mit Rauschen funktionieren wieder", text: "Bei viel Hintergrundrauschen endete jedes Diktat mit Keine Sprache erkannt. Jetzt wird die Stimme erkannt, und die Tasten, die FlowVoice zum Einfügen drückt, bleiben nie hängen." }],
+    ja: [{ icon: "mic", title: "ノイズの多いマイクでも再び使えるように", text: "背景ノイズが多いと、どの音声入力も「音声が検出されませんでした」で終わっていました。今は声が認識され、FlowVoice が貼り付けのために押すキーが押されたままになることもありません。" }],
+    zh: [{ icon: "mic", title: "噪音大的麦克风重新可用", text: "背景噪音很大时，每次听写都以“未检测到语音”结束。现在可以识别人声，FlowVoice 为粘贴而按下的按键也不会再卡住。" }],
+    ru: [{ icon: "mic", title: "Шумные микрофоны снова работают", text: "При сильном фоновом шуме каждая диктовка заканчивалась сообщением «Речь не обнаружена». Теперь голос распознаётся, а клавиши, которые FlowVoice нажимает для вставки, больше не залипают." }],
+    hi: [{ icon: "mic", title: "शोर वाले माइक्रोफ़ोन फिर से काम करते हैं", text: "बहुत बैकग्राउंड शोर होने पर हर डिक्टेशन “कोई आवाज़ नहीं मिली” पर खत्म होता था। अब आवाज़ पहचानी जाती है, और पेस्ट के लिए FlowVoice जो कुंजियाँ दबाता है वे कभी दबी नहीं रह जातीं।" }],
+    bn: [{ icon: "mic", title: "গোলমালের মাইক্রোফোন আবার কাজ করে", text: "অনেক ব্যাকগ্রাউন্ড শব্দ থাকলে প্রতিটি ডিকটেশন “কোনো কথা শনাক্ত হয়নি” বলে শেষ হত। এখন কণ্ঠ চেনা যায়, আর পেস্ট করতে FlowVoice যে কী চাপে তা কখনো চাপা অবস্থায় আটকে থাকে না।" }],
+  },
   "2.2.1": {
     pt: [{ icon: "history", title: "Esc não apaga mais o ditado", text: "Cancelou sem querer? O que a prévia mostrou vai para o histórico, marcado como cancelado, e o cartão oferece Transcrever a gravação." }],
     en: [{ icon: "history", title: "Esc no longer loses your dictation", text: "Cancelled by accident? What the live preview showed goes to the history, marked as cancelled, and the card offers to transcribe the recording." }],

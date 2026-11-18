@@ -2,6 +2,20 @@
 
 Todas as mudanças relevantes do FlowVoice. As notas da 1.x estão nos [releases antigos](https://github.com/cesarkali/Flow-Voice/releases?q=v1&expanded=true) e no histórico do Git.
 
+## 2.2.2
+
+### Microfones com ruído voltam a funcionar
+
+- Em microfones com muito ruído de fundo (ventoinha, ambiente barulhento, ganho no máximo), todo ditado terminava em **Nenhuma fala detectada**: o limite que separa voz de silêncio ficava acima da própria voz. Agora ele acompanha o quanto a gravação sobe acima do ruído ([#2](https://github.com/cesarkali/Flow-Voice/issues/2)).
+- O zumbido da rede elétrica e o desvio de alguns microfones não contam mais como ruído de fundo. Uma gravação só com ruído constante continua sendo descartada.
+
+### Teclas mais seguras ao colar e copiar
+
+- Se o Windows interromper uma colagem no meio (um aviso de administrador, a tela de bloqueio), o FlowVoice solta as teclas que já tinha apertado, em vez de deixar o **Ctrl** preso ([#3](https://github.com/cesarkali/Flow-Voice/issues/3)).
+- Um **Ctrl** ou **Alt** da direita (o **AltGr**) que o Windows dá como preso agora também é solto antes de colar. Antes só os da esquerda eram, e o Ctrl+C virava AltGr+C (no ABNT2, um `₢`).
+- Para devolver o foco ao app, o FlowVoice não se liga mais a uma janela que parou de responder.
+- Cada tecla que o FlowVoice aperta fica registrada no log, só as teclas, nunca o texto, e leva uma marca própria que permite distingui-la das do teclado e de outros programas.
+
 ## 2.2.1
 
 ### Esc não apaga mais o ditado
