@@ -120,12 +120,42 @@
       <div class="pg-head-in">
         <h1>2.2：胶囊想放哪就<span class="nowrap">放哪。<span class="caret" aria-hidden="true"></span></span></h1>
         <p class="pg-lede">录音时拖动胶囊，或选一个专属位置。听写失败时会出现“重试”按钮，应用现在支持 10 种语言。还有一个快捷键，可以修正任何选中文字的拼写。</p>
-        <p class="pg-meta"><span>版本 <b>2.2.1</b></span><span>Windows 10 和 11</span><span>自动更新</span></p>
+        <p class="pg-meta"><span>版本 <b>2.2.2</b></span><span>Windows 10 和 11</span><span>自动更新</span></p>
       </div>
     </div>
   </header>
 
   <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v222">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2.2</p>
+        <span class="pg-rel-date">2026年11月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v222">噪音大的麦克风重新可用</h2>
+        <p>在背景噪音很大的麦克风上，每次听写都以 <b>未检测到语音</b> 结束。此版本修复了这一问题，并让 FlowVoice 为粘贴和复制而按下的按键更安全。</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>语音检测</h3>
+            <ul>
+              <li>风扇、嘈杂的环境或调到最大的麦克风增益不再掩盖人声：这些听写现在都会被转写。</li>
+              <li>电源嗡嗡声和部分麦克风的直流偏移不再被算作背景噪音。只有稳定噪音的录音仍会被丢弃。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>粘贴和复制</h3>
+            <ul>
+              <li>如果 Windows 在粘贴中途打断（管理员提示、锁屏），FlowVoice 会松开已经按下的按键，而不是让 <kbd>Ctrl</kbd> 一直卡住。</li>
+              <li>Windows 认为仍被按住的右侧 <kbd>Ctrl</kbd> 或 <kbd>Alt</kbd>（即 <kbd>AltGr</kbd>）现在也会在粘贴前松开，左侧的早就如此。</li>
+              <li>为了把焦点还给应用，FlowVoice 不再附加到已停止响应的窗口。</li>
+              <li>FlowVoice 按下的每个键都会记录在日志中：只记录按键，从不记录文字。</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
     <section class="pg-rel" aria-labelledby="v221">
       <div class="pg-rel-meta">
         <p class="pg-rel-ver">2.2.1</p>

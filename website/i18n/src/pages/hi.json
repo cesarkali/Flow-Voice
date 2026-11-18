@@ -446,11 +446,21 @@
  "Conte o que faria o FlowVoice servir melhor para você.": "बताएं कि FlowVoice आपके लिए और बेहतर कैसे हो सकता है।",
  "Indicar para alguém": "किसी को सुझाएं",
  "Quem digita o dia todo vai agradecer.": "दिन भर टाइप करने वाले लोग शुक्रिया कहेंगे।",
- "Versão [1]2.2.1[/1]": "वर्ज़न [1]2.2.1[/1]",
  "Esc não apaga mais o ditado": "Esc से अब डिक्टेशन नहीं खोता",
  "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "पहले रिकॉर्डिंग के बीच गलती से [1]Esc[/1] दबाने पर कही गई हर बात मिट जाती थी। अब रद्द किया गया डिक्टेशन रखा रहता है।",
  "Cancelado, mas não perdido": "रद्द, पर खोया नहीं",
  "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "रद्द किया गया डिक्टेशन या अनुवाद [1]रद्द[/1] निशान के साथ इतिहास में जाता है, उस पल लाइव प्रीव्यू में दिख रहे टेक्स्ट के साथ। उसे वहीं से कॉपी कर सकते हैं या स्टाइल से सुधार सकते हैं।",
  "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "[1]Esc[/1] के बाद दिखने वाले कार्ड में [2]ट्रांसक्राइब करें[/2] बटन है: डिक्टेशन ऐसे आगे बढ़ता है जैसे आपने सामान्य रूप से रोका हो, और उसी ऐप में पेस्ट होता है। इतिहास में वही बटन ट्रांसक्राइब करके कॉपी करता है।",
- "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "रिकॉर्डिंग सिर्फ़ मेमोरी में रहती है (विफल रिकॉर्डिंग के साथ आख़िरी 3), डिस्क पर कभी नहीं। शॉर्टकट को झटपट छूना और बिना बोले [1]Esc[/1] दबाना पहले की तरह हटा दिए जाते हैं।"
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "रिकॉर्डिंग सिर्फ़ मेमोरी में रहती है (विफल रिकॉर्डिंग के साथ आख़िरी 3), डिस्क पर कभी नहीं। शॉर्टकट को झटपट छूना और बिना बोले [1]Esc[/1] दबाना पहले की तरह हटा दिए जाते हैं।",
+ "Versão [1]2.2.2[/1]": "वर्ज़न [1]2.2.2[/1]",
+ "Microfones com ruído voltam a funcionar": "शोर वाले माइक्रोफ़ोन फिर से काम करते हैं",
+ "Em microfones com muito ruído de fundo, todo ditado terminava em [1]Nenhuma fala detectada[/1]. Esta versão corrige isso e deixa mais seguras as teclas que o FlowVoice aperta para colar e copiar.": "बहुत ज़्यादा बैकग्राउंड शोर वाले माइक्रोफ़ोन पर हर डिक्टेशन [1]कोई आवाज़ नहीं मिली[/1] पर खत्म हो जाता था। यह वर्ज़न इसे ठीक करता है और पेस्ट व कॉपी करने के लिए FlowVoice जो कुंजियाँ दबाता है, उन्हें ज़्यादा सुरक्षित बनाता है।",
+ "Detecção de fala": "आवाज़ की पहचान",
+ "Uma ventoinha, um ambiente barulhento ou o ganho do microfone no máximo não escondem mais a voz: esses ditados agora são transcritos.": "पंखा, शोर भरा कमरा या पूरा बढ़ाया हुआ माइक्रोफ़ोन गेन अब आवाज़ को नहीं छिपाता: ऐसे डिक्टेशन अब ट्रांसक्राइब होते हैं।",
+ "O zumbido da rede elétrica e o desvio de alguns microfones não contam mais como ruído de fundo. Uma gravação só com ruído constante continua sendo descartada.": "बिजली की गुनगुनाहट और कुछ माइक्रोफ़ोन का ऑफ़सेट अब बैकग्राउंड शोर नहीं गिना जाता। सिर्फ़ लगातार शोर वाली रिकॉर्डिंग पहले की तरह हटा दी जाती है।",
+ "Colar e copiar": "पेस्ट और कॉपी",
+ "Se o Windows interromper uma colagem no meio (um aviso de administrador, a tela de bloqueio), o FlowVoice solta as teclas que já tinha apertado, em vez de deixar o [1]Ctrl[/1] preso.": "अगर Windows पेस्ट को बीच में रोक दे (एडमिनिस्ट्रेटर की पुष्टि, लॉक स्क्रीन), तो FlowVoice पहले से दबाई गई कुंजियाँ छोड़ देता है, ताकि [1]Ctrl[/1] दबी न रह जाए।",
+ "Um [1]Ctrl[/1] ou [2]Alt[/2] da direita (o [3]AltGr[/3]) que o Windows dá como preso agora também é solto antes de colar, como já acontecia com os da esquerda.": "दाईं ओर का [1]Ctrl[/1] या [2]Alt[/2] ([3]AltGr[/3]), जिसे Windows दबा हुआ मानता है, अब पेस्ट से पहले छोड़ दिया जाता है, जैसा बाईं ओर वालों के साथ पहले से होता था।",
+ "Para devolver o foco ao app, o FlowVoice não se liga mais a uma janela que parou de responder.": "ऐप पर फ़ोकस लौटाने के लिए FlowVoice अब किसी ऐसी विंडो से नहीं जुड़ता जिसने जवाब देना बंद कर दिया हो।",
+ "Cada tecla que o FlowVoice aperta fica registrada no log, só as teclas, nunca o texto.": "FlowVoice जो भी कुंजी दबाता है, वह लॉग में दर्ज होती है: सिर्फ़ कुंजियाँ, टेक्स्ट कभी नहीं।"
 }

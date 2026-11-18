@@ -446,11 +446,21 @@
  "Conte o que faria o FlowVoice servir melhor para você.": "Say what would make FlowVoice work better for you.",
  "Indicar para alguém": "Telling someone about it",
  "Quem digita o dia todo vai agradecer.": "Anyone who types all day will thank you.",
- "Versão [1]2.2.1[/1]": "Version [1]2.2.1[/1]",
  "Esc não apaga mais o ditado": "Esc no longer loses your dictation",
  "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "Pressing [1]Esc[/1] by accident in the middle of a recording used to throw away everything you had said. Now a cancelled dictation is kept.",
  "Cancelado, mas não perdido": "Cancelled, not lost",
  "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "A cancelled dictation or translation goes to the history marked [1]Cancelled[/1], with the text the live preview was showing at that moment. You can copy it or refine it with the styles right there.",
  "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "The card that shows up after [1]Esc[/1] has a [2]Transcribe[/2] button: the dictation goes on as if you had stopped normally and is pasted into the same app. In the history, the same button transcribes and copies.",
- "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "The recording stays in memory only (the last 3, together with failures), never on disk. A quick tap on the shortcut and an [1]Esc[/1] with no speech are still discarded."
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "The recording stays in memory only (the last 3, together with failures), never on disk. A quick tap on the shortcut and an [1]Esc[/1] with no speech are still discarded.",
+ "Versão [1]2.2.2[/1]": "Version [1]2.2.2[/1]",
+ "Microfones com ruído voltam a funcionar": "Noisy microphones work again",
+ "Em microfones com muito ruído de fundo, todo ditado terminava em [1]Nenhuma fala detectada[/1]. Esta versão corrige isso e deixa mais seguras as teclas que o FlowVoice aperta para colar e copiar.": "On microphones with a lot of background noise, every dictation ended in [1]No speech detected[/1]. This version fixes that and makes the keys FlowVoice presses to paste and copy safer.",
+ "Detecção de fala": "Speech detection",
+ "Uma ventoinha, um ambiente barulhento ou o ganho do microfone no máximo não escondem mais a voz: esses ditados agora são transcritos.": "A fan, a noisy room or the microphone gain turned all the way up no longer hide your voice: those dictations are now transcribed.",
+ "O zumbido da rede elétrica e o desvio de alguns microfones não contam mais como ruído de fundo. Uma gravação só com ruído constante continua sendo descartada.": "Mains hum and the offset some microphones have no longer count as background noise. A recording with only steady noise is still discarded.",
+ "Colar e copiar": "Paste and copy",
+ "Se o Windows interromper uma colagem no meio (um aviso de administrador, a tela de bloqueio), o FlowVoice solta as teclas que já tinha apertado, em vez de deixar o [1]Ctrl[/1] preso.": "If Windows interrupts a paste midway (an administrator prompt, the lock screen), FlowVoice releases the keys it had already pressed instead of leaving [1]Ctrl[/1] stuck.",
+ "Um [1]Ctrl[/1] ou [2]Alt[/2] da direita (o [3]AltGr[/3]) que o Windows dá como preso agora também é solto antes de colar, como já acontecia com os da esquerda.": "A right [1]Ctrl[/1] or [2]Alt[/2] (the [3]AltGr[/3]) that Windows reports as stuck is now released before pasting too, as the left ones already were.",
+ "Para devolver o foco ao app, o FlowVoice não se liga mais a uma janela que parou de responder.": "To bring the focus back to the app, FlowVoice no longer attaches itself to a window that stopped responding.",
+ "Cada tecla que o FlowVoice aperta fica registrada no log, só as teclas, nunca o texto.": "Every key FlowVoice presses is written to the log: only the keys, never the text."
 }

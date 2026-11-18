@@ -120,12 +120,42 @@
       <div class="pg-head-in">
         <h1>2.2：カプセルを<span class="nowrap">好きな場所へ。<span class="caret" aria-hidden="true"></span></span></h1>
         <p class="pg-lede">録音中にカプセルをドラッグするか、決まった位置を選べます。失敗した音声入力には「もう一度試す」ボタンが付き、アプリは 10 言語に対応しました。さらに、ショートカットひとつで選択したテキストのつづりを直せます。</p>
-        <p class="pg-meta"><span>バージョン <b>2.2.1</b></span><span>Windows 10・11</span><span>自動でアップデート</span></p>
+        <p class="pg-meta"><span>バージョン <b>2.2.2</b></span><span>Windows 10・11</span><span>自動でアップデート</span></p>
       </div>
     </div>
   </header>
 
   <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v222">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2.2</p>
+        <span class="pg-rel-date">2026年11月</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v222">ノイズの多いマイクでも再び使えるように</h2>
+        <p>背景ノイズの多いマイクでは、どのディクテーションも <b>音声が検出されませんでした</b> で終わっていました。このバージョンではそれを修正し、FlowVoice が貼り付けやコピーのために押すキーをより安全にしました。</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>音声の検出</h3>
+            <ul>
+              <li>扇風機、騒がしい場所、最大まで上げたマイクのゲインが声を隠すことはもうありません。こうしたディクテーションも文字起こしされます。</li>
+              <li>電源のハム音や一部のマイクの直流オフセットは、背景ノイズとして数えられなくなりました。一定のノイズだけの録音は、これまでどおり破棄されます。</li>
+            </ul>
+          </li>
+          <li>
+            <h3>貼り付けとコピー</h3>
+            <ul>
+              <li>貼り付けの途中で Windows が中断した場合（管理者の確認画面、ロック画面など）、FlowVoice はすでに押したキーを離し、<kbd>Ctrl</kbd> が押されたままになるのを防ぎます。</li>
+              <li>Windows が押されたままと判断した右の <kbd>Ctrl</kbd> や <kbd>Alt</kbd>（<kbd>AltGr</kbd>）も、左側と同じように貼り付けの前に離すようになりました。</li>
+              <li>アプリにフォーカスを戻すとき、FlowVoice は応答しなくなったウィンドウに接続しなくなりました。</li>
+              <li>FlowVoice が押すキーはすべてログに記録されます。記録されるのはキーだけで、テキストは記録されません。</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
     <section class="pg-rel" aria-labelledby="v221">
       <div class="pg-rel-meta">
         <p class="pg-rel-ver">2.2.1</p>

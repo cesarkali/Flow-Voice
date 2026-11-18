@@ -446,11 +446,21 @@
  "Conte o que faria o FlowVoice servir melhor para você.": "Sag, was FlowVoice für dich besser machen würde.",
  "Indicar para alguém": "Es weiterempfehlen",
  "Quem digita o dia todo vai agradecer.": "Wer den ganzen Tag tippt, wird es dir danken.",
- "Versão [1]2.2.1[/1]": "Version [1]2.2.1[/1]",
  "Esc não apaga mais o ditado": "Esc löscht das Diktat nicht mehr",
  "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "Wer mitten in einer Aufnahme versehentlich [1]Esc[/1] drückte, verlor alles, was gesagt worden war. Jetzt bleibt ein abgebrochenes Diktat erhalten.",
  "Cancelado, mas não perdido": "Abgebrochen, nicht verloren",
  "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "Ein abgebrochenes Diktat oder eine abgebrochene Übersetzung landet im Verlauf, markiert als [1]Abgebrochen[/1], mit dem Text, den die Live-Vorschau in dem Moment zeigte. Du kannst ihn dort kopieren oder mit den Stilen überarbeiten.",
  "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "Die Karte, die nach [1]Esc[/1] erscheint, hat die Schaltfläche [2]Transkribieren[/2]: Das Diktat geht weiter, als hättest du normal gestoppt, und wird in dieselbe App eingefügt. Im Verlauf transkribiert und kopiert dieselbe Schaltfläche.",
- "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "Die Aufnahme bleibt nur im Arbeitsspeicher (die letzten 3, zusammen mit Fehlschlägen), nie auf der Festplatte. Ein kurzes Tippen auf das Tastenkürzel und ein [1]Esc[/1] ohne Sprache werden weiterhin verworfen."
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "Die Aufnahme bleibt nur im Arbeitsspeicher (die letzten 3, zusammen mit Fehlschlägen), nie auf der Festplatte. Ein kurzes Tippen auf das Tastenkürzel und ein [1]Esc[/1] ohne Sprache werden weiterhin verworfen.",
+ "Versão [1]2.2.2[/1]": "Version [1]2.2.2[/1]",
+ "Microfones com ruído voltam a funcionar": "Mikrofone mit Rauschen funktionieren wieder",
+ "Em microfones com muito ruído de fundo, todo ditado terminava em [1]Nenhuma fala detectada[/1]. Esta versão corrige isso e deixa mais seguras as teclas que o FlowVoice aperta para colar e copiar.": "Bei Mikrofonen mit viel Hintergrundrauschen endete jedes Diktat mit [1]Keine Sprache erkannt[/1]. Diese Version behebt das und macht die Tasten sicherer, die FlowVoice zum Einfügen und Kopieren drückt.",
+ "Detecção de fala": "Sprache in der Aufnahme erkennen",
+ "Uma ventoinha, um ambiente barulhento ou o ganho do microfone no máximo não escondem mais a voz: esses ditados agora são transcritos.": "Ein Lüfter, ein lauter Raum oder die Mikrofonverstärkung am Anschlag verdecken die Stimme nicht mehr: Diese Diktate werden jetzt transkribiert.",
+ "O zumbido da rede elétrica e o desvio de alguns microfones não contam mais como ruído de fundo. Uma gravação só com ruído constante continua sendo descartada.": "Netzbrummen und der Gleichspannungsversatz mancher Mikrofone zählen nicht mehr als Hintergrundrauschen. Eine Aufnahme mit nur gleichmäßigem Rauschen wird weiterhin verworfen.",
+ "Colar e copiar": "Einfügen und Kopieren",
+ "Se o Windows interromper uma colagem no meio (um aviso de administrador, a tela de bloqueio), o FlowVoice solta as teclas que já tinha apertado, em vez de deixar o [1]Ctrl[/1] preso.": "Unterbricht Windows ein Einfügen mittendrin (eine Administratorabfrage, der Sperrbildschirm), lässt FlowVoice die bereits gedrückten Tasten wieder los, statt [1]Ctrl[/1] hängen zu lassen.",
+ "Um [1]Ctrl[/1] ou [2]Alt[/2] da direita (o [3]AltGr[/3]) que o Windows dá como preso agora também é solto antes de colar, como já acontecia com os da esquerda.": "Ein rechtes [1]Ctrl[/1] oder [2]Alt[/2] (das [3]AltGr[/3]), das Windows für gedrückt hält, wird jetzt ebenfalls vor dem Einfügen losgelassen, wie es bei den linken schon geschah.",
+ "Para devolver o foco ao app, o FlowVoice não se liga mais a uma janela que parou de responder.": "Um den Fokus an die App zurückzugeben, hängt sich FlowVoice nicht mehr an ein Fenster, das nicht mehr reagiert.",
+ "Cada tecla que o FlowVoice aperta fica registrada no log, só as teclas, nunca o texto.": "Jede Taste, die FlowVoice drückt, wird im Log festgehalten: nur die Tasten, nie der Text."
 }

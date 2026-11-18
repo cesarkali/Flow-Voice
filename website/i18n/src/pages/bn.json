@@ -446,11 +446,21 @@
  "Conte o que faria o FlowVoice servir melhor para você.": "বলুন, FlowVoice কীভাবে আপনার জন্য আরও ভালো হতে পারে।",
  "Indicar para alguém": "কাউকে জানান",
  "Quem digita o dia todo vai agradecer.": "সারাদিন টাইপ করেন এমন মানুষেরা ধন্যবাদ দেবেন।",
- "Versão [1]2.2.1[/1]": "ভার্সন [1]2.2.1[/1]",
  "Esc não apaga mais o ditado": "Esc চাপলে আর ডিকটেশন হারায় না",
  "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "আগে রেকর্ডিংয়ের মাঝে ভুল করে [1]Esc[/1] চাপলে বলা সবকিছু মুছে যেত। এখন বাতিল করা ডিকটেশন রাখা থাকে।",
  "Cancelado, mas não perdido": "বাতিল, কিন্তু হারায়নি",
  "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "বাতিল করা ডিকটেশন বা অনুবাদ [1]বাতিল[/1] চিহ্নসহ ইতিহাসে যায়, সেই মুহূর্তে লাইভ প্রিভিউতে দেখানো লেখাসহ। সেখান থেকেই কপি করা বা স্টাইল দিয়ে পরিমার্জন করা যায়।",
  "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "[1]Esc[/1] চাপার পর যে কার্ড আসে তাতে [2]ট্রান্সক্রাইব করুন[/2] বোতাম আছে: ডিকটেশন এমনভাবে এগোয় যেন আপনি স্বাভাবিকভাবে থামিয়েছেন, আর একই অ্যাপে পেস্ট হয়। ইতিহাসে একই বোতাম ট্রান্সক্রাইব করে কপি করে।",
- "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "রেকর্ডিং শুধু মেমোরিতে থাকে (ব্যর্থগুলোর সাথে শেষ ৩টি), কখনো ডিস্কে নয়। শর্টকাটে এক ঝলক চাপ আর কথা ছাড়া [1]Esc[/1] আগের মতোই বাদ দেওয়া হয়।"
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "রেকর্ডিং শুধু মেমোরিতে থাকে (ব্যর্থগুলোর সাথে শেষ ৩টি), কখনো ডিস্কে নয়। শর্টকাটে এক ঝলক চাপ আর কথা ছাড়া [1]Esc[/1] আগের মতোই বাদ দেওয়া হয়।",
+ "Versão [1]2.2.2[/1]": "ভার্সন [1]2.2.2[/1]",
+ "Microfones com ruído voltam a funcionar": "গোলমালের মাইক্রোফোন আবার কাজ করে",
+ "Em microfones com muito ruído de fundo, todo ditado terminava em [1]Nenhuma fala detectada[/1]. Esta versão corrige isso e deixa mais seguras as teclas que o FlowVoice aperta para colar e copiar.": "অনেক ব্যাকগ্রাউন্ড শব্দ থাকা মাইক্রোফোনে প্রতিটি ডিকটেশন [1]কোনো কথা শনাক্ত হয়নি[/1] বলে শেষ হত। এই ভার্সন সেটা ঠিক করে, আর পেস্ট ও কপি করতে FlowVoice যে কী চাপে সেগুলো আরও নিরাপদ করে।",
+ "Detecção de fala": "কথা শনাক্ত করা",
+ "Uma ventoinha, um ambiente barulhento ou o ganho do microfone no máximo não escondem mais a voz: esses ditados agora são transcritos.": "ফ্যান, শব্দময় ঘর বা সর্বোচ্চে তোলা মাইক্রোফোনের গেইন আর কণ্ঠ ঢেকে দেয় না: এমন ডিকটেশন এখন ট্রান্সক্রাইব হয়।",
+ "O zumbido da rede elétrica e o desvio de alguns microfones não contam mais como ruído de fundo. Uma gravação só com ruído constante continua sendo descartada.": "বিদ্যুতের গুনগুন শব্দ আর কিছু মাইক্রোফোনের অফসেট আর ব্যাকগ্রাউন্ড শব্দ হিসেবে গোনা হয় না। শুধু একটানা শব্দের রেকর্ডিং আগের মতোই বাদ দেওয়া হয়।",
+ "Colar e copiar": "পেস্ট ও কপি",
+ "Se o Windows interromper uma colagem no meio (um aviso de administrador, a tela de bloqueio), o FlowVoice solta as teclas que já tinha apertado, em vez de deixar o [1]Ctrl[/1] preso.": "Windows মাঝপথে পেস্ট থামিয়ে দিলে (অ্যাডমিনিস্ট্রেটরের অনুমতি চাওয়া, লক স্ক্রিন), FlowVoice আগে চাপা কী ছেড়ে দেয়, যাতে [1]Ctrl[/1] চাপা অবস্থায় আটকে না থাকে।",
+ "Um [1]Ctrl[/1] ou [2]Alt[/2] da direita (o [3]AltGr[/3]) que o Windows dá como preso agora também é solto antes de colar, como já acontecia com os da esquerda.": "ডান দিকের [1]Ctrl[/1] বা [2]Alt[/2] ([3]AltGr[/3]), যেটা Windows চাপা বলে ধরে নেয়, এখন পেস্টের আগে ছেড়ে দেওয়া হয়, বাঁ দিকেরগুলোর ক্ষেত্রে যেমন আগে থেকেই হত।",
+ "Para devolver o foco ao app, o FlowVoice não se liga mais a uma janela que parou de responder.": "অ্যাপে ফোকাস ফেরাতে FlowVoice আর এমন উইন্ডোর সাথে যুক্ত হয় না যেটা সাড়া দেওয়া বন্ধ করেছে।",
+ "Cada tecla que o FlowVoice aperta fica registrada no log, só as teclas, nunca o texto.": "FlowVoice যে প্রতিটি কী চাপে তা লগে লেখা থাকে: শুধু কী, কখনো লেখা নয়।"
 }

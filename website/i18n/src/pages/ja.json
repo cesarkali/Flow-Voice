@@ -446,11 +446,21 @@
  "Conte o que faria o FlowVoice servir melhor para você.": "FlowVoice がもっと役立つために必要なことを教えてください。",
  "Indicar para alguém": "誰かにすすめる",
  "Quem digita o dia todo vai agradecer.": "一日中タイピングしている人に喜ばれます。",
- "Versão [1]2.2.1[/1]": "バージョン [1]2.2.1[/1]",
  "Esc não apaga mais o ditado": "Esc で音声入力が消えなくなりました",
  "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "これまでは録音中にうっかり [1]Esc[/1] を押すと、話した内容がすべて消えていました。今はキャンセルした音声入力も残ります。",
  "Cancelado, mas não perdido": "キャンセルしても失われない",
  "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "キャンセルした音声入力や翻訳は、[1]キャンセル済み[/1] の印と、その時点でライブプレビューに表示されていたテキスト付きで履歴に残ります。そのままコピーしたり、スタイルで整えたりできます。",
  "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "[1]Esc[/1] のあとに表示されるカードには [2]文字起こし[/2] ボタンがあります。普通に停止したときと同じように処理され、同じアプリに貼り付けられます。履歴では同じボタンで文字起こししてコピーします。",
- "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "録音はメモリにだけ保持され(失敗分と合わせて最新 3 件)、ディスクには保存されません。ショートカットを一瞬押しただけのときや、話していないときの [1]Esc[/1] は、これまでどおり破棄されます。"
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "録音はメモリにだけ保持され(失敗分と合わせて最新 3 件)、ディスクには保存されません。ショートカットを一瞬押しただけのときや、話していないときの [1]Esc[/1] は、これまでどおり破棄されます。",
+ "Versão [1]2.2.2[/1]": "バージョン [1]2.2.2[/1]",
+ "Microfones com ruído voltam a funcionar": "ノイズの多いマイクでも再び使えるように",
+ "Em microfones com muito ruído de fundo, todo ditado terminava em [1]Nenhuma fala detectada[/1]. Esta versão corrige isso e deixa mais seguras as teclas que o FlowVoice aperta para colar e copiar.": "背景ノイズの多いマイクでは、どのディクテーションも [1]音声が検出されませんでした[/1] で終わっていました。このバージョンではそれを修正し、FlowVoice が貼り付けやコピーのために押すキーをより安全にしました。",
+ "Detecção de fala": "音声の検出",
+ "Uma ventoinha, um ambiente barulhento ou o ganho do microfone no máximo não escondem mais a voz: esses ditados agora são transcritos.": "扇風機、騒がしい場所、最大まで上げたマイクのゲインが声を隠すことはもうありません。こうしたディクテーションも文字起こしされます。",
+ "O zumbido da rede elétrica e o desvio de alguns microfones não contam mais como ruído de fundo. Uma gravação só com ruído constante continua sendo descartada.": "電源のハム音や一部のマイクの直流オフセットは、背景ノイズとして数えられなくなりました。一定のノイズだけの録音は、これまでどおり破棄されます。",
+ "Colar e copiar": "貼り付けとコピー",
+ "Se o Windows interromper uma colagem no meio (um aviso de administrador, a tela de bloqueio), o FlowVoice solta as teclas que já tinha apertado, em vez de deixar o [1]Ctrl[/1] preso.": "貼り付けの途中で Windows が中断した場合（管理者の確認画面、ロック画面など）、FlowVoice はすでに押したキーを離し、[1]Ctrl[/1] が押されたままになるのを防ぎます。",
+ "Um [1]Ctrl[/1] ou [2]Alt[/2] da direita (o [3]AltGr[/3]) que o Windows dá como preso agora também é solto antes de colar, como já acontecia com os da esquerda.": "Windows が押されたままと判断した右の [1]Ctrl[/1] や [2]Alt[/2]（[3]AltGr[/3]）も、左側と同じように貼り付けの前に離すようになりました。",
+ "Para devolver o foco ao app, o FlowVoice não se liga mais a uma janela que parou de responder.": "アプリにフォーカスを戻すとき、FlowVoice は応答しなくなったウィンドウに接続しなくなりました。",
+ "Cada tecla que o FlowVoice aperta fica registrada no log, só as teclas, nunca o texto.": "FlowVoice が押すキーはすべてログに記録されます。記録されるのはキーだけで、テキストは記録されません。"
 }

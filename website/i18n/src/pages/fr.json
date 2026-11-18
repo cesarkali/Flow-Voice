@@ -446,11 +446,21 @@
  "Conte o que faria o FlowVoice servir melhor para você.": "Dites ce qui rendrait FlowVoice plus utile pour vous.",
  "Indicar para alguém": "En parler autour de vous",
  "Quem digita o dia todo vai agradecer.": "Les personnes qui tapent toute la journée vous remercieront.",
- "Versão [1]2.2.1[/1]": "Version [1]2.2.1[/1]",
  "Esc não apaga mais o ditado": "Échap ne fait plus perdre la dictée",
  "Apertar [1]Esc[/1] sem querer no meio de uma gravação jogava fora tudo o que tinha sido dito. Agora o ditado cancelado fica guardado.": "Appuyer sur [1]Esc[/1] par erreur au milieu d'un enregistrement effaçait tout ce que vous aviez dit. Désormais, la dictée annulée est conservée.",
  "Cancelado, mas não perdido": "Annulée, pas perdue",
  "Um ditado ou tradução cancelado vai para o histórico com a marca [1]Cancelado[/1] e o texto que a prévia ao vivo mostrava naquele momento. Dá para copiar ou refinar com os estilos dali mesmo.": "Une dictée ou une traduction annulée va dans l'historique avec la mention [1]Annulé[/1] et le texte que l'aperçu en direct affichait à ce moment-là. Vous pouvez la copier ou la retoucher avec les styles, directement depuis là.",
  "O cartão que aparece depois do [1]Esc[/1] tem o botão [2]Transcrever[/2]: o ditado segue como se você tivesse parado normalmente e é colado no mesmo app. No histórico, o mesmo botão transcreve e copia.": "La carte qui s'affiche après [1]Esc[/1] propose le bouton [2]Transcrire[/2] : la dictée continue comme si vous l'aviez arrêtée normalement et est collée dans la même app. Dans l'historique, le même bouton transcrit et copie.",
- "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "L'enregistrement reste uniquement en mémoire (les 3 derniers, avec les échecs), jamais sur le disque. Un appui bref sur le raccourci et un [1]Esc[/1] sans parole sont toujours ignorés."
+ "A gravação fica só na memória (as 3 últimas, junto com as falhas), nunca em disco. Um toque rápido no atalho e um [1]Esc[/1] sem fala continuam sendo descartados.": "L'enregistrement reste uniquement en mémoire (les 3 derniers, avec les échecs), jamais sur le disque. Un appui bref sur le raccourci et un [1]Esc[/1] sans parole sont toujours ignorés.",
+ "Versão [1]2.2.2[/1]": "Version [1]2.2.2[/1]",
+ "Microfones com ruído voltam a funcionar": "Les micros bruyants fonctionnent à nouveau",
+ "Em microfones com muito ruído de fundo, todo ditado terminava em [1]Nenhuma fala detectada[/1]. Esta versão corrige isso e deixa mais seguras as teclas que o FlowVoice aperta para colar e copiar.": "Sur les micros avec beaucoup de bruit de fond, chaque dictée finissait par [1]Aucune parole détectée[/1]. Cette version corrige cela et rend plus sûres les touches sur lesquelles FlowVoice appuie pour coller et copier.",
+ "Detecção de fala": "Détection de la parole",
+ "Uma ventoinha, um ambiente barulhento ou o ganho do microfone no máximo não escondem mais a voz: esses ditados agora são transcritos.": "Un ventilateur, une pièce bruyante ou le gain du micro au maximum ne masquent plus la voix : ces dictées sont maintenant transcrites.",
+ "O zumbido da rede elétrica e o desvio de alguns microfones não contam mais como ruído de fundo. Uma gravação só com ruído constante continua sendo descartada.": "Le bourdonnement du secteur et le décalage de certains micros ne comptent plus comme bruit de fond. Un enregistrement qui ne contient qu'un bruit constant est toujours ignoré.",
+ "Colar e copiar": "Coller et copier",
+ "Se o Windows interromper uma colagem no meio (um aviso de administrador, a tela de bloqueio), o FlowVoice solta as teclas que já tinha apertado, em vez de deixar o [1]Ctrl[/1] preso.": "Si Windows interrompt un collage en cours (une invite administrateur, l'écran de verrouillage), FlowVoice relâche les touches déjà enfoncées, au lieu de laisser [1]Ctrl[/1] bloquée.",
+ "Um [1]Ctrl[/1] ou [2]Alt[/2] da direita (o [3]AltGr[/3]) que o Windows dá como preso agora também é solto antes de colar, como já acontecia com os da esquerda.": "Un [1]Ctrl[/1] ou [2]Alt[/2] de droite (l'[3]AltGr[/3]) que Windows croit bloqué est maintenant relâché lui aussi avant de coller, comme c'était déjà le cas pour ceux de gauche.",
+ "Para devolver o foco ao app, o FlowVoice não se liga mais a uma janela que parou de responder.": "Pour rendre le focus à l'application, FlowVoice ne s'attache plus à une fenêtre qui ne répond plus.",
+ "Cada tecla que o FlowVoice aperta fica registrada no log, só as teclas, nunca o texto.": "Chaque touche sur laquelle FlowVoice appuie est inscrite dans le journal : seulement les touches, jamais le texte."
 }

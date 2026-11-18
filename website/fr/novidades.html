@@ -120,12 +120,42 @@
       <div class="pg-head-in">
         <h1>2.2 : la capsule va où vous <span class="nowrap">voulez.<span class="caret" aria-hidden="true"></span></span></h1>
         <p class="pg-lede">Faites glisser la capsule pendant l'enregistrement ou choisissez votre propre position. Une dictée qui a échoué reçoit le bouton Réessayer, et l'application existe désormais en 10 langues. Et un raccourci corrige l'orthographe de n'importe quel texte sélectionné.</p>
-        <p class="pg-meta"><span>Version <b>2.2.1</b></span><span>Windows 10 et 11</span><span>Se met à jour tout seul</span></p>
+        <p class="pg-meta"><span>Version <b>2.2.2</b></span><span>Windows 10 et 11</span><span>Se met à jour tout seul</span></p>
       </div>
     </div>
   </header>
 
   <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v222">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2.2</p>
+        <span class="pg-rel-date">Novembre 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v222">Les micros bruyants fonctionnent à nouveau</h2>
+        <p>Sur les micros avec beaucoup de bruit de fond, chaque dictée finissait par <b>Aucune parole détectée</b>. Cette version corrige cela et rend plus sûres les touches sur lesquelles FlowVoice appuie pour coller et copier.</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Détection de la parole</h3>
+            <ul>
+              <li>Un ventilateur, une pièce bruyante ou le gain du micro au maximum ne masquent plus la voix : ces dictées sont maintenant transcrites.</li>
+              <li>Le bourdonnement du secteur et le décalage de certains micros ne comptent plus comme bruit de fond. Un enregistrement qui ne contient qu'un bruit constant est toujours ignoré.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Coller et copier</h3>
+            <ul>
+              <li>Si Windows interrompt un collage en cours (une invite administrateur, l'écran de verrouillage), FlowVoice relâche les touches déjà enfoncées, au lieu de laisser <kbd>Ctrl</kbd> bloquée.</li>
+              <li>Un <kbd>Ctrl</kbd> ou <kbd>Alt</kbd> de droite (l'<kbd>AltGr</kbd>) que Windows croit bloqué est maintenant relâché lui aussi avant de coller, comme c'était déjà le cas pour ceux de gauche.</li>
+              <li>Pour rendre le focus à l'application, FlowVoice ne s'attache plus à une fenêtre qui ne répond plus.</li>
+              <li>Chaque touche sur laquelle FlowVoice appuie est inscrite dans le journal : seulement les touches, jamais le texte.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
     <section class="pg-rel" aria-labelledby="v221">
       <div class="pg-rel-meta">
         <p class="pg-rel-ver">2.2.1</p>

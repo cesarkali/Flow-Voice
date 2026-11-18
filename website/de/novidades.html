@@ -120,12 +120,42 @@
       <div class="pg-head-in">
         <h1>2.2: Die Kapsel geht, wohin du <span class="nowrap">willst.<span class="caret" aria-hidden="true"></span></span></h1>
         <p class="pg-lede">Zieh die Kapsel während der Aufnahme oder wähle eine eigene Position. Ein fehlgeschlagenes Diktat bekommt die Schaltfläche Erneut versuchen, und die App spricht jetzt 10 Sprachen. Und ein Tastenkürzel korrigiert die Rechtschreibung jedes markierten Texts.</p>
-        <p class="pg-meta"><span>Version <b>2.2.1</b></span><span>Windows 10 und 11</span><span>Aktualisiert sich selbst</span></p>
+        <p class="pg-meta"><span>Version <b>2.2.2</b></span><span>Windows 10 und 11</span><span>Aktualisiert sich selbst</span></p>
       </div>
     </div>
   </header>
 
   <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v222">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2.2</p>
+        <span class="pg-rel-date">November 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v222">Mikrofone mit Rauschen funktionieren wieder</h2>
+        <p>Bei Mikrofonen mit viel Hintergrundrauschen endete jedes Diktat mit <b>Keine Sprache erkannt</b>. Diese Version behebt das und macht die Tasten sicherer, die FlowVoice zum Einfügen und Kopieren drückt.</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Sprache in der Aufnahme erkennen</h3>
+            <ul>
+              <li>Ein Lüfter, ein lauter Raum oder die Mikrofonverstärkung am Anschlag verdecken die Stimme nicht mehr: Diese Diktate werden jetzt transkribiert.</li>
+              <li>Netzbrummen und der Gleichspannungsversatz mancher Mikrofone zählen nicht mehr als Hintergrundrauschen. Eine Aufnahme mit nur gleichmäßigem Rauschen wird weiterhin verworfen.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Einfügen und Kopieren</h3>
+            <ul>
+              <li>Unterbricht Windows ein Einfügen mittendrin (eine Administratorabfrage, der Sperrbildschirm), lässt FlowVoice die bereits gedrückten Tasten wieder los, statt <kbd>Ctrl</kbd> hängen zu lassen.</li>
+              <li>Ein rechtes <kbd>Ctrl</kbd> oder <kbd>Alt</kbd> (das <kbd>AltGr</kbd>), das Windows für gedrückt hält, wird jetzt ebenfalls vor dem Einfügen losgelassen, wie es bei den linken schon geschah.</li>
+              <li>Um den Fokus an die App zurückzugeben, hängt sich FlowVoice nicht mehr an ein Fenster, das nicht mehr reagiert.</li>
+              <li>Jede Taste, die FlowVoice drückt, wird im Log festgehalten: nur die Tasten, nie der Text.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
     <section class="pg-rel" aria-labelledby="v221">
       <div class="pg-rel-meta">
         <p class="pg-rel-ver">2.2.1</p>

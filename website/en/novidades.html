@@ -120,12 +120,42 @@
       <div class="pg-head-in">
         <h1>2.2: the capsule goes where you <span class="nowrap">want.<span class="caret" aria-hidden="true"></span></span></h1>
         <p class="pg-lede">Drag the capsule while recording or pick a position of your own. A dictation that failed gets a Try again button, and the app now comes in 10 languages. And one shortcut fixes the spelling of any selected text.</p>
-        <p class="pg-meta"><span>Version <b>2.2.1</b></span><span>Windows 10 and 11</span><span>Updates itself</span></p>
+        <p class="pg-meta"><span>Version <b>2.2.2</b></span><span>Windows 10 and 11</span><span>Updates itself</span></p>
       </div>
     </div>
   </header>
 
   <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v222">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2.2</p>
+        <span class="pg-rel-date">November 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v222">Noisy microphones work again</h2>
+        <p>On microphones with a lot of background noise, every dictation ended in <b>No speech detected</b>. This version fixes that and makes the keys FlowVoice presses to paste and copy safer.</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Speech detection</h3>
+            <ul>
+              <li>A fan, a noisy room or the microphone gain turned all the way up no longer hide your voice: those dictations are now transcribed.</li>
+              <li>Mains hum and the offset some microphones have no longer count as background noise. A recording with only steady noise is still discarded.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Paste and copy</h3>
+            <ul>
+              <li>If Windows interrupts a paste midway (an administrator prompt, the lock screen), FlowVoice releases the keys it had already pressed instead of leaving <kbd>Ctrl</kbd> stuck.</li>
+              <li>A right <kbd>Ctrl</kbd> or <kbd>Alt</kbd> (the <kbd>AltGr</kbd>) that Windows reports as stuck is now released before pasting too, as the left ones already were.</li>
+              <li>To bring the focus back to the app, FlowVoice no longer attaches itself to a window that stopped responding.</li>
+              <li>Every key FlowVoice presses is written to the log: only the keys, never the text.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
     <section class="pg-rel" aria-labelledby="v221">
       <div class="pg-rel-meta">
         <p class="pg-rel-ver">2.2.1</p>

@@ -120,12 +120,42 @@
       <div class="pg-head-in">
         <h1>2.2: la cápsula va adonde <span class="nowrap">quieras.<span class="caret" aria-hidden="true"></span></span></h1>
         <p class="pg-lede">Arrastra la cápsula durante la grabación o elige una posición propia. Un dictado que falló gana el botón Intentar de nuevo, y la app ahora está en 10 idiomas. Y un atajo corrige la ortografía de cualquier texto seleccionado.</p>
-        <p class="pg-meta"><span>Versión <b>2.2.1</b></span><span>Windows 10 y 11</span><span>Se actualiza solo</span></p>
+        <p class="pg-meta"><span>Versión <b>2.2.2</b></span><span>Windows 10 y 11</span><span>Se actualiza solo</span></p>
       </div>
     </div>
   </header>
 
   <div class="wrap">
+    <section class="pg-rel" aria-labelledby="v222">
+      <div class="pg-rel-meta">
+        <p class="pg-rel-ver">2.2.2</p>
+        <span class="pg-rel-date">Noviembre de 2026</span>
+      </div>
+      <div class="pg-rel-body">
+        <h2 id="v222">Los micrófonos con ruido vuelven a funcionar</h2>
+        <p>En micrófonos con mucho ruido de fondo, cada dictado terminaba en <b>No se detectó voz</b>. Esta versión lo corrige y hace más seguras las teclas que FlowVoice pulsa para pegar y copiar.</p>
+
+        <ul class="pg-changes">
+          <li>
+            <h3>Detección de voz</h3>
+            <ul>
+              <li>Un ventilador, un lugar ruidoso o la ganancia del micrófono al máximo ya no ocultan la voz: esos dictados ahora se transcriben.</li>
+              <li>El zumbido de la red eléctrica y el desvío de algunos micrófonos ya no cuentan como ruido de fondo. Una grabación con solo ruido constante se sigue descartando.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Pegar y copiar</h3>
+            <ul>
+              <li>Si Windows interrumpe un pegado a la mitad (un aviso de administrador, la pantalla de bloqueo), FlowVoice suelta las teclas que ya había pulsado, en lugar de dejar <kbd>Ctrl</kbd> presionada.</li>
+              <li>Un <kbd>Ctrl</kbd> o <kbd>Alt</kbd> derecho (el <kbd>AltGr</kbd>) que Windows da por presionado ahora también se suelta antes de pegar, como ya pasaba con los izquierdos.</li>
+              <li>Para devolver el foco a la app, FlowVoice ya no se une a una ventana que dejó de responder.</li>
+              <li>Cada tecla que pulsa FlowVoice queda registrada en el log: solo las teclas, nunca el texto.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
     <section class="pg-rel" aria-labelledby="v221">
       <div class="pg-rel-meta">
         <p class="pg-rel-ver">2.2.1</p>
