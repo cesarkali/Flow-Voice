@@ -331,23 +331,72 @@ pub fn normalize(samples: &[f32]) -> Vec<f32> {
     samples.iter().map(|x| (x * gain).clamp(-0.98, 0.98)).collect()
 }
 
+/// 2nd-order Butterworth high-pass at 120 Hz, for measuring levels only (the audio sent to the
+/// recognizer is untouched): a mic's DC offset and mains hum (50/60 Hz) are not speech, but they
+/// raised the noise floor above the voice itself.
+fn high_pass(samples: &[f32]) -> Vec<f32> {
+    let w0 = 2.0 * std::f32::consts::PI * 120.0 / SAMPLE_RATE as f32;
+    let (cos, alpha) = (w0.cos(), w0.sin() / (2.0 * std::f32::consts::FRAC_1_SQRT_2));
+    let a0 = 1.0 + alpha;
+    let (b0, b1, b2) = ((1.0 + cos) / 2.0 / a0, -(1.0 + cos) / a0, (1.0 + cos) / 2.0 / a0);
+    let (a1, a2) = (-2.0 * cos / a0, (1.0 - alpha) / a0);
+    // As if the signal had always been at its first value: a DC offset doesn't start with a
+    // step, whose ringing would look like a loud first window.
+    let first = samples.first().copied().unwrap_or(0.0);
+    let (mut x1, mut x2, mut y1, mut y2) = (first, first, 0.0f32, 0.0f32);
+    samples
+        .iter()
+        .map(|&x| {
+            let y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+            (x2, x1, y2, y1) = (x1, x, y1, y);
+            y
+        })
+        .collect()
+}
+
+/// The level above which a 20 ms window counts as voice, from the recording's noise floor and
+/// its loudest window. `floor * 2.5` keeps quiet microphones working; but on a noisy one (fan,
+/// hum, gain all the way up) that sat above the voice itself (issue #2: floor 0.108, peak 0.154,
+/// threshold 0.269, every dictation "no speech"). When the recording does rise above its floor,
+/// the threshold then stays a third of the way up from the floor to the peak. A flat recording
+/// (steady noise only: its windows vary by a few percent) stays silence.
+fn voice_threshold(floor: f32, peak: f32) -> f32 {
+    let mut thresh = floor * 2.5;
+    if peak > floor * 1.3 {
+        thresh = thresh.min(floor + (peak - floor) * 0.35);
+    }
+    thresh.max(0.0025)
+}
+
 /// Trims leading/trailing near-silence (keeps 200 ms of padding). The threshold adapts to the
 /// mic's noise floor so quiet microphones aren't mistaken for silence.
 pub fn trim_silence(samples: &[f32]) -> &[f32] {
+    trim(samples, true)
+}
+
+/// `trim_silence` without the log line: the live preview measures its window many times a second.
+pub fn trim_silence_quiet(samples: &[f32]) -> &[f32] {
+    trim(samples, false)
+}
+
+fn trim(samples: &[f32], log: bool) -> &[f32] {
     let win = (SAMPLE_RATE / 50) as usize; // 20 ms
-    let chunks: Vec<&[f32]> = samples.chunks(win).collect();
+    let filtered = high_pass(samples);
+    let chunks: Vec<&[f32]> = filtered.chunks(win).collect();
     if chunks.is_empty() {
         return &samples[0..0];
     }
-    let mut levels: Vec<f32> = chunks.iter().map(|c| rms(c)).collect();
-    let peak = levels.iter().cloned().fold(0.0, f32::max);
+    let chunk_levels: Vec<f32> = chunks.iter().map(|c| rms(c)).collect();
+    let peak = chunk_levels.iter().cloned().fold(0.0, f32::max);
+    let mut levels = chunk_levels.clone();
     levels.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let floor = levels[levels.len() / 10];
-    let thresh = (floor * 2.5).max(0.0025);
-    log::info!("audio levels: floor {floor:.4}, peak {peak:.4}, threshold {thresh:.4}");
-    let loud = |chunk: &[f32]| rms(chunk) > thresh;
-    let first = chunks.iter().position(|c| loud(c));
-    let last = chunks.iter().rposition(|c| loud(c));
+    let thresh = voice_threshold(floor, peak);
+    if log {
+        log::info!("audio levels: floor {floor:.4}, peak {peak:.4}, threshold {thresh:.4}");
+    }
+    let first = chunk_levels.iter().position(|&l| l > thresh);
+    let last = chunk_levels.iter().rposition(|&l| l > thresh);
     match (first, last) {
         (Some(f), Some(l)) => {
             let pad = 10;
@@ -375,6 +424,70 @@ mod tests {
         assert_eq!(samples.lock().len(), super::MAX_SAMPLES);
         super::keep(&samples, &[1.0; 5]);
         assert_eq!(samples.lock().len(), super::MAX_SAMPLES);
+    }
+}
+
+#[cfg(test)]
+mod trim_tests {
+    use super::{trim_silence, SAMPLE_RATE};
+
+    const SR: usize = SAMPLE_RATE as usize;
+
+    /// Uniform white noise with this RMS (fixed seed: same signal every run).
+    fn noise(len: usize, rms: f32) -> Vec<f32> {
+        let amp = rms * 3f32.sqrt();
+        let mut seed = 0x2545_f491u32;
+        (0..len)
+            .map(|_| {
+                seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                ((seed >> 8) as f32 / (1u32 << 24) as f32 * 2.0 - 1.0) * amp
+            })
+            .collect()
+    }
+
+    /// A 300 Hz "voice" of this RMS added between `from` and `to` seconds.
+    fn with_voice(mut s: Vec<f32>, from: f32, to: f32, rms: f32) -> Vec<f32> {
+        let amp = rms * std::f32::consts::SQRT_2;
+        for i in (from * SR as f32) as usize..(to * SR as f32) as usize {
+            s[i] += amp * (2.0 * std::f32::consts::PI * 300.0 * i as f32 / SR as f32).sin();
+        }
+        s
+    }
+
+    #[test]
+    fn silence_is_silence() {
+        assert!(trim_silence(&vec![0.0; 3 * SR]).is_empty());
+        assert!(trim_silence(&noise(3 * SR, 0.0005)).is_empty());
+    }
+
+    #[test]
+    fn quiet_mic_keeps_the_voice() {
+        let s = with_voice(noise(3 * SR, 0.002), 1.0, 2.0, 0.02);
+        let kept = trim_silence(&s).len() as f32 / SR as f32;
+        assert!((1.0..=1.5).contains(&kept), "kept {kept} s");
+    }
+
+    #[test]
+    fn noisy_mic_keeps_the_voice() {
+        // Issue #2: a floor of 0.1 and a voice that only brings it to ~0.15.
+        let s = with_voice(noise(3 * SR, 0.1), 1.0, 2.0, 0.112);
+        let kept = trim_silence(&s).len() as f32 / SR as f32;
+        assert!((1.0..=1.5).contains(&kept), "kept {kept} s");
+    }
+
+    #[test]
+    fn steady_noise_alone_is_silence() {
+        assert!(trim_silence(&noise(3 * SR, 0.1)).is_empty());
+    }
+
+    #[test]
+    fn dc_offset_and_hum_are_not_a_floor() {
+        let mut s = with_voice(noise(3 * SR, 0.002), 1.0, 2.0, 0.02);
+        for (i, x) in s.iter_mut().enumerate() {
+            *x += 0.2 + 0.08 * (2.0 * std::f32::consts::PI * 50.0 * i as f32 / SR as f32).sin();
+        }
+        let kept = trim_silence(&s).len() as f32 / SR as f32;
+        assert!((1.0..=1.5).contains(&kept), "kept {kept} s");
     }
 }
 

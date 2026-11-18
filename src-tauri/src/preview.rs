@@ -754,7 +754,7 @@ pub fn cloud_preview(app: AppHandle, samples: Arc<Mutex<Vec<f32>>>, stop: Arc<At
         if end < last_end + SR * 3 / 10 {
             continue;
         }
-        let voiced = audio::trim_silence(&window).len() as f32 / SR as f32;
+        let voiced = audio::trim_silence_quiet(&window).len() as f32 / SR as f32;
         if voiced < if any_shown { NEXT_MIN_VOICED } else { FIRST_MIN_VOICED } {
             continue;
         }
