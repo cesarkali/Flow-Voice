@@ -561,7 +561,7 @@ pub fn note_shortcut(has_alt: bool) {
 #[cfg(windows)]
 fn leave_access_keys(target: isize) {
     use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::Input::KeyboardAndMouse::{SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VK_MENU};
+    use windows::Win32::UI::Input::KeyboardAndMouse::VK_MENU;
     use windows::Win32::UI::WindowsAndMessaging::GetClassNameW;
     if !ALT_SHORTCUT.swap(false, std::sync::atomic::Ordering::Relaxed) || target == 0 {
         return;
@@ -576,14 +576,7 @@ fn leave_access_keys(target: isize) {
     if focus_now(target).caret.is_some() {
         return;
     }
-    let key = |flags| INPUT {
-        r#type: INPUT_KEYBOARD,
-        Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: VK_MENU, wScan: 0, dwFlags: flags, time: 0, dwExtraInfo: 0 } },
-    };
-    let inputs = [key(KEYBD_EVENT_FLAGS(0)), key(KEYEVENTF_KEYUP)];
-    unsafe {
-        SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
-    }
+    keys::send("Alt tap (Notepad access keys)", &[keys::key(VK_MENU, false), keys::key(VK_MENU, true)]);
     for _ in 0..15 {
         std::thread::sleep(Duration::from_millis(20));
         if focus_now(target).caret.is_some() {
@@ -671,7 +664,19 @@ fn is_elevated(_target: isize) -> bool {
 fn focus(target: isize) {
     use windows::Win32::Foundation::HWND;
     use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
-    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId, IsWindow, SetForegroundWindow};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetForegroundWindow, GetWindowThreadProcessId, IsHungAppWindow, IsWindow, SetForegroundWindow,
+    };
+    /// Detaches on every way out (the threads share one keyboard state while attached).
+    struct Attached(u32, u32);
+    impl Drop for Attached {
+        fn drop(&mut self) {
+            let ok = unsafe { AttachThreadInput(self.0, self.1, false) }.as_bool();
+            if !ok {
+                log::warn!("focus: AttachThreadInput detach failed");
+            }
+        }
+    }
     if target == 0 {
         return;
     }
@@ -684,13 +689,20 @@ fn focus(target: isize) {
         if fg == hwnd {
             return;
         }
+        // A window that stopped answering (issue #3: an app under heavy UI Automation) would share
+        // its frozen keyboard state with this thread: don't attach, just ask.
+        if !fg.0.is_null() && IsHungAppWindow(fg).as_bool() {
+            log::warn!("focus: the foreground window ({}) is not responding, not attaching to it", class_name(fg.0 as isize));
+            let _ = SetForegroundWindow(hwnd);
+            return;
+        }
         let fg_thread = GetWindowThreadProcessId(fg, None);
         let me = GetCurrentThreadId();
-        let attached = fg_thread != 0 && fg_thread != me && AttachThreadInput(me, fg_thread, true).as_bool();
-        let _ = SetForegroundWindow(hwnd);
-        if attached {
-            let _ = AttachThreadInput(me, fg_thread, false);
-        }
+        let attached = (fg_thread != 0 && fg_thread != me && AttachThreadInput(me, fg_thread, true).as_bool())
+            .then(|| Attached(me, fg_thread));
+        let ok = SetForegroundWindow(hwnd).as_bool();
+        drop(attached);
+        log::info!("focus: {} -> {} (ok {ok})", class_name(fg.0 as isize), class_name(target));
     }
 }
 
@@ -698,32 +710,108 @@ fn focus(target: isize) {
 fn focus(_target: isize) {}
 
 #[cfg(windows)]
+fn class_name(hwnd: isize) -> String {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::GetClassNameW;
+    if hwnd == 0 {
+        return "-".into();
+    }
+    let mut buf = [0u16; 64];
+    let n = unsafe { GetClassNameW(HWND(hwnd as *mut _), &mut buf) };
+    String::from_utf16_lossy(&buf[..n.max(0) as usize])
+}
+
+/// Every key FlowVoice injects goes through here (issue #3).
+#[cfg(windows)]
+mod keys {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP,
+        VIRTUAL_KEY, VK_LWIN, VK_RCONTROL, VK_RMENU, VK_RWIN,
+    };
+
+    /// `dwExtraInfo` of FlowVoice's own key events ("FLVW"), so a keyboard hook can tell them
+    /// apart from the user's and from other programs'.
+    pub const TAG: usize = 0x464C_5657;
+
+    pub fn key(vk: VIRTUAL_KEY, up: bool) -> INPUT {
+        // The right Ctrl/Alt (AltGr) and the Win keys are extended keys: without the flag, Windows
+        // takes them as the left ones, and a stuck AltGr would never be released.
+        let extended = [VK_RCONTROL, VK_RMENU, VK_LWIN, VK_RWIN].contains(&vk);
+        let mut flags = if up { KEYEVENTF_KEYUP } else { KEYBD_EVENT_FLAGS(0) };
+        if extended {
+            flags |= KEYEVENTF_EXTENDEDKEY;
+        }
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: vk, wScan: 0, dwFlags: flags, time: 0, dwExtraInfo: TAG } },
+        }
+    }
+
+    /// Sends the batch and logs it (keys only, never text). SendInput can stop midway (UIPI, a
+    /// desktop switch such as a UAC prompt or the lock screen): a Ctrl that went down without its
+    /// release would stay down for the whole system, so every key the inserted part pressed is
+    /// released again.
+    pub fn send(what: &str, inputs: &[INPUT]) {
+        let n = unsafe { SendInput(inputs, std::mem::size_of::<INPUT>() as i32) } as usize;
+        let err = windows::core::Error::from_win32();
+        let fg = super::foreground_window();
+        if n == inputs.len() {
+            log::info!("input: {what} -> {}", super::class_name(fg));
+            return;
+        }
+        log::warn!("input: {what} -> {}: only {n} of {} events went in ({err})", super::class_name(fg), inputs.len());
+        let ups: Vec<INPUT> = inputs[..n]
+            .iter()
+            .filter(|i| unsafe { i.Anonymous.ki.dwFlags } & KEYEVENTF_KEYUP != KEYEVENTF_KEYUP)
+            .map(|i| {
+                let mut up = *i;
+                unsafe { up.Anonymous.ki.dwFlags |= KEYEVENTF_KEYUP };
+                up
+            })
+            .rev()
+            .collect();
+        if ups.is_empty() {
+            return;
+        }
+        for _ in 0..3 {
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            let m = unsafe { SendInput(&ups, std::mem::size_of::<INPUT>() as i32) } as usize;
+            if m == ups.len() {
+                log::info!("input: released the {} key(s) left down", ups.len());
+                return;
+            }
+        }
+        log::warn!("input: could not release the keys left down");
+    }
+}
+
+#[cfg(windows)]
 fn wait_modifiers_released() {
     use windows::Win32::UI::Input::KeyboardAndMouse::{
-        GetAsyncKeyState, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_CONTROL,
-        VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
+        GetAsyncKeyState, VIRTUAL_KEY, VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_RCONTROL, VK_RMENU, VK_RSHIFT,
+        VK_RWIN,
     };
-    let mods = [VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN];
+    // Left and right apart: AltGr is the right Alt, and releasing "Alt" releases only the left one.
+    let mods = [VK_LSHIFT, VK_RSHIFT, VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU, VK_LWIN, VK_RWIN];
     let is_held = |vk: &VIRTUAL_KEY| unsafe { GetAsyncKeyState(vk.0 as i32) } as u16 & 0x8000 != 0;
-    for _ in 0..60 {
+    let t0 = std::time::Instant::now();
+    for i in 0..60 {
         if !mods.iter().any(is_held) {
+            if i > 0 {
+                log::info!("input: modifiers released after {} ms", t0.elapsed().as_millis());
+            }
             return;
         }
         std::thread::sleep(Duration::from_millis(25));
     }
-    // Still "held" after 1.5 s (stuck key state): release them so the paste is a plain Ctrl+V,
-    // not Ctrl+Shift+V (which runs other commands in some apps).
-    let ups: Vec<INPUT> = mods
-        .iter()
-        .filter(|vk| is_held(vk))
-        .map(|vk| INPUT {
-            r#type: INPUT_KEYBOARD,
-            Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: *vk, wScan: 0, dwFlags: KEYEVENTF_KEYUP, time: 0, dwExtraInfo: 0 } },
-        })
-        .collect();
-    unsafe {
-        SendInput(&ups, std::mem::size_of::<INPUT>() as i32);
+    // Still "held" after 1.5 s (stuck key state): release them, once, so the paste is a plain
+    // Ctrl+V, not Ctrl+Shift+V (which runs other commands in some apps) nor AltGr+V.
+    let held: Vec<VIRTUAL_KEY> = mods.iter().copied().filter(is_held).collect();
+    if held.is_empty() {
+        return;
     }
+    let ups: Vec<_> = held.iter().map(|vk| keys::key(*vk, true)).collect();
+    keys::send(&format!("release stuck modifiers {:?}", held.iter().map(|vk| vk.0).collect::<Vec<_>>()), &ups);
 }
 
 #[cfg(not(windows))]
@@ -733,33 +821,17 @@ fn wait_modifiers_released() {
 
 #[cfg(windows)]
 fn send_ctrl(letter: char) {
-    use windows::Win32::UI::Input::KeyboardAndMouse::{
-        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_CONTROL,
-    };
-    let key = |vk: VIRTUAL_KEY, up: bool| INPUT {
-        r#type: INPUT_KEYBOARD,
-        Anonymous: INPUT_0 {
-            ki: KEYBDINPUT {
-                wVk: vk,
-                wScan: 0,
-                dwFlags: if up { KEYEVENTF_KEYUP } else { KEYBD_EVENT_FLAGS(0) },
-                time: 0,
-                dwExtraInfo: 0,
-            },
-        },
-    };
-    let letter = VIRTUAL_KEY(letter as u16);
-    let inputs = [key(VK_CONTROL, false), key(letter, false), key(letter, true), key(VK_CONTROL, true)];
-    unsafe {
-        SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
-    }
+    use windows::Win32::UI::Input::KeyboardAndMouse::{VIRTUAL_KEY, VK_CONTROL};
+    let vk = VIRTUAL_KEY(letter as u16);
+    let inputs = [keys::key(VK_CONTROL, false), keys::key(vk, false), keys::key(vk, true), keys::key(VK_CONTROL, true)];
+    keys::send(&format!("Ctrl+{letter}"), &inputs);
 }
 
 /// Types one character, whatever the keyboard layout.
 #[cfg(windows)]
 fn send_char(c: char) {
     use windows::Win32::UI::Input::KeyboardAndMouse::{
-        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, VIRTUAL_KEY,
+        INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, VIRTUAL_KEY,
     };
     let mut units = [0u16; 2];
     let inputs: Vec<INPUT> = c
@@ -774,14 +846,12 @@ fn send_char(c: char) {
                     wScan: u,
                     dwFlags: if up { KEYEVENTF_UNICODE | KEYEVENTF_KEYUP } else { KEYEVENTF_UNICODE },
                     time: 0,
-                    dwExtraInfo: 0,
+                    dwExtraInfo: keys::TAG,
                 },
             },
         })
         .collect();
-    unsafe {
-        SendInput(&inputs, std::mem::size_of::<INPUT>() as i32);
-    }
+    keys::send("a character", &inputs);
 }
 
 #[cfg(not(windows))]
